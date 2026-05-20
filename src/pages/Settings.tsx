@@ -48,6 +48,7 @@ export default function Settings() {
   const [currentPwd, setCurrentPwd] = React.useState('');
   const [newPwd, setNewPwd] = React.useState('');
   const [confirmPwd, setConfirmPwd] = React.useState('');
+  const avatarSrc = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'showpro')}`;
 
   const fillRequiredMessage = language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all required fields';
   const currentPasswordRequiredMessage = language === 'th' ? 'กรุณากรอกรหัสผ่านปัจจุบัน' : 'Please enter your current password';
@@ -264,7 +265,7 @@ export default function Settings() {
             <div className="flex items-center gap-4 p-5 mb-8 bg-slate-900 text-white rounded-[2rem] shadow-xl relative z-10">
               <div className="relative">
                 <Avatar className="w-16 h-16 border-2 border-white/20 shadow-md rounded-2xl">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`} />
+                  <AvatarImage src={avatarSrc} />
                   <AvatarFallback className="bg-white/10 text-white font-bold rounded-2xl dark:bg-slate-900/50">{user?.nameThai?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-lg border-2 border-slate-900 flex items-center justify-center">
@@ -362,7 +363,7 @@ export default function Settings() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none" />
                     <div className="relative group/avatar cursor-pointer">
                       <Avatar className="w-32 h-32 border-4 border-white shadow-2xl rounded-[2rem]">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`} />
+                        <AvatarImage src={avatarSrc} />
                         <AvatarFallback className="text-3xl bg-indigo-100 text-indigo-600 font-black dark:text-slate-300">{user?.nameThai?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-slate-900/60 rounded-[2rem] opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-all duration-300">

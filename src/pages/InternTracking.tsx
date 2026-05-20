@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
   Users, ClipboardList, CheckSquare, Briefcase, Clock, MapPin, Star,
@@ -83,11 +84,14 @@ const internsData = [
   },
 ];
 
-type InternRow = typeof internsData[number];
+type InternRow = typeof internsData[number] & {
+  companyId?: string;
+};
 
 export default function InternTracking() {
   const { t, language } = useLanguage();
   const tr = t.internTracking;
+  const [searchParams, setSearchParams] = useSearchParams();
   const [interns, setInterns] = useState<InternRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedIntern, setSelectedIntern] = useState<InternRow | null>(null);

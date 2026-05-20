@@ -237,6 +237,7 @@ router.get(
       success: true,
       students: students.map((student) => ({
         id: student.id,
+        userId: student.userId,
         studentId: student.studentId,
         name: student.user.name,
         nameThai: student.user.nameThai,

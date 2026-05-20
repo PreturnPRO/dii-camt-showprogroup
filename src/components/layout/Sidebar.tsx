@@ -83,6 +83,10 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
       return [
         ...commonItems,
         { icon: Users, label: nav.users, href: '/users' },
+        { icon: GraduationCap, label: nav.studentDatabase, href: '/students' },
+        { icon: BookOpen, label: nav.curriculumCourses, href: '/courses' },
+        { icon: ClipboardList, label: nav.requests, href: '/requests' },
+        { icon: MessageSquare, label: nav.messages, href: '/messages' },
         { icon: DollarSign, label: nav.budgetProcurement, href: '/budget' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: FileText, label: nav.issueDocuments, href: '/documents' },

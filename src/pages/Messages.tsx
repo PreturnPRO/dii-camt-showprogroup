@@ -1,5 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { CheckCheck, ChevronLeft, Info, MessageCircle, MoreHorizontal, Paperclip, Plus, Search, Send } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -39,6 +40,8 @@ const initials = (name: string) => (name || '?').trim().charAt(0).toUpperCase();
 export default function Messages() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [messages, setMessages] = React.useState<MessageRow[]>([]);
   const [selectedPeerId, setSelectedPeerId] = React.useState<string | null>(null);
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -63,6 +66,10 @@ export default function Messages() {
     messageSent: language === 'th' ? 'ส่งข้อความแล้ว' : 'Message sent',
     selectRecipient: language === 'th' ? 'เลือกผู้รับก่อนส่งข้อความ' : 'Choose a recipient first',
     conversation: language === 'th' ? 'บทสนทนา' : 'Conversation',
+    details: language === 'th' ? 'รายละเอียดบทสนทนา' : 'Conversation details',
+    moreActions: language === 'th' ? 'เมนูเพิ่มเติมยังไม่มีการตั้งค่า' : 'More actions are not configured yet',
+    attachmentsUnavailable: language === 'th' ? 'การแนบไฟล์ยังไม่พร้อมใช้งาน' : 'File attachments are not available yet',
+    messagesCount: language === 'th' ? 'ข้อความ' : 'messages',
   }), [language]);
 
   React.useEffect(() => {
@@ -199,6 +206,26 @@ export default function Messages() {
     ? selectedRecipient.nameThai || selectedRecipient.name
     : selectedConversation?.peerName || '';
 
+  React.useEffect(() => {
+    const state = location.state as { recipient?: Partial<DirectoryUser> } | null;
+    const recipient = state?.recipient;
+    if (!recipient?.id) return;
+
+    const nextRecipient: DirectoryUser = {
+      id: String(recipient.id),
+      email: String(recipient.email || ''),
+      name: String(recipient.name || recipient.nameThai || ''),
+      nameThai: String(recipient.nameThai || recipient.name || ''),
+      role: String(recipient.role || ''),
+    };
+
+    setSelectedRecipient(nextRecipient);
+    setSelectedPeerId(nextRecipient.id);
+    setRecipientQuery(`${nextRecipient.nameThai || nextRecipient.name} <${nextRecipient.email}>`);
+    setSearchQuery('');
+    navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
+
   const sendMessage = async () => {
     if (!replyText.trim()) return;
     if (!activePeerId) {
@@ -229,6 +256,14 @@ export default function Messages() {
     } finally {
       setIsSending(false);
     }
+  };
+
+  const showConversationInfo = () => {
+    if (!activePeerName) return;
+    const totalMessages = selectedConversation?.messages.length ?? 0;
+    toast.info(copy.details, {
+      description: `${activePeerName} · ${totalMessages} ${copy.messagesCount}`,
+    });
   };
 
   return (
@@ -376,10 +411,10 @@ export default function Messages() {
                     </div>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={showConversationInfo} title={copy.details}>
                       <Info className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="rounded-full">
+                    <Button variant="ghost" size="icon" className="rounded-full" onClick={() => toast.info(copy.moreActions)} title={copy.moreActions}>
                       <MoreHorizontal className="h-5 w-5" />
                     </Button>
                   </div>
@@ -428,7 +463,7 @@ export default function Messages() {
 
                 <footer className="border-t border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950 md:p-4">
                   <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-[1.5rem] border border-slate-200 bg-slate-50 p-2 dark:border-slate-800 dark:bg-slate-900">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full text-slate-500">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 shrink-0 rounded-full text-slate-500" onClick={() => toast.info(copy.attachmentsUnavailable)} title={copy.attachmentsUnavailable}>
                       <Paperclip className="h-5 w-5" />
                     </Button>
                     <Textarea
