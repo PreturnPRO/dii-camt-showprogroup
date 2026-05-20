@@ -26,6 +26,7 @@ import {
   Command,
   Swords,
   Target,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -118,6 +119,7 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: FileText, label: nav.documentsRequests, href: '/documents' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: Trophy, label: nav.activityAdmin, href: '/activities-management' },
+        { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
         { icon: Briefcase, label: nav.jobsInternships, href: '/job-postings' },
         { icon: Search, label: nav.studentDatabase, href: '/student-profiles' },
         { icon: Building, label: nav.partnerCompanies, href: '/cooperation' },

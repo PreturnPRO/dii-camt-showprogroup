@@ -45,10 +45,20 @@ const resetPasswordSchema = z.object({
   password: z.string().min(8),
 });
 
+const avatarSchema = z
+  .string()
+  .refine(
+    (value) => {
+      if (value.startsWith("/api/files/")) return true;
+      return z.string().url().safeParse(value).success;
+    },
+    { message: "Avatar must be a URL or managed file path" },
+  );
+
 const updateUserProfileSchema = z.object({
   name: z.string().min(1).optional(),
   nameThai: z.string().min(1).optional(),
-  avatar: z.string().url().optional(),
+  avatar: avatarSchema.nullable().optional(),
   phone: z.string().optional(),
   currentPassword: z.string().min(8).optional(),
   newPassword: z.string().min(8).optional(),
@@ -83,7 +93,44 @@ const createPasswordResetToken = (user: { id: string; email: string; passwordHas
   );
 
 const frontendOrigin = (req: { get: (name: string) => string | undefined }) =>
-  req.get("origin") || env.CORS_ORIGIN.split(",")[0] || "http://localhost:8080";
+  env.FRONTEND_URL || req.get("origin") || env.CORS_ORIGIN.split(",")[0] || "http://localhost:8080";
+
+const sendPasswordResetEmail = async (payload: {
+  email: string;
+  name: string;
+  resetUrl: string;
+}) => {
+  if (!env.PASSWORD_RESET_WEBHOOK_URL) {
+    if (env.NODE_ENV === "production") {
+      console.warn("PASSWORD_RESET_WEBHOOK_URL is not configured; reset email was not sent.");
+    }
+    return;
+  }
+
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+
+  if (env.PASSWORD_RESET_WEBHOOK_TOKEN) {
+    headers.Authorization = `Bearer ${env.PASSWORD_RESET_WEBHOOK_TOKEN}`;
+  }
+
+  const response = await fetch(env.PASSWORD_RESET_WEBHOOK_URL, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({
+      type: "password-reset",
+      to: payload.email,
+      name: payload.name,
+      resetUrl: payload.resetUrl,
+      expiresInMinutes: 30,
+    }),
+  });
+
+  if (!response.ok) {
+    throw new AppError(502, "Password reset email provider rejected the request");
+  }
+};
 
 router.post(
   "/auth/register",
@@ -323,9 +370,18 @@ router.post(
 
     if (user?.isActive) {
       const resetToken = createPasswordResetToken(user);
+      const resetUrl = `${frontendOrigin(req)}/reset-password?token=${encodeURIComponent(resetToken)}`;
+      await sendPasswordResetEmail({
+        email: user.email,
+        name: user.name,
+        resetUrl,
+      }).catch((error) => {
+        console.error("Password reset email delivery failed", error);
+      });
+
       if (env.NODE_ENV !== "production") {
         response.resetToken = resetToken;
-        response.resetUrl = `${frontendOrigin(req)}/reset-password?token=${encodeURIComponent(resetToken)}`;
+        response.resetUrl = resetUrl;
       }
 
       await createAuditLog({

@@ -6,24 +6,219 @@ import type {
   Grade,
   JobPosting,
   Lecturer,
+  Message,
   Schedule,
   Student,
 } from "@/types";
-import {
-  mockActivities,
-  mockAppointments,
-  mockCompanies,
-  mockCourses,
-  mockGrades,
-  mockJobPostings,
-  mockLecturers,
-  mockMessages,
-  mockStudent,
-  mockStudents,
-} from "@/lib/mockData";
 import { asArray, asBoolean, asDate, asNumber, asRecord, asString } from "@/lib/live-data";
 
-type MessageRow = (typeof mockMessages)[number];
+type MessageRow = Message & {
+  from: string;
+  to: string;
+  date: Date;
+};
+
+const emptySchedule = (id = "schedule-0"): Schedule => ({
+  id,
+  day: "monday",
+  dayThai: "Monday",
+  startTime: "09:00",
+  endTime: "10:00",
+  room: "",
+  building: "",
+  type: "lecture",
+});
+
+const emptyCourse = (index = 0): Course => ({
+  id: `course-${index}`,
+  code: "",
+  name: "Untitled course",
+  nameThai: "Untitled course",
+  credits: 0,
+  semester: 1,
+  academicYear: "",
+  year: 1,
+  lecturerId: "",
+  lecturerName: "",
+  sections: [],
+  description: "",
+  prerequisites: [],
+  learningOutcomes: [],
+  syllabus: "",
+  schedule: [],
+  enrolledStudents: [],
+  maxStudents: 0,
+  minStudents: 0,
+  materials: [],
+  assignments: [],
+  grades: [],
+});
+
+const emptyStudent = (index = 0): Student => ({
+  id: `student-${index}`,
+  email: "",
+  name: "Student",
+  nameThai: "Student",
+  role: "student",
+  createdAt: new Date(),
+  isActive: true,
+  studentId: "",
+  major: "",
+  program: "bachelor",
+  year: 1,
+  semester: 1,
+  academicYear: "",
+  gpa: 0,
+  gpax: 0,
+  totalCredits: 0,
+  earnedCredits: 0,
+  requiredCredits: 0,
+  academicStatus: "normal",
+  skills: [],
+  activities: [],
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  badges: [],
+  dataConsent: {
+    studentId: "",
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: "private",
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
+  timeline: [],
+});
+
+const emptyLecturer = (index = 0): Lecturer => ({
+  id: `lecturer-${index}`,
+  email: "",
+  name: "Lecturer",
+  nameThai: "Lecturer",
+  role: "lecturer",
+  createdAt: new Date(),
+  isActive: true,
+  lecturerId: "",
+  department: "",
+  position: "instructor",
+  courses: [],
+  teachingHours: 0,
+  maxTeachingHours: 0,
+  advisees: [],
+  maxAdvisees: 0,
+  officeHours: [],
+  appointments: [],
+  specialization: [],
+  researchInterests: [],
+});
+
+const emptyCompany = (index = 0): Company => ({
+  id: `company-${index}`,
+  email: "",
+  name: "Company",
+  nameThai: "Company",
+  role: "company",
+  createdAt: new Date(),
+  isActive: true,
+  companyId: "",
+  companyName: "",
+  companyNameThai: "",
+  industry: "",
+  size: "small",
+  jobPostings: [],
+  internshipSlots: 0,
+  currentInterns: 0,
+  studentViewConsent: [],
+  canContactStudents: false,
+  messages: [],
+});
+
+const emptyJob = (index = 0): JobPosting => ({
+  id: `job-${index}`,
+  companyId: "",
+  companyName: "",
+  title: "Untitled position",
+  type: "internship",
+  positions: 0,
+  description: "",
+  responsibilities: [],
+  requirements: [],
+  preferredSkills: [],
+  location: "",
+  workType: "onsite",
+  deadline: new Date(),
+  applicants: [],
+  status: "open",
+  isActive: true,
+  postedAt: new Date(),
+});
+
+const emptyActivity = (index = 0): Activity => ({
+  id: `activity-${index}`,
+  title: "Untitled activity",
+  titleThai: "Untitled activity",
+  description: "",
+  type: "event",
+  startDate: new Date(),
+  endDate: new Date(),
+  location: "",
+  organizer: "",
+  activityHours: 0,
+  gamificationPoints: 0,
+  enrolledStudents: [],
+  attendedStudents: [],
+  isGroupActivity: false,
+  checkInEnabled: false,
+  status: "upcoming",
+  registrationStatus: "open",
+  requiresPeerEvaluation: false,
+});
+
+const emptyAppointment = (index = 0): Appointment => ({
+  id: `appointment-${index}`,
+  studentId: "",
+  studentName: "",
+  lecturerId: "",
+  lecturerName: "",
+  date: new Date(),
+  startTime: "",
+  endTime: "",
+  location: "",
+  purpose: "",
+  status: "pending",
+  createdAt: new Date(),
+});
+
+const emptyGrade = (): Grade => ({
+  studentId: "",
+  courseId: "",
+  gradedBy: "",
+  history: [],
+});
+
+const emptyMessage = (index = 0): MessageRow => ({
+  id: `message-${index}`,
+  from: "",
+  fromId: "",
+  to: "",
+  toId: "",
+  subject: "",
+  preview: "",
+  body: "",
+  timestamp: new Date(),
+  date: new Date(),
+  read: false,
+  starred: false,
+  hasAttachment: false,
+  attachments: [],
+  category: "general",
+});
 
 const dayThai: Record<Schedule["day"], string> = {
   monday: "Monday",
@@ -178,7 +373,7 @@ export const mapSchedule = (value: unknown, index = 0, fallback?: Schedule): Sch
 
 export const mapCourse = (value: unknown, index = 0): Course => {
   const source = asRecord(value);
-  const fallback = mockCourses[index % mockCourses.length] ?? mockCourses[0];
+  const fallback = emptyCourse(index);
   const lecturer = asRecord(source.lecturer);
   const lecturerUser = asRecord(lecturer.user);
   const enrollments = asArray(source.enrollments);
@@ -187,7 +382,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
 
   const mappedSchedule = courseSchedule.length
     ? courseSchedule.map((slot, slotIndex) => mapSchedule(slot, slotIndex, fallback.schedule[slotIndex]))
-    : fallback.schedule;
+    : [];
 
   return {
     ...fallback,
@@ -268,7 +463,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
 
 export const mapJob = (value: unknown, index = 0): JobPosting => {
   const source = asRecord(value);
-  const fallback = mockJobPostings[index % mockJobPostings.length] ?? mockJobPostings[0];
+  const fallback = emptyJob(index);
   const company = asRecord(source.company);
   const companyProfile = asRecord(source.companyProfile);
   const hasApplicationField = Object.prototype.hasOwnProperty.call(source, "applications") || Object.prototype.hasOwnProperty.call(source, "applicants");
@@ -286,17 +481,11 @@ export const mapJob = (value: unknown, index = 0): JobPosting => {
     type: normalizeJobType(source.type, fallback.type),
     positions: asNumber(source.positions, fallback.positions),
     description: asString(source.description, fallback.description),
-    responsibilities: asArray<string>(source.responsibilities).length
-      ? asArray<string>(source.responsibilities)
-      : fallback.responsibilities,
-    requirements: asArray<string>(source.requirements).length
-      ? asArray<string>(source.requirements)
-      : fallback.requirements,
-    preferredSkills: asArray<string>(source.preferredSkills).length
-      ? asArray<string>(source.preferredSkills)
-      : fallback.preferredSkills,
+    responsibilities: asArray<string>(source.responsibilities),
+    requirements: asArray<string>(source.requirements),
+    preferredSkills: asArray<string>(source.preferredSkills),
     salary: asString(source.salary, fallback.salary ?? ""),
-    benefits: asArray<string>(source.benefits).length ? asArray<string>(source.benefits) : fallback.benefits,
+    benefits: asArray<string>(source.benefits),
     location: asString(source.location, fallback.location),
     workType: normalizeWorkType(source.workType, fallback.workType),
     startDate: source.startDate ? asDate(source.startDate, fallback.startDate) : fallback.startDate,
@@ -315,7 +504,7 @@ export const mapJob = (value: unknown, index = 0): JobPosting => {
             notes: asString(application.notes),
           };
         })
-      : fallback.applicants,
+      : [],
     maxApplicants: source.maxApplicants ? asNumber(source.maxApplicants, fallback.maxApplicants) : fallback.maxApplicants,
     status: normalizeJobStatus(source.status, fallback.status),
     isActive: asBoolean(source.isActive, fallback.isActive),
@@ -325,7 +514,7 @@ export const mapJob = (value: unknown, index = 0): JobPosting => {
 
 export const mapCompany = (value: unknown, index = 0): Company => {
   const source = asRecord(value);
-  const fallback = mockCompanies[index % mockCompanies.length] ?? mockCompanies[0];
+  const fallback = emptyCompany(index);
   const user = asRecord(source.user);
 
   return {
@@ -357,22 +546,18 @@ export const mapCompany = (value: unknown, index = 0): Company => {
     privacyProtocolAcceptedAt: source.privacyProtocolAcceptedAt
       ? asDate(source.privacyProtocolAcceptedAt, fallback.privacyProtocolAcceptedAt)
       : fallback.privacyProtocolAcceptedAt,
-    jobPostings: asArray(source.jobPostings).length
-      ? asArray(source.jobPostings).map(mapJob)
-      : fallback.jobPostings,
+    jobPostings: asArray(source.jobPostings).map(mapJob),
     internshipSlots: asNumber(source.internshipSlots, fallback.internshipSlots),
     currentInterns: asNumber(source.currentInterns, fallback.currentInterns),
-    studentViewConsent: asArray<string>(source.studentViewConsent).length
-      ? asArray<string>(source.studentViewConsent)
-      : fallback.studentViewConsent,
+    studentViewConsent: asArray<string>(source.studentViewConsent),
     canContactStudents: asBoolean(source.canContactStudents, fallback.canContactStudents),
-    messages: asArray(source.messages).length ? (asArray(source.messages) as Company["messages"]) : fallback.messages,
+    messages: asArray(source.messages) as Company["messages"],
   };
 };
 
 export const mapStudent = (value: unknown, index = 0): Student => {
   const source = asRecord(value);
-  const fallback = mockStudents[index % mockStudents.length] ?? mockStudent;
+  const fallback = emptyStudent(index);
   const user = asRecord(source.user);
   const advisor = asRecord(source.advisor);
   const consent = asRecord(source.consent ?? source.dataConsent);
@@ -418,11 +603,9 @@ export const mapStudent = (value: unknown, index = 0): Student => {
             verifiedBy: asString(skillRow.verifiedBy, asString(skillRow.source, "")),
           };
         })
-      : fallback.skills,
-    badges: asArray(source.badges).length ? (asArray(source.badges) as Student["badges"]) : fallback.badges,
-    activities: asArray(source.activities).length
-      ? (asArray(source.activities) as Student["activities"])
-      : fallback.activities,
+      : [],
+    badges: asArray(source.badges) as Student["badges"],
+    activities: asArray(source.activities) as Student["activities"],
     totalActivityHours: asNumber(source.totalActivityHours, fallback.totalActivityHours),
     gamificationPoints: asNumber(source.gamificationPoints, fallback.gamificationPoints),
     portfolio: portfolio.studentId || portfolio.id
@@ -466,7 +649,7 @@ export const mapStudent = (value: unknown, index = 0): Student => {
             };
           }),
         }
-      : fallback.portfolio,
+      : undefined,
     internship: (source.internship as Student["internship"]) ?? fallback.internship,
     dataConsent: {
       ...fallback.dataConsent,
@@ -486,13 +669,13 @@ export const mapStudent = (value: unknown, index = 0): Student => {
       lastModified: asDate(consent.lastModified ?? consent.updatedAt, fallback.dataConsent.lastModified),
       history: asArray(consent.history) as Student["dataConsent"]["history"],
     },
-    timeline: asArray(source.timeline).length ? (asArray(source.timeline) as Student["timeline"]) : fallback.timeline,
+    timeline: asArray(source.timeline) as Student["timeline"],
   };
 };
 
 export const mapActivity = (value: unknown, index = 0): Activity => {
   const source = asRecord(value);
-  const fallback = mockActivities[index % mockActivities.length] ?? mockActivities[0];
+  const fallback = emptyActivity(index);
   const enrollments = asArray(source.enrollments);
   const attendedStudents = enrollments
     .filter((item) => asString(asRecord(item).status).toLowerCase() === "completed")
@@ -514,7 +697,7 @@ export const mapActivity = (value: unknown, index = 0): Activity => {
     gamificationPoints: asNumber(source.gamificationPoints, fallback.gamificationPoints),
     maxParticipants: source.maxParticipants ? asNumber(source.maxParticipants, fallback.maxParticipants) : fallback.maxParticipants,
     enrolledStudents: enrollments.map((item) => asString(asRecord(item).studentId)).filter(Boolean),
-    attendedStudents: attendedStudents.length ? attendedStudents : fallback.attendedStudents,
+    attendedStudents,
     isGroupActivity: asBoolean(source.isGroupActivity, fallback.isGroupActivity),
     teamSize: source.teamSize ? asNumber(source.teamSize, fallback.teamSize) : fallback.teamSize,
     qrCode: asString(source.qrCode, fallback.qrCode ?? ""),
@@ -522,15 +705,13 @@ export const mapActivity = (value: unknown, index = 0): Activity => {
     status: normalizeActivityStatus(source.status, fallback.status),
     registrationStatus: normalizeRegistrationStatus(source.registrationStatus, fallback.registrationStatus),
     requiresPeerEvaluation: asBoolean(source.requiresPeerEvaluation, fallback.requiresPeerEvaluation),
-    evaluations: asArray(source.evaluations).length
-      ? (asArray(source.evaluations) as Activity["evaluations"])
-      : fallback.evaluations,
+    evaluations: asArray(source.evaluations) as Activity["evaluations"],
   };
 };
 
 export const mapLecturer = (value: unknown, index = 0): Lecturer => {
   const source = asRecord(value);
-  const fallback = mockLecturers[index % mockLecturers.length] ?? mockLecturers[0];
+  const fallback = emptyLecturer(index);
   const user = asRecord(source.user);
   const courses = asArray(source.courses);
 
@@ -548,17 +729,13 @@ export const mapLecturer = (value: unknown, index = 0): Lecturer => {
     lecturerId: asString(source.lecturerId, fallback.lecturerId),
     department: asString(source.department, fallback.department),
     position: normalizePosition(source.position, fallback.position),
-    courses: courses.length ? courses.map(mapCourse) : fallback.courses,
+    courses: courses.map(mapCourse),
     teachingHours: asNumber(source.teachingHours, fallback.teachingHours),
     maxTeachingHours: asNumber(source.maxTeachingHours, fallback.maxTeachingHours),
     advisees: asArray(source.advisees).map((item) => asString(asRecord(item).id, asString(item))).filter(Boolean),
     maxAdvisees: asNumber(source.maxAdvisees, fallback.maxAdvisees),
-    officeHours: asArray(source.officeHours).length
-      ? (asArray(source.officeHours) as Lecturer["officeHours"])
-      : fallback.officeHours,
-    appointments: asArray(source.appointments).length
-      ? (asArray(source.appointments) as Lecturer["appointments"])
-      : fallback.appointments,
+    officeHours: asArray(source.officeHours) as Lecturer["officeHours"],
+    appointments: asArray(source.appointments) as Lecturer["appointments"],
     specialization: asArray<string>(source.specialization),
     researchInterests: asArray<string>(source.researchInterests),
   };
@@ -566,7 +743,7 @@ export const mapLecturer = (value: unknown, index = 0): Lecturer => {
 
 export const mapAppointment = (value: unknown, index = 0): Appointment => {
   const source = asRecord(value);
-  const fallback = mockAppointments[index % mockAppointments.length] ?? mockAppointments[0];
+  const fallback = emptyAppointment(index);
   const student = asRecord(source.student);
   const studentUser = asRecord(student.user);
   const lecturer = asRecord(source.lecturer);
@@ -594,7 +771,7 @@ export const mapAppointment = (value: unknown, index = 0): Appointment => {
 
 export const mapMessage = (value: unknown, index = 0): MessageRow => {
   const source = asRecord(value);
-  const fallback = mockMessages[index % mockMessages.length] ?? mockMessages[0];
+  const fallback = emptyMessage(index);
   const from = asRecord(source.from);
   const to = asRecord(source.to);
 
@@ -608,6 +785,7 @@ export const mapMessage = (value: unknown, index = 0): MessageRow => {
     subject: asString(source.subject, fallback.subject),
     preview: asString(source.preview, fallback.preview),
     body: asString(source.body, fallback.body),
+    timestamp: asDate(source.timestamp ?? source.date, fallback.timestamp),
     date: asDate(source.timestamp ?? source.date, fallback.date),
     read: asBoolean(source.read, fallback.read),
     starred: asBoolean(source.starred, fallback.starred),
@@ -621,7 +799,7 @@ export const mapMessage = (value: unknown, index = 0): MessageRow => {
 
 export const mapGrade = (value: unknown, index = 0): Grade => {
   const source = asRecord(value);
-  const fallback = mockGrades[index % mockGrades.length] ?? mockGrades[0];
+  const fallback = emptyGrade();
   const course = asRecord(source.course);
 
   return {

@@ -44,6 +44,7 @@ export default function ScheduleManagement() {
     const { t } = useLanguage();
     const [isEditMode, setIsEditMode] = useState(false);
     const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+    const [courseRecords, setCourseRecords] = useState<unknown[]>([]);
     const [requests, setRequests] = useState<Array<{ id: string; lecturer: string; courseCode: string; courseName: string; oldTime: string; newTime: string; reason: string; type: string; targetDate?: string }>>([]);
     const [rooms, setRooms] = useState<Array<{ id: string; code: string; name: string; building: string; room: string; type: string; capacity: number; status: string }>>([]);
     const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
@@ -66,19 +67,24 @@ export default function ScheduleManagement() {
                 if (!isMounted) return;
 
                 if (coursesResponse.status === 'fulfilled') {
+                    setCourseRecords(coursesResponse.value.courses);
                     const mappedSchedule = coursesResponse.value.courses.flatMap((item, courseIndex) => {
                         const course = asRecord(item);
                         const sections = asArray(course.sections);
                         const slots = sections.length
-                            ? sections.flatMap((section) => asArray(asRecord(section).schedule).map((slot) => ({ slot, section })))
-                            : asArray(course.schedule).map((slot) => ({ slot, section: {} }));
+                            ? sections.flatMap((section, sectionIndex) => asArray(asRecord(section).schedule).map((slot, scheduleIndex) => ({ slot, section, sectionIndex, scheduleIndex })))
+                            : asArray(course.schedule).map((slot, scheduleIndex) => ({ slot, section: {}, sectionIndex: undefined, scheduleIndex }));
 
-                        return slots.map(({ slot, section }, slotIndex) => {
+                        return slots.map(({ slot, section, sectionIndex, scheduleIndex }, slotIndex) => {
                             const scheduleSlot = asRecord(slot);
                             const sectionRecord = asRecord(section);
                             const facility = asRecord(sectionRecord.facility);
+                            const courseId = asString(course.id, `course-${courseIndex}`);
                             return {
-                                id: `${asString(course.id, `course-${courseIndex}`)}-${slotIndex}`,
+                                id: `${courseId}-${sectionIndex ?? 'course'}-${scheduleIndex ?? slotIndex}`,
+                                courseId,
+                                sectionIndex,
+                                scheduleIndex,
                                 day: dayToIndex(scheduleSlot.day),
                                 startTime: asString(scheduleSlot.startTime, '09:00'),
                                 endTime: asString(scheduleSlot.endTime, '12:00'),
@@ -216,6 +222,72 @@ export default function ScheduleManagement() {
         }
     };
 
+    const calculateEndTime = (newStart: string, oldStart: string, oldEnd: string) => {
+        const startHour = Number(oldStart.split(':')[0]);
+        const endHour = Number(oldEnd.split(':')[0]);
+        const duration = Number.isFinite(startHour) && Number.isFinite(endHour) ? Math.max(endHour - startHour, 1) : 3;
+        const nextHour = Number(newStart.split(':')[0]);
+        return `${String(nextHour + duration).padStart(2, '0')}:00`;
+    };
+
+    const dayNameByIndex = (day: number) => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'][day - 1] ?? 'monday';
+
+    const handleScheduleMove = async (item: ScheduleItem, targetDay: number, targetTime: string, mode: 'permanent' | 'one-time') => {
+        if (!item.courseId || typeof item.scheduleIndex !== 'number') {
+            toast.error('Unable to identify schedule slot');
+            return;
+        }
+
+        const course = courseRecords.find((record) => asString(asRecord(record).id) === item.courseId);
+        if (!course) {
+            toast.error('Unable to find course record');
+            return;
+        }
+
+        const courseRecord = asRecord(course);
+        const nextSlot = {
+            day: dayNameByIndex(targetDay),
+            startTime: targetTime,
+            endTime: calculateEndTime(targetTime, item.startTime, item.endTime),
+            room: item.room,
+        };
+
+        try {
+            if (typeof item.sectionIndex === 'number') {
+                const nextSections = asArray(courseRecord.sections).map((section, sectionIndex) => {
+                    const sectionRecord = asRecord(section);
+                    const scheduleItems = asArray(sectionRecord.schedule).map((slot, scheduleIndex) =>
+                        sectionIndex === item.sectionIndex && scheduleIndex === item.scheduleIndex
+                            ? { ...asRecord(slot), ...nextSlot }
+                            : asRecord(slot),
+                    );
+                    return {
+                        number: asString(sectionRecord.number, String(sectionIndex + 1)),
+                        room: asString(sectionRecord.room, item.room),
+                        facilityId: asString(sectionRecord.facilityId) || undefined,
+                        maxStudents: asNumber(sectionRecord.maxStudents, 30),
+                        schedule: scheduleItems,
+                    };
+                });
+                await api.courses.update(item.courseId, { sections: nextSections });
+            } else {
+                const nextSchedule = asArray(courseRecord.schedule).map((slot, scheduleIndex) =>
+                    scheduleIndex === item.scheduleIndex ? { ...asRecord(slot), ...nextSlot } : asRecord(slot),
+                );
+                await api.courses.update(item.courseId, { schedule: nextSchedule });
+            }
+
+            setSchedule((current) => current.map((slot) =>
+                slot.id === item.id
+                    ? { ...slot, day: targetDay, startTime: targetTime, endTime: nextSlot.endTime, isOneTime: mode === 'one-time' }
+                    : slot,
+            ));
+            toast.success(mode === 'one-time' ? 'บันทึกการเปลี่ยนเฉพาะครั้งแล้ว' : 'บันทึกตารางเรียนแล้ว');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Unable to update schedule');
+        }
+    };
+
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
             {/* Header */}
@@ -323,7 +395,7 @@ export default function ScheduleManagement() {
                         <Edit3 className="w-4 h-4" /> {t.scheduleManagementPage.editModeDesc}
                     </div>
                 )}
-                <DraggableSchedule initialSchedule={schedule} editable={isEditMode} />
+                <DraggableSchedule initialSchedule={schedule} editable={isEditMode} onRequestMove={handleScheduleMove} />
             </motion.div>
 
             <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>

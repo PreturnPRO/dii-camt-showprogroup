@@ -17,10 +17,11 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { StatsCard } from '@/components/common/StatsCard';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { mockLecturer, mockCourses, mockAppointments } from '@/lib/mockData';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { mapAppointment, mapCourse, mapStudent } from '@/lib/live-mappers';
 import { Link } from 'react-router-dom';
+import type { Appointment, Course } from '@/types';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,19 +36,12 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// Mock at-risk students
-const fallbackAtRiskStudents = [
-  { id: '1', name: 'นายสมศักดิ์ มานะ', studentId: '650510005', gpa: 1.85, issue: 'GPA ต่ำกว่าเกณฑ์' },
-  { id: '2', name: 'นางสาวสมหญิง ใจดี', studentId: '650510012', gpa: 2.15, issue: 'ขาดเรียนบ่อย' },
-  { id: '3', name: 'นายชัยวุฒิ พยายาม', studentId: '650510008', gpa: 2.25, issue: 'ไม่ส่งงานหลายวิชา' },
-];
-
 export default function TeacherDashboard() {
   const { t, language } = useLanguage();
-  const teacher = mockLecturer;
-  const [teacherCourses, setTeacherCourses] = React.useState(mockCourses.filter(c => c.lecturerId === teacher.id || c.lecturerId === teacher.lecturerId));
-  const [teacherAppointments, setTeacherAppointments] = React.useState(mockAppointments.filter(apt => apt.lecturerId === teacher.id));
-  const [atRiskStudents, setAtRiskStudents] = React.useState(fallbackAtRiskStudents);
+  const { user } = useAuth();
+  const [teacherCourses, setTeacherCourses] = React.useState<Course[]>([]);
+  const [teacherAppointments, setTeacherAppointments] = React.useState<Appointment[]>([]);
+  const [atRiskStudents, setAtRiskStudents] = React.useState<{ id: string; name: string; studentId: string; gpa: number; issue: string }[]>([]);
   const totalCourses = teacherCourses.length;
   const totalStudents = teacherCourses.reduce((sum, course) => sum + (course.enrolledStudents?.length || 0), 0);
   const pendingAppointments = teacherAppointments.filter(apt => apt.status === 'pending').length;
@@ -100,10 +94,10 @@ export default function TeacherDashboard() {
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-            {t.teacherDashboard.hello} {teacher.nameThai}
+            {t.teacherDashboard.hello} {user?.nameThai || user?.name || ''}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {teacher.position} • สาขา {teacher.department}
+            {user?.email || ''}
           </p>
         </div>
         <Button variant="teacher" asChild>

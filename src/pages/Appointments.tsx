@@ -10,6 +10,10 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { mapAppointment, mapLecturer } from '@/lib/live-mappers';
 import type { Appointment, Lecturer } from '@/types';
@@ -33,6 +37,13 @@ export default function Appointments() {
     const [appointments, setAppointments] = React.useState<AppointmentRow[]>([]);
     const [lecturers, setLecturers] = React.useState<LecturerRow[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [bookingLecturer, setBookingLecturer] = React.useState<LecturerRow | null>(null);
+    const [bookingDate, setBookingDate] = React.useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10));
+    const [bookingStart, setBookingStart] = React.useState('09:00');
+    const [bookingEnd, setBookingEnd] = React.useState('10:00');
+    const [bookingLocation, setBookingLocation] = React.useState('');
+    const [bookingPurpose, setBookingPurpose] = React.useState('');
+    const [isBooking, setIsBooking] = React.useState(false);
     const pendingCount = appointments.filter(a => a.status === 'pending').length;
     const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
     const isTeacher = user?.role === 'lecturer';
@@ -85,6 +96,37 @@ export default function Appointments() {
         }
     };
 
+    const openBooking = (lecturer: LecturerRow) => {
+        const firstSlot = lecturer.officeHours.find((slot) => slot.isAvailable) ?? lecturer.officeHours[0];
+        setBookingLecturer(lecturer);
+        setBookingStart(firstSlot?.startTime || '09:00');
+        setBookingEnd(firstSlot?.endTime || '10:00');
+        setBookingLocation(firstSlot?.location || lecturer.department || '');
+        setBookingPurpose('');
+    };
+
+    const createAppointment = async () => {
+        if (!bookingLecturer || !bookingPurpose.trim()) return;
+        setIsBooking(true);
+        try {
+            const response = await api.appointments.create({
+                lecturerId: bookingLecturer.id,
+                date: bookingDate,
+                startTime: bookingStart,
+                endTime: bookingEnd,
+                location: bookingLocation || bookingLecturer.department || 'TBA',
+                purpose: bookingPurpose.trim(),
+            });
+            setAppointments((current) => [mapAppointment(response.appointment), ...current]);
+            toast.success(`${t.appointmentsPage.bookSuccess} ${bookingLecturer.nameThai}`);
+            setBookingLecturer(null);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : t.appointmentsPage.systemUpgrade);
+        } finally {
+            setIsBooking(false);
+        }
+    };
+
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'pending': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.appointmentsPage.pendingTab}</Badge>;
@@ -108,7 +150,7 @@ export default function Appointments() {
                     </motion.h1>
                 </div>
                 {!isTeacher && (
-                    <Button className="bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => toast.info(t.appointmentsPage.systemUpgrade)}>
+                    <Button className="bg-gradient-to-r from-blue-500 to-cyan-500" onClick={() => lecturers[0] ? openBooking(lecturers[0]) : toast.error('ไม่พบอาจารย์ที่เปิดให้จอง')}>
                         <Plus className="w-4 h-4 mr-2" />{t.appointmentsPage.newAppointment}
                     </Button>
                 )}
@@ -165,7 +207,7 @@ export default function Appointments() {
                                                     ))}
                                                 </div>
                                             </div>
-                                            <Button size="sm" onClick={() => toast.success(`${t.appointmentsPage.bookSuccess} ${lecturer.nameThai}`)}>{ t.appointmentsPage.bookTime}</Button>
+                                            <Button size="sm" onClick={() => openBooking(lecturer)}>{ t.appointmentsPage.bookTime}</Button>
                                         </div>
                                     </div>
                                 ))}
@@ -281,6 +323,43 @@ export default function Appointments() {
                     </TabsContent>
                 </Tabs>
             </motion.div>
+
+            <Dialog open={Boolean(bookingLecturer)} onOpenChange={(open) => !open && setBookingLecturer(null)}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{t.appointmentsPage.newAppointment}</DialogTitle>
+                        <DialogDescription>{bookingLecturer?.nameThai || bookingLecturer?.name}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="appointment-date">Date</Label>
+                            <Input id="appointment-date" type="date" value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="appointment-location">Location</Label>
+                            <Input id="appointment-location" value={bookingLocation} onChange={(event) => setBookingLocation(event.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="appointment-start">Start</Label>
+                            <Input id="appointment-start" type="time" value={bookingStart} onChange={(event) => setBookingStart(event.target.value)} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="appointment-end">End</Label>
+                            <Input id="appointment-end" type="time" value={bookingEnd} onChange={(event) => setBookingEnd(event.target.value)} />
+                        </div>
+                        <div className="sm:col-span-2 space-y-2">
+                            <Label htmlFor="appointment-purpose">Purpose</Label>
+                            <Textarea id="appointment-purpose" value={bookingPurpose} onChange={(event) => setBookingPurpose(event.target.value)} />
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setBookingLecturer(null)} disabled={isBooking}>{t.common.cancel}</Button>
+                        <Button onClick={createAppointment} disabled={isBooking || !bookingPurpose.trim()}>
+                            {isBooking ? t.common.loading : t.appointmentsPage.bookTime}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </motion.div>
     );
 }

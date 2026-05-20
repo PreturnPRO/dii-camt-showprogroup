@@ -13,14 +13,56 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { mockActivities, mockStudent } from '@/lib/mockData';
 import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
+import type { Activity, Student } from '@/types';
 
-type ActivityRow = (typeof mockActivities)[number];
+type ActivityRow = Activity;
 type LeaderboardRow = { rank: number; name: string; points: number; badge: string };
+
+const emptyStudent: Student = {
+  id: '',
+  email: '',
+  name: '',
+  nameThai: '',
+  role: 'student',
+  createdAt: new Date(),
+  isActive: true,
+  studentId: '',
+  major: '',
+  program: 'bachelor',
+  year: 1,
+  semester: 1,
+  academicYear: '',
+  gpa: 0,
+  gpax: 0,
+  totalCredits: 0,
+  earnedCredits: 0,
+  requiredCredits: 0,
+  academicStatus: 'normal',
+  skills: [],
+  activities: [],
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  badges: [],
+  dataConsent: {
+    studentId: '',
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: 'private',
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
+  timeline: [],
+};
 
 const buildLeaderboard = (
   rawActivities: unknown[],
@@ -162,11 +204,9 @@ export default function Activities() {
   const isTH = language !== 'en';
   const [activeTab, setActiveTab] = React.useState('upcoming');
   const [activities, setActivities] = React.useState<ActivityRow[]>([]);
-  const [student, setStudent] = React.useState(mockStudent);
+  const [student, setStudent] = React.useState<Student>(emptyStudent);
   const [selectedActivity, setSelectedActivity] = React.useState<ActivityRow | null>(null);
-  const [leaderboard, setLeaderboard] = React.useState<LeaderboardRow[]>([
-    { rank: 1, name: mockStudent.nameThai, points: mockStudent.gamificationPoints, badge: "Top" },
-  ]);
+  const [leaderboard, setLeaderboard] = React.useState<LeaderboardRow[]>([]);
 
   const upcomingActivities = activities.filter(a => a.status === 'upcoming');
   const historyActivities = activities.filter(a =>
@@ -188,9 +228,9 @@ export default function Activities() {
     ]).then(([activitiesResult, statsResult]) => {
       if (!mounted) return;
 
-      let nextStudent = mockStudent;
+      let nextStudent = emptyStudent;
       if (statsResult.status === 'fulfilled') {
-        nextStudent = mapStudentStatsToStudent(mockStudent, statsResult.value.stats);
+        nextStudent = mapStudentStatsToStudent(emptyStudent, statsResult.value.stats);
         setStudent(nextStudent);
       }
 
