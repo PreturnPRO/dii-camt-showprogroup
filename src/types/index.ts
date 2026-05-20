@@ -121,6 +121,15 @@ export interface Company extends BaseUser {
   size: 'startup' | 'small' | 'medium' | 'large' | 'enterprise';
   website?: string;
   address?: string;
+  locationMapUrl?: string;
+  productsServices?: string;
+  contactPersonName?: string;
+  contactPersonRole?: string;
+  contactPersonEmail?: string;
+  contactPersonPhone?: string;
+  socialMedia?: string;
+  onboardingStatus?: string;
+  privacyProtocolAcceptedAt?: Date;
 
   // Job Postings
   jobPostings: JobPosting[];
@@ -820,5 +829,4 @@ export interface StudentRequest {
   createdAt: Date;
   updatedAt: Date;
 }
-
 

@@ -13,15 +13,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { mockStudent, mockGrades, mockCourses } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import type { Course, Grade, Student } from '@/types';
 
-type StudentRow = typeof mockStudent;
-type GradeRow = (typeof mockGrades)[number];
-type CourseRow = (typeof mockCourses)[number];
+type StudentRow = Student;
+type GradeRow = Grade;
+type CourseRow = Course;
 type EnrollmentRow = {
   id: string;
   studentId: string;
@@ -41,22 +41,44 @@ type EnrollmentRow = {
 };
 
 const emptyStudent: StudentRow = {
-  ...mockStudent,
   id: '',
   email: '',
   name: '',
   nameThai: '',
+  role: 'student',
+  createdAt: new Date(),
+  isActive: true,
   studentId: '',
   major: '',
+  program: 'bachelor',
+  year: 1,
+  semester: 1,
+  academicYear: '',
   gpa: 0,
   gpax: 0,
   totalCredits: 0,
   earnedCredits: 0,
   requiredCredits: 0,
+  academicStatus: 'normal',
   skills: [],
   badges: [],
   activities: [],
-  portfolio: { ...mockStudent.portfolio, projects: [] },
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  dataConsent: {
+    studentId: '',
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: 'private',
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
   timeline: [],
 };
 

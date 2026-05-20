@@ -237,6 +237,7 @@ router.get(
       success: true,
       students: students.map((student) => ({
         id: student.id,
+        userId: student.userId,
         studentId: student.studentId,
         name: student.user.name,
         nameThai: student.user.nameThai,
@@ -392,13 +393,30 @@ router.get(
           : undefined,
       include: {
         user: true,
+        advisor: { include: { user: true } },
         skills: { include: { skill: true } },
         portfolio: { include: { projects: true } },
         consent: true,
         badges: true,
+        internship: {
+          include: {
+            company: { include: { user: true } },
+            documents: true,
+            evaluation: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    const gpaBand = (gpax: number) => {
+      if (gpax >= 3.5) return "3.50+";
+      if (gpax >= 3) return "3.00-3.49";
+      if (gpax >= 2.5) return "2.50-2.99";
+      if (gpax > 0) return "below 2.50";
+      return "not_disclosed";
+    };
+    const canSeeExactGrades = currentUser.role !== Role.COMPANY;
 
     res.json({
       success: true,
@@ -406,11 +424,62 @@ router.get(
         id: student.id,
         studentId: student.studentId,
         name: student.user.name,
+        nameThai: student.user.nameThai,
+        email: currentUser.role === Role.COMPANY ? undefined : student.user.email,
+        phone: currentUser.role === Role.COMPANY ? undefined : student.user.phone,
         major: student.major,
-        gpax: student.gpax,
-        skills: student.skills.map((item) => item.skill.name),
+        program: student.program,
+        year: student.year,
+        semester: student.semester,
+        academicYear: student.academicYear,
+        academicStatus: student.academicStatus,
+        totalCredits: student.totalCredits,
+        earnedCredits: student.earnedCredits,
+        requiredCredits: student.requiredCredits,
+        ...(canSeeExactGrades ? { gpa: student.gpa, gpax: student.gpax } : {}),
+        gpaBand: gpaBand(student.gpax || student.gpa),
+        exactGradeVisible: canSeeExactGrades,
+        cvUrl: student.cvUrl,
+        advisorId: student.advisorId,
+        advisorName: student.advisor?.user.nameThai ?? student.advisor?.user.name,
+        advisorEmail: student.advisor?.user.email,
+        advisorUserId: student.advisor?.userId,
+        skills: student.skills.map((item) => ({
+          name: item.skill.name,
+          category: item.skill.category,
+          level: item.level,
+          verifiedBy: item.verifiedBy,
+          yearsOfExperience: item.yearsOfExperience,
+        })),
+        portfolio: student.portfolio,
         portfolioVisible: student.portfolio?.isPublic ?? false,
         badges: student.badges,
+        internship: student.internship
+          ? {
+              id: student.internship.id,
+              companyName:
+                student.internship.companyName ??
+                student.internship.company?.companyNameThai ??
+                student.internship.company?.companyName,
+              position: student.internship.position,
+              supervisor: currentUser.role === Role.COMPANY ? undefined : student.internship.supervisor,
+              status: student.internship.status,
+              startMonth: student.internship.startMonth,
+              endMonth: student.internship.endMonth,
+              duration: student.internship.duration,
+              documentsCount: student.internship.documents.length,
+              hasEvaluation: Boolean(student.internship.evaluation),
+            }
+          : null,
+        dataConsent: student.consent,
+        privacy: {
+          gradeAccess: canSeeExactGrades ? "visible_for_staff_or_advisor" : "advisor_approval_required",
+          gradeAccessMessage:
+            "Exact GPA/transcript is restricted. Company/HR must request permission through the student's advisor before access.",
+          advisorName: student.advisor?.user.nameThai ?? student.advisor?.user.name,
+          advisorEmail: student.advisor?.user.email,
+          advisorUserId: student.advisor?.userId,
+        },
       })),
     });
   }),

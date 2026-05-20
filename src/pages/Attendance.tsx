@@ -8,12 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockCourses } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 
-type CourseRow = (typeof mockCourses)[number];
+type CourseRow = ReturnType<typeof mapCourse>;
 type AttendanceRow = {
     enrollmentId: string;
     studentName: string;
@@ -34,8 +33,8 @@ const itemVariants = {
 export default function Attendance() {
     const { t } = useLanguage();
     const { user } = useAuth();
-    const [courses, setCourses] = React.useState<CourseRow[]>(mockCourses);
-    const [selectedCourse, setSelectedCourse] = React.useState(mockCourses[0]?.id || '');
+    const [courses, setCourses] = React.useState<CourseRow[]>([]);
+    const [selectedCourse, setSelectedCourse] = React.useState('');
     const [date, setDate] = React.useState(new Date().toISOString().split('T')[0]);
     const [attendanceRows, setAttendanceRows] = React.useState<AttendanceRow[]>([]);
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Users, FileText, Building, Send, Sparkles, BrainCircuit, Bookmark, PlusCircle, CheckCircle2, TrendingUp, BellRing, Target, Trophy, Flame } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,11 +18,6 @@ import { mapCompany, mapJob, mapStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import type { Company, JobPosting, Student } from '@/types';
 
-const mockNotifications = [
-  { id: 1, type: 'interest', message: 'พีรดนย์ ศรีประเสริฐ (Year 3) has expressed interest in your Data Scientist requirement.', time: '2 hours ago', read: false },
-  { id: 2, type: 'threshold', message: 'THRESHOLD MET: สมใจ รักดี (Followed) has just reached the required 3.5 GPA criteria.', time: '5 hours ago', read: false },
-  { id: 3, type: 'competition', message: 'COMPETITION ALERT: Another company is viewing your top matched talent. Send an early offer now!', time: '1 day ago', read: true }
-];
 
 type RequirementRow = {
   id: string;
@@ -88,38 +83,38 @@ export default function CompanyDashboard() {
     : (company?.companyName || company?.companyNameThai || user?.name || '');
   const copy = language === 'th'
     ? {
-        submitRequirement: 'ส่ง Requirement ใหม่',
-        submitRequirementTitle: 'ส่ง Requirement ใหม่',
-        submitRequirementDesc: 'ระบุบทบาท ทักษะ และรายละเอียดงานเพื่อให้ระบบช่วยจับคู่กับนักศึกษา',
-        role: 'โปรเจกต์/ตำแหน่ง',
-        skills: 'ทักษะหลัก',
-        details: 'รายละเอียด',
-        submitToAi: 'ส่งให้ AI Matching',
-        liveAlerts: 'แจ้งเตือนการสรรหา',
-        new: 'ใหม่',
-        viewDetails: 'ดูรายละเอียด',
-        requirements: 'Requirements และ AI Matches',
-        followed: 'Talent ที่ติดตาม',
-        activeRequirements: 'Requirements ที่เปิดอยู่',
-        total: 'ทั้งหมด',
-        postedCriteria: 'เงื่อนไขที่ประกาศไว้สำหรับจับคู่นักศึกษา',
+        submitRequirement: 'เธชเนเธ Requirement เนเธซเธกเน',
+        submitRequirementTitle: 'เธชเนเธ Requirement เนเธซเธกเน',
+        submitRequirementDesc: 'เธฃเธฐเธเธธเธเธ—เธเธฒเธ— เธ—เธฑเธเธฉเธฐ เนเธฅเธฐเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฒเธเน€เธเธทเนเธญเนเธซเนเธฃเธฐเธเธเธเนเธงเธขเธเธฑเธเธเธนเนเธเธฑเธเธเธฑเธเธจเธถเธเธฉเธฒ',
+        role: 'เนเธเธฃเน€เธเธเธ•เน/เธ•เธณเนเธซเธเนเธ',
+        skills: 'เธ—เธฑเธเธฉเธฐเธซเธฅเธฑเธ',
+        details: 'เธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”',
+        submitToAi: 'เธชเนเธเนเธซเน AI Matching',
+        liveAlerts: 'เนเธเนเธเน€เธ•เธทเธญเธเธเธฒเธฃเธชเธฃเธฃเธซเธฒ',
+        new: 'เนเธซเธกเน',
+        viewDetails: 'เธ”เธนเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”',
+        requirements: 'Requirements เนเธฅเธฐ AI Matches',
+        followed: 'Talent เธ—เธตเนเธ•เธดเธ”เธ•เธฒเธก',
+        activeRequirements: 'Requirements เธ—เธตเนเน€เธเธดเธ”เธญเธขเธนเน',
+        total: 'เธ—เธฑเนเธเธซเธกเธ”',
+        postedCriteria: 'เน€เธเธทเนเธญเธเนเธเธ—เธตเนเธเธฃเธฐเธเธฒเธจเนเธงเนเธชเธณเธซเธฃเธฑเธเธเธฑเธเธเธนเนเธเธฑเธเธจเธถเธเธฉเธฒ',
         matches: 'Matches',
         aiTalentMatching: 'AI Talent Matching',
-        bestMatches: 'นักศึกษาที่เหมาะกับ Requirement ของคุณที่สุด',
-        exclusiveAccess: 'สิทธิ์เข้าถึงพิเศษ',
-        fastTrackOffer: 'ส่งข้อเสนอเร็ว',
-        follow: 'ติดตาม',
-        viewProfile: 'ดูโปรไฟล์',
-        trackedProgress: 'ติดตามความคืบหน้าของนักศึกษาที่สนใจ',
-        followedDate: 'ติดตามเมื่อ',
-        currentGpa: 'GPA ปัจจุบัน',
-        profileOverview: 'ดูโปรไฟล์',
-        noJobs: 'ยังไม่มีประกาศงานจาก API',
-        noStudents: 'ยังไม่มีนักศึกษาที่เปิดสิทธิ์ให้ดู',
-        noRequirements: 'ยังไม่มี Requirement',
-        noMatches: 'ยังไม่มีผลจับคู่จาก AI',
-        noFollowed: 'ยังไม่มี Talent ที่ติดตาม',
-        noAlerts: 'ยังไม่มีแจ้งเตือนการสรรหา',
+        bestMatches: 'เธเธฑเธเธจเธถเธเธฉเธฒเธ—เธตเนเน€เธซเธกเธฒเธฐเธเธฑเธ Requirement เธเธญเธเธเธธเธ“เธ—เธตเนเธชเธธเธ”',
+        exclusiveAccess: 'เธชเธดเธ—เธเธดเนเน€เธเนเธฒเธ–เธถเธเธเธดเน€เธจเธฉ',
+        fastTrackOffer: 'เธชเนเธเธเนเธญเน€เธชเธเธญเน€เธฃเนเธง',
+        follow: 'เธ•เธดเธ”เธ•เธฒเธก',
+        viewProfile: 'เธ”เธนเนเธเธฃเนเธเธฅเน',
+        trackedProgress: 'เธ•เธดเธ”เธ•เธฒเธกเธเธงเธฒเธกเธเธทเธเธซเธเนเธฒเธเธญเธเธเธฑเธเธจเธถเธเธฉเธฒเธ—เธตเนเธชเธเนเธ',
+        followedDate: 'เธ•เธดเธ”เธ•เธฒเธกเน€เธกเธทเนเธญ',
+        currentGpa: 'GPA เธเธฑเธเธเธธเธเธฑเธ',
+        profileOverview: 'เธ”เธนเนเธเธฃเนเธเธฅเน',
+        noJobs: 'เธขเธฑเธเนเธกเนเธกเธตเธเธฃเธฐเธเธฒเธจเธเธฒเธเธเธฒเธ API',
+        noStudents: 'เธขเธฑเธเนเธกเนเธกเธตเธเธฑเธเธจเธถเธเธฉเธฒเธ—เธตเนเน€เธเธดเธ”เธชเธดเธ—เธเธดเนเนเธซเนเธ”เธน',
+        noRequirements: 'เธขเธฑเธเนเธกเนเธกเธต Requirement',
+        noMatches: 'เธขเธฑเธเนเธกเนเธกเธตเธเธฅเธเธฑเธเธเธนเนเธเธฒเธ AI',
+        noFollowed: 'เธขเธฑเธเนเธกเนเธกเธต Talent เธ—เธตเนเธ•เธดเธ”เธ•เธฒเธก',
+        noAlerts: 'เธขเธฑเธเนเธกเนเธกเธตเนเธเนเธเน€เธ•เธทเธญเธเธเธฒเธฃเธชเธฃเธฃเธซเธฒ',
       }
     : {
         submitRequirement: 'Submit Requirement',
@@ -263,12 +258,12 @@ export default function CompanyDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [language, user?.id]);
+  }, [language, user?.id, user?.name]);
 
   const handleSubmitRequirement = async () => {
     const skills = requirementForm.skills.split(',').map(skill => skill.trim()).filter(Boolean);
     if (!requirementForm.title.trim() || !requirementForm.description.trim()) {
-      toast.error(language === 'th' ? 'กรุณากรอกตำแหน่งและรายละเอียด' : 'Please enter a role and details.');
+      toast.error(language === 'th' ? 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธ•เธณเนเธซเธเนเธเนเธฅเธฐเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”' : 'Please enter a role and details.');
       return;
     }
 
@@ -303,9 +298,9 @@ export default function CompanyDashboard() {
       }, ...current]);
       setRequirementForm({ title: '', skills: '', description: '' });
       setIsRequirementOpen(false);
-      toast.success(language === 'th' ? 'ส่ง Requirement แล้ว' : 'Requirement submitted.');
+      toast.success(language === 'th' ? 'เธชเนเธ Requirement เนเธฅเนเธง' : 'Requirement submitted.');
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ส่ง Requirement ไม่สำเร็จ' : 'Unable to submit requirement.'));
+      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'เธชเนเธ Requirement เนเธกเนเธชเธณเน€เธฃเนเธ' : 'Unable to submit requirement.'));
     } finally {
       setIsSubmittingRequirement(false);
     }
@@ -535,7 +530,7 @@ export default function CompanyDashboard() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-semibold text-lg">{job.title}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{job.type === 'internship' ? t.companyDashboard.internship : t.companyDashboard.fullTime} • {job.location}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">{job.type === 'internship' ? t.companyDashboard.internship : t.companyDashboard.fullTime} โ€ข {job.location}</p>
                       </div>
                       <Badge variant={job.status === 'open' ? 'default' : 'secondary'}>{job.status === 'open' ? t.companyDashboard.open : t.companyDashboard.closed}</Badge>
                     </div>
@@ -571,7 +566,7 @@ export default function CompanyDashboard() {
                       </div>
                       <div>
                         <div className="font-semibold">{student.nameThai}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t.companyDashboard.year} {student.year} • GPA {student.gpa.toFixed(2)}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{t.companyDashboard.year} {student.year} โ€ข GPA {student.gpa.toFixed(2)}</div>
                       </div>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => navigate('/student-profiles')}>{t.companyDashboard.viewProfile}</Button>
@@ -646,7 +641,7 @@ export default function CompanyDashboard() {
                             <h4 className="font-semibold text-lg text-slate-800 dark:text-white">{student.nameThai}</h4>
                             {student.exclusiveAccess && <Badge variant="outline" className="bg-amber-100/50 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 text-[10px] shadow-sm py-0"><Flame className="w-3 h-3 mr-1 text-orange-500" /> {copy.exclusiveAccess}</Badge>}
                           </div>
-                          <p className="text-sm border-b pb-2 mb-2 text-slate-500 dark:text-slate-400">{t.companyDashboard.year} {student.year} • GPA {student.gpa.toFixed(2)} • {student.major}</p>
+                          <p className="text-sm border-b pb-2 mb-2 text-slate-500 dark:text-slate-400">{t.companyDashboard.year} {student.year} โ€ข GPA {student.gpa.toFixed(2)} โ€ข {student.major}</p>
                           <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-green-600 dark:text-green-500 mt-2 font-medium">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>{copy.skills}: {student.matchedSkills.length ? student.matchedSkills.join(', ') : '-'}</span>
@@ -662,7 +657,7 @@ export default function CompanyDashboard() {
                                size="sm"
                                onClick={() => {
                                  setFollowedStudents(current => current.some(item => item.id === student.id) ? current : [{ ...student, followDate: new Date().toISOString().slice(0, 10), thresholdMet: student.gpa >= 3.5 }, ...current]);
-                                 toast.success(language === 'th' ? 'เพิ่มในรายการติดตามแล้ว' : 'Talent followed.');
+                                 toast.success(language === 'th' ? 'เน€เธเธดเนเธกเนเธเธฃเธฒเธขเธเธฒเธฃเธ•เธดเธ”เธ•เธฒเธกเนเธฅเนเธง' : 'Talent followed.');
                                }}
                                className="bg-slate-900 dark:bg-slate-800 group hover:bg-slate-800 dark:hover:bg-slate-700"
                              >

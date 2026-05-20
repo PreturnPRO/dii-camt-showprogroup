@@ -76,7 +76,7 @@ const courseUpdateSchema = courseCreateSchema.partial().extend({
 });
 
 const enrollSchema = z.object({
-  studentId: z.string().min(1),
+  studentId: z.string().min(1).optional(),
   courseId: z.string().min(1),
   sectionId: z.string().optional(),
 });
@@ -463,12 +463,35 @@ router.get(
 router.post(
   "/enrollments",
   requireAuth,
-  checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
+  checkRole([Role.STUDENT, Role.STAFF, Role.ADMIN, Role.LECTURER]),
   validate(enrollSchema),
   asyncHandler(async (req, res) => {
+    const currentUser = requireUser(req);
+    const student =
+      currentUser.role === Role.STUDENT
+        ? await getStudentProfileByUserId(currentUser.id)
+        : req.body.studentId
+          ? await getStudentProfileByAnyId(req.body.studentId)
+          : null;
+
+    if (!student) {
+      throw new AppError(400, "studentId is required for staff, admin, and lecturer enrollments");
+    }
+
+    const existing = await prisma.enrollment.findFirst({
+      where: {
+        studentId: student.id,
+        courseId: req.body.courseId,
+      },
+    });
+
+    if (existing) {
+      throw new AppError(409, "Student is already enrolled in this course");
+    }
+
     const enrollment = await prisma.enrollment.create({
       data: {
-        studentId: req.body.studentId,
+        studentId: student.id,
         courseId: req.body.courseId,
         sectionId: req.body.sectionId,
       },

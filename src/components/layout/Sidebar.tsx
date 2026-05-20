@@ -26,6 +26,7 @@ import {
   Command,
   Swords,
   Target,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -75,7 +76,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: ClipboardList, label: nav.attendanceBehavior, href: '/attendance' },
         { icon: GraduationCap, label: nav.grading, href: '/grades' },
         { icon: FileText, label: nav.appointments, href: '/appointments' },
-        { icon: BarChart3, label: nav.workloadReport, href: '/workload' },
         { icon: MessageSquare, label: nav.messages, href: '/messages' },
         { icon: Settings, label: nav.settings, href: '/settings' },
       ];
@@ -83,6 +83,10 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
       return [
         ...commonItems,
         { icon: Users, label: nav.users, href: '/users' },
+        { icon: GraduationCap, label: nav.studentDatabase, href: '/students' },
+        { icon: BookOpen, label: nav.curriculumCourses, href: '/courses' },
+        { icon: ClipboardList, label: nav.requests, href: '/requests' },
+        { icon: MessageSquare, label: nav.messages, href: '/messages' },
         { icon: DollarSign, label: nav.budgetProcurement, href: '/budget' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: FileText, label: nav.issueDocuments, href: '/documents' },
@@ -119,6 +123,7 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: FileText, label: nav.documentsRequests, href: '/documents' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: Trophy, label: nav.activityAdmin, href: '/activities-management' },
+        { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
         { icon: Briefcase, label: nav.jobsInternships, href: '/job-postings' },
         { icon: Search, label: nav.studentDatabase, href: '/student-profiles' },
         { icon: Building, label: nav.partnerCompanies, href: '/cooperation' },

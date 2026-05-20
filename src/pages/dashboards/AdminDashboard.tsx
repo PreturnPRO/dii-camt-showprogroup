@@ -6,7 +6,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StatsCard } from '@/components/common/StatsCard';
-import { mockAdmin, mockStudents, mockCourses, mockLecturers, mockCompanies } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { asNumber, asRecord } from '@/lib/live-data';
 
@@ -22,13 +21,12 @@ const itemVariants = {
 
 export default function AdminDashboard() {
   const { t, language } = useLanguage();
-  const admin = mockAdmin;
   const [stats, setStats] = React.useState({
-    totalUsers: mockStudents.length + mockLecturers.length + 1 + mockCompanies.length,
-    totalCourses: mockCourses.length,
-    totalCompanies: mockCompanies.length,
-    totalStudents: mockStudents.length,
-    totalLecturers: mockLecturers.length,
+    totalUsers: 0,
+    totalCourses: 0,
+    totalCompanies: 0,
+    totalStudents: 0,
+    totalLecturers: 0,
   });
 
   React.useEffect(() => {
@@ -42,12 +40,12 @@ export default function AdminDashboard() {
     ]).then(([reportResult, companiesResult, studentsResult, lecturersResult]) => {
       if (!mounted) return;
       const report = reportResult.status === 'fulfilled' ? asRecord(reportResult.value.report) : {};
-      setStats(current => ({
-        totalUsers: asNumber(report.totalUsers, current.totalUsers),
-        totalCourses: asNumber(report.totalCourses, current.totalCourses),
-        totalCompanies: companiesResult.status === 'fulfilled' ? companiesResult.value.companies.length : current.totalCompanies,
-        totalStudents: studentsResult.status === 'fulfilled' ? studentsResult.value.students.length : current.totalStudents,
-        totalLecturers: lecturersResult.status === 'fulfilled' ? lecturersResult.value.lecturers.length : current.totalLecturers,
+      setStats(() => ({
+        totalUsers: asNumber(report.totalUsers, 0),
+        totalCourses: asNumber(report.totalCourses, 0),
+        totalCompanies: companiesResult.status === 'fulfilled' ? companiesResult.value.companies.length : 0,
+        totalStudents: studentsResult.status === 'fulfilled' ? studentsResult.value.students.length : 0,
+        totalLecturers: lecturersResult.status === 'fulfilled' ? lecturersResult.value.lecturers.length : 0,
       }));
     }).catch((error) => {
       console.warn('Unable to load admin dashboard stats from API', error);

@@ -453,6 +453,14 @@ router.post(
   asyncHandler(async (req, res) => {
     const currentUser = requireUser(req);
     const body = req.body.body as string;
+    const recipient = await prisma.user.findUnique({
+      where: { id: req.body.toId },
+      select: { id: true },
+    });
+
+    if (!recipient) {
+      throw new AppError(404, "Recipient user not found");
+    }
 
     const message = await prisma.message.create({
       data: {

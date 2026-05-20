@@ -6,6 +6,7 @@ import { GraduationCap, Building2, User, Mail, Lock, CheckCircle, ArrowRight, Ar
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -18,7 +19,22 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1);
     const [role, setRole] = useState<'student' | 'company' | 'lecturer' | 'staff' | 'enterprise' | null>(null);
     const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-    const [enterpriseData, setEnterpriseData] = useState({ taxId: '', website: '', industry: '', regBlock: '' });
+    const [enterpriseData, setEnterpriseData] = useState({
+        taxId: '',
+        website: '',
+        industry: '',
+        regBlock: '',
+        companyNameThai: '',
+        companyNameEn: '',
+        companySize: 'small',
+        locationMapUrl: '',
+        productsServices: '',
+        contactPersonName: '',
+        contactPersonRole: 'HR / Company Coordinator',
+        contactPersonEmail: '',
+        contactPersonPhone: '',
+        socialMedia: '',
+    });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
@@ -69,12 +85,21 @@ export default function RegisterPage() {
 
         return {
             companyId: `COM${timestamp}`,
-            companyName: formData.name,
-            companyNameThai: formData.name,
+            companyName: enterpriseData.companyNameEn || formData.name,
+            companyNameThai: enterpriseData.companyNameThai || formData.name,
             industry: enterpriseData.industry || 'Technology',
-            size: role === 'enterprise' ? 'enterprise' : 'small',
+            size: role === 'enterprise' ? 'enterprise' : enterpriseData.companySize,
             website: enterpriseData.website || undefined,
             address: enterpriseData.regBlock || undefined,
+            locationMapUrl: enterpriseData.locationMapUrl || undefined,
+            productsServices: enterpriseData.productsServices || undefined,
+            contactPersonName: enterpriseData.contactPersonName || undefined,
+            contactPersonRole: enterpriseData.contactPersonRole || undefined,
+            contactPersonEmail: enterpriseData.contactPersonEmail || formData.email,
+            contactPersonPhone: enterpriseData.contactPersonPhone || undefined,
+            socialMedia: enterpriseData.socialMedia || undefined,
+            onboardingStatus: 'pending_review',
+            privacyProtocolAcceptedAt: new Date().toISOString(),
             taxId: enterpriseData.taxId || undefined,
             internshipSlots: 0,
         };
@@ -87,9 +112,9 @@ export default function RegisterPage() {
             return;
         }
 
-        if (role === 'enterprise') {
-            if (!enterpriseData.taxId || !enterpriseData.website || !enterpriseData.industry || !enterpriseData.regBlock) {
-                toast.error("Please fill all enterprise validation fields.");
+        if (role === 'company' || role === 'enterprise') {
+            if (!enterpriseData.companyNameThai || !enterpriseData.companyNameEn || !enterpriseData.industry || !enterpriseData.regBlock || !enterpriseData.contactPersonName || !enterpriseData.contactPersonEmail) {
+                toast.error("Please fill required company intake fields.");
                 return;
             }
         }
@@ -348,24 +373,75 @@ export default function RegisterPage() {
                                         </div>
                                     </div>
 
-                                    {role === 'enterprise' && (
+                                    {(role === 'company' || role === 'enterprise') && (
                                         <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                            <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">Enterprise Entity Details</h3>
-                                            <div className="space-y-2">
-                                                <Label>Company Registration Block</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Block A, 12th Floor..." value={enterpriseData.regBlock} onChange={e => setEnterpriseData({ ...enterpriseData, regBlock: e.target.value })} />
+                                            <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">Company Intake & Privacy Protocol</h3>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label>Company Name (Thai)</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required value={enterpriseData.companyNameThai} onChange={e => setEnterpriseData({ ...enterpriseData, companyNameThai: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Company Name (English)</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required value={enterpriseData.companyNameEn} onChange={e => setEnterpriseData({ ...enterpriseData, companyNameEn: e.target.value })} />
+                                                </div>
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Tax ID</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="13-digit Tax ID" value={enterpriseData.taxId} onChange={e => setEnterpriseData({ ...enterpriseData, taxId: e.target.value })} />
+                                                <Label>Company Size</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" placeholder="small / medium / large / enterprise" value={enterpriseData.companySize} onChange={e => setEnterpriseData({ ...enterpriseData, companySize: e.target.value })} />
                                             </div>
                                             <div className="space-y-2">
-                                                <Label>Company Website Link</Label>
-                                                <Input type="url" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="https://www.example.com" value={enterpriseData.website} onChange={e => setEnterpriseData({ ...enterpriseData, website: e.target.value })} />
+                                                <Label>Head office / branch address and location map</Label>
+                                                <Textarea className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required placeholder="Address, branch, Google Maps link..." value={enterpriseData.regBlock} onChange={e => setEnterpriseData({ ...enterpriseData, regBlock: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Location map URL</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" placeholder="https://maps.app.goo.gl/..." value={enterpriseData.locationMapUrl} onChange={e => setEnterpriseData({ ...enterpriseData, locationMapUrl: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Products / Services / Digital Industry</Label>
+                                                <Textarea className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required placeholder="Software, IoT, Digital Service, Cyber Security..." value={enterpriseData.productsServices} onChange={e => setEnterpriseData({ ...enterpriseData, productsServices: e.target.value })} />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label>Industry</Label>
                                                 <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Technology, Finance, Education..." value={enterpriseData.industry} onChange={e => setEnterpriseData({ ...enterpriseData, industry: e.target.value })} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label>Company Phone</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" value={enterpriseData.contactPersonPhone} onChange={e => setEnterpriseData({ ...enterpriseData, contactPersonPhone: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Company Website</Label>
+                                                    <Input type="url" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" placeholder="https://www.example.com" value={enterpriseData.website} onChange={e => setEnterpriseData({ ...enterpriseData, website: e.target.value })} />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Social / Line / Facebook</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" value={enterpriseData.socialMedia} onChange={e => setEnterpriseData({ ...enterpriseData, socialMedia: e.target.value })} />
+                                            </div>
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                <div className="space-y-2">
+                                                    <Label>Coordinator / HR Name</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required value={enterpriseData.contactPersonName} onChange={e => setEnterpriseData({ ...enterpriseData, contactPersonName: e.target.value })} />
+                                                </div>
+                                                <div className="space-y-2">
+                                                    <Label>Coordinator Role</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" value={enterpriseData.contactPersonRole} onChange={e => setEnterpriseData({ ...enterpriseData, contactPersonRole: e.target.value })} />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Coordinator Email</Label>
+                                                <Input type="email" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 rounded-xl" required value={enterpriseData.contactPersonEmail} onChange={e => setEnterpriseData({ ...enterpriseData, contactPersonEmail: e.target.value })} />
+                                            </div>
+                                            {role === 'enterprise' && (
+                                                <div className="space-y-2">
+                                                    <Label>Tax ID</Label>
+                                                    <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" placeholder="13-digit Tax ID" value={enterpriseData.taxId} onChange={e => setEnterpriseData({ ...enterpriseData, taxId: e.target.value })} />
+                                                </div>
+                                            )}
+                                            <div className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+                                                By creating this company account, the coordinator accepts the student privacy protocol: exact GPA/transcript must be requested through the student's advisor and cannot be accessed directly by HR.
                                             </div>
                                         </div>
                                     )}

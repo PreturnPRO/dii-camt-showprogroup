@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { asNumber, asRecord, asString, getRoleProfile } from '@/lib/user-profile';
+import { api } from '@/lib/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -35,6 +36,7 @@ export default function Settings() {
   const [activeTab, setActiveTab] = React.useState('profile');
   const [isSaving, setIsSaving] = React.useState(false);
   const [isChangingPassword, setIsChangingPassword] = React.useState(false);
+  const avatarInputRef = React.useRef<HTMLInputElement | null>(null);
 
   // Profile form state
   const [nameThai, setNameThai] = React.useState(user?.nameThai || '');
@@ -46,10 +48,17 @@ export default function Settings() {
   const [currentPwd, setCurrentPwd] = React.useState('');
   const [newPwd, setNewPwd] = React.useState('');
   const [confirmPwd, setConfirmPwd] = React.useState('');
+  const avatarSrc = user?.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(user?.name || 'showpro')}`;
+
+  const fillRequiredMessage = language === 'th' ? 'กรุณากรอกข้อมูลให้ครบถ้วน' : 'Please fill in all required fields';
+  const currentPasswordRequiredMessage = language === 'th' ? 'กรุณากรอกรหัสผ่านปัจจุบัน' : 'Please enter your current password';
+  const newPasswordTooShortMessage = language === 'th' ? 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร' : 'New password must be at least 8 characters';
+  const passwordMismatchMessage = language === 'th' ? 'รหัสผ่านใหม่ไม่ตรงกัน' : 'New passwords do not match';
+  const passwordUpdatedMessage = language === 'th' ? 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว' : 'Password updated successfully';
 
   const handleSave = () => {
     if (!nameThai.trim() || !nameEn.trim() || !email.trim()) {
-      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error(fillRequiredMessage);
       return;
     }
     toast.success(t.settingsPage.savedSuccess);
@@ -57,21 +66,21 @@ export default function Settings() {
 
   const handlePasswordChange = () => {
     if (!currentPwd) {
-      toast.error('กรุณากรอกรหัสผ่านปัจจุบัน');
+      toast.error(currentPasswordRequiredMessage);
       return;
     }
     if (newPwd.length < 8) {
-      toast.error('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
+      toast.error(newPasswordTooShortMessage);
       return;
     }
     if (newPwd !== confirmPwd) {
-      toast.error('รหัสผ่านใหม่ไม่ตรงกัน');
+      toast.error(passwordMismatchMessage);
       return;
     }
     setCurrentPwd('');
     setNewPwd('');
     setConfirmPwd('');
-    toast.success('เปลี่ยนรหัสผ่านเรียบร้อยแล้ว');
+    toast.success(passwordUpdatedMessage);
   };
 
   React.useEffect(() => {
@@ -128,7 +137,7 @@ export default function Settings() {
 
   const handleSaveProfile = async () => {
     if (!nameThai.trim() || !nameEn.trim() || !email.trim()) {
-      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน');
+      toast.error(fillRequiredMessage);
       return;
     }
 
@@ -150,15 +159,15 @@ export default function Settings() {
 
   const handleChangePasswordLive = async () => {
     if (!currentPwd) {
-      toast.error('กรุณากรอกรหัสผ่านปัจจุบัน');
+      toast.error(currentPasswordRequiredMessage);
       return;
     }
     if (newPwd.length < 8) {
-      toast.error('รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร');
+      toast.error(newPasswordTooShortMessage);
       return;
     }
     if (newPwd !== confirmPwd) {
-      toast.error('รหัสผ่านใหม่ไม่ตรงกัน');
+      toast.error(passwordMismatchMessage);
       return;
     }
 
@@ -172,11 +181,57 @@ export default function Settings() {
       setCurrentPwd('');
       setNewPwd('');
       setConfirmPwd('');
-      toast.success('Password updated successfully');
+      toast.success(passwordUpdatedMessage);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update password');
     } finally {
       setIsChangingPassword(false);
+    }
+  };
+
+  const handleAvatarFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsSaving(true);
+    try {
+      const upload = await api.files.upload(file, { category: 'avatar', visibility: 'public' });
+      const asset = asRecord(upload.asset);
+      const avatarUrl = asString(asset.url, asString(asset.publicUrl, asString(asset.signedUrl)));
+      if (!avatarUrl) {
+        throw new Error('Uploaded file URL was not returned');
+      }
+      await updateProfile({
+        name: nameEn,
+        nameThai,
+        phone,
+        avatar: avatarUrl,
+        roleData: buildRoleData(),
+      });
+      toast.success(t.settingsPage.savedSuccess);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to upload profile photo');
+    } finally {
+      setIsSaving(false);
+      event.target.value = '';
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setIsSaving(true);
+    try {
+      await updateProfile({
+        name: nameEn,
+        nameThai,
+        phone,
+        avatar: null,
+        roleData: buildRoleData(),
+      });
+      toast.success(t.settingsPage.savedSuccess);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to remove profile photo');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -210,7 +265,7 @@ export default function Settings() {
             <div className="flex items-center gap-4 p-5 mb-8 bg-slate-900 text-white rounded-[2rem] shadow-xl relative z-10">
               <div className="relative">
                 <Avatar className="w-16 h-16 border-2 border-white/20 shadow-md rounded-2xl">
-                  <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`} />
+                  <AvatarImage src={avatarSrc} />
                   <AvatarFallback className="bg-white/10 text-white font-bold rounded-2xl dark:bg-slate-900/50">{user?.nameThai?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-lg border-2 border-slate-900 flex items-center justify-center">
@@ -308,7 +363,7 @@ export default function Settings() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none" />
                     <div className="relative group/avatar cursor-pointer">
                       <Avatar className="w-32 h-32 border-4 border-white shadow-2xl rounded-[2rem]">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.name}`} />
+                        <AvatarImage src={avatarSrc} />
                         <AvatarFallback className="text-3xl bg-indigo-100 text-indigo-600 font-black dark:text-slate-300">{user?.nameThai?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-slate-900/60 rounded-[2rem] opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-all duration-300">
@@ -319,16 +374,25 @@ export default function Settings() {
                       <h3 className="font-black text-2xl text-slate-900 dark:text-white mb-2 tracking-tight">{t.settingsPage.profilePhoto}</h3>
                       <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">{t.settingsPage.profilePhotoDesc}</p>
                       <div className="flex justify-center md:justify-start gap-3">
+                        <input
+                          ref={avatarInputRef}
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={handleAvatarFile}
+                        />
                         <Button
                           className="rounded-xl h-11 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-bold hover:bg-slate-50 shadow-sm px-6"
-                          onClick={() => toast.info('อัปโหลดรูปผ่านระบบไฟล์กำลังเชื่อมกับโปรไฟล์ผู้ใช้')}
+                          onClick={() => avatarInputRef.current?.click()}
+                          disabled={isSaving}
                         >
                           {t.settingsPage.uploadNew}
                         </Button>
                         <Button
                           variant="ghost"
                           className="rounded-xl h-11 text-red-500 font-bold hover:bg-red-50 px-6 dark:text-slate-400 dark:bg-slate-800"
-                          onClick={() => toast.info('ยังไม่มีรูปโปรไฟล์ที่บันทึกไว้ให้ลบ')}
+                          onClick={handleRemoveAvatar}
+                          disabled={isSaving}
                         >
                           {t.settingsPage.deletePhoto}
                         </Button>
@@ -457,17 +521,17 @@ export default function Settings() {
                       <div className="flex items-center justify-between p-8 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-indigo-200 transition-all">
                         <div className="space-y-2">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-orange-50 text-orange-500 dark:text-slate-400"><Smartphone className="w-5 h-5" /></div>
-                            <Label className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight leading-none">2FA Verification</Label>
+                            <div className="p-2 rounded-xl bg-emerald-50 text-emerald-600 dark:text-slate-400"><ShieldCheck className="w-5 h-5" /></div>
+                            <Label className="text-xl font-black text-slate-800 dark:text-slate-200 tracking-tight leading-none">Account Security</Label>
                           </div>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t.settingsPage.smsVerification}</p>
+                          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Password login and JWT session protection are active.</p>
                         </div>
                         <Button
                           variant="outline"
                           className="rounded-xl h-12 border-slate-200 dark:border-slate-700 font-bold px-6"
-                          onClick={() => toast.info('2FA ยังไม่ได้เปิดใช้บน backend production')}
+                          onClick={() => toast.success('Security settings are active')}
                         >
-                          {t.settingsPage.enable}
+                          Active
                         </Button>
                       </div>
                       <div className="flex items-center justify-between p-8 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-slate-300 transition-all">
@@ -483,7 +547,7 @@ export default function Settings() {
                           className="rounded-xl h-12 text-slate-500 dark:text-slate-400 font-bold px-4"
                           onClick={() => {
                             const lastLogin = asRecord(user?.raw).lastLogin;
-                            toast.info(lastLogin ? `Last login: ${new Date(String(lastLogin)).toLocaleString('th-TH')}` : 'ยังไม่มีประวัติ login เพิ่มเติม');
+                            toast.info(lastLogin ? `Last login: ${new Date(String(lastLogin)).toLocaleString('th-TH')}` : (language === 'th' ? 'ยังไม่มีประวัติการเข้าสู่ระบบเพิ่มเติม' : 'No additional login history yet'));
                           }}
                         >
                           {t.settingsPage.viewData}
@@ -543,7 +607,7 @@ export default function Settings() {
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div onClick={() => setLanguage('th')} className={`p-6 rounded-[2rem] border-4 bg-white dark:bg-slate-900 flex items-center justify-between cursor-pointer shadow-lg transform active:scale-[0.98] transition-all ${language === 'th' ? 'border-indigo-600' : 'border-slate-100 hover:border-slate-200'}`}>
                           <div className="flex items-center gap-6">
-                            <span className="text-4xl filter drop-shadow-md">🇹🇭</span>
+                            <span className="text-4xl filter drop-shadow-md">TH</span>
                             <div className="flex flex-col">
                               <span className="font-black text-xl text-slate-900 dark:text-white leading-tight">{t.settingsPage.thai}</span>
                               <span className={`text-xs font-bold uppercase tracking-widest ${language === 'th' ? 'text-indigo-500' : 'text-slate-400'}`}>{language === 'th' ? 'Selected' : 'Thai'}</span>
@@ -553,7 +617,7 @@ export default function Settings() {
                         </div>
                         <div onClick={() => setLanguage('en')} className={`p-6 rounded-[2rem] border-2 bg-white/50 hover:bg-white flex items-center justify-between cursor-pointer transition-all ${language === 'en' ? 'border-indigo-600 border-4' : 'border-slate-100 hover:border-slate-200'} dark:bg-slate-900/50`}>
                           <div className="flex items-center gap-6">
-                            <span className={`text-4xl filter drop-shadow-sm ${language === 'en' ? '' : 'opacity-60'}`}>🇬🇧</span>
+                            <span className={`text-4xl filter drop-shadow-sm ${language === 'en' ? '' : 'opacity-60'}`}>EN</span>
                             <div className="flex flex-col">
                               <span className={`font-black text-xl leading-tight ${language === 'en' ? 'text-slate-900' : 'text-slate-400'} dark:text-slate-200`}>English</span>
                               <span className={`text-xs font-bold tracking-tight ${language === 'en' ? 'text-indigo-500' : 'text-slate-400'}`}>{language === 'en' ? 'Selected' : 'EN-US / EN-GB'}</span>

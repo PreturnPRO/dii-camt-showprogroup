@@ -45,7 +45,7 @@ export const en = {
     notifications: 'Notifications',
     profile: 'My Profile',
     systemSettings: 'System Settings',
-    switchRole: 'Switch Role (Demo)',
+    switchRole: 'Switch Account',
     logout: 'Logout',
     language: 'Language',
   },
@@ -101,6 +101,7 @@ export const en = {
     teachingScheduleAdmin: 'Teaching Schedule',
     documentsRequests: 'Documents & Requests',
     activityAdmin: 'Activities',
+    automation: 'Automation',
     jobsInternships: 'Jobs & Internships',
     studentDatabase: 'Student Database',
     partnerCompanies: 'Partner Companies',
@@ -1380,9 +1381,7 @@ export const en = {
     title: 'Staff Dashboard',
     hello: 'Hello,',
     manageSchedule: 'Manage Schedule',
-    scheduleComingSoon: 'Schedule management coming soon',
     systemSettings: 'System Settings',
-    settingsComingSoon: 'Settings system coming soon',
     totalStudents: 'Total Students',
     atRisk: 'At Risk',
     courses: 'Courses',
@@ -1462,14 +1461,6 @@ export const en = {
     description: 'The page you are looking for may have been moved, deleted, or never existed.',
     goHome: 'Go to Homepage',
     goBack: 'Go Back',
-  },
-
-  // Placeholder Page
-  placeholderPage: {
-    thisPage: 'This page',
-    underDevelopment: 'Under Development',
-    developingMessage: 'This feature is being built and will be available soon. Thank you for your patience!',
-    defaultSubtitle: 'System is under development',
   },
 
   // Privacy Policy
