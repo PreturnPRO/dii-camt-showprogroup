@@ -94,6 +94,8 @@ export default function Audit() {
         const matchesRole = roleFilter === 'all' || log.userRole === roleFilter;
         return matchesSearch && matchesRole;
     });
+    const today = new Date();
+    const todayLogCount = auditLogs.filter((log) => log.timestamp.toDateString() === today.toDateString()).length;
 
     const exportLogs = () => {
         const rows = filteredLogs.map((log) => [
@@ -216,7 +218,7 @@ export default function Audit() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.audit.todayLabel}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{auditLogs.length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{todayLogCount}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.audit.todayDesc}</div>
                     </div>
                 </motion.div>

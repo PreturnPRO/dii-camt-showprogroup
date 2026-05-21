@@ -199,6 +199,17 @@ router.post(
               size: String(profile.size ?? "small"),
               website: profile.website ? String(profile.website) : undefined,
               address: profile.address ? String(profile.address) : undefined,
+              locationMapUrl: profile.locationMapUrl ? String(profile.locationMapUrl) : undefined,
+              productsServices: profile.productsServices ? String(profile.productsServices) : undefined,
+              contactPersonName: profile.contactPersonName ? String(profile.contactPersonName) : undefined,
+              contactPersonRole: profile.contactPersonRole ? String(profile.contactPersonRole) : undefined,
+              contactPersonEmail: profile.contactPersonEmail ? String(profile.contactPersonEmail) : undefined,
+              contactPersonPhone: profile.contactPersonPhone ? String(profile.contactPersonPhone) : undefined,
+              socialMedia: profile.socialMedia ? String(profile.socialMedia) : undefined,
+              onboardingStatus: String(profile.onboardingStatus ?? "pending_review"),
+              privacyProtocolAcceptedAt: profile.privacyProtocolAcceptedAt
+                ? new Date(String(profile.privacyProtocolAcceptedAt))
+                : undefined,
               internshipSlots: Number(profile.internshipSlots ?? 0),
             },
           });
@@ -332,6 +343,17 @@ router.patch(
                 size: roleData.size,
                 website: roleData.website,
                 address: roleData.address,
+                locationMapUrl: roleData.locationMapUrl,
+                productsServices: roleData.productsServices,
+                contactPersonName: roleData.contactPersonName,
+                contactPersonRole: roleData.contactPersonRole,
+                contactPersonEmail: roleData.contactPersonEmail,
+                contactPersonPhone: roleData.contactPersonPhone,
+                socialMedia: roleData.socialMedia,
+                onboardingStatus: roleData.onboardingStatus,
+                privacyProtocolAcceptedAt: roleData.privacyProtocolAcceptedAt
+                  ? new Date(String(roleData.privacyProtocolAcceptedAt))
+                  : undefined,
               },
             });
           }

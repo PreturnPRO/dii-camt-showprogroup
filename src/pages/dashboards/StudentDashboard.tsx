@@ -23,16 +23,10 @@ import { TechnicalSkillsRubricCard } from '@/components/dashboard/TechnicalSkill
 import { SoftSkillsRubricCard } from '@/components/dashboard/SoftSkillsRubricCard';
 import { SkillsRadarCard } from '@/components/dashboard/SkillsRadarCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
-import {
-  mockStudent,
-  mockCourses,
-  mockActivities,
-  getStudentTimeline,
-  getStudentGrades,
-} from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import type { Activity, Course, Grade, Student } from '@/types';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -44,10 +38,52 @@ const itemVariants = {
   visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 100 } },
 };
 
+const emptyStudent: Student = {
+  id: '',
+  email: '',
+  name: '',
+  nameThai: '',
+  role: 'student',
+  createdAt: new Date(),
+  isActive: true,
+  studentId: '',
+  major: '',
+  program: 'bachelor',
+  year: 1,
+  semester: 1,
+  academicYear: '',
+  gpa: 0,
+  gpax: 0,
+  totalCredits: 0,
+  earnedCredits: 0,
+  requiredCredits: 0,
+  academicStatus: 'normal',
+  skills: [],
+  activities: [],
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  badges: [],
+  dataConsent: {
+    studentId: '',
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: 'private',
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
+  timeline: [],
+};
+
 // Transform grades for CourseGradesCard
 const transformGradesForCard = (
-  studentGrades: ReturnType<typeof getStudentGrades>,
-  courses: typeof mockCourses,
+  studentGrades: Grade[],
+  courses: Course[],
 ) => {
   return studentGrades.map(grade => {
     const course = courses.find(c => c.id === grade.courseId);
@@ -158,7 +194,7 @@ const averageScore = (values: number[], fallback = 3) => {
   return clean.length ? clean.reduce((sum, value) => sum + value, 0) / clean.length : fallback;
 };
 
-const deriveTechnicalScores = (sourceStudent: typeof mockStudent): TechnicalSkillScores => {
+const deriveTechnicalScores = (sourceStudent: Student): TechnicalSkillScores => {
   const technicalSkills = sourceStudent.skills.filter((skill) => skill.category !== 'soft_skill');
   const score = averageScore(technicalSkills.map((skill) => levelScore(skill.level)));
   return {
@@ -173,7 +209,7 @@ const deriveTechnicalScores = (sourceStudent: typeof mockStudent): TechnicalSkil
   };
 };
 
-const deriveSoftScores = (sourceStudent: typeof mockStudent): SoftSkillScores => {
+const deriveSoftScores = (sourceStudent: Student): SoftSkillScores => {
   const softSkills = sourceStudent.skills.filter((skill) => skill.category === 'soft_skill');
   const score = averageScore(softSkills.map((skill) => levelScore(skill.level)), 3);
   return {
@@ -249,14 +285,14 @@ export default function StudentDashboard() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState('overview');
-  const [student, setStudent] = React.useState(mockStudent);
-  const [courses, setCourses] = React.useState<typeof mockCourses>([]);
-  const [activities, setActivities] = React.useState<typeof mockActivities>([]);
-  const [timeline, setTimeline] = React.useState<ReturnType<typeof getStudentTimeline>>([]);
-  const [grades, setGrades] = React.useState<ReturnType<typeof getStudentGrades>>([]);
+  const [student, setStudent] = React.useState<Student>(emptyStudent);
+  const [courses, setCourses] = React.useState<Course[]>([]);
+  const [activities, setActivities] = React.useState<Activity[]>([]);
+  const [timeline, setTimeline] = React.useState<Student['timeline']>([]);
+  const [grades, setGrades] = React.useState<Grade[]>([]);
   const [semesterHistory, setSemesterHistory] = React.useState<{ semester: string; gpa: number; credits: number }[]>([]);
   const [curriculumCourses, setCurriculumCourses] = React.useState<CurriculumCourse[]>([]);
-  const [curriculumTotals, setCurriculumTotals] = React.useState({ required: mockStudent.requiredCredits - 15, ge: 9, free: 6 });
+  const [curriculumTotals, setCurriculumTotals] = React.useState({ required: 0, ge: 0, free: 0 });
   const [technicalSkillScores, setTechnicalSkillScores] = React.useState<TechnicalSkillScores>(emptyTechnicalSkillScores);
   const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillScores>(emptySoftSkillScores);
   const [companyTargets, setCompanyTargets] = React.useState<CompanyTarget[]>([]);
@@ -274,7 +310,7 @@ export default function StudentDashboard() {
     ]).then(([profileResult, statsResult, transcriptResult, enrollmentsResult, activitiesResult, targetsResult]) => {
       if (!mounted) return;
 
-      let nextStudent = mockStudent;
+      let nextStudent = emptyStudent;
       if (profileResult.status === 'fulfilled') {
         nextStudent = mapStudent(profileResult.value.profile);
         setTimeline(asArray(asRecord(profileResult.value.profile).timeline) as typeof timeline);
@@ -343,9 +379,9 @@ export default function StudentDashboard() {
         const curriculumProgress = asRecord(stats.curriculumProgress);
         const totals = asRecord(curriculumProgress.categoryTotals);
         setCurriculumTotals({
-          required: asNumber(totals.required, nextStudent.requiredCredits - 15),
-          ge: asNumber(totals.ge, 9),
-          free: asNumber(totals.free, 6),
+          required: asNumber(totals.required, nextStudent.requiredCredits),
+          ge: asNumber(totals.ge, 0),
+          free: asNumber(totals.free, 0),
         });
         const mappedCurriculum = asArray(curriculumProgress.courses).map(mapCurriculumCourse);
         if (mappedCurriculum.length) {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -35,61 +35,7 @@ const skillIcons: Record<string, React.ElementType> = {
   'English Communication': Globe, 'Cybersecurity': Shield,
 };
 
-const mockRequirements = [
-  {
-    id: '1',
-    name: 'Full-Stack Developer', nameEn: 'Full-Stack Developer',
-    description: 'พัฒนาเว็บแอปพลิเคชันทั้ง Frontend และ Backend',
-    descriptionEn: 'Develop web applications, both Frontend and Backend',
-    skills: [
-      { name: 'React', level: 'intermediate' },
-      { name: 'Node.js', level: 'intermediate' },
-      { name: 'TypeScript', level: 'beginner' },
-      { name: 'PostgreSQL', level: 'beginner' },
-    ],
-    priority: 'high',
-    matchedStudents: 12,
-    avgMatch: 78,
-    positions: 2,
-  },
-  {
-    id: '2',
-    name: 'UX/UI Designer', nameEn: 'UX/UI Designer',
-    description: 'ออกแบบ UX/UI สำหรับแอปพลิเคชันมือถือและเว็บ',
-    descriptionEn: 'Design UX/UI for mobile and web applications',
-    skills: [
-      { name: 'Figma', level: 'advanced' },
-      { name: 'UI/UX Design', level: 'intermediate' },
-      { name: 'English Communication', level: 'beginner' },
-    ],
-    priority: 'medium',
-    matchedStudents: 8,
-    avgMatch: 85,
-    positions: 1,
-  },
-  {
-    id: '3',
-    name: 'Data Analyst', nameEn: 'Data Analyst',
-    description: 'วิเคราะห์ข้อมูลและสร้าง Dashboard สำหรับ Business Intelligence',
-    descriptionEn: 'Analyze data and build dashboards for Business Intelligence',
-    skills: [
-      { name: 'Python', level: 'intermediate' },
-      { name: 'SQL', level: 'advanced' },
-      { name: 'Data Analysis', level: 'intermediate' },
-      { name: 'Machine Learning', level: 'beginner' },
-    ],
-    priority: 'high',
-    matchedStudents: 6,
-    avgMatch: 72,
-    positions: 3,
-  },
-];
 
-const mockMatches = [
-  { name: 'สมชาย ดีมาก', nameEn: 'Somchai Deemak', gpa: 3.78, year: 3, matchScore: 92, skills: ['React', 'Node.js', 'TypeScript'] },
-  { name: 'สมหญิง ใจดี', nameEn: 'Somying Jaidee', gpa: 3.55, year: 4, matchScore: 85, skills: ['React', 'PostgreSQL'] },
-  { name: 'วิชัย พยายาม', nameEn: 'Wichai Phayayam', gpa: 3.42, year: 3, matchScore: 78, skills: ['Node.js', 'TypeScript', 'MongoDB'] },
-];
 
 type RequirementRow = {
   id: string;
@@ -391,12 +337,12 @@ export default function SkillsRequirement() {
         })}
         {isLoading && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'กำลังโหลด Requirements...' : 'Loading requirements...'}
+            {language === 'th' ? 'เธเธณเธฅเธฑเธเนเธซเธฅเธ” Requirements...' : 'Loading requirements...'}
           </div>
         )}
         {!isLoading && requirements.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'ยังไม่มี Requirement จาก API' : 'No requirements from API yet.'}
+            {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธต Requirement เธเธฒเธ API' : 'No requirements from API yet.'}
           </div>
         )}
       </div>
@@ -406,7 +352,7 @@ export default function SkillsRequirement() {
         <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'แก้ไข Requirement' : 'Edit Requirement') : tr.createNew}
+              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'เนเธเนเนเธ Requirement' : 'Edit Requirement') : tr.createNew}
             </DialogTitle>
             <DialogDescription>{tr.description}</DialogDescription>
           </DialogHeader>
@@ -501,7 +447,7 @@ export default function SkillsRequirement() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{language === 'th' ? match.name : match.nameEn}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} • {t.studentsPage?.year || 'Year'} {match.year}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} โ€ข {t.studentsPage?.year || 'Year'} {match.year}</div>
                   <div className="flex gap-1 mt-1">
                     {match.skills.map((s, si) => (
                       <Badge key={si} variant="outline" className="text-[10px] px-1.5 py-0">{s}</Badge>
@@ -516,7 +462,7 @@ export default function SkillsRequirement() {
             ))}
             {matches.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {language === 'th' ? 'ยังไม่มีผลจับคู่จาก API' : 'No match results from API yet.'}
+                {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธตเธเธฅเธเธฑเธเธเธนเนเธเธฒเธ API' : 'No match results from API yet.'}
               </div>
             )}
           </div>

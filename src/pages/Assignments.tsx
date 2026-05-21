@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -12,7 +12,6 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { mockCourses } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 
@@ -26,58 +25,17 @@ const itemVariants = {
     visible: { opacity: 1, y: 0 },
 };
 
-const mockAssignments = [
-    {
-        id: 'ASG001',
-        title: 'Project UX Design',
-        courseName: 'การออกแบบประสบการณ์ผู้ใช้',
-        courseCode: 'DII201',
-        dueDate: new Date('2026-02-15'),
-        type: 'group',
-        maxScore: 100,
-        submissionCount: 35,
-        totalStudents: 45,
-        status: 'active',
-    },
-    {
-        id: 'ASG002',
-        title: 'React Portfolio',
-        courseName: 'การพัฒนาเว็บแอปพลิเคชัน',
-        courseCode: 'DII202',
-        dueDate: new Date('2026-02-20'),
-        type: 'individual',
-        maxScore: 50,
-        submissionCount: 28,
-        totalStudents: 42,
-        status: 'active',
-    },
-    {
-        id: 'ASG003',
-        title: 'ML Model Training',
-        courseName: 'Machine Learning พื้นฐาน',
-        courseCode: 'DII301',
-        dueDate: new Date('2026-01-10'),
-        type: 'individual',
-        maxScore: 80,
-        submissionCount: 38,
-        totalStudents: 38,
-        status: 'completed',
-    },
-    {
-        id: 'ASG004',
-        title: 'Wireframe Design',
-        courseName: 'การออกแบบประสบการณ์ผู้ใช้',
-        courseCode: 'DII201',
-        dueDate: new Date('2026-02-28'),
-        type: 'individual',
-        maxScore: 30,
-        submissionCount: 0,
-        totalStudents: 45,
-        status: 'draft',
-    },
-];
-
-type AssignmentRow = (typeof mockAssignments)[number] & {
+type AssignmentRow = {
+    id: string;
+    title: string;
+    courseName: string;
+    courseCode: string;
+    dueDate: Date;
+    type: 'group' | 'individual' | string;
+    maxScore: number;
+    submissionCount: number;
+    totalStudents: number;
+    status: 'active' | 'completed' | 'draft';
     submissions?: {
         id: string;
         name: string;
@@ -92,19 +50,20 @@ export default function Assignments() {
     const { user } = useAuth();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [statusFilter, setStatusFilter] = React.useState('all');
-    const [assignments, setAssignments] = React.useState<AssignmentRow[]>(mockAssignments);
+    const [assignments, setAssignments] = React.useState<AssignmentRow[]>([]);
     const [selectedAssignment, setSelectedAssignment] = React.useState<AssignmentRow | null>(null);
     const [viewMode, setViewMode] = React.useState<'view' | 'grade'>('view');
+    const [isLoading, setIsLoading] = React.useState(true);
 
     React.useEffect(() => {
         let isMounted = true;
 
+        setIsLoading(true);
         api.assignments.list('?includeSubmissions=true')
             .then((response) => {
                 if (!isMounted) return;
                 const mapped = response.assignments.map((item, index) => {
                     const assignment = asRecord(item);
-                    const fallback = mockAssignments[index % mockAssignments.length];
                     const course = asRecord(assignment.course);
                     const submissions = asArray(assignment.submissions).map((submissionItem, submissionIndex) => {
                         const submission = asRecord(submissionItem);
@@ -120,25 +79,28 @@ export default function Assignments() {
                                 : asNumber(submission.score, 0),
                         };
                     });
-                    const dueDate = asDate(assignment.dueDate, fallback.dueDate);
+                    const dueDate = asDate(assignment.dueDate);
                     const isPublished = Boolean(assignment.isPublished);
                     return {
-                        id: asString(assignment.id, fallback.id),
-                        title: asString(assignment.title, fallback.title),
-                        courseName: asString(course.nameThai, asString(course.name, fallback.courseName)),
-                        courseCode: asString(course.code, fallback.courseCode),
+                        id: asString(assignment.id, `assignment-${index}`),
+                        title: asString(assignment.title, 'Untitled assignment'),
+                        courseName: asString(course.nameThai, asString(course.name, '')),
+                        courseCode: asString(course.code, ''),
                         dueDate,
-                        type: asString(assignment.type, fallback.type) as AssignmentRow['type'],
-                        maxScore: asNumber(assignment.maxScore, fallback.maxScore),
+                        type: asString(assignment.type, 'individual') as AssignmentRow['type'],
+                        maxScore: asNumber(assignment.maxScore, 100),
                         submissionCount: submissions.length,
-                        totalStudents: asNumber(course.maxStudents, fallback.totalStudents),
+                        totalStudents: Math.max(asNumber(course.maxStudents, submissions.length), submissions.length),
                         status: (!isPublished ? 'draft' : dueDate < new Date() ? 'completed' : 'active') as AssignmentRow['status'],
                         submissions,
                     };
                 });
-                if (mapped.length) setAssignments(mapped);
+                setAssignments(mapped);
             })
-            .catch(() => undefined);
+            .catch(() => setAssignments([]))
+            .finally(() => {
+                if (isMounted) setIsLoading(false);
+            });
 
         return () => {
             isMounted = false;
@@ -174,13 +136,7 @@ export default function Assignments() {
 
     // Detail / Grade view
     if (selectedAssignment) {
-        const mockSubmissions = selectedAssignment.submissions?.length ? selectedAssignment.submissions : Array.from({ length: selectedAssignment.submissionCount }, (_, i) => ({
-            id: `S${i + 1}`,
-            name: `นักศึกษา ${i + 1}`,
-            studentId: `6421${10000 + i}`,
-            submittedAt: new Date(Date.now() - Math.random() * 86400000 * 5),
-            score: selectedAssignment.status === 'completed' ? Math.floor(Math.random() * selectedAssignment.maxScore * 0.4 + selectedAssignment.maxScore * 0.6) : null,
-        }));
+        const submissions = selectedAssignment.submissions ?? [];
 
         return (
             <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
@@ -195,7 +151,7 @@ export default function Assignments() {
                     <div className="relative z-10 flex items-start justify-between">
                         <div>
                             <h1 className="text-2xl font-bold mb-1">{selectedAssignment.title}</h1>
-                            <p className="text-white/80">{selectedAssignment.courseCode} • {selectedAssignment.courseName}</p>
+                            <p className="text-white/80">{selectedAssignment.courseCode} โ€ข {selectedAssignment.courseName}</p>
                             <div className="flex gap-3 mt-3">
                                 <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{selectedAssignment.type === 'group' ? t.assignmentsPage.group : t.assignmentsPage.individual}</Badge>
                                 <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{t.assignmentsPage.deadline} {selectedAssignment.dueDate.toLocaleDateString('th-TH')}</Badge>
@@ -219,20 +175,20 @@ export default function Assignments() {
                             <CardTitle className="flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-blue-500 dark:text-slate-400" />
                                 {viewMode === 'grade' ? t.assignmentsPage.gradeAssignment : t.assignmentsPage.viewAssignment}
-                                <span className="ml-auto text-sm font-normal text-gray-500 dark:text-slate-400">{mockSubmissions.length} {t.assignmentsPage.people}</span>
+                                <span className="ml-auto text-sm font-normal text-gray-500 dark:text-slate-400">{submissions.length} {t.assignmentsPage.people}</span>
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-3">
-                            {mockSubmissions.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">ยังไม่มีนักศึกษาส่งงาน</div>
-                            ) : mockSubmissions.map((sub) => (
+                            {submissions.length === 0 ? (
+                                <div className="text-center py-8 text-gray-400">เธขเธฑเธเนเธกเนเธกเธตเธเธฑเธเธจเธถเธเธฉเธฒเธชเนเธเธเธฒเธ</div>
+                            ) : submissions.map((sub) => (
                                 <div key={sub.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors dark:bg-slate-800">
                                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-sm dark:text-slate-300 dark:bg-slate-800">
                                         {sub.studentId.slice(-2)}
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-medium text-sm">{sub.name}</div>
-                                        <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} • ส่งเมื่อ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
+                                        <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} โ€ข เธชเนเธเน€เธกเธทเนเธญ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {viewMode === 'grade' ? (
@@ -251,20 +207,20 @@ export default function Assignments() {
                                             sub.score !== null ? (
                                                 <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{sub.score}/{selectedAssignment.maxScore}</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="text-gray-500 dark:text-slate-400">รอตรวจ</Badge>
+                                                <Badge variant="outline" className="text-gray-500 dark:text-slate-400">เธฃเธญเธ•เธฃเธงเธ</Badge>
                                             )
                                         )}
                                         <Button size="sm" variant="ghost" className="text-xs text-blue-500 hover:bg-blue-50 dark:text-slate-400 dark:bg-slate-800">
-                                            <Upload className="w-3.5 h-3.5 mr-1" /> ดูไฟล์
+                                            <Upload className="w-3.5 h-3.5 mr-1" /> เธ”เธนเนเธเธฅเน
                                         </Button>
                                     </div>
                                 </div>
                             ))}
-                            {viewMode === 'grade' && mockSubmissions.length > 0 && (
+                            {viewMode === 'grade' && submissions.length > 0 && (
                                 <div className="pt-4 flex justify-end">
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200"
                                         onClick={() => { setSelectedAssignment(null); }}>
-                                        <CheckCircle className="w-4 h-4 mr-2" /> บันทึกคะแนน
+                                        <CheckCircle className="w-4 h-4 mr-2" /> เธเธฑเธเธ—เธถเธเธเธฐเนเธเธ
                                     </Button>
                                 </div>
                             )}
@@ -287,7 +243,7 @@ export default function Assignments() {
                 <div>
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
                         <ClipboardList className="w-4 h-4 text-blue-500 dark:text-slate-400" />
-                        <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} • ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
+                        <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} โ€ข ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
                     </motion.div>
                     <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.assignmentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.assignmentsPage.titleHighlight}</span>
@@ -392,8 +348,10 @@ export default function Assignments() {
                         <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
-                                    {filterAssignments(assignments).length === 0 ? (
-                                        <div className="text-center py-8 text-gray-400">ไม่พบงานที่ค้นหา</div>
+                                    {isLoading ? (
+                                        <div className="text-center py-8 text-gray-400">{t.common.loading}</div>
+                                    ) : filterAssignments(assignments).length === 0 ? (
+                                        <div className="text-center py-8 text-gray-400">เนเธกเนเธเธเธเธฒเธเธ—เธตเนเธเนเธเธซเธฒ</div>
                                     ) : filterAssignments(assignments).map((assignment, index) => (
                                         <motion.div
                                             key={assignment.id}
@@ -417,7 +375,7 @@ export default function Assignments() {
                                                         </Badge>
                                                     </div>
                                                     <p className="text-sm text-gray-600 dark:text-slate-300">
-                                                        {assignment.courseCode} • {assignment.courseName}
+                                                        {assignment.courseCode} โ€ข {assignment.courseName}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
@@ -470,7 +428,7 @@ export default function Assignments() {
                                             <div className="flex items-start justify-between mb-4">
                                                 <div>
                                                     <h3 className="font-semibold text-lg">{assignment.title}</h3>
-                                                    <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} • {assignment.courseName}</p>
+                                                    <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} โ€ข {assignment.courseName}</p>
                                                 </div>
                                                 {getStatusBadge(assignment.status)}
                                             </div>

@@ -116,6 +116,9 @@ export default function Documents() {
             if (request.type.toLowerCase().includes('transcript')) {
                 const blob = await api.documents.transcript(request.studentId);
                 saveBlob(blob, `transcript-${request.studentId}.pdf`);
+            } else {
+                const blob = await api.documents.internshipCertificate(request.studentId);
+                saveBlob(blob, `internship-certificate-${request.studentId}.pdf`);
             }
 
             await api.requests.updateStatus(request.id, { status: 'completed' });

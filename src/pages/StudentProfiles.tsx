@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Search, Filter, Eye, Mail, Star, Code, Award, ChevronRight, Sparkles } from 'lucide-react';
+import { GraduationCap, Search, Eye, Mail, Star, Code, Award, Sparkles, Shield, Briefcase, FileText, UserCheck, ExternalLink, LockKeyhole } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,8 +13,24 @@ import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapStudent } from '@/lib/live-mappers';
 import type { Student } from '@/types';
+import { toast } from 'sonner';
 
-type StudentRow = Student;
+type StudentRow = Student & {
+    gpaBand?: string;
+    exactGradeVisible?: boolean;
+    advisorUserId?: string;
+    advisorName?: string;
+    advisorEmail?: string;
+    portfolioVisible?: boolean;
+    privacy?: {
+        gradeAccess?: string;
+        gradeAccessMessage?: string;
+        advisorName?: string;
+        advisorEmail?: string;
+        advisorUserId?: string;
+    };
+    cvUrl?: string;
+};
 type StudentSkill = StudentRow['skills'][number];
 
 const normalizeSkillCategory = (value: unknown): StudentSkill['category'] => {
@@ -28,11 +44,30 @@ const normalizeSkillCategory = (value: unknown): StudentSkill['category'] => {
 const mapVisibleStudent = (value: unknown, index: number): StudentRow => {
     const source = asRecord(value);
     const student = mapStudent(value, index);
+    const hasExactGpa = typeof source.gpa !== 'undefined' || typeof source.gpax !== 'undefined';
+    const privacy = asRecord(source.privacy);
+    const advisor = asRecord(source.advisor);
     return {
         ...student,
         nameThai: asString(source.nameThai, asString(source.name, student.nameThai)),
-        gpa: asNumber(source.gpa, asNumber(source.gpax, student.gpa)),
-        gpax: asNumber(source.gpax, student.gpax),
+        email: asString(source.email, student.email),
+        phone: asString(source.phone, student.phone ?? ''),
+        gpa: hasExactGpa ? asNumber(source.gpa, asNumber(source.gpax, 0)) : 0,
+        gpax: hasExactGpa ? asNumber(source.gpax, asNumber(source.gpa, 0)) : 0,
+        semester: asNumber(source.semester, student.semester),
+        academicYear: asString(source.academicYear, student.academicYear),
+        totalCredits: asNumber(source.totalCredits, student.totalCredits),
+        earnedCredits: asNumber(source.earnedCredits, student.earnedCredits),
+        requiredCredits: asNumber(source.requiredCredits, student.requiredCredits),
+        academicStatus: asString(source.academicStatus, student.academicStatus) as Student['academicStatus'],
+        advisorId: asString(source.advisorId, student.advisorId ?? ''),
+        advisorName: asString(source.advisorName, asString(advisor.nameThai, asString(advisor.name, student.advisorName ?? ''))),
+        advisorEmail: asString(source.advisorEmail),
+        advisorUserId: asString(source.advisorUserId, asString(privacy.advisorUserId)),
+        gpaBand: asString(source.gpaBand, hasExactGpa ? getGpaBand(asNumber(source.gpax, asNumber(source.gpa, 0))) : 'not_disclosed'),
+        exactGradeVisible: Boolean(source.exactGradeVisible ?? hasExactGpa),
+        cvUrl: asString(source.cvUrl),
+        portfolioVisible: Boolean(source.portfolioVisible ?? student.portfolio?.isPublic),
         skills: asArray(source.skills).length
             ? asArray(source.skills).map((skill) => {
                 if (typeof skill === 'string') {
@@ -44,15 +79,40 @@ const mapVisibleStudent = (value: unknown, index: number): StudentRow => {
                     category: normalizeSkillCategory(item.category),
                     level: asString(item.level, 'intermediate') as StudentRow['skills'][number]['level'],
                     verifiedBy: asString(item.verifiedBy, ''),
+                    yearsOfExperience: asNumber(item.yearsOfExperience, 0),
                 };
             })
             : student.skills,
+        portfolio: asRecord(source.portfolio).id || asRecord(source.portfolio).studentId ? student.portfolio : student.portfolio,
+        internship: source.internship ? (source.internship as Student['internship']) : student.internship,
         dataConsent: {
             ...student.dataConsent,
-            allowPortfolioSharing: true,
-            profileVisibility: 'public',
+            ...asRecord(source.dataConsent),
+            allowPortfolioSharing: Boolean(asRecord(source.dataConsent).allowPortfolioSharing ?? source.portfolioVisible ?? student.dataConsent.allowPortfolioSharing),
+            profileVisibility: asString(asRecord(source.dataConsent).profileVisibility, student.dataConsent.profileVisibility) as Student['dataConsent']['profileVisibility'],
+        },
+        privacy: {
+            gradeAccess: asString(privacy.gradeAccess, hasExactGpa ? 'visible' : 'advisor_approval_required'),
+            gradeAccessMessage: asString(privacy.gradeAccessMessage, 'Exact grades require advisor approval before release.'),
+            advisorName: asString(privacy.advisorName, asString(source.advisorName)),
+            advisorEmail: asString(privacy.advisorEmail, asString(source.advisorEmail)),
+            advisorUserId: asString(privacy.advisorUserId, asString(source.advisorUserId)),
         },
     };
+};
+
+const getGpaBand = (gpa: number) => {
+    if (gpa >= 3.5) return '3.50+';
+    if (gpa >= 3) return '3.00-3.49';
+    if (gpa >= 2.5) return '2.50-2.99';
+    if (gpa > 0) return 'below 2.50';
+    return 'not_disclosed';
+};
+
+const formatGpa = (student: StudentRow) => {
+    if (student.exactGradeVisible && student.gpa > 0) return student.gpa.toFixed(2);
+    if (student.gpaBand && student.gpaBand !== 'not_disclosed') return `ช่วง ${student.gpaBand}`;
+    return 'ต้องขออนุญาต';
 };
 
 const containerVariants = {
@@ -106,6 +166,32 @@ export default function StudentProfiles() {
     });
 
     const allSkills = [...new Set(accessibleStudents.flatMap(s => s.skills.map(sk => sk.name)))];
+    const gradeAccessCount = accessibleStudents.filter(s => s.exactGradeVisible).length;
+
+    const handleRequestGradeAccess = async (student: StudentRow) => {
+        const advisorUserId = student.advisorUserId || student.privacy?.advisorUserId;
+        if (!advisorUserId) {
+            toast.info('ยังไม่มีข้อมูลบัญชีอาจารย์ที่ปรึกษา กรุณาติดต่อผ่าน Messages');
+            navigate('/messages');
+            return;
+        }
+
+        try {
+            await api.messages.create({
+                toId: advisorUserId,
+                subject: `Grade access request: ${student.nameThai || student.name}`,
+                body: [
+                    `บริษัทต้องการขออนุญาตดูข้อมูลเกรด/Transcript ของนักศึกษา ${student.nameThai || student.name} (${student.studentId})`,
+                    'เหตุผล: เพื่อประกอบการพิจารณาฝึกงาน/รับสมัครงาน',
+                    'ตาม protocol ต้องได้รับความยินยอมจากอาจารย์ที่ปรึกษาและนักศึกษาก่อนเปิดเผยข้อมูลละเอียด',
+                ].join('\n'),
+                category: 'privacy_request',
+            });
+            toast.success('ส่งคำขอไปยังอาจารย์ที่ปรึกษาแล้ว');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'ส่งคำขอไม่สำเร็จ');
+        }
+    };
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
@@ -164,10 +250,10 @@ export default function StudentProfiles() {
                             <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
                                 <Star className="w-6 h-6" />
                             </div>
-                            <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.gpa35Plus}</span>
+                            <span className="font-medium text-slate-600 dark:text-slate-300">Grade Access</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{accessibleStudents.filter(s => s.gpa >= 3.5).length}</div>
-                        <div className="mt-3 text-sm text-slate-400">{t.studentProfiles.excellentGrades}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{gradeAccessCount}</div>
+                        <div className="mt-3 text-sm text-slate-400">ที่เห็นเกรดจริงตามสิทธิ์</div>
                     </div>
                 </motion.div>
 
@@ -252,7 +338,7 @@ export default function StudentProfiles() {
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge variant="outline">{t.studentProfiles.yearPrefix} {student.year}</Badge>
                                                 <Badge className={student.gpa >= 3.5 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}>
-                                                    {t.studentProfiles.gpa} {student.gpa.toFixed(2)}
+                                                    {t.studentProfiles.gpa} {formatGpa(student)}
                                                 </Badge>
                                             </div>
                                         </div>
@@ -303,30 +389,89 @@ export default function StudentProfiles() {
             </motion.div>
 
             <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => !open && setSelectedStudent(null)}>
-                <DialogContent className="sm:max-w-[640px]">
+                <DialogContent className="sm:max-w-[900px]">
                     {selectedStudent && (
                         <>
                             <DialogHeader>
                                 <DialogTitle>{selectedStudent.nameThai || selectedStudent.name}</DialogTitle>
-                                <DialogDescription>{selectedStudent.studentId} / {selectedStudent.major} / GPA {selectedStudent.gpa.toFixed(2)}</DialogDescription>
+                                <DialogDescription>{selectedStudent.studentId} / {selectedStudent.major} / GPA {formatGpa(selectedStudent)}</DialogDescription>
                             </DialogHeader>
-                            <div className="space-y-4">
+                            <div className="max-h-[72vh] overflow-y-auto pr-1 space-y-5">
                                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Year</div><div className="font-bold">{selectedStudent.year}</div></div>
-                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">GPA</div><div className="font-bold">{selectedStudent.gpa.toFixed(2)}</div></div>
+                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">GPA</div><div className="font-bold">{formatGpa(selectedStudent)}</div></div>
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Credits</div><div className="font-bold">{selectedStudent.earnedCredits}/{selectedStudent.requiredCredits}</div></div>
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Status</div><div className="font-bold">{selectedStudent.academicStatus}</div></div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                                        <div className="flex items-center gap-2 font-semibold mb-3"><GraduationCap className="w-4 h-4 text-blue-500" /> ข้อมูลการศึกษา</div>
+                                        <dl className="grid grid-cols-2 gap-2 text-sm">
+                                            <dt className="text-slate-500">หลักสูตร</dt><dd className="font-medium">{selectedStudent.program}</dd>
+                                            <dt className="text-slate-500">เทอม/ปี</dt><dd className="font-medium">{selectedStudent.semester}/{selectedStudent.academicYear}</dd>
+                                            <dt className="text-slate-500">หน่วยกิตสะสม</dt><dd className="font-medium">{selectedStudent.earnedCredits}/{selectedStudent.totalCredits}</dd>
+                                            <dt className="text-slate-500">อาจารย์ที่ปรึกษา</dt><dd className="font-medium">{selectedStudent.advisorName || selectedStudent.privacy?.advisorName || '-'}</dd>
+                                        </dl>
+                                    </div>
+                                    <div className="rounded-2xl border border-amber-200 dark:border-amber-900 bg-amber-50/70 dark:bg-amber-950/20 p-4">
+                                        <div className="flex items-center gap-2 font-semibold mb-2 text-amber-800 dark:text-amber-300"><LockKeyhole className="w-4 h-4" /> Privacy Protocol</div>
+                                        <p className="text-sm text-amber-800/80 dark:text-amber-200/80">
+                                            {selectedStudent.exactGradeVisible ? 'บัญชีนี้มีสิทธิ์ดูเกรดจริงตามบทบาท' : 'บริษัทเห็นได้เฉพาะช่วงเกรด ต้องขออนุญาตผ่านอาจารย์ที่ปรึกษาก่อนดู GPA/Transcript จริง'}
+                                        </p>
+                                        <Button variant="outline" size="sm" className="mt-3 bg-white/70 dark:bg-slate-900" onClick={() => handleRequestGradeAccess(selectedStudent)}>
+                                            <Shield className="w-4 h-4 mr-2" /> ขอสิทธิ์ดูเกรดผ่าน Advisor
+                                        </Button>
+                                    </div>
                                 </div>
                                 <div>
                                     <div className="font-semibold mb-2">{t.studentProfiles.skillsLabel}</div>
                                     <div className="flex flex-wrap gap-2">
-                                        {selectedStudent.skills.map((skill) => <Badge key={`${skill.name}-${skill.level}`} variant="secondary">{skill.name} / {skill.level}</Badge>)}
+                                        {selectedStudent.skills.map((skill) => (
+                                            <Badge key={`${skill.name}-${skill.level}`} variant="secondary">
+                                                {skill.name} / {skill.level}{skill.verifiedBy ? ` / ${skill.verifiedBy}` : ''}
+                                            </Badge>
+                                        ))}
                                         {selectedStudent.skills.length === 0 && <span className="text-sm text-slate-500">-</span>}
                                     </div>
                                 </div>
                                 <div>
-                                    <div className="font-semibold mb-1">Portfolio</div>
-                                    <p className="text-sm text-slate-600 dark:text-slate-300">{selectedStudent.portfolio?.summaryThai || selectedStudent.portfolio?.summary || '-'}</p>
+                                    <div className="flex items-center gap-2 font-semibold mb-2"><FileText className="w-4 h-4 text-purple-500" /> Portfolio</div>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300 mb-3">{selectedStudent.portfolio?.summaryThai || selectedStudent.portfolio?.summary || '-'}</p>
+                                    <div className="space-y-2">
+                                        {selectedStudent.portfolio?.projects?.slice(0, 4).map(project => (
+                                            <div key={project.id} className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3">
+                                                <div className="font-medium">{project.title}</div>
+                                                <div className="text-xs text-slate-500 line-clamp-2">{project.description}</div>
+                                                <div className="mt-2 flex flex-wrap gap-1">
+                                                    {project.technologies.map(tech => <Badge key={tech} variant="outline" className="text-[10px]">{tech}</Badge>)}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        {selectedStudent.portfolio?.githubUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.portfolio?.githubUrl, '_blank', 'noopener,noreferrer')}><ExternalLink className="w-3.5 h-3.5 mr-1" /> GitHub</Button>}
+                                        {selectedStudent.portfolio?.linkedinUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.portfolio?.linkedinUrl, '_blank', 'noopener,noreferrer')}><ExternalLink className="w-3.5 h-3.5 mr-1" /> LinkedIn</Button>}
+                                        {selectedStudent.cvUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.cvUrl, '_blank', 'noopener,noreferrer')}><FileText className="w-3.5 h-3.5 mr-1" /> CV</Button>}
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                                        <div className="flex items-center gap-2 font-semibold mb-3"><Briefcase className="w-4 h-4 text-orange-500" /> Internship</div>
+                                        <dl className="grid grid-cols-2 gap-2 text-sm">
+                                            <dt className="text-slate-500">บริษัท</dt><dd className="font-medium">{selectedStudent.internship?.companyName || '-'}</dd>
+                                            <dt className="text-slate-500">ตำแหน่ง</dt><dd className="font-medium">{selectedStudent.internship?.position || '-'}</dd>
+                                            <dt className="text-slate-500">สถานะ</dt><dd className="font-medium">{selectedStudent.internship?.status || '-'}</dd>
+                                            <dt className="text-slate-500">ช่วงเวลา</dt><dd className="font-medium">{selectedStudent.internship?.startMonth || '-'} - {selectedStudent.internship?.endMonth || '-'}</dd>
+                                        </dl>
+                                    </div>
+                                    <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">
+                                        <div className="flex items-center gap-2 font-semibold mb-3"><UserCheck className="w-4 h-4 text-emerald-500" /> Consent</div>
+                                        <div className="space-y-2 text-sm">
+                                            <div className="flex justify-between"><span className="text-slate-500">Portfolio sharing</span><Badge variant="outline">{selectedStudent.dataConsent.allowPortfolioSharing ? 'allowed' : 'restricted'}</Badge></div>
+                                            <div className="flex justify-between"><span className="text-slate-500">Profile visibility</span><Badge variant="outline">{selectedStudent.dataConsent.profileVisibility}</Badge></div>
+                                            <div className="flex justify-between"><span className="text-slate-500">Grade access</span><Badge variant="outline">{selectedStudent.privacy?.gradeAccess || '-'}</Badge></div>
+                                        </div>
+                                    </div>
                                 </div>
                                 <Button className="w-full" onClick={() => navigate('/messages')}><Mail className="w-4 h-4 mr-2" />ติดต่อผู้สมัคร</Button>
                             </div>

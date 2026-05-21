@@ -18,26 +18,6 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
   </motion.div>
 );
 
-const FloatingShapes = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-    <motion.div
-      animate={{ y: [0, -20, 0], rotate: [0, 5, 0] }}
-      transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-      className="absolute top-1/4 left-[10%] w-24 h-24 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-xl"
-    />
-    <motion.div
-      animate={{ y: [0, 30, 0], x: [0, -20, 0] }}
-      transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-      className="absolute top-1/3 right-[15%] w-32 h-32 bg-gradient-to-tr from-indigo-500/20 to-cyan-500/20 rounded-full blur-2xl"
-    />
-    <motion.div
-      animate={{ scale: [1, 1.2, 1], rotate: [0, -10, 0] }}
-      transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      className="absolute bottom-1/4 left-[20%] w-40 h-40 bg-gradient-to-t from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl"
-    />
-  </div>
-);
-
 export default function LandingPage() {
   const { t, language, toggleLanguage } = useLanguage();
   const { scrollYProgress } = useScroll();
@@ -56,8 +36,8 @@ export default function LandingPage() {
       {/* Floating Glass Navbar */}
       <nav className={`fixed top-0 w-full z-50 transition-all duration-700 ease-out px-4 sm:px-6 pt-4 sm:pt-6 pointer-events-none ${scrolled ? 'pt-2 sm:pt-4' : ''}`}>
         <div className={`pointer-events-auto mx-auto max-w-6xl flex items-center justify-between transition-all duration-700 ${scrolled
-            ? 'h-16 px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl border border-white/20 dark:border-slate-800/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full'
-            : 'h-20 px-4 bg-transparent border-transparent shadow-none'
+          ? 'h-16 px-6 bg-white/80 dark:bg-slate-900/80 backdrop-blur-3xl border border-white/20 dark:border-slate-800/50 shadow-[0_10px_40px_rgba(0,0,0,0.08)] rounded-full'
+          : 'h-20 px-4 bg-transparent border-transparent shadow-none'
           }`}>
           <div className="flex items-center gap-3 cursor-pointer group">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-500/30 group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
@@ -103,220 +83,152 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* Hero Section - Elegant, Professional & Slightly Playful */}
-      <section className="relative min-h-[95vh] flex items-center pt-24 pb-32 overflow-hidden bg-slate-50 dark:bg-slate-950 selection:bg-blue-200/50 font-sans">
+      {/* Hero Section - Apple/Vercel Aesthetic Hybrid */}
+      <section className="relative min-h-[100vh] flex flex-col justify-center pt-32 pb-32 overflow-hidden bg-white dark:bg-[#030712] font-sans selection:bg-indigo-300/30">
 
-        {/* Soft Modern Background */}
+        {/* Dynamic Abstract Background */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-          <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f0_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f0_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b_1px,transparent_1px),linear-gradient(to_bottom,#1e293b_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_60%_at_50%_0%,#000_10%,transparent_80%)] opacity-60"></div>
+          {/* Subtle noise texture */}
+          <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.04] bg-[url('https://grainy-gradients.vercel.app/noise.svg')] pointer-events-none"></div>
 
-          <motion.div
-            animate={{ rotate: 360, scale: [1, 1.05, 1] }}
-            transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
-            className="absolute -top-[20%] -right-[5%] w-[40vw] h-[40vw] rounded-full filter blur-[100px] opacity-40 bg-gradient-to-tr from-blue-200 via-indigo-100 to-white dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-transparent mix-blend-multiply dark:mix-blend-soft-light"
-          />
-          <motion.div
-            animate={{ rotate: -360, scale: [1, 1.1, 1] }}
-            transition={{ duration: 50, repeat: Infinity, ease: "linear" }}
-            className="absolute top-[30%] -left-[10%] w-[50vw] h-[50vw] rounded-full filter blur-[120px] opacity-40 bg-gradient-to-br from-indigo-100 via-blue-50 to-white dark:from-indigo-900/20 dark:via-blue-900/20 dark:to-transparent mix-blend-multiply dark:mix-blend-soft-light"
-          />
+          {/* Vercel-like glowing conic gradients */}
+          <div className="absolute top-[-20%] left-[-10%] w-[70vw] h-[70vw] rounded-full blur-[120px] bg-gradient-to-tr from-indigo-100/50 via-purple-50/50 to-transparent dark:from-indigo-900/20 dark:via-purple-900/10 dark:to-transparent opacity-80 animate-pulse-slow mix-blend-normal"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[60vw] h-[60vw] rounded-full blur-[150px] bg-gradient-to-bl from-blue-100/40 via-cyan-50/40 to-transparent dark:from-blue-900/20 dark:via-cyan-900/10 dark:to-transparent opacity-70 animate-pulse-slow delay-1000 mix-blend-normal"></div>
         </div>
 
-        <FloatingShapes />
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 w-full flex-grow flex flex-col items-center justify-center">
 
-        <div className="container mx-auto px-6 relative z-10 w-full mt-10">
-          <div className="grid lg:grid-cols-12 gap-16 lg:gap-10 items-center">
+          {/* Center Aligned Typography (Apple Style) */}
+          <div className="text-center w-full max-w-4xl mx-auto relative z-20 flex flex-col items-center">
 
-            {/* Left Column: Clean Elegant Typography */}
-            <div className="lg:col-span-6 text-left w-full max-w-2xl mx-auto lg:mx-0 relative">
+            {/* Pill Badge */}
+            <FadeIn delay={0.1} className="w-full flex justify-center">
+              <div className="inline-flex items-center gap-2 mb-8 px-5 py-2 rounded-full border border-slate-200/80 dark:border-slate-800 bg-white/50 dark:bg-slate-900/50 backdrop-blur-md shadow-sm hover:shadow-md hover:bg-white dark:hover:bg-slate-800 transition-all cursor-pointer group">
+                <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse"></div>
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {language === 'th' ? 'พบกับ ShowPro โฉมใหม่' : 'Introducing Next-Gen ShowPro'}
+                </span>
+                <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 group-hover:text-indigo-500 transition-all" />
+              </div>
+            </FadeIn>
 
-              {/* Refined Badge */}
-              <FadeIn delay={0.1}>
-                <div className="inline-flex items-center gap-3 mb-8 px-5 py-2.5 rounded-full bg-white/60 dark:bg-slate-900/60 border border-slate-200/60 backdrop-blur-xl shadow-sm hover:bg-white/80 transition-colors dark:border-slate-700/60 dark:bg-slate-800/80">
-                  <div className="relative flex h-2.5 w-2.5">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-blue-500"></span>
-                  </div>
-                  <span className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-100 tracking-wider uppercase">
-                    {language === 'th' ? 'ShowPro Platform' : 'Professional Showcase Platform'}
+            {/* Massive Bold Headline */}
+            <FadeIn delay={0.2} className="w-full">
+              <h1 className="text-[4rem] sm:text-[5rem] md:text-[6rem] lg:text-[7.5rem] font-bold tracking-tighter text-slate-900 dark:text-white leading-[0.95] mb-6 flex flex-col items-center">
+                <span className="block opacity-90">{language === 'th' ? 'การศึกษาที่' : 'Learning.'}</span>
+                <span className="relative inline-block mt-2">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-b from-indigo-500 to-purple-600 dark:from-indigo-400 dark:to-purple-500">
+                    {language === 'th' ? 'ชาญฉลาดกว่าเดิม.' : 'Reimagined.'}
                   </span>
+                </span>
+              </h1>
+            </FadeIn>
+
+            {/* Subtitle */}
+            <FadeIn delay={0.3} className="w-full">
+              <p className="text-xl sm:text-2xl text-slate-500 dark:text-slate-400 mb-12 leading-relaxed font-light max-w-2xl mx-auto">
+                {language === 'th'
+                  ? 'ปลดล็อกศักยภาพของคุณด้วยแพลตฟอร์มจัดการพอร์ตโฟลิโอและทักษะที่ขับเคลื่อนด้วย AI ออกแบบมาให้เรียบหรู ทรงพลัง และเร็วที่สุด'
+                  : 'Unlock your potential with an AI-driven portfolio and skill management platform designed to be sleek, powerful, and incredibly fast.'}
+              </p>
+            </FadeIn>
+
+            {/* Call to Actions */}
+            <FadeIn delay={0.4} className="w-full flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6">
+              <Link to="/register" className="w-full sm:w-auto">
+                <Button className="w-full sm:w-auto h-14 px-10 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 rounded-full text-lg font-semibold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                  {t.landing.getStartedFree}
+                </Button>
+              </Link>
+              <Link to="/features" className="w-full sm:w-auto">
+                <Button variant="outline" className="w-full sm:w-auto h-14 px-10 rounded-full text-lg font-medium text-slate-700 dark:text-slate-200 border-none bg-slate-100/80 hover:bg-slate-200 dark:bg-slate-800/80 dark:hover:bg-slate-700 backdrop-blur-md transition-all group">
+                  {t.landing.viewDemo} <ChevronRight className="ml-2 w-5 h-5 text-slate-400 group-hover:translate-x-1 group-hover:text-slate-900 dark:group-hover:text-white transition-all" />
+                </Button>
+              </Link>
+            </FadeIn>
+          </div>
+
+          {/* Large Hero Graphic (Showcase Dashboard inside a sleek container) */}
+          <FadeIn delay={0.6} className="w-full mt-24 relative z-30 perspective-[3000px] flex justify-center hidden sm:flex">
+            <motion.div
+              initial={{ rotateX: 15, y: 40, opacity: 0 }}
+              animate={{ rotateX: 0, y: 0, opacity: 1 }}
+              transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+              className="w-full max-w-5xl rounded-[2rem] bg-slate-900 dark:bg-black border-[8px] border-slate-900 dark:border-slate-800/80 p-0 overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.2)] dark:shadow-[0_40px_100px_rgba(0,0,0,0.5)] ring-1 ring-white/10 dark:ring-white/5"
+            >
+              {/* Fake Window Controls */}
+              <div className="h-10 bg-slate-800 dark:bg-slate-900 border-b border-slate-700/50 dark:border-slate-800 flex items-center px-4 gap-2">
+                <div className="flex gap-1.5">
+                  <div className="w-3 h-3 rounded-full bg-[#FF5F56]"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#FFBD2E]"></div>
+                  <div className="w-3 h-3 rounded-full bg-[#27C93F]"></div>
                 </div>
-              </FadeIn>
-
-              {/* Elegant Headline */}
-              <FadeIn delay={0.2}>
-                <h1 className="text-5xl md:text-6xl lg:text-[4.8rem] font-bold tracking-tight text-slate-900 dark:text-white mb-6 leading-[1.1] font-sans">
-                  <span className="text-slate-800 dark:text-slate-200">{language === 'th' ? 'การศึกษาที่' : 'Empowering'}</span><br />
-                  <span className="relative inline-block mt-2">
-                    <span className="relative text-transparent bg-clip-text bg-gradient-to-r from-blue-700 via-indigo-600 to-blue-600">
-                      {language === 'th' ? 'ไร้ขีดจำกัด' : 'Digital Education'}
-                    </span>
-                    <svg className="absolute w-full h-3 -bottom-1 left-0 text-blue-400/30 -z-10" viewBox="0 0 100 20" preserveAspectRatio="none">
-                      <path d="M0,10 Q50,20 100,10" stroke="currentColor" strokeWidth="4" fill="none" strokeLinecap="round" />
-                    </svg>
-                  </span>
-                </h1>
-              </FadeIn>
-
-              {/* Crisp Description */}
-              <FadeIn delay={0.3}>
-                <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 mb-10 leading-relaxed font-light max-w-lg border-l-2 border-indigo-200 dark:border-indigo-800 pl-6">
-                  {language === 'th'
-                    ? 'ยกระดับประสบการณ์การเรียนรู้ และพัฒนาทักษะด้วยระบบอัจฉริยะที่ออกแบบมาให้ใช้งานง่าย มืออาชีพ และสร้างสรรค์'
-                    : t.landing.heroDescAlt}
-                </p>
-              </FadeIn>
-
-              {/* Modern Playful CTAs */}
-              <FadeIn delay={0.4}>
-                <div className="flex flex-col sm:flex-row items-center sm:items-stretch gap-4">
-                  <Link to="/register" className="w-full sm:w-auto relative group">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-300"></div>
-                    <Button size="lg" className="relative w-full sm:w-auto h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white rounded-full text-base font-medium shadow-lg hover:shadow-xl transition-all hover:-translate-y-0.5">
-                      {t.landing.getStartedFree} <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </Link>
-                  <Link to="/features" className="w-full sm:w-auto">
-                    <Button size="lg" variant="outline" className="w-full sm:w-auto h-14 px-8 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100/50 dark:hover:bg-slate-800/50 rounded-full text-base font-medium transition-all group bg-white/50 backdrop-blur-sm dark:bg-slate-900/50">
-                      <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center mr-3 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/60 group-hover:scale-110 transition-transform">
-                        <Play className="w-3.5 h-3.5 ml-0.5" />
-                      </div>
-                      {t.landing.viewDemo}
-                    </Button>
-                  </Link>
-                </div>
-              </FadeIn>
-            </div>
-
-            {/* Right Column: Clean Light Glass Mockups */}
-            <div className="lg:col-span-6 relative w-full h-[650px] hidden lg:flex items-center justify-center perspective-[2500px]">
-
-              {/* Playful Floating Core */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-                <motion.div animate={{ rotate: 360 }} transition={{ duration: 50, repeat: Infinity, ease: "linear" }} className="w-[500px] h-[500px] border border-blue-100 dark:border-blue-900/30 rounded-full"></motion.div>
-                <div className="w-[350px] h-[350px] border border-indigo-50 dark:border-indigo-900/30 border-dashed rounded-full absolute"></div>
+                <div className="mx-auto text-[11px] font-medium text-slate-400 dark:text-slate-500 tracking-wider">app.showpro.com</div>
               </div>
 
-              {/* Main Light Glass Application Panel */}
-              <FadeIn delay={0.6} className="absolute z-30">
-                <motion.div
-                  initial={{ rotateY: -10, rotateX: 5 }}
-                  animate={{ y: [-8, 8, -8], rotateY: [-8, -4, -8] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
-                  className="w-[480px] h-[340px] rounded-3xl bg-white/70 dark:bg-slate-900/70 border border-white dark:border-slate-800 backdrop-blur-2xl p-1 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.05)] overflow-hidden relative group"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 via-transparent to-indigo-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+              {/* Inner Mockup UI (Simplistic modern grid) */}
+              <div className="bg-slate-50 dark:bg-slate-950 p-6 md:p-10 grid grid-cols-3 gap-6">
 
-                  {/* MacOS Style Top Bar */}
-                  <div className="h-10 bg-white/40 border-b border-slate-100 dark:border-slate-800 flex items-center px-4 gap-2 relative z-10 dark:bg-slate-900/50">
-                    <div className="flex gap-1.5">
-                      <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-amber-400"></div>
-                      <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                    </div>
-                    <div className="mx-auto flex items-center justify-center gap-2 w-48 h-6 bg-white/60 dark:bg-slate-900/60 rounded-md border border-slate-100 dark:border-slate-800 text-[10px] text-slate-500 dark:text-slate-400 font-medium dark:bg-slate-900/50">
-                      <Lock className="w-3 h-3 text-slate-400" />
-                      workspace.showpro.app
+                {/* Left side nav concept */}
+                <div className="col-span-1 hidden md:flex flex-col gap-4">
+                  <div className="h-8 w-24 bg-slate-200 dark:bg-slate-800 rounded-lg mb-8"></div>
+                  {[1, 2, 3, 4].map(i => (
+                    <div key={i} className="h-10 w-full bg-slate-200/50 dark:bg-slate-800/50 rounded-xl"></div>
+                  ))}
+                  <div className="h-32 w-full mt-auto bg-indigo-100 dark:bg-indigo-900/20 border border-indigo-200/50 dark:border-indigo-800/50 rounded-2xl p-4 flex flex-col justify-end">
+                    <div className="w-8 h-8 rounded-full bg-indigo-500 mb-2"></div>
+                    <div className="h-4 w-16 bg-slate-900 dark:bg-white rounded mb-1"></div>
+                    <div className="h-3 w-20 bg-slate-500 dark:bg-slate-400 rounded opacity-60"></div>
+                  </div>
+                </div>
+
+                {/* Main Content Area concept */}
+                <div className="col-span-3 md:col-span-2 flex flex-col gap-6">
+                  {/* Top Bar */}
+                  <div className="flex justify-between items-center h-12">
+                    <div className="h-8 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+                    <div className="flex gap-3">
+                      <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
+                      <div className="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-full"></div>
                     </div>
                   </div>
 
-                  {/* App Content */}
-                  <div className="p-5 flex gap-5 relative z-10">
-                    {/* Sidebar */}
-                    <div className="w-16 space-y-3">
-                      {[1, 2, 3, 4].map(i => (
-                        <motion.div
-                          key={i}
-                          whileHover={{ scale: 1.05 }}
-                          className={`w-10 h-10 rounded-xl flex items-center justify-center cursor-pointer transition-colors ${i === 1 ? 'bg-blue-100 dark:bg-blue-900/40 border border-blue-200 dark:border-blue-800 text-blue-600 dark:text-blue-400 shadow-sm' : 'bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
-                        >
-                          <div className="w-4 h-4 bg-current rounded-sm opacity-80"></div>
-                        </motion.div>
-                      ))}
+                  {/* Big Hero Card */}
+                  <div className="h-48 w-full bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 relative overflow-hidden flex flex-col justify-between">
+                    <div className="absolute right-0 top-0 bottom-0 w-1/2 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20"></div>
+                    <div className="h-6 w-24 bg-white/20 rounded backdrop-blur-md"></div>
+                    <div>
+                      <div className="h-12 w-48 bg-white rounded-lg mb-3"></div>
+                      <div className="h-4 w-64 bg-white/50 rounded"></div>
                     </div>
+                  </div>
 
-                    {/* Main Area */}
-                    <div className="flex-1 space-y-4">
-                      {/* Hero Stat */}
-                      <div className="h-28 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 border border-blue-500/20 p-5 relative overflow-hidden flex flex-col justify-end shadow-md">
-                        <div className="absolute right-[-10%] top-[-20%] w-32 h-32 bg-white/20 blur-2xl rounded-full dark:bg-slate-900/50"></div>
-                        <div className="text-white/80 text-[11px] uppercase font-bold tracking-widest mb-1">{language === 'th' ? 'ผลการเรียนล่าสุด' : 'Latest Performance'}</div>
-                        <div className="text-3xl font-black text-white">4.00 <span className="text-xs font-medium text-emerald-100 bg-emerald-500/30 px-2 py-0.5 rounded-full ml-2 backdrop-blur-sm">Top 5%</span></div>
+                  {/* Grid of stats */}
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="h-32 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 mb-2 border border-blue-200 dark:border-blue-800/50"></div>
+                      <div>
+                        <div className="h-8 w-20 bg-slate-800 dark:bg-slate-100 rounded-md mb-2"></div>
+                        <div className="h-3 w-32 bg-slate-300 dark:bg-slate-700 rounded"></div>
                       </div>
-
-                      {/* Small Stats Grid */}
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="w-7 h-7 rounded-full bg-purple-100 flex items-center justify-center mb-2 dark:bg-slate-800">
-                            <div className="w-3 h-3 bg-purple-500 rounded-sm"></div>
-                          </div>
-                          <div className="h-2 w-16 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
-                        </div>
-                        <div className="h-20 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-3 shadow-sm hover:shadow-md transition-shadow">
-                          <div className="w-7 h-7 rounded-full bg-cyan-100 flex items-center justify-center mb-2">
-                            <div className="w-3 h-3 bg-cyan-500 rounded-sm"></div>
-                          </div>
-                          <div className="h-2 w-20 bg-slate-100 dark:bg-slate-800 rounded-full"></div>
-                        </div>
+                    </div>
+                    <div className="h-32 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-6 flex flex-col justify-between">
+                      <div className="w-10 h-10 rounded-full bg-emerald-100 dark:bg-emerald-900/30 mb-2 border border-emerald-200 dark:border-emerald-800/50"></div>
+                      <div>
+                        <div className="h-8 w-20 bg-slate-800 dark:bg-slate-100 rounded-md mb-2"></div>
+                        <div className="h-3 w-32 bg-slate-300 dark:bg-slate-700 rounded"></div>
                       </div>
                     </div>
                   </div>
-                </motion.div>
-              </FadeIn>
+                </div>
+              </div>
+            </motion.div>
+          </FadeIn>
 
-              {/* Floating Element: Minimalist AI Badge */}
-              <FadeIn delay={1.0} className="absolute z-40 top-[15%] right-[5%]">
-                <motion.div
-                  animate={{ y: [0, -12, 0] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                  className="px-4 py-3 rounded-2xl bg-white/90 border border-slate-200 dark:border-slate-700 backdrop-blur-xl shadow-xl flex items-center gap-3 dark:bg-slate-900/50"
-                >
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-900/40 dark:to-purple-900/40 flex items-center justify-center border border-indigo-50 dark:border-indigo-800/50">
-                    <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">{language === 'th' ? 'AI วิเคราะห์' : 'AI Analysis'}</div>
-                    <div className="text-[10px] text-slate-500 dark:text-slate-400">Processing skills...</div>
-                  </div>
-                </motion.div>
-              </FadeIn>
-
-              {/* Floating Element: Bright Graph */}
-              <FadeIn delay={1.2} className="absolute z-20 bottom-[10%] left-[5%]">
-                <motion.div
-                  animate={{ y: [0, 15, 0] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: "easeInOut", delay: 0.5 }}
-                  className="w-48 p-4 rounded-3xl bg-white/80 border border-slate-100 dark:border-slate-800 backdrop-blur-xl shadow-xl dark:bg-slate-900/50"
-                >
-                  <div className="flex justify-between items-center mb-3">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Growth</span>
-                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                  </div>
-                  <div className="flex justify-between items-end h-10 gap-1 px-1">
-                    {[30, 45, 60, 40, 80, 55, 90, 100].map((h, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${h}%` }}
-                        transition={{ duration: 1, delay: 1.5 + (i * 0.1) }}
-                        className="w-full bg-blue-500/20 hover:bg-blue-500 rounded-sm relative group cursor-pointer transition-colors"
-                      >
-                        <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 bg-slate-800 text-white text-[10px] px-2 py-0.5 rounded font-bold transition-all z-50 shadow-sm">
-                          {h}
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </motion.div>
-              </FadeIn>
-
-            </div>
-
-          </div>
         </div>
 
-        {/* Soft Blend to next section */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-b from-transparent to-slate-50 dark:to-slate-950 pointer-events-none z-20"></div>
+        {/* Faded bottom gradient for transition */}
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-[#f8fafc] dark:to-slate-950 pointer-events-none z-20"></div>
       </section>
       <section id="features" className="py-40 bg-[#f8fafc] dark:bg-slate-950 relative overflow-hidden font-sans border-t border-slate-100 dark:border-slate-800">
         {/* Ethereal Floating Orbs & Fine Grid */}

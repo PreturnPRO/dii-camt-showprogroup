@@ -15,10 +15,52 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { mockStudent } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
+import type { Student } from '@/types';
+
+const emptyStudent: Student = {
+  id: '',
+  email: '',
+  name: '',
+  nameThai: '',
+  role: 'student',
+  createdAt: new Date(),
+  isActive: true,
+  studentId: '',
+  major: '',
+  program: 'bachelor',
+  year: 1,
+  semester: 1,
+  academicYear: '',
+  gpa: 0,
+  gpax: 0,
+  totalCredits: 0,
+  earnedCredits: 0,
+  requiredCredits: 0,
+  academicStatus: 'normal',
+  skills: [],
+  activities: [],
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  badges: [],
+  dataConsent: {
+    studentId: '',
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: 'private',
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
+  timeline: [],
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -34,7 +76,7 @@ export default function Portfolio() {
   const { user } = useAuth();
   const { t } = useLanguage();
   const [activeTab, setActiveTab] = React.useState('projects');
-  const [student, setStudent] = React.useState(mockStudent);
+  const [student, setStudent] = React.useState<Student>(emptyStudent);
   const [isProjectDialogOpen, setIsProjectDialogOpen] = React.useState(false);
   const [projectForm, setProjectForm] = React.useState({
     title: '',
@@ -51,7 +93,7 @@ export default function Portfolio() {
     Promise.allSettled([api.students.profile(), api.students.stats()])
       .then(([profileResult, statsResult]) => {
         if (!mounted) return;
-        let nextStudent = mockStudent;
+        let nextStudent = emptyStudent;
         if (profileResult.status === 'fulfilled') {
           nextStudent = mapStudent(profileResult.value.profile);
         }

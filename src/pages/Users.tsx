@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,6 +53,13 @@ export default function UsersPage() {
         size?: string;
         website?: string;
         address?: string;
+        locationMapUrl?: string;
+        productsServices?: string;
+        contactPersonName?: string;
+        contactPersonRole?: string;
+        contactPersonEmail?: string;
+        contactPersonPhone?: string;
+        socialMedia?: string;
         [key: string]: unknown;
     };
 
@@ -76,6 +84,13 @@ export default function UsersPage() {
         size: string;
         website: string;
         address: string;
+        locationMapUrl: string;
+        productsServices: string;
+        contactPersonName: string;
+        contactPersonRole: string;
+        contactPersonEmail: string;
+        contactPersonPhone: string;
+        socialMedia: string;
     };
 
     const emptyForm: UserFormData = {
@@ -99,6 +114,13 @@ export default function UsersPage() {
         size: 'small',
         website: '',
         address: '',
+        locationMapUrl: '',
+        productsServices: '',
+        contactPersonName: '',
+        contactPersonRole: 'HR / Company Coordinator',
+        contactPersonEmail: '',
+        contactPersonPhone: '',
+        socialMedia: '',
     };
 
     const getRoleText = React.useCallback((role: UserType) => {
@@ -161,6 +183,13 @@ export default function UsersPage() {
             size: asString(companyProfile.size),
             website: asString(companyProfile.website),
             address: asString(companyProfile.address),
+            locationMapUrl: asString(companyProfile.locationMapUrl),
+            productsServices: asString(companyProfile.productsServices),
+            contactPersonName: asString(companyProfile.contactPersonName),
+            contactPersonRole: asString(companyProfile.contactPersonRole),
+            contactPersonEmail: asString(companyProfile.contactPersonEmail),
+            contactPersonPhone: asString(companyProfile.contactPersonPhone),
+            socialMedia: asString(companyProfile.socialMedia),
             studentProfile,
             lecturerProfile,
             staffProfile,
@@ -220,6 +249,13 @@ export default function UsersPage() {
             size: user.size || 'small',
             website: user.website || '',
             address: user.address || '',
+            locationMapUrl: user.locationMapUrl || '',
+            productsServices: user.productsServices || '',
+            contactPersonName: user.contactPersonName || '',
+            contactPersonRole: user.contactPersonRole || 'HR / Company Coordinator',
+            contactPersonEmail: user.contactPersonEmail || user.email || '',
+            contactPersonPhone: user.contactPersonPhone || user.phone || '',
+            socialMedia: user.socialMedia || '',
         });
         setIsDialogOpen(true);
     };
@@ -270,6 +306,15 @@ export default function UsersPage() {
             size: formData.size,
             website: formData.website || undefined,
             address: formData.address || undefined,
+            locationMapUrl: formData.locationMapUrl || undefined,
+            productsServices: formData.productsServices || undefined,
+            contactPersonName: formData.contactPersonName || undefined,
+            contactPersonRole: formData.contactPersonRole || undefined,
+            contactPersonEmail: formData.contactPersonEmail || formData.email || undefined,
+            contactPersonPhone: formData.contactPersonPhone || undefined,
+            socialMedia: formData.socialMedia || undefined,
+            onboardingStatus: 'pending_review',
+            privacyProtocolAcceptedAt: new Date().toISOString(),
         };
     };
 
@@ -642,6 +687,38 @@ export default function UsersPage() {
                                 <div className="space-y-2">
                                     <Label>ที่อยู่</Label>
                                     <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Location map URL</Label>
+                                    <Input value={formData.locationMapUrl} onChange={(e) => setFormData({ ...formData, locationMapUrl: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Products / Services / Digital Industry</Label>
+                                    <Textarea value={formData.productsServices} onChange={(e) => setFormData({ ...formData, productsServices: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Coordinator / HR Name</Label>
+                                        <Input value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Role</Label>
+                                        <Input value={formData.contactPersonRole} onChange={(e) => setFormData({ ...formData, contactPersonRole: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Email</Label>
+                                        <Input value={formData.contactPersonEmail} onChange={(e) => setFormData({ ...formData, contactPersonEmail: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Phone</Label>
+                                        <Input value={formData.contactPersonPhone} onChange={(e) => setFormData({ ...formData, contactPersonPhone: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Social / Line / Facebook</Label>
+                                    <Input value={formData.socialMedia} onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })} />
                                 </div>
                             </>
                         )}

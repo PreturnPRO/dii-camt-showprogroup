@@ -69,6 +69,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
   const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
+  const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
   const [showNotifications, setShowNotifications] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
@@ -332,37 +333,41 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                 
                 <DropdownMenuSeparator className="my-2 bg-slate-100 dark:bg-slate-800" />
                 
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="rounded-xl cursor-pointer py-3 focus:bg-slate-100/80 transition-colors">
-                    <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mr-3 dark:text-slate-300">
-                      <Users className="h-4 w-4" />
-                    </div>
-                    <span className="font-bold text-slate-700 dark:text-slate-300">{t.header?.switchRole || 'Switch Account'}</span>
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="p-2 rounded-2xl shadow-xl border-white/60 dark:border-slate-800/60 bg-white/90 backdrop-blur-2xl dark:bg-slate-900/50">
-                      {(
-                        [
-                          { label: 'Student Portal', value: 'student' },
-                          { label: 'Lecturer Portal', value: 'lecturer' },
-                          { label: 'Staff Portal', value: 'staff' },
-                          { label: 'Company Portal', value: 'company' },
-                          { label: 'Admin Root', value: 'admin' },
-                        ] as const
-                      ).map(({ label, value }) => (
-                        <DropdownMenuItem
-                          key={value}
-                          onClick={() => switchRole(value)}
-                          className="rounded-xl cursor-pointer py-2.5 font-bold text-slate-600 dark:text-slate-400 focus:bg-indigo-50 focus:text-indigo-700 transition-colors"
-                        >
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-                
-                <DropdownMenuSeparator className="my-2 bg-slate-100 dark:bg-slate-800" />
+                {demoAccountsEnabled && (
+                  <>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="rounded-xl cursor-pointer py-3 focus:bg-slate-100/80 transition-colors">
+                        <div className="w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 flex items-center justify-center mr-3 dark:text-slate-300">
+                          <Users className="h-4 w-4" />
+                        </div>
+                        <span className="font-bold text-slate-700 dark:text-slate-300">{t.header?.switchRole || 'Switch Account'}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="p-2 rounded-2xl shadow-xl border-white/60 dark:border-slate-800/60 bg-white/90 backdrop-blur-2xl dark:bg-slate-900/50">
+                          {(
+                            [
+                              { label: 'Student Portal', value: 'student' },
+                              { label: 'Lecturer Portal', value: 'lecturer' },
+                              { label: 'Staff Portal', value: 'staff' },
+                              { label: 'Company Portal', value: 'company' },
+                              { label: 'Admin Root', value: 'admin' },
+                            ] as const
+                          ).map(({ label, value }) => (
+                            <DropdownMenuItem
+                              key={value}
+                              onClick={() => switchRole(value)}
+                              className="rounded-xl cursor-pointer py-2.5 font-bold text-slate-600 dark:text-slate-400 focus:bg-indigo-50 focus:text-indigo-700 transition-colors"
+                            >
+                              {label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    
+                    <DropdownMenuSeparator className="my-2 bg-slate-100 dark:bg-slate-800" />
+                  </>
+                )}
                 
                 <DropdownMenuItem
                   onClick={handleLogout}
