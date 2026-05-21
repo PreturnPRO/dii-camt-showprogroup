@@ -117,7 +117,7 @@ npm run backend:seed
 - `narin@showpro.local`
 - `talent@northernsoft.local`
 - `alice@student.showpro.local`
-
+//ถึงตรงนี้ 2/5/2569
 ## 5. รันระบบบนเครื่อง
 
 เปิด backend:
