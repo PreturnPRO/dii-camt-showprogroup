@@ -169,6 +169,7 @@ export interface Course {
   name: string;
   nameThai: string;
   credits: number;
+  status?: 'draft' | 'pending' | 'active' | 'archived';
 
   // Academic period
   semester: number; // 1, 2, 3 (summer)

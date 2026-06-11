@@ -39,12 +39,14 @@ type CourseFormState = {
   minStudents: string;
   description: string;
   syllabus: string;
+  status: string;
 };
 
 type LecturerOption = {
   id: string;
   lecturerId: string;
   name: string;
+  userId: string;
 };
 
 type ImportCoursePayload = {
@@ -144,7 +146,7 @@ export default function Courses() {
   }, [user?.role]);
 
   React.useEffect(() => {
-    if (user?.role !== 'staff' && user?.role !== 'admin') return;
+    if (user?.role !== 'staff' && user?.role !== 'admin' && user?.role !== 'lecturer') return;
     let mounted = true;
 
     api.lecturers
@@ -158,6 +160,7 @@ export default function Courses() {
             id: asString(source.id),
             lecturerId: asString(source.lecturerId),
             name: asString(lecturerUser.nameThai, asString(lecturerUser.name, asString(source.lecturerId))),
+            userId: asString(lecturerUser.id),
           };
         }).filter((lecturer) => lecturer.id);
         setLecturers(nextLecturers);
@@ -173,17 +176,19 @@ export default function Courses() {
     };
   }, [user?.role]);
 
+  const visibleCourses = user?.role === 'student' ? courses.filter(c => c.status === 'active') : courses;
+
   const filteredCourses = searchQuery
-    ? courses.filter(c =>
+    ? visibleCourses.filter(c =>
       c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.nameThai?.toLowerCase().includes(searchQuery.toLowerCase())
     )
-    : courses;
+    : visibleCourses;
   const registrationMatches = React.useMemo(() => {
     const q = registrationQuery.trim().toLowerCase();
     if (!q) return [];
-    return courses.filter((course) => (
+    return visibleCourses.filter((course) => (
       course.enrolledStudents.length < course.maxStudents &&
       (
         course.code?.toLowerCase().includes(q) ||
@@ -191,8 +196,8 @@ export default function Courses() {
         course.nameThai?.toLowerCase().includes(q)
       )
     ));
-  }, [courses, registrationQuery]);
-  const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
+  }, [visibleCourses, registrationQuery]);
+  const totalCredits = visibleCourses.reduce((sum, course) => sum + course.credits, 0);
   const creditProgress = Math.min((totalCredits / 22) * 100, 100);
 
   const handleRegistrationSearch = () => {
@@ -219,11 +224,18 @@ export default function Courses() {
       minStudents: String(course.minStudents),
       description: course.description || '',
       syllabus: course.syllabus || '',
+      status: course.status || 'active',
     });
   };
 
   const openNewCourseEditor = () => {
     setEditingCourse(null);
+    let defaultLecturerId = importLecturerId || lecturers[0]?.id || '';
+    if (user?.role === 'lecturer') {
+      const myProfile = lecturers.find(l => l.userId === user?.id);
+      if (myProfile) defaultLecturerId = myProfile.id;
+    }
+
     setCourseForm({
       code: '',
       name: '',
@@ -232,11 +244,12 @@ export default function Courses() {
       semester: '1',
       academicYear: String(new Date().getFullYear() + 543),
       year: '1',
-      lecturerId: importLecturerId || lecturers[0]?.id || '',
+      lecturerId: defaultLecturerId,
       maxStudents: '30',
       minStudents: '0',
       description: '',
       syllabus: '',
+      status: user?.role === 'lecturer' ? 'pending' : 'active',
     });
   };
 
@@ -265,6 +278,7 @@ export default function Courses() {
         minStudents: Number(courseForm.minStudents),
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
+        status: courseForm.status,
       };
       const response = editingCourse
         ? await api.courses.update(editingCourse.id, payload)
@@ -460,7 +474,7 @@ export default function Courses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-lecturer">{language === 'th' ? 'ผู้สอน' : 'Instructor'}</Label>
-              <Select value={courseForm.lecturerId} onValueChange={(value) => updateCourseForm('lecturerId', value)}>
+              <Select disabled={user?.role === 'lecturer'} value={courseForm.lecturerId} onValueChange={(value) => updateCourseForm('lecturerId', value)}>
                 <SelectTrigger id="course-lecturer">
                   <SelectValue placeholder={language === 'th' ? 'เลือกผู้สอน' : 'Choose instructor'} />
                 </SelectTrigger>
@@ -481,6 +495,22 @@ export default function Courses() {
               <Label htmlFor="course-syllabus">Syllabus</Label>
               <Textarea id="course-syllabus" value={courseForm.syllabus} onChange={(event) => updateCourseForm('syllabus', event.target.value)} />
             </div>
+            {(user?.role === 'staff' || user?.role === 'admin') && (
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="course-status">{language === 'th' ? 'สถานะรายวิชา' : 'Course Status'}</Label>
+                <Select value={courseForm.status} onValueChange={(value) => updateCourseForm('status', value)}>
+                  <SelectTrigger id="course-status">
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">{language === 'th' ? 'เปิดสอน (Active)' : 'Active'}</SelectItem>
+                    <SelectItem value="pending">{language === 'th' ? 'รออนุมัติ (Pending)' : 'Pending'}</SelectItem>
+                    <SelectItem value="draft">{language === 'th' ? 'แบบร่าง (Draft)' : 'Draft'}</SelectItem>
+                    <SelectItem value="archived">{language === 'th' ? 'ปิดรายวิชา (Archived)' : 'Archived'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
           </div>
         )}
         <DialogFooter>
@@ -788,6 +818,11 @@ export default function Courses() {
               {t.coursesPage.manageCourses}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.coursesPage.manageCoursesHighlight}</span>
             </motion.h1>
           </div>
+          <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
+            <Button onClick={openNewCourseEditor} size="lg" className="rounded-2xl px-8 bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 h-12 font-bold transform active:scale-95 transition-all">
+              <Plus className="w-5 h-5 mr-2" /> {language === 'th' ? 'เสนอรายวิชาใหม่' : 'New Course Request'}
+            </Button>
+          </motion.div>
         </div>
 
         {isLoading && (
@@ -806,7 +841,11 @@ export default function Courses() {
           {filteredCourses.map((course) => (
             <motion.div variants={itemVariants} key={course.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all dark:bg-slate-900">
               <div className="flex justify-between items-start mb-4">
-                <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0 dark:text-slate-300 dark:bg-slate-800">{course.code}</Badge>
+                <div className="flex gap-2">
+                  <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0 dark:text-slate-300 dark:bg-slate-800">{course.code}</Badge>
+                  {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending</Badge>}
+                  {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
+                </div>
                 <Button variant="ghost" size="icon" className="-mr-2 -mt-2" onClick={() => openCourseEditor(course)}>
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
@@ -959,8 +998,11 @@ export default function Courses() {
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-2">
+                    <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-0 dark:text-slate-300 dark:bg-slate-800">{course.code}</Badge>
+                      {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending Approval</Badge>}
+                      {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
+                      {course.status === 'archived' && <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-0">Archived</Badge>}
                       <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:border-slate-700 dark:bg-slate-900/50">
                         {language === 'th' ? `${course.credits} หน่วยกิต` : `${course.credits} credits`}
                       </Badge>
