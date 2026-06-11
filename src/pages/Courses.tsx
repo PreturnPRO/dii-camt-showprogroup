@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import {
   BookOpen, Users, Calendar, MapPin, Filter, Search,
   GraduationCap, Clock, AlertCircle, ChevronRight,
-  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download
+  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download, Trash2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,10 @@ type CourseFormState = {
   description: string;
   syllabus: string;
   status: string;
+  room: string;
+  scheduleDays: string[];
+  scheduleStartTime: string;
+  scheduleEndTime: string;
 };
 
 type LecturerOption = {
@@ -225,6 +229,10 @@ export default function Courses() {
       description: course.description || '',
       syllabus: course.syllabus || '',
       status: course.status || 'active',
+      room: course.room || '',
+      scheduleDays: course.schedule?.map(s => s.day) || [],
+      scheduleStartTime: course.schedule?.[0]?.startTime || '09:00',
+      scheduleEndTime: course.schedule?.[0]?.endTime || '12:00',
     });
   };
 
@@ -250,10 +258,14 @@ export default function Courses() {
       description: '',
       syllabus: '',
       status: user?.role === 'lecturer' ? 'pending' : 'active',
+      room: '',
+      scheduleDays: [],
+      scheduleStartTime: '09:00',
+      scheduleEndTime: '12:00',
     });
   };
 
-  const updateCourseForm = (field: keyof CourseFormState, value: string) => {
+  const updateCourseForm = <K extends keyof CourseFormState>(field: K, value: CourseFormState[K]) => {
     setCourseForm((current) => current ? { ...current, [field]: value } : current);
   };
 
@@ -279,6 +291,13 @@ export default function Courses() {
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
         status: courseForm.status,
+        room: courseForm.room.trim(),
+        schedule: courseForm.scheduleDays.map(day => ({
+          day,
+          startTime: courseForm.scheduleStartTime,
+          endTime: courseForm.scheduleEndTime,
+          type: 'lecture',
+        })),
       };
       const response = editingCourse
         ? await api.courses.update(editingCourse.id, payload)
@@ -295,6 +314,22 @@ export default function Courses() {
       toast.error(language === 'th' ? 'บันทึกรายวิชาไม่สำเร็จ' : 'Unable to save course');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const deleteCourse = async (id: string) => {
+    if (!window.confirm(language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบรายวิชานี้? (ข้อมูลจะถูกลบถาวร)' : 'Are you sure you want to delete this course? (This action is permanent)')) {
+      return;
+    }
+    try {
+      await api.courses.delete(id);
+      setCourses((current) => current.filter((course) => course.id !== id));
+      toast.success(language === 'th' ? 'ลบรายวิชาแล้ว' : 'Course deleted');
+      setEditingCourse(null);
+      setCourseForm(null);
+    } catch (error) {
+      console.error('Unable to delete course', error);
+      toast.error(language === 'th' ? 'ลบรายวิชาไม่สำเร็จ' : 'Unable to delete course');
     }
   };
 
@@ -431,15 +466,19 @@ export default function Courses() {
         setCourseForm(null);
       }
     }}>
-      <DialogContent className="max-w-2xl dark:border-slate-800">
-        <DialogHeader>
-          <DialogTitle>{editingCourse ? (language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course') : (language === 'th' ? 'เพิ่มรายวิชา' : 'Add course')}</DialogTitle>
-          <DialogDescription>
-            {editingCourse ? `${editingCourse.code} ${editingCourse.name}` : (language === 'th' ? 'กรอกรายละเอียดรายวิชาใหม่' : 'Enter the new course details')}
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl bg-white/90 backdrop-blur-2xl p-0 overflow-hidden gap-0 rounded-[2.5rem] border-white/50 shadow-2xl dark:bg-slate-900/50 dark:border-slate-800">
+        <div className="p-6 md:p-8 bg-slate-900 text-white relative overflow-hidden shrink-0">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold tracking-tight text-white">{editingCourse ? (language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course') : (language === 'th' ? 'เพิ่มรายวิชา' : 'Add course')}</DialogTitle>
+            <DialogDescription className="text-slate-400">
+              {editingCourse ? `${editingCourse.code} ${editingCourse.name}` : (language === 'th' ? 'กรอกรายละเอียดรายวิชาใหม่' : 'Enter the new course details')}
+            </DialogDescription>
+          </DialogHeader>
+        </div>
         {courseForm && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-6 md:p-8 space-y-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="course-code">{language === 'th' ? 'รหัสวิชา' : 'Code'}</Label>
               <Input id="course-code" value={courseForm.code} onChange={(event) => updateCourseForm('code', event.target.value)} />
@@ -487,7 +526,60 @@ export default function Courses() {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="space-y-2 md:col-span-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">{language === 'th' ? 'วันเวลาและสถานที่เรียน' : 'Schedule & Room'}</h3>
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              <Label>{language === 'th' ? 'วันที่เรียน (เลือกได้หลายวัน หรือไม่เลือกเพื่อเป็น TBA)' : 'Days (Select multiple, or none for TBA)'}</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {[
+                  { id: 'monday', th: 'จันทร์', en: 'Mon' },
+                  { id: 'tuesday', th: 'อังคาร', en: 'Tue' },
+                  { id: 'wednesday', th: 'พุธ', en: 'Wed' },
+                  { id: 'thursday', th: 'พฤหัสฯ', en: 'Thu' },
+                  { id: 'friday', th: 'ศุกร์', en: 'Fri' },
+                  { id: 'saturday', th: 'เสาร์', en: 'Sat' },
+                  { id: 'sunday', th: 'อาทิตย์', en: 'Sun' }
+                ].map((day) => {
+                  const isSelected = courseForm.scheduleDays.includes(day.id);
+                  return (
+                    <button
+                      key={day.id}
+                      type="button"
+                      onClick={() => {
+                        const newDays = isSelected
+                          ? courseForm.scheduleDays.filter(d => d !== day.id)
+                          : [...courseForm.scheduleDays, day.id];
+                        updateCourseForm('scheduleDays', newDays);
+                      }}
+                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border ${
+                        isSelected
+                          ? 'bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                          : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
+                      }`}
+                    >
+                      {language === 'th' ? day.th : day.en}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="space-y-2 flex gap-2">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="course-time-start">{language === 'th' ? 'เวลาเริ่ม' : 'Start Time'}</Label>
+                <Input id="course-time-start" type="time" value={courseForm.scheduleStartTime} onChange={(event) => updateCourseForm('scheduleStartTime', event.target.value)} />
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="course-time-end">{language === 'th' ? 'เวลาสิ้นสุด' : 'End Time'}</Label>
+                <Input id="course-time-end" type="time" value={courseForm.scheduleEndTime} onChange={(event) => updateCourseForm('scheduleEndTime', event.target.value)} />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="course-room">{language === 'th' ? 'ห้องเรียน' : 'Room Location'}</Label>
+              <Input id="course-room" placeholder="Ex. CAMT 113" value={courseForm.room} onChange={(event) => updateCourseForm('room', event.target.value)} />
+            </div>
+
+            <div className="md:col-span-2 space-y-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
               <Label htmlFor="course-description">{language === 'th' ? 'คำอธิบายรายวิชา' : 'Description'}</Label>
               <Textarea id="course-description" value={courseForm.description} onChange={(event) => updateCourseForm('description', event.target.value)} />
             </div>
@@ -511,16 +603,28 @@ export default function Courses() {
                 </Select>
               </div>
             )}
+            </div>
           </div>
         )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => { setEditingCourse(null); setCourseForm(null); }} disabled={isSaving}>
-            {language === 'th' ? 'ยกเลิก' : 'Cancel'}
-          </Button>
-          <Button onClick={saveCourse} disabled={isSaving || !courseForm}>
-            {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึก' : 'Save')}
-          </Button>
-        </DialogFooter>
+        <div className="p-6 md:p-8 pt-4 md:pt-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-100 dark:border-slate-800 shrink-0">
+          <DialogFooter className="flex justify-between sm:justify-between w-full">
+          <div>
+            {editingCourse && (
+              <Button variant="destructive" onClick={() => deleteCourse(editingCourse.id)} disabled={isSaving}>
+                {language === 'th' ? 'ลบรายวิชา' : 'Delete'}
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => { setEditingCourse(null); setCourseForm(null); }} disabled={isSaving}>
+              {language === 'th' ? 'ยกเลิก' : 'Cancel'}
+            </Button>
+            <Button onClick={saveCourse} disabled={isSaving || !courseForm}>
+              {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึก' : 'Save')}
+            </Button>
+          </div>
+          </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );
@@ -856,9 +960,14 @@ export default function Courses() {
                 <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.studentsRegistered}</span>
                 <span className="font-bold text-slate-900 dark:text-slate-200">{course.enrolledStudents.length} {t.coursesPage.studentsCount}</span>
               </div>
-              <Button className="mt-5 w-full rounded-xl" variant="outline" onClick={() => openCourseEditor(course)}>
-                {language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course'}
-              </Button>
+              <div className="flex gap-2 mt-5">
+                <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => openCourseEditor(course)}>
+                  {language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course'}
+                </Button>
+                <Button className="rounded-xl px-3" variant="destructive" onClick={() => deleteCourse(course.id)}>
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </motion.div>
           ))}
         </div>
@@ -1041,6 +1150,12 @@ export default function Courses() {
                     <div className="text-xs text-slate-500 dark:text-slate-400">{language === 'th' ? 'สถานะ' : 'Status'}</div>
                     <div className="font-semibold text-emerald-700 dark:text-slate-300">{language === 'th' ? 'เปิดใช้งาน' : 'Active'}</div>
                   </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <Button variant="ghost" className="w-full text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl" onClick={() => deleteCourse(course.id)}>
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    {language === 'th' ? 'ลบรายวิชา' : 'Delete course'}
+                  </Button>
                 </div>
               </div>
             </motion.div>

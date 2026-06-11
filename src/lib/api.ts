@@ -445,6 +445,10 @@ export const api = {
         method: "PATCH",
         body: payload,
       }),
+    delete: (id: string) =>
+      request<ApiEnvelope<{ message: string }>>(`/courses/${id}`, {
+        method: "DELETE",
+      }),
     lecturerSchedule: (lecturerId?: string) =>
       request<ApiEnvelope<{ lecturer: unknown; schedule: unknown[] }>>(
         `/courses/lecturer/schedule${lecturerId ? `?lecturerId=${encodeURIComponent(lecturerId)}` : ""}`,

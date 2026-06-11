@@ -39,8 +39,10 @@ const courseCreateSchema = z.object({
   learningOutcomes: z.array(z.string()).default([]),
   syllabus: z.string().optional(),
   schedule: z.any().optional(),
+  room: z.string().optional(),
+  status: z.string().optional(),
   maxStudents: z.coerce.number().int().positive().default(60),
-  minStudents: z.coerce.number().int().positive().default(1),
+  minStudents: z.coerce.number().int().nonnegative().default(0),
   sections: z
     .array(
       z.object({
@@ -228,9 +230,10 @@ router.get(
 router.post(
   "/courses",
   requireAuth,
-  checkRole([Role.STAFF, Role.ADMIN]),
+  checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
   validate(courseCreateSchema),
   asyncHandler(async (req, res) => {
+    const currentUser = requireUser(req);
     const sections = await prepareCourseSections(req.body.sections);
     const course = await prisma.course.create({
       data: {
@@ -247,6 +250,8 @@ router.post(
         learningOutcomes: req.body.learningOutcomes,
         syllabus: req.body.syllabus,
         schedule: req.body.schedule,
+        room: req.body.room,
+        status: req.body.status || (currentUser.role === Role.LECTURER ? "pending" : "active"),
         maxStudents: req.body.maxStudents,
         minStudents: req.body.minStudents,
         sections: {
@@ -339,6 +344,8 @@ router.patch(
           learningOutcomes: req.body.learningOutcomes,
           syllabus: req.body.syllabus,
           schedule: req.body.schedule,
+          room: req.body.room,
+          status: req.body.status,
           maxStudents: req.body.maxStudents,
           minStudents: req.body.minStudents,
           sections: sections
@@ -997,6 +1004,38 @@ router.patch(
     res.json({
       success: true,
       assignment,
+    });
+  }),
+);
+
+router.delete(
+  "/courses/:id",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
+  asyncHandler(async (req, res) => {
+    const currentUser = requireUser(req);
+    const existing = await prisma.course.findUnique({
+      where: { id: String(req.params.id) },
+      include: { lecturer: true },
+    });
+
+    if (!existing) {
+      throw new AppError(404, "Course not found");
+    }
+
+    if (currentUser.role === Role.LECTURER) {
+      if (existing.lecturer?.userId !== currentUser.id) {
+        throw new AppError(403, "You can only delete your own courses");
+      }
+    }
+
+    await prisma.course.delete({
+      where: { id: existing.id },
+    });
+
+    res.json({
+      success: true,
+      message: "Course deleted successfully",
     });
   }),
 );

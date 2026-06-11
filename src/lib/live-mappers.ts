@@ -400,6 +400,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
       asString(lecturerUser.name, fallback.lecturerName),
     ),
     status: asString(source.status, fallback.status ?? "active") as any,
+    room: asString(source.room, fallback.room ?? ""),
     description: asString(source.description, fallback.description ?? ""),
     prerequisites: asArray<string>(source.prerequisites),
     learningOutcomes: asArray<string>(source.learningOutcomes),

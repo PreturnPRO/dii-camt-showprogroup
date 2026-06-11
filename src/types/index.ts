@@ -189,6 +189,7 @@ export interface Course {
 
   // Schedule
   schedule: Schedule[];
+  room?: string;
 
   // Enrollment
   enrolledStudents: string[]; // Student IDs
