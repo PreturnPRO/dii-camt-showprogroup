@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   LayoutDashboard,
   BookOpen,
@@ -17,13 +17,11 @@ import {
   UserCog,
   Shield,
   Bell,
-  Folder,
   X,
   DollarSign,
   Search,
   Clock,
   Building,
-  Command,
   Swords,
   Target,
 } from 'lucide-react';
@@ -132,6 +130,17 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
   }
 };
 
+const getRoleAccent = (role: UserRole) => {
+  switch (role) {
+    case 'student':  return { dot: 'bg-blue-500',   active: 'bg-blue-600 text-white',   init: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
+    case 'lecturer': return { dot: 'bg-emerald-500', active: 'bg-emerald-600 text-white', init: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' };
+    case 'staff':    return { dot: 'bg-purple-500',  active: 'bg-purple-600 text-white',  init: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' };
+    case 'company':  return { dot: 'bg-amber-500',   active: 'bg-amber-600 text-white',   init: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' };
+    case 'admin':    return { dot: 'bg-red-500',     active: 'bg-red-600 text-white',     init: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' };
+    default:         return { dot: 'bg-slate-500',   active: 'bg-slate-700 text-white',   init: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' };
+  }
+};
+
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
@@ -140,60 +149,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   if (!user) return null;
 
   const navItems = getNavItems(user.role, t.nav as unknown as Record<string, string>);
-
-  const getRoleGradient = (role: UserRole) => {
-    switch (role) {
-      case 'student': return 'from-blue-500 to-indigo-600';
-      case 'lecturer': return 'from-emerald-500 to-teal-600';
-      case 'staff': return 'from-purple-500 to-fuchsia-600';
-      case 'company': return 'from-orange-500 to-amber-600';
-      case 'admin': return 'from-red-500 to-rose-600';
-      default: return 'from-blue-500 to-indigo-600';
-    }
-  };
-
-  const getRoleActiveScheme = (role: UserRole) => {
-    switch (role) {
-      case 'student': return {
-        bg: 'bg-blue-600',
-        shadow: 'shadow-blue-500/25',
-        gradient: 'from-blue-600 to-indigo-600',
-        textHover: 'group-hover:text-blue-400'
-      };
-      case 'lecturer': return {
-        bg: 'bg-emerald-600',
-        shadow: 'shadow-emerald-500/25',
-        gradient: 'from-emerald-600 to-teal-600',
-        textHover: 'group-hover:text-emerald-400'
-      };
-      case 'staff': return {
-        bg: 'bg-purple-600',
-        shadow: 'shadow-purple-500/25',
-        gradient: 'from-purple-600 to-fuchsia-600',
-        textHover: 'group-hover:text-purple-400'
-      };
-      case 'company': return {
-        bg: 'bg-orange-600',
-        shadow: 'shadow-orange-500/25',
-        gradient: 'from-orange-600 to-amber-600',
-        textHover: 'group-hover:text-orange-400'
-      };
-      case 'admin': return {
-        bg: 'bg-red-600',
-        shadow: 'shadow-red-500/25',
-        gradient: 'from-red-600 to-rose-600',
-        textHover: 'group-hover:text-red-400'
-      };
-      default: return {
-        bg: 'bg-blue-600',
-        shadow: 'shadow-blue-500/25',
-        gradient: 'from-blue-600 to-indigo-600',
-        textHover: 'group-hover:text-blue-400'
-      };
-    }
-  };
-
-  const activeScheme = getRoleActiveScheme(user.role);
+  const accent = getRoleAccent(user.role);
+  const initials = user.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '??';
 
   return (
     <>
@@ -204,45 +161,40 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-sm md:hidden"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar - Premium Dark Glass */}
+      {/* Sidebar */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 h-[100dvh] min-h-[100dvh] max-h-[100dvh] w-72 shrink-0 self-start bg-slate-900 text-white shadow-2xl transition-transform duration-300 md:sticky md:inset-auto md:top-0 md:translate-x-0 border-r border-white/5 flex flex-col overflow-hidden",
+          "fixed inset-y-0 left-0 z-50 h-[100dvh] w-64 shrink-0 self-start flex flex-col",
+          "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800",
+          "transition-transform duration-300 md:sticky md:inset-auto md:top-0 md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        {/* Background Effects */}
-        <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-64 h-64 bg-white/5 rounded-full blur-[100px] -translate-x-1/2 -translate-y-1/2 opacity-20 dark:bg-slate-900/50" />
-          <div className="absolute bottom-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-[100px] translate-x-1/2 translate-y-1/2 opacity-20 dark:bg-slate-900/50" />
-        </div>
-
         {/* Header */}
-        <div className="relative z-10 flex items-center justify-between p-6 border-b border-white/5 shrink-0">
-          <Link to="/dashboard" className="flex items-center gap-4 group">
-            <div className={cn("w-12 h-12 rounded-2xl bg-gradient-to-br flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300 relative overflow-hidden", getRoleGradient(user.role))}>
-              <div className="absolute inset-0 bg-white/10 blur-xl dark:bg-slate-900/50"></div>
-              <Command className="w-6 h-6 text-white relative z-10" />
+        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
+          <Link to="/dashboard" className="flex items-center gap-2.5 group">
+            <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center shrink-0">
+              <span className="text-[9px] font-bold text-white dark:text-slate-900">SP</span>
             </div>
             <div>
-              <h2 className={`font-bold text-lg tracking-tight transition-colors ${activeScheme.textHover}`}>ShowPro</h2>
-              <p className="text-xs text-slate-400 font-medium tracking-wide">Ecosystem v2.0</p>
+              <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">ShowPro</div>
+              <div className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight capitalize">{user.role}</div>
             </div>
           </Link>
-          <Button variant="ghost" size="icon" className="md:hidden text-slate-400 hover:text-white" onClick={onClose}>
-            <X className="h-5 w-5" />
+          <Button variant="ghost" size="icon" className="md:hidden w-8 h-8 text-slate-400 hover:text-slate-900 dark:hover:text-white" onClick={onClose}>
+            <X className="h-4 w-4" />
           </Button>
         </div>
 
         {/* Navigation */}
-        <ScrollArea className="relative z-10 flex-1 min-h-0 py-6 px-4">
-          <nav className="space-y-1.5 pb-3">
+        <ScrollArea className="flex-1 min-h-0 py-3 px-3">
+          <nav className="space-y-0.5">
             {navItems.map((item) => {
               const isActive = location.pathname === item.href;
               return (
@@ -251,32 +203,18 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                   to={item.href}
                   onClick={onClose}
                   className={cn(
-                    "relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-300 group overflow-hidden",
+                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
                     isActive
-                      ? `${activeScheme.bg} text-white shadow-lg ${activeScheme.shadow}`
-                      : "text-slate-400 hover:text-white hover:bg-white/5"
+                      ? `${accent.active}`
+                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
                   )}
                 >
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeNav"
-                      className={`absolute inset-0 bg-gradient-to-r ${activeScheme.gradient} opacity-100`}
-                      initial={false}
-                      transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    />
-                  )}
-
-                  <span className="relative z-10 flex items-center gap-3">
-                    <item.icon className={cn("h-5 w-5 transition-transform duration-300", isActive ? "scale-110" : "group-hover:scale-110")} />
-                    <span className="font-medium tracking-wide">{item.label}</span>
-                  </span>
-
+                  <item.icon className="h-4 w-4 shrink-0" />
+                  <span className="font-medium truncate">{item.label}</span>
                   {item.badge && (
                     <span className={cn(
-                      "relative z-10 ml-auto px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded-full",
-                      isActive
-                        ? "bg-white/20 text-white"
-                        : "bg-slate-800 text-slate-300 group-hover:bg-slate-700"
+                      "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
+                      isActive ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
                     )}>
                       {item.badge}
                     </span>
@@ -287,17 +225,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </nav>
         </ScrollArea>
 
-        {/* User Profile Mini - Fixed at Bottom */}
-        <div className="relative z-10 p-4 border-t border-white/5 bg-slate-900/50 backdrop-blur-md shrink-0 mt-auto">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50">
-            <div className="flex items-center gap-3">
-              <div className={cn("w-10 h-10 rounded-full bg-gradient-to-tr border-2 border-slate-700 shadow-md", getRoleGradient(user.role))} />
-              <div className="flex-1 min-w-0">
-                <div className={`text-sm font-bold text-white truncate group-hover:text-blue-400 transition-colors`}>{user.name}</div>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className={cn("w-2 h-2 rounded-full animate-pulse", activeScheme.bg)} />
-                  <div className="text-xs text-slate-400 truncate capitalize">{user.role} Account</div>
-                </div>
+        {/* User Profile */}
+        <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 p-3">
+          <div className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer">
+            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", accent.init)}>
+              {initials}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</div>
+              <div className="flex items-center gap-1.5">
+                <div className={cn("w-1.5 h-1.5 rounded-full", accent.dot)} />
+                <div className="text-xs text-slate-400 dark:text-slate-500 capitalize">{user.role}</div>
               </div>
             </div>
           </div>

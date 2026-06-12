@@ -2,399 +2,405 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Building2, User, Mail, Lock, CheckCircle, ArrowRight, ArrowLeft, BookOpen, UserCog, Globe } from 'lucide-react';
+import { GraduationCap, Building2, BookOpen, UserCog, Globe, ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ApiError } from '@/lib/api';
 
 export default function RegisterPage() {
-    const { t, language, toggleLanguage } = useLanguage();
-    const navigate = useNavigate();
-    const { login, register } = useAuth();
-    const [step, setStep] = useState(1);
-    const [role, setRole] = useState<'student' | 'company' | 'lecturer' | 'staff' | 'enterprise' | null>(null);
-    const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-    const [enterpriseData, setEnterpriseData] = useState({ taxId: '', website: '', industry: '', regBlock: '' });
-    const [isSubmitting, setIsSubmitting] = useState(false);
+  const { t, language, toggleLanguage } = useLanguage();
+  const navigate = useNavigate();
+  const { login, register } = useAuth();
+  const [step, setStep] = useState(1);
+  const [role, setRole] = useState<'student' | 'company' | 'lecturer' | 'staff' | 'enterprise' | null>(null);
+  const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
+  const [enterpriseData, setEnterpriseData] = useState({ taxId: '', website: '', industry: '', regBlock: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-    const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
-        setRole(selectedRole);
-        setStep(2);
+  const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
+    setRole(selectedRole);
+    setStep(2);
+  };
+
+  const buildProfile = () => {
+    const timestamp = Date.now().toString().slice(-6);
+
+    if (role === 'student') {
+      return {
+        studentId: `STU${timestamp}`,
+        major: 'Digital Industry Integration',
+        program: 'bachelor',
+        year: 1,
+        semester: 1,
+        academicYear: '2569',
+        allowDataSharing: false,
+        allowPortfolioSharing: false,
+      };
+    }
+
+    if (role === 'lecturer') {
+      return {
+        lecturerId: `LEC${timestamp}`,
+        department: 'Digital Industry Integration',
+        position: 'instructor',
+        specialization: [],
+        researchInterests: [],
+      };
+    }
+
+    if (role === 'staff') {
+      return {
+        staffId: `STA${timestamp}`,
+        department: 'DII Office',
+        position: 'Staff',
+        permissions: ['students', 'courses', 'reports'],
+        canManageUsers: true,
+        canManageCourses: true,
+        canManageSchedules: true,
+        canViewReports: true,
+        canManageInternships: true,
+      };
+    }
+
+    return {
+      companyId: `COM${timestamp}`,
+      companyName: formData.name,
+      companyNameThai: formData.name,
+      industry: enterpriseData.industry || 'Technology',
+      size: role === 'enterprise' ? 'enterprise' : 'small',
+      website: enterpriseData.website || undefined,
+      address: enterpriseData.regBlock || undefined,
+      taxId: enterpriseData.taxId || undefined,
+      internshipSlots: 0,
     };
+  };
 
-    const buildProfile = () => {
-        const timestamp = Date.now().toString().slice(-6);
-        const baseId = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8) || timestamp;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (formData.password !== formData.confirmPassword) {
+      toast.error(t.register.passwordMismatch);
+      return;
+    }
+    if (role === 'enterprise') {
+      if (!enterpriseData.taxId || !enterpriseData.website || !enterpriseData.industry || !enterpriseData.regBlock) {
+        toast.error('Please fill all enterprise validation fields.');
+        return;
+      }
+    }
+    if (!role) {
+      toast.error(t.register.chooseAccountType);
+      return;
+    }
 
-        if (role === 'student') {
-            return {
-                studentId: `STU${timestamp}`,
-                major: 'Digital Industry Integration',
-                program: 'bachelor',
-                year: 1,
-                semester: 1,
-                academicYear: '2569',
-                allowDataSharing: false,
-                allowPortfolioSharing: false,
-            };
-        }
-
-        if (role === 'lecturer') {
-            return {
-                lecturerId: `LEC${timestamp}`,
-                department: 'Digital Industry Integration',
-                position: 'instructor',
-                specialization: [],
-                researchInterests: [],
-            };
-        }
-
-        if (role === 'staff') {
-            return {
-                staffId: `STA${timestamp}`,
-                department: 'DII Office',
-                position: 'Staff',
-                permissions: ['students', 'courses', 'reports'],
-                canManageUsers: true,
-                canManageCourses: true,
-                canManageSchedules: true,
-                canViewReports: true,
-                canManageInternships: true,
-            };
-        }
-
-        return {
-            companyId: `COM${timestamp}`,
-            companyName: formData.name,
-            companyNameThai: formData.name,
-            industry: enterpriseData.industry || 'Technology',
-            size: role === 'enterprise' ? 'enterprise' : 'small',
-            website: enterpriseData.website || undefined,
-            address: enterpriseData.regBlock || undefined,
-            taxId: enterpriseData.taxId || undefined,
-            internshipSlots: 0,
-        };
-    };
-
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (formData.password !== formData.confirmPassword) {
-            toast.error(t.register.passwordMismatch);
-            return;
-        }
-
-        if (role === 'enterprise') {
-            if (!enterpriseData.taxId || !enterpriseData.website || !enterpriseData.industry || !enterpriseData.regBlock) {
-                toast.error("Please fill all enterprise validation fields.");
-                return;
-            }
-        }
-
-        if (!role) {
-            toast.error(t.register.chooseAccountType);
-            return;
-        }
-
-        setIsSubmitting(true);
+    setIsSubmitting(true);
+    try {
+      await register({
+        email: formData.email,
+        password: formData.password,
+        name: formData.name,
+        nameThai: formData.name,
+        role: role === 'enterprise' ? 'company' : role,
+        profile: buildProfile(),
+      });
+      toast.success(t.register.registerSuccess);
+      navigate('/dashboard');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
         try {
-            await register({
-                email: formData.email,
-                password: formData.password,
-                name: formData.name,
-                nameThai: formData.name,
-                role: role === 'enterprise' ? 'company' : role,
-                profile: buildProfile(),
-            });
-            toast.success(t.register.registerSuccess);
-            navigate('/dashboard');
-        } catch (error) {
-            if (error instanceof ApiError && error.status === 409) {
-                try {
-                    await login(formData.email, formData.password);
-                    toast.success(t.login.loginSuccess);
-                    navigate('/dashboard');
-                    return;
-                } catch {
-                    toast.error('อีเมลนี้สมัครไว้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านเดิม หรือใช้เมนูลืมรหัสผ่าน');
-                    return;
-                }
-            }
-            toast.error(error instanceof Error ? error.message : t.register.pleaseLogin);
-        } finally {
-            setIsSubmitting(false);
+          await login(formData.email, formData.password);
+          toast.success(t.login.loginSuccess);
+          navigate('/dashboard');
+          return;
+        } catch {
+          toast.error('อีเมลนี้สมัครไว้แล้ว กรุณาเข้าสู่ระบบด้วยรหัสผ่านเดิม หรือใช้เมนูลืมรหัสผ่าน');
+          return;
         }
-    };
+      }
+      toast.error(error instanceof Error ? error.message : t.register.pleaseLogin);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
-    return (
+  const roleOptions = [
+    {
+      id: 'student' as const,
+      icon: GraduationCap,
+      label: t.roles.student,
+      desc: t.register.studentDesc,
+      accent: 'blue',
+    },
+    {
+      id: 'lecturer' as const,
+      icon: BookOpen,
+      label: t.roles.lecturer,
+      desc: t.register.lecturerDesc,
+      accent: 'emerald',
+    },
+    {
+      id: 'staff' as const,
+      icon: UserCog,
+      label: t.roles.staff,
+      desc: t.register.staffDesc,
+      accent: 'purple',
+    },
+    {
+      id: 'company' as const,
+      icon: Building2,
+      label: t.register.companyOrg,
+      desc: t.register.companyDesc,
+      accent: 'amber',
+    },
+    {
+      id: 'enterprise' as const,
+      icon: Building2,
+      label: 'Enterprise Entity',
+      desc: 'Exclusive registration for VIP / Enterprise partners.',
+      accent: 'slate',
+    },
+  ];
 
-        <div className="min-h-screen flex font-sans bg-white dark:bg-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden dark:text-slate-200">
-            {/* Left Side: Information - Premium Dark */}
-            <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-between p-12">
-                <div className="absolute inset-0 z-0">
-                    <img
-                        src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=2070&auto=format&fit=crop"
-                        alt="Team"
-                        className="w-full h-full object-cover opacity-20 mix-blend-overlay"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
-                    {/* Animated particles */}
-                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
-                </div>
+  const accentClasses: Record<string, { icon: string; border: string }> = {
+    blue:    { icon: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',    border: 'border-blue-500' },
+    emerald: { icon: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500' },
+    purple:  { icon: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', border: 'border-purple-500' },
+    amber:   { icon: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',  border: 'border-amber-500' },
+    slate:   { icon: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',   border: 'border-slate-500' },
+  };
 
-                <div className="relative z-10 w-full max-w-lg mx-auto">
-                    <Link to="/" className="inline-block p-3 bg-white dark:bg-slate-900/10 rounded-2xl mb-8 backdrop-blur-sm border border-white/10 hover:bg-white dark:bg-slate-900/20 transition-colors">
-                        <ArrowLeft className="w-6 h-6 text-white" />
-                    </Link>
-                    <motion.h1
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="text-4xl font-bold mb-6 text-white leading-tight"
-                    >
-                        {t.register.startJourney}<br />
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">{t.register.successWithDII}</span>
-                    </motion.h1>
-                    <motion.p
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 }}
-                        className="text-slate-300 text-lg leading-relaxed mb-12"
-                    >
-                        {t.register.journeyDesc}
-                    </motion.p>
+  return (
+    <div className="min-h-screen flex font-sans bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
 
-                    <div className="space-y-6">
-                        {[
-                            { text: t.register.feature1, color: 'text-emerald-400' },
-                            { text: t.register.feature2, color: 'text-blue-400' },
-                            { text: t.register.feature3, color: 'text-purple-400' }
-                        ].map((item, i) => (
-                            <motion.div
-                                key={i}
-                                initial={{ opacity: 0, x: -20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                transition={{ delay: 0.2 + (i * 0.1) }}
-                                className="flex items-center gap-4 text-slate-300 bg-white dark:bg-slate-900/5 p-4 rounded-xl border border-white/5"
-                            >
-                                <CheckCircle className={`w-6 h-6 ${item.color}`} />
-                                <span className="font-medium">{item.text}</span>
-                            </motion.div>
-                        ))}
-                    </div>
-                </div>
+      {/* Left panel */}
+      <div className="hidden lg:flex w-5/12 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col justify-between p-12">
+        <div>
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-12">
+            <ArrowLeft className="w-4 h-4" />
+            {language === 'th' ? 'กลับหน้าแรก' : 'Back to home'}
+          </Link>
 
-                <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
-                    © 2026 ShowPro. All rights reserved.
-                </div>
+          <div className="flex items-center gap-2.5 mb-10">
+            <div className="w-8 h-8 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center">
+              <span className="text-[10px] font-bold text-white dark:text-slate-900">SP</span>
             </div>
+            <span className="font-bold text-lg text-slate-900 dark:text-white">ShowPro</span>
+          </div>
 
-            {/* Right Side: Form */}
-            <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative bg-slate-50 dark:bg-slate-900">
-                {/* Language Toggle */}
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={toggleLanguage}
-                    className="absolute top-6 right-6 z-20 font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 gap-1.5 rounded-full dark:bg-slate-800"
-                >
-                    <Globe className="h-4 w-4" />
-                    {language === 'th' ? 'EN' : 'TH'}
-                </Button>
-                <div className="absolute inset-0 bg-white dark:bg-slate-900/40 backdrop-blur-3xl z-0"></div>
-                {/* Background blobs */}
-                <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-emerald-100 dark:bg-emerald-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-                <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white leading-tight mb-3 tracking-tight">
+            {t.register.startJourney}
+          </h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-10 max-w-xs">
+            {t.register.journeyDesc}
+          </p>
 
-                <div className="w-full max-w-md relative z-10 bg-white dark:bg-slate-900/80 p-6 md:p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-white dark:border-slate-800 min-h-[600px] flex flex-col justify-center">
-                    <AnimatePresence mode="wait">
-                        {step === 1 ? (
-                            <motion.div
-                                key="step1"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-8"
-                            >
-                                <div className="text-center">
-                                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{t.register.chooseAccountType}</h2>
-                                    <p className="text-slate-500 dark:text-slate-400">{t.register.whatRoleQuestion}</p>
-                                </div>
-
-                                <div className="grid gap-4">
-                                    <Card
-                                        className="p-5 cursor-pointer hover:border-blue-500 hover:shadow-xl hover:shadow-blue-500/10 transition-all group border-2 border-slate-100 dark:border-slate-800 hover:scale-[1.02] bg-white dark:bg-slate-900"
-                                        onClick={() => handleRoleSelect('student')}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300 dark:bg-slate-800">
-                                                <GraduationCap className="w-6 h-6 text-blue-600 group-hover:text-white dark:text-slate-300" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900 dark:text-white text-lg group-hover:text-blue-600 transition-colors">{t.roles.student}</h3>
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm">{t.register.studentDesc}</p>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-blue-500 group-hover:translate-x-1 transition-all dark:text-slate-400" />
-                                        </div>
-                                    </Card>
-
-                                    <Card
-                                        className="p-5 cursor-pointer hover:border-orange-500 hover:shadow-xl hover:shadow-orange-500/10 transition-all group border-2 border-slate-100 dark:border-slate-800 hover:scale-[1.02] bg-white dark:bg-slate-900"
-                                        onClick={() => handleRoleSelect('company')}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-orange-100 dark:bg-orange-950/40 rounded-2xl flex items-center justify-center group-hover:bg-orange-600 group-hover:text-white transition-all duration-300">
-                                                <Building2 className="w-6 h-6 text-orange-600 group-hover:text-white dark:text-orange-400" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900 dark:text-white text-lg group-hover:text-orange-600 transition-colors">{t.register.companyOrg}</h3>
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm">{t.register.companyDesc}</p>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-orange-500 group-hover:translate-x-1 transition-all dark:text-slate-400" />
-                                        </div>
-                                    </Card>
-
-                                    <Card
-                                        className="p-5 cursor-pointer hover:border-emerald-500 hover:shadow-xl hover:shadow-emerald-500/10 transition-all group border-2 border-slate-100 dark:border-slate-800 hover:scale-[1.02] bg-white dark:bg-slate-900"
-                                        onClick={() => handleRoleSelect('lecturer')}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-emerald-100 rounded-2xl flex items-center justify-center group-hover:bg-emerald-600 group-hover:text-white transition-all duration-300 dark:bg-slate-800">
-                                                <BookOpen className="w-6 h-6 text-emerald-600 group-hover:text-white dark:text-slate-300" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900 dark:text-white text-lg group-hover:text-emerald-600 transition-colors">{t.roles.lecturer}</h3>
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm">{t.register.lecturerDesc}</p>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-emerald-500 group-hover:translate-x-1 transition-all dark:text-slate-400" />
-                                        </div>
-                                    </Card>
-
-                                    <Card
-                                        className="p-5 cursor-pointer hover:border-purple-500 hover:shadow-xl hover:shadow-purple-500/10 transition-all group border-2 border-slate-100 dark:border-slate-800 hover:scale-[1.02] bg-white dark:bg-slate-900"
-                                        onClick={() => handleRoleSelect('staff')}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center group-hover:bg-purple-600 group-hover:text-white transition-all duration-300 dark:bg-slate-800">
-                                                <UserCog className="w-6 h-6 text-purple-600 group-hover:text-white dark:text-slate-300" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-slate-900 dark:text-white text-lg group-hover:text-purple-600 transition-colors">{t.roles.staff}</h3>
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm">{t.register.staffDesc}</p>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-purple-500 group-hover:translate-x-1 transition-all dark:text-slate-400" />
-                                        </div>
-                                    </Card>
-
-                                    <Card
-                                        className="p-5 cursor-pointer hover:border-indigo-500 hover:shadow-xl hover:shadow-indigo-500/10 transition-all group border-2 border-indigo-100 dark:border-indigo-900 hover:scale-[1.02] bg-gradient-to-br from-indigo-50 to-white dark:from-slate-900 dark:to-slate-900"
-                                        onClick={() => handleRoleSelect('enterprise')}
-                                    >
-                                        <div className="flex items-center gap-4">
-                                            <div className="w-12 h-12 bg-indigo-100 dark:bg-indigo-950/40 rounded-2xl flex items-center justify-center group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-                                                <Building2 className="w-6 h-6 text-indigo-600 group-hover:text-white dark:text-indigo-400" />
-                                            </div>
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-indigo-900 dark:text-indigo-300 text-lg group-hover:text-indigo-600 transition-colors">Enterprise Entity</h3>
-                                                <p className="text-slate-500 dark:text-slate-400 text-sm">Exclusive registration for VIP / Enterprise partners.</p>
-                                            </div>
-                                            <ArrowRight className="w-5 h-5 text-slate-300 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all dark:text-slate-400" />
-                                        </div>
-                                    </Card>
-                                </div>
-
-                                <div className="text-center pt-4">
-                                    <Link to="/login" className="text-sm font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 transition-colors">{t.register.hasAccount} {t.register.loginNow}</Link>
-                                </div>
-                            </motion.div>
-                        ) : (
-                            <motion.div
-                                key="step2"
-                                initial={{ opacity: 0, x: 20 }}
-                                animate={{ opacity: 1, x: 0 }}
-                                exit={{ opacity: 0, x: -20 }}
-                                className="space-y-6"
-                            >
-                                <div>
-                                    <Button variant="ghost" className="pl-0 hover:bg-transparent text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:text-slate-100 mb-2 group" onClick={() => setStep(1)}>
-                                        <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" /> {t.common.back}
-                                    </Button>
-                                    <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 tracking-tight">{t.register.personalInfo}</h2>
-                                    <p className="text-slate-500 dark:text-slate-400">
-                                        {t.register.registerAs} <span className="font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg dark:text-slate-300 dark:bg-slate-800">
-                                            {role === 'student' ? t.roles.student :
-                                                role === 'company' ? t.roles.company :
-                                                    role === 'lecturer' ? t.roles.lecturer : 
-                                                        role === 'enterprise' ? 'Enterprise Entity' : t.roles.staff}
-                                        </span>
-                                    </p>
-                                </div>
-
-                                <form onSubmit={handleSubmit} className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label>{t.register.fullNameOrCompany}</Label>
-                                        <div className="relative group">
-                                            <User className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
-                                            <Input className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all" required value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>{t.register.email}</Label>
-                                        <div className="relative group">
-                                            <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
-                                            <Input type="email" className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all" required value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} />
-                                        </div>
-                                    </div>
-
-                                    {role === 'enterprise' && (
-                                        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                            <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">Enterprise Entity Details</h3>
-                                            <div className="space-y-2">
-                                                <Label>Company Registration Block</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Block A, 12th Floor..." value={enterpriseData.regBlock} onChange={e => setEnterpriseData({ ...enterpriseData, regBlock: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Tax ID</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="13-digit Tax ID" value={enterpriseData.taxId} onChange={e => setEnterpriseData({ ...enterpriseData, taxId: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Company Website Link</Label>
-                                                <Input type="url" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="https://www.example.com" value={enterpriseData.website} onChange={e => setEnterpriseData({ ...enterpriseData, website: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Industry</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Technology, Finance, Education..." value={enterpriseData.industry} onChange={e => setEnterpriseData({ ...enterpriseData, industry: e.target.value })} />
-                                            </div>
-                                        </div>
-                                    )}
-
-                                    <div className="space-y-2">
-                                        <Label>{t.register.password}</Label>
-                                        <div className="relative group">
-                                            <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
-                                            <Input type="password" className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all" required value={formData.password} onChange={e => setFormData({ ...formData, password: e.target.value })} />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>{t.register.confirmPassword}</Label>
-                                        <div className="relative group">
-                                            <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
-                                            <Input type="password" className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 rounded-xl transition-all" required value={formData.confirmPassword} onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })} />
-                                        </div>
-                                    </div>
-
-                                    <Button type="submit" disabled={isSubmitting} className="w-full h-12 text-lg font-semibold mt-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/30 rounded-xl transition-all hover:scale-[1.01] disabled:opacity-70">
-                                        {isSubmitting ? 'Signing up...' : t.register.registerButton}
-                                    </Button>
-                                </form>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-            </div>
+          <div className="space-y-3">
+            {[t.register.feature1, t.register.feature2, t.register.feature3].map((f, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-400">
+                <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0" />
+                <span>{f}</span>
+              </div>
+            ))}
+          </div>
         </div>
-    );
 
+        <p className="text-xs text-slate-400 dark:text-slate-500">
+          © {new Date().getFullYear()} ShowPro — DII CAMT, Chiang Mai University
+        </p>
+      </div>
+
+      {/* Right panel: form */}
+      <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-950 relative">
+        {/* top right controls */}
+        <div className="absolute top-6 right-6">
+          <button
+            onClick={toggleLanguage}
+            className="h-8 px-3 flex items-center gap-1.5 rounded-md text-sm text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium"
+          >
+            <Globe className="h-3.5 w-3.5" />
+            {language === 'th' ? 'EN' : 'TH'}
+          </button>
+        </div>
+
+        <div className="w-full max-w-md">
+          {/* Mobile logo */}
+          <div className="flex items-center gap-2 mb-8 lg:hidden">
+            <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center">
+              <span className="text-[9px] font-bold text-white dark:text-slate-900">SP</span>
+            </div>
+            <span className="font-bold text-slate-900 dark:text-white">ShowPro</span>
+          </div>
+
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.div
+                key="step1"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25 }}
+              >
+                <div className="mb-7">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.register.chooseAccountType}</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">{t.register.whatRoleQuestion}</p>
+                </div>
+
+                <div className="space-y-2">
+                  {roleOptions.map((opt) => {
+                    const ac = accentClasses[opt.accent];
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleRoleSelect(opt.id)}
+                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:${ac.border} hover:border-opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group`}
+                      >
+                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${ac.icon}`}>
+                          <opt.icon className="w-5 h-5" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-slate-900 dark:text-white">{opt.label}</div>
+                          <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{opt.desc}</div>
+                        </div>
+                        <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 shrink-0 transition-colors" />
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+                  {t.register.hasAccount}{' '}
+                  <Link to="/login" className="font-medium text-slate-900 dark:text-white hover:underline">
+                    {t.register.loginNow}
+                  </Link>
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="step2"
+                initial={{ opacity: 0, x: 16 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -16 }}
+                transition={{ duration: 0.25 }}
+              >
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6"
+                >
+                  <ArrowLeft className="w-4 h-4" /> {t.common.back}
+                </button>
+
+                <div className="mb-7">
+                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.register.personalInfo}</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400">
+                    {t.register.registerAs}{' '}
+                    <span className="font-medium text-slate-900 dark:text-white">
+                      {role === 'student'    ? t.roles.student
+                      : role === 'company'   ? t.roles.company
+                      : role === 'lecturer'  ? t.roles.lecturer
+                      : role === 'enterprise'? 'Enterprise'
+                      : t.roles.staff}
+                    </span>
+                  </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.fullNameOrCompany}</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
+                        required
+                        value={formData.name}
+                        onChange={e => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.email}</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="email"
+                        className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
+                        required
+                        value={formData.email}
+                        onChange={e => setFormData({ ...formData, email: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  {role === 'enterprise' && (
+                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Enterprise Details</p>
+                      {[
+                        { label: 'Company Registration Block', field: 'regBlock' as const, placeholder: 'e.g. Block A, 12th Floor...' },
+                        { label: 'Tax ID', field: 'taxId' as const, placeholder: '13-digit Tax ID' },
+                        { label: 'Company Website', field: 'website' as const, placeholder: 'https://www.example.com', type: 'url' },
+                        { label: 'Industry', field: 'industry' as const, placeholder: 'e.g. Technology, Finance...' },
+                      ].map(({ label, field, placeholder, type }) => (
+                        <div key={field} className="space-y-1.5">
+                          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</Label>
+                          <Input
+                            type={type || 'text'}
+                            className="h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
+                            placeholder={placeholder}
+                            required
+                            value={enterpriseData[field]}
+                            onChange={e => setEnterpriseData({ ...enterpriseData, [field]: e.target.value })}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.password}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="password"
+                        className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
+                        required
+                        value={formData.password}
+                        onChange={e => setFormData({ ...formData, password: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.confirmPassword}</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <Input
+                        type="password"
+                        className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
+                        required
+                        value={formData.confirmPassword}
+                        onChange={e => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="w-full h-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 rounded-md font-medium text-sm mt-2"
+                  >
+                    {isSubmitting && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                    {t.register.registerButton}
+                  </Button>
+                </form>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
 }
