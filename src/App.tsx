@@ -24,6 +24,7 @@ const Grades = lazy(() => import("./pages/Grades"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Internships = lazy(() => import("./pages/Internships"));
+const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const Requests = lazy(() => import("./pages/Requests"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -96,6 +97,7 @@ const App = () => (
                   {/* Student Routes */}
                   <Route path="/portfolio" element={<Portfolio />} />
                   <Route path="/internships" element={<Internships />} />
+                  <Route path="/application-history" element={<ApplicationHistory />} />
                   <Route path="/requests" element={<Requests />} />
                   <Route path="/training" element={<Training />} />
 

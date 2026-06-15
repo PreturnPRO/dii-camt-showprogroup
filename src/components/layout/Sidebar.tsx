@@ -60,6 +60,7 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Trophy, label: nav.activities, href: '/activities' },
         { icon: FileText, label: nav.portfolio, href: '/portfolio' },
         { icon: Briefcase, label: nav.internships, href: '/internships' },
+        { icon: Clock, label: nav.applicationHistory || 'ประวัติการสมัคร', href: '/application-history' },
         { icon: ClipboardList, label: nav.requests, href: '/requests' },
         // { icon: Swords, label: nav.training, href: '/training' }, // ปิดชั่วคราว
         { icon: MessageSquare, label: nav.messages, href: '/messages' },

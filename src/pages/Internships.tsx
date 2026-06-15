@@ -6,7 +6,7 @@ import {
   Briefcase, Building, MapPin, CheckCircle,
   DollarSign, Search, ExternalLink, Bookmark,
   ChevronRight, Globe, ArrowUpRight, Sparkles,
-  TrendingUp, Users, Share2, Clock
+  TrendingUp, Users, Share2, Clock, X
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,7 @@ const itemVariants = {
 
 export default function Internships() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedJobId, setSelectedJobId] = React.useState<string | null>(null);
@@ -221,7 +221,17 @@ export default function Internships() {
               <h3 className={`text-xl font-bold mb-1 tracking-tight relative z-10 ${selectedJob?.id === job.id ? 'text-white' : 'text-slate-900'}`}>{job.title}</h3>
               <p className={`text-sm mb-5 font-medium relative z-10 ${selectedJob?.id === job.id ? 'text-white/70' : 'text-slate-500'} dark:text-slate-400`}>{job.companyName}</p>
 
-              <div className="flex flex-wrap gap-2 relative z-10">
+              <div className="flex items-center gap-4 mb-3 relative z-10 text-sm">
+                <div className={`flex items-center gap-1 ${selectedJob?.id === job.id ? 'text-white/80' : 'text-slate-500'} dark:text-slate-400`}>
+                  <MapPin className="w-4 h-4" />
+                  <span className="truncate max-w-[120px]">{job.location}</span>
+                </div>
+                <div className={`flex items-center gap-1 ${selectedJob?.id === job.id ? 'text-white/80' : 'text-slate-500'} dark:text-slate-400`}>
+                  <Clock className="w-4 h-4" />
+                  <span>{new Date(job.deadline).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2 relative z-10 items-center">
                 <Badge variant="secondary" className={`rounded-lg px-2.5 py-0.5 border-0 ${selectedJob?.id === job.id ? 'bg-white/10 text-white' : 'bg-slate-100 text-slate-600'} dark:text-slate-400 dark:bg-slate-900/50`}>
                   {job.type === 'internship' ? t.internshipsPage.internshipTab : t.internshipsPage.coopTab}
                 </Badge>
@@ -234,7 +244,7 @@ export default function Internships() {
         </div>
 
         {/* Job Details Panel */}
-        <div className="hidden lg:col-span-7 lg:block bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white/80 shadow-sm overflow-hidden flex flex-col h-full relative dark:bg-slate-900/50">
+        <div className={`lg:col-span-7 bg-white/70 backdrop-blur-xl rounded-[2.5rem] border border-white/80 shadow-sm overflow-hidden flex flex-col h-full relative dark:bg-slate-900/50 ${selectedJobId ? 'fixed inset-4 z-50 lg:static lg:inset-auto shadow-2xl' : 'hidden lg:flex'}`}>
           <AnimatePresence mode="wait">
             {selectedJob ? (
               <motion.div
@@ -270,19 +280,23 @@ export default function Internships() {
                       <span className="text-indigo-600 dark:text-slate-300">{selectedJob.location}</span>
                     </div>
 
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-12">
+                    <Button className="lg:hidden absolute top-10 right-10 z-50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md rounded-full shadow-lg border border-slate-200 dark:border-slate-700" variant="outline" size="icon" onClick={() => setSelectedJobId(null)}>
+                       <X className="w-5 h-5 text-slate-700 dark:text-slate-300" />
+                    </Button>
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-12">
                       {[
                         { label: t.internshipsPage.jobType, value: selectedJob.type === 'internship' ? t.internshipsPage.internshipTab : t.internshipsPage.coopTab, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
                         { label: t.internshipsPage.locationLabel, value: selectedJob.workType || 'On-site', icon: MapPin, color: 'text-purple-600', bg: 'bg-purple-50' },
                         { label: t.internshipsPage.salary, value: selectedJob.salary || 'N/A', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                        { label: t.internshipsPage.duration, value: t.internshipsPage.durationValue, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' }
+                        { label: 'Positions', value: selectedJob.positions?.toString() || '1', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+                        { label: 'Deadline', value: new Date(selectedJob.deadline).toLocaleDateString(), icon: Clock, color: 'text-rose-600', bg: 'bg-rose-50' }
                       ].map((stat, i) => (
-                        <div key={i} className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm">
+                        <div key={i} className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm flex flex-col items-center text-center">
                           <div className={`w-8 h-8 rounded-lg ${stat.bg} ${stat.color} flex items-center justify-center mb-2`}>
                             <stat.icon className="w-4 h-4" />
                           </div>
                           <div className="text-slate-400 text-[10px] font-bold uppercase tracking-wider mb-0.5">{stat.label}</div>
-                          <div className="font-bold text-slate-900 dark:text-white text-sm">{stat.value}</div>
+                          <div className="font-bold text-slate-900 dark:text-white text-xs">{stat.value}</div>
                         </div>
                       ))}
                     </div>
@@ -293,23 +307,26 @@ export default function Internships() {
                           <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />
                           {t.internshipsPage.jobDescription}
                         </h3>
-                        <p className="text-slate-600 leading-relaxed whitespace-pre-line text-lg italic bg-slate-50/50 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 font-medium dark:text-slate-200 dark:bg-slate-900/50">
-                          "{selectedJob.description}"
-                        </p>
+                        <div className="text-slate-700 leading-relaxed whitespace-pre-line text-base bg-white dark:bg-slate-900 p-6 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm dark:text-slate-300 font-medium">
+                          {selectedJob.description || '-'}
+                        </div>
                       </section>
 
                       <section>
                         <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-6 tracking-tight flex items-center gap-3">
                           <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
-                          {t.internshipsPage.requirements}
+                          {t.internshipsPage.requirements} / Skills
                         </h3>
                         <div className="grid gap-3">
-                          {selectedJob.requirements?.map((req, i) => (
+                          {[...(selectedJob.preferredSkills || []), ...(selectedJob.requirements || [])].filter(Boolean).map((req, i) => (
                             <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-emerald-200 transition-colors shadow-sm">
                               <CheckCircle className="w-6 h-6 text-emerald-500 shrink-0 mt-0.5 dark:text-slate-400" />
                               <span className="text-slate-700 font-medium dark:text-slate-300">{req}</span>
                             </div>
                           ))}
+                          {[...(selectedJob.preferredSkills || []), ...(selectedJob.requirements || [])].filter(Boolean).length === 0 && (
+                             <div className="text-slate-500 italic p-4 text-center border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl">No specific skills required.</div>
+                          )}
                         </div>
                       </section>
                     </div>
@@ -323,10 +340,16 @@ export default function Internships() {
                   <Button variant="outline" size="lg" className="rounded-2xl h-14 px-8 border-slate-200 dark:border-slate-700 font-bold hover:bg-slate-50 dark:bg-slate-800">
                     <Globe className="w-5 h-5 mr-3" /> {t.internshipsPage.website}
                   </Button>
-                  <Button size="lg" onClick={handleApply} disabled={user?.role !== 'student'} className="rounded-2xl h-14 px-16 bg-slate-900 text-lg hover:bg-slate-800 shadow-2xl shadow-slate-900/40 font-bold tracking-tight transform active:scale-95 transition-all">
-                    {t.internshipsPage.applyNow}
-                    <ChevronRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  {(() => {
+                    const hasApplied = selectedJob.applicants?.some(app => (app as any).studentId === user?.id || (app as any).userId === user?.id);
+                    return (
+                      <Button size="lg" onClick={handleApply} disabled={user?.role !== 'student' || hasApplied} className={`rounded-2xl h-14 px-16 text-lg shadow-2xl font-bold tracking-tight transform active:scale-95 transition-all ${hasApplied ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/40' : 'bg-slate-900 hover:bg-slate-800 text-white shadow-slate-900/40'}`}>
+                        {hasApplied ? (language === 'th' ? 'สมัครแล้ว' : 'Applied') : t.internshipsPage.applyNow}
+                        {!hasApplied && <ChevronRight className="w-5 h-5 ml-2" />}
+                        {hasApplied && <CheckCircle className="w-5 h-5 ml-2" />}
+                      </Button>
+                    );
+                  })()}
                 </div>
               </motion.div>
             ) : (
