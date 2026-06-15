@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -35,6 +36,13 @@ export default function JobPostings() {
     const isCompany = user?.role === 'company';
     const canManage = isAdmin || isCompany;
 
+    const canManageJob = React.useCallback((job: JobPosting) => {
+        if (isAdmin) return true;
+        const companyProfileId = (user?.raw as any)?.companyProfile?.id;
+        if (isCompany && companyProfileId === job.companyId) return true;
+        return false;
+    }, [isAdmin, isCompany, user]);
+
     const [jobs, setJobs] = useState<JobPosting[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -42,12 +50,21 @@ export default function JobPostings() {
     const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
     const [formData, setFormData] = useState<{
         title: string;
+        description: string;
         type: JobPosting['type'];
         location: string;
         salary: string;
         positions: number;
+        priority: string;
         deadline: string; // yyyy-mm-dd
-    }>({ title: '', type: 'full-time', location: '', salary: '', positions: 1, deadline: '' });
+        skills: { name: string; level: string }[];
+    }>({ title: '', description: '', type: 'full-time', location: '', salary: '', positions: 1, priority: 'medium', deadline: '', skills: [{ name: '', level: 'beginner' }] });
+
+    const companyProfile = (user?.raw as any)?.companyProfile;
+    const internshipSlots = companyProfile?.internshipSlots || 0;
+    const currentInterns = companyProfile?.currentInterns || 0;
+    const availableSlots = Math.max(0, internshipSlots - currentInterns);
+    const isExceedingQuota = isCompany && formData.positions > availableSlots;
 
     const mapJob = React.useCallback((item: unknown, index = 0): JobPosting => mapLiveJob(item, index), []);
 
@@ -75,19 +92,23 @@ export default function JobPostings() {
 
     const handleAdd = () => {
         setEditingJob(null);
-        setFormData({ title: '', type: 'full-time', location: 'Chiang Mai', salary: '20,000+', positions: 1, deadline: new Date().toISOString().split('T')[0] });
+        setFormData({ title: '', description: '', type: 'full-time', location: 'Chiang Mai', salary: '20,000+', positions: 1, priority: 'medium', deadline: new Date().toISOString().split('T')[0], skills: [{ name: '', level: 'beginner' }] });
         setIsDialogOpen(true);
     };
 
     const handleEdit = (job: JobPosting) => {
         setEditingJob(job);
+        const combinedSkills = [...job.preferredSkills, ...job.requirements].filter(Boolean);
         setFormData({
             title: job.title,
+            description: job.description || '',
             type: job.type,
             location: job.location,
             salary: job.salary || '',
             positions: job.positions,
-            deadline: new Date(job.deadline).toISOString().split('T')[0]
+            priority: job.status === 'closed' ? 'low' : 'medium',
+            deadline: new Date(job.deadline).toISOString().split('T')[0],
+            skills: combinedSkills.length ? combinedSkills.map(s => ({ name: s, level: 'intermediate' })) : [{ name: '', level: 'beginner' }]
         });
         setIsDialogOpen(true);
     };
@@ -108,16 +129,16 @@ export default function JobPostings() {
         title: formData.title,
         type: formData.type,
         positions: formData.positions,
-        description: formData.title,
+        description: formData.description || formData.title,
         responsibilities: [],
-        requirements: [],
-        preferredSkills: [],
+        requirements: formData.skills.map(s => s.name).filter(Boolean),
+        preferredSkills: formData.skills.map(s => s.name).filter(Boolean),
         salary: formData.salary,
         benefits: [],
         location: formData.location,
         workType: 'hybrid',
         deadline: new Date(formData.deadline).toISOString(),
-        status: 'open',
+        status: formData.priority === 'low' ? 'closed' : 'open',
     });
 
     const handleSave = async () => {
@@ -314,9 +335,9 @@ export default function JobPostings() {
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button size="sm" variant="outline" onClick={() => setSelectedJob(job)}><Eye className="w-4 h-4 mr-1" />{language === 'th' ? 'รายละเอียด' : 'Details'}</Button>
-                                                <Button size="sm" variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
-                                                {canManage && (
+                                                {canManageJob(job) && (
                                                     <>
+                                                        <Button size="sm" variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
                                                         <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
                                                         <Button size="sm" variant="ghost" className="text-red-600 dark:text-slate-300" onClick={() => handleDelete(job.id)}><Trash2 className="w-4 h-4" /></Button>
                                                     </>
@@ -343,15 +364,19 @@ export default function JobPostings() {
 
             {/* Job Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[500px]">
+                <DialogContent className="sm:max-w-[600px]">
                     <DialogHeader>
                         <DialogTitle>{editingJob ? t.jobPostings.editJob : t.jobPostings.addNew}</DialogTitle>
                         <DialogDescription>{t.jobPostings.fillDetails}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-4 py-4">
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.jobTitle}</Label>
                             <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{language === 'th' ? 'คำอธิบาย' : 'Description'}</Label>
+                            <Textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
@@ -367,12 +392,30 @@ export default function JobPostings() {
                             </div>
                             <div className="grid gap-2">
                                 <Label>{t.jobPostings.positions} ({t.jobPostings.positionsUnit})</Label>
-                                <Input type="number" value={formData.positions} onChange={e => setFormData({ ...formData, positions: parseInt(e.target.value) })} />
+                                <Input type="number" min="1" max={isCompany ? availableSlots : undefined} value={formData.positions} onChange={e => setFormData({ ...formData, positions: parseInt(e.target.value) || 1 })} className={isExceedingQuota ? 'border-red-500' : ''} />
+                                {isCompany && (
+                                    <p className={`text-xs ${isExceedingQuota ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
+                                        {language === 'th' ? `โควตาที่รับได้: ${availableSlots} ตำแหน่ง` : `Available quota: ${availableSlots} positions`}
+                                    </p>
+                                )}
                             </div>
                         </div>
-                        <div className="grid gap-2">
-                            <Label>{t.jobPostings.location}</Label>
-                            <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>{t.jobPostings.location}</Label>
+                                <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{language === 'th' ? 'ลำดับความสำคัญ (สถานะ)' : 'Priority (Status)'}</Label>
+                                <Select value={formData.priority} onValueChange={v => setFormData({ ...formData, priority: v })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="high">{language === 'th' ? 'สูง (เปิดรับ)' : 'High (Open)'}</SelectItem>
+                                        <SelectItem value="medium">{language === 'th' ? 'ปานกลาง (เปิดรับ)' : 'Medium (Open)'}</SelectItem>
+                                        <SelectItem value="low">{language === 'th' ? 'ต่ำ (ปิดรับ)' : 'Low (Closed)'}</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.salary}</Label>
@@ -382,10 +425,50 @@ export default function JobPostings() {
                             <Label>{t.jobPostings.deadline}</Label>
                             <Input type="date" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
                         </div>
+                        <div className="grid gap-2">
+                            <div className="flex items-center justify-between mb-2">
+                                <Label>{language === 'th' ? 'ทักษะที่ต้องการ' : 'Required Skills'}</Label>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setFormData(prev => ({ ...prev, skills: [...prev.skills, { name: '', level: 'beginner' }] }))} className="gap-1">
+                                    <Plus className="w-3.5 h-3.5" /> {language === 'th' ? 'เพิ่มทักษะ' : 'Add Skill'}
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                {formData.skills.map((skill, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <Input className="flex-1" placeholder={language === 'th' ? 'ชื่อทักษะ' : 'Skill name'} value={skill.name}
+                                            onChange={e => {
+                                                const skills = [...formData.skills];
+                                                skills[i].name = e.target.value;
+                                                setFormData(prev => ({ ...prev, skills }));
+                                            }} />
+                                        <Select value={skill.level} onValueChange={v => {
+                                            const skills = [...formData.skills];
+                                            skills[i].level = v;
+                                            setFormData(prev => ({ ...prev, skills }));
+                                        }}>
+                                            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="beginner">{language === 'th' ? 'เริ่มต้น' : 'Beginner'}</SelectItem>
+                                                <SelectItem value="intermediate">{language === 'th' ? 'ปานกลาง' : 'Intermediate'}</SelectItem>
+                                                <SelectItem value="advanced">{language === 'th' ? 'สูง' : 'Advanced'}</SelectItem>
+                                                <SelectItem value="expert">{language === 'th' ? 'เชี่ยวชาญ' : 'Expert'}</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {formData.skills.length > 1 && (
+                                            <Button type="button" variant="ghost" size="sm" className="text-red-500 dark:text-slate-400" onClick={() => {
+                                                setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
+                                            }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t.common.cancel}</Button>
-                        <Button onClick={handleSave} className="bg-orange-500 hover:bg-orange-600">
+                        <Button onClick={handleSave} disabled={isExceedingQuota} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed">
                             <Save className="w-4 h-4 mr-2" />{t.common.save}
                         </Button>
                     </DialogFooter>
@@ -434,8 +517,12 @@ export default function JobPostings() {
                                 </div>
                             </div>
                             <DialogFooter>
-                                <Button variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
-                                {canManage && <Button onClick={() => { handleEdit(selectedJob); setSelectedJob(null); }}>{t.jobPostings.editJob}</Button>}
+                                {canManageJob(selectedJob) && (
+                                    <>
+                                        <Button variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
+                                        <Button onClick={() => { handleEdit(selectedJob); setSelectedJob(null); }}>{t.jobPostings.editJob}</Button>
+                                    </>
+                                )}
                             </DialogFooter>
                         </>
                     )}

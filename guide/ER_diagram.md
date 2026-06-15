@@ -25,6 +25,7 @@ Enum FileVisibility {
 // Users & Core Profiles
 // ==========================
 Table User {
+  Note: 'ข้อมูลบัญชีผู้ใช้งานระบบทั้งหมด (Login credentials & Core info)'
   id String [primary key]
   email String [unique]
   passwordHash String
@@ -40,6 +41,7 @@ Table User {
 }
 
 Table StudentProfile {
+  Note: 'ข้อมูลส่วนตัวและประวัติการศึกษาของนักศึกษา'
   id String [primary key]
   userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
   studentId String [unique, note: 'รหัสนักศึกษา เช่น 64061xxxx (Business Key)']
@@ -65,6 +67,7 @@ Table StudentProfile {
 }
 
 Table LecturerProfile {
+  Note: 'ข้อมูลอาจารย์และความเชี่ยวชาญ'
   id String [primary key]
   userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
   lecturerId String [unique, note: 'รหัสประจำตัวอาจารย์ (Business Key)']
@@ -77,6 +80,7 @@ Table LecturerProfile {
 }
 
 Table StaffProfile {
+  Note: 'ข้อมูลเจ้าหน้าที่และสิทธิ์การจัดการระบบ'
   id String [primary key]
   userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
   staffId String [unique, note: 'รหัสประจำตัวเจ้าหน้าที่ (Business Key)']
@@ -93,6 +97,7 @@ Table StaffProfile {
 }
 
 Table CompanyProfile {
+  Note: 'ข้อมูลสถานประกอบการและบริษัทที่เข้าร่วม'
   id String [primary key]
   userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
   companyId String [unique, note: 'เลขทะเบียนหรือรหัสบริษัท (Business Key)']
@@ -121,6 +126,7 @@ Table CompanyProfile {
 }
 
 Table AdminProfile {
+  Note: 'ข้อมูลผู้ดูแลระบบและสิทธิ์การใช้งานขั้นสูง'
   id String [primary key]
   userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
   adminId String [unique, note: 'รหัสประจำตัวแอดมิน (Business Key)']
@@ -134,6 +140,7 @@ Table AdminProfile {
 // Academic & Courses
 // ==========================
 Table Course {
+  Note: 'ข้อมูลรายวิชาที่เปิดสอนในหลักสูตร'
   id String [primary key]
   code String [unique]
   name String
@@ -157,6 +164,7 @@ Table Course {
 }
 
 Table Section {
+  Note: 'ตอนเรียน (กลุ่มเรียน) ของแต่ละรายวิชา'
   id String [primary key]
   courseId String
   number String
@@ -167,6 +175,7 @@ Table Section {
 }
 
 Table Enrollment {
+  Note: 'การลงทะเบียนเรียนของนักศึกษาในแต่ละวิชา (เก็บเกรดและคะแนน)'
   id String [primary key]
   studentId String [note: 'อ้างอิง StudentProfile.id (Foreign Key ไม่ใช่รหัสนักศึกษา)']
   courseId String
@@ -187,6 +196,7 @@ Table Enrollment {
 }
 
 Table AttendanceRecord {
+  Note: 'บันทึกการเช็คชื่อเข้าเรียน'
   id String [primary key]
   enrollmentId String
   date DateTime
@@ -195,6 +205,7 @@ Table AttendanceRecord {
 }
 
 Table Assignment {
+  Note: 'งานหรือการบ้านที่สั่งในรายวิชา'
   id String [primary key]
   courseId String
   title String
@@ -208,6 +219,7 @@ Table Assignment {
 }
 
 Table Submission {
+  Note: 'การส่งงานของนักศึกษาและคะแนนที่ได้'
   id String [primary key]
   assignmentId String
   studentId String
@@ -219,6 +231,7 @@ Table Submission {
 }
 
 Table CourseMaterial {
+  Note: 'เอกสารประกอบการเรียนการสอน'
   id String [primary key]
   courseId String
   title String
@@ -229,6 +242,7 @@ Table CourseMaterial {
 }
 
 Table GradeHistory {
+  Note: 'ประวัติการแก้ไขหรือเปลี่ยนแปลงเกรด'
   id String [primary key]
   enrollmentId String
   modifiedBy String
@@ -242,6 +256,7 @@ Table GradeHistory {
 // Skills & Portfolio
 // ==========================
 Table Skill {
+  Note: 'คลังทักษะ (Skills Dictionary) ของระบบ'
   id String [primary key]
   name String [unique]
   category String
@@ -250,6 +265,7 @@ Table Skill {
 }
 
 Table StudentSkill {
+  Note: 'ระดับทักษะที่นักศึกษาแต่ละคนมี'
   id String [primary key]
   studentId String
   skillId String
@@ -260,6 +276,7 @@ Table StudentSkill {
 }
 
 Table Portfolio {
+  Note: 'หน้าพอร์ตโฟลิโอรวมของนักศึกษา'
   id String [primary key]
   studentId String [unique]
   summary String
@@ -273,6 +290,7 @@ Table Portfolio {
 }
 
 Table Project {
+  Note: 'ผลงานหรือโปรเจกต์ในพอร์ตโฟลิโอ'
   id String [primary key]
   portfolioId String
   title String
@@ -287,6 +305,7 @@ Table Project {
 }
 
 Table SkillRubric {
+  Note: 'การประเมินทักษะนักศึกษา (รูบริก)'
   id String [primary key]
   studentId String
   category String
@@ -301,6 +320,7 @@ Table SkillRubric {
 // Internships & Jobs
 // ==========================
 Table InternshipRecord {
+  Note: 'ประวัติการฝึกงานหรือสหกิจศึกษาของนักศึกษา'
   id String [primary key]
   studentId String [unique, note: 'อ้างอิง StudentProfile.id (Foreign Key)']
   startMonth String [null]
@@ -317,6 +337,7 @@ Table InternshipRecord {
 }
 
 Table InternshipLog {
+  Note: 'บันทึกการปฏิบัติงานรายวัน/สัปดาห์ (Logbook)'
   id String [primary key]
   recordId String
   date DateTime
@@ -327,6 +348,7 @@ Table InternshipLog {
 }
 
 Table InternshipDocument {
+  Note: 'เอกสารที่เกี่ยวข้องกับการฝึกงาน (เช่น ใบรับรอง)'
   id String [primary key]
   recordId String
   type String
@@ -337,6 +359,7 @@ Table InternshipDocument {
 }
 
 Table InternshipEvaluation {
+  Note: 'การประเมินผลการฝึกงานโดยสถานประกอบการ'
   id String [primary key]
   recordId String [unique]
   evaluatedBy String
@@ -351,6 +374,7 @@ Table InternshipEvaluation {
 }
 
 Table JobPosting {
+  Note: 'ประกาศรับสมัครงานหรือฝึกงานจากบริษัท'
   id String [primary key]
   companyId String [note: 'อ้างอิง CompanyProfile.id (Foreign Key ไม่ใช่รหัสบริษัท)']
   title String
@@ -375,6 +399,7 @@ Table JobPosting {
 }
 
 Table Application {
+  Note: 'การยื่นใบสมัครงานของนักศึกษา'
   id String [primary key]
   jobPostingId String
   studentId String
@@ -386,6 +411,7 @@ Table Application {
 }
 
 Table CooperationRecord {
+  Note: 'บันทึกความร่วมมือ (MOU) กับสถานประกอบการ'
   id String [primary key]
   companyId String
   title String
@@ -397,6 +423,7 @@ Table CooperationRecord {
 }
 
 Table PaymentHistory {
+  Note: 'ประวัติการชำระเงินของบริษัท (ถ้ามีแพ็คเกจ)'
   id String [primary key]
   companyId String
   amount Float
@@ -411,6 +438,7 @@ Table PaymentHistory {
 // Quests & Activities
 // ==========================
 Table Quest {
+  Note: 'ภารกิจหรือเควสที่ให้นักศึกษาทำเพื่อสะสมแต้ม'
   id String [primary key]
   title String
   titleEn String
@@ -429,6 +457,7 @@ Table Quest {
 }
 
 Table QuestTask {
+  Note: 'งานย่อยในแต่ละภารกิจ'
   id String [primary key]
   questId String
   title String
@@ -437,6 +466,7 @@ Table QuestTask {
 }
 
 Table QuestEnrollment {
+  Note: 'การเข้าร่วมภารกิจและความคืบหน้าของนักศึกษา'
   id String [primary key]
   questId String
   studentId String
@@ -449,6 +479,7 @@ Table QuestEnrollment {
 }
 
 Table Activity {
+  Note: 'กิจกรรมเสริมหลักสูตรหรือกิจกรรมพิเศษ'
   id String [primary key]
   title String
   titleThai String
@@ -474,6 +505,7 @@ Table Activity {
 }
 
 Table ActivityEnrollment {
+  Note: 'การลงทะเบียนเข้าร่วมกิจกรรมของนักศึกษา'
   id String [primary key]
   activityId String
   studentId String
@@ -483,6 +515,7 @@ Table ActivityEnrollment {
 }
 
 Table Badge {
+  Note: 'เหรียญรางวัลตราสัญลักษณ์ที่นักศึกษาได้รับ'
   id String [primary key]
   studentId String
   name String
@@ -497,6 +530,7 @@ Table Badge {
 // System & Communications
 // ==========================
 Table Request {
+  Note: 'คำร้องต่างๆ ที่นักศึกษายื่นต่อระบบ/เจ้าหน้าที่'
   id String [primary key]
   studentId String
   type String
@@ -513,6 +547,7 @@ Table Request {
 }
 
 Table RequestComment {
+  Note: 'ความคิดเห็นหรือการตอบกลับในคำร้อง'
   id String [primary key]
   requestId String
   authorId String
@@ -521,6 +556,7 @@ Table RequestComment {
 }
 
 Table Appointment {
+  Note: 'การนัดหมายระหว่างนักศึกษากับอาจารย์/เจ้าหน้าที่'
   id String [primary key]
   studentId String
   lecturerId String
@@ -537,6 +573,7 @@ Table Appointment {
 }
 
 Table Message {
+  Note: 'ข้อความสื่อสารภายในระบบ (Inbox)'
   id String [primary key]
   fromId String
   toId String
@@ -552,6 +589,7 @@ Table Message {
 }
 
 Table Notification {
+  Note: 'การแจ้งเตือนต่างๆ ถึงผู้ใช้งาน'
   id String [primary key]
   userId String
   title String
@@ -570,6 +608,7 @@ Table Notification {
 }
 
 Table AuditLog {
+  Note: 'บันทึกประวัติการกระทำสำคัญในระบบ (Security & Tracking)'
   id String [primary key]
   userId String [null]
   action String
@@ -583,6 +622,7 @@ Table AuditLog {
 }
 
 Table TimelineEvent {
+  Note: 'เหตุการณ์สำคัญหรือไทม์ไลน์ชีวิตของนักศึกษา'
   id String [primary key]
   studentId String
   type String
@@ -600,6 +640,7 @@ Table TimelineEvent {
 }
 
 Table FileAsset {
+  Note: 'ไฟล์ที่ถูกอัปโหลดเข้าระบบทั้งหมด (Images, Documents)'
   id String [primary key]
   uploaderId String [null]
   originalName String
@@ -615,6 +656,7 @@ Table FileAsset {
 }
 
 Table BudgetRecord {
+  Note: 'บันทึกงบประมาณและค่าใช้จ่ายของโครงการ'
   id String [primary key]
   title String
   amount Float
@@ -627,6 +669,7 @@ Table BudgetRecord {
 }
 
 Table Facility {
+  Note: 'ข้อมูลห้องเรียนและสิ่งอำนวยความสะดวก'
   id String [primary key]
   code String [unique]
   name String
@@ -642,6 +685,7 @@ Table Facility {
 }
 
 Table OfficeHour {
+  Note: 'เวลาเข้าพบอาจารย์ที่ปรึกษา (Office Hours)'
   id String [primary key]
   lecturerId String
   day String
@@ -652,6 +696,7 @@ Table OfficeHour {
 }
 
 Table WorkloadRecord {
+  Note: 'บันทึกภาระงานของอาจารย์'
   id String [primary key]
   lecturerId String
   academicYear String
@@ -664,6 +709,7 @@ Table WorkloadRecord {
 }
 
 Table DataConsent {
+  Note: 'การยินยอมให้ใช้ข้อมูลส่วนบุคคล (PDPA)'
   id String [primary key]
   studentId String [unique]
   allowDataSharing Boolean [default: false]
@@ -680,6 +726,7 @@ Table DataConsent {
 }
 
 Table AutomationRule {
+  Note: 'กฎการทำงานอัตโนมัติของระบบ (กำหนดโดยแอดมิน)'
   id String [primary key]
   adminId String [note: 'อ้างอิง AdminProfile.id (Foreign Key ไม่ใช่รหัสแอดมิน)']
   name String
