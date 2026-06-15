@@ -8,10 +8,13 @@ import { cn } from '@/lib/utils';
 import { MapPin, Clock, GripVertical } from 'lucide-react';
 import { RescheduleDialog } from './RescheduleDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 
-// Mock schedule data structure
 export interface ScheduleItem {
     id: string;
+    courseId?: string;
+    sectionIndex?: number;
+    scheduleIndex?: number;
     courseCode: string;
     courseName: string;
     day: number; // 0-6 (Sun-Sat), but typically 1-5 (Mon-Fri)
@@ -87,41 +90,7 @@ export function DraggableSchedule({ initialSchedule, editable = false, onRequest
             return;
         }
 
-        if (mode === 'permanent') {
-            const updatedSchedule = schedule.map(item => {
-                if (item.id === pendingMove.item.id) {
-                    return {
-                        ...item,
-                        day: pendingMove.targetDay,
-                        startTime: pendingMove.targetTime,
-                        // Simple logic: assume 3 hour duration for demo, or calculate based on old duration
-                        endTime: calculateEndTime(pendingMove.targetTime, item.startTime, item.endTime)
-                    };
-                }
-                return item;
-            });
-            setSchedule(updatedSchedule);
-        } else {
-            // For one-time, normally we'd add an exception record to backend
-            // Here we just simulate visual feedback or could fork the item for a specific date
-            console.log('One-time move requested for', pendingMove);
-            // For demo visualization, we might just move it in UI with a special flag
-            // But let's verify the user requirement: "Play or select day/time"
-            // Simplest for now: just move it in UI to show interaction works
-            const updatedSchedule = schedule.map(item => {
-                if (item.id === pendingMove.item.id) {
-                    return {
-                        ...item,
-                        day: pendingMove.targetDay,
-                        startTime: pendingMove.targetTime,
-                        endTime: calculateEndTime(pendingMove.targetTime, item.startTime, item.endTime),
-                        isOneTime: true // Flag to show visual difference
-                    };
-                }
-                return item;
-            });
-            setSchedule(updatedSchedule);
-        }
+        toast.error('Unable to save schedule change because no backend handler is configured.');
         setDialogOpen(false);
         setPendingMove(null);
     };
@@ -159,13 +128,6 @@ export function DraggableSchedule({ initialSchedule, editable = false, onRequest
                             {DAYS.map((_, dayIndex) => {
                                 // Find course starting at this time/day
                                 const item = schedule.find(s => s.day === dayIndex + 1 && s.startTime === time);
-
-                                // If item exists, span multiple rows?
-                                // For simplified grid, let's just render it here.
-                                // A real timetable is complex with rowSpan.
-                                // We'll calculate row height based on duration for absolute positioning or use grid-row-start/end
-                                // But for this "Drag Drop" demo, a slot-based approach is easier to implement robustly in limited turn time.
-                                // Let's stick to slot-based for "Start Time" drag entry.
 
                                 const isActiveDrop = dropTarget?.day === dayIndex + 1 && dropTarget?.time === time;
 

@@ -133,6 +133,15 @@ model CompanyProfile {
   size               String
   website            String?
   address            String?
+  locationMapUrl     String?
+  productsServices   String?
+  contactPersonName  String?
+  contactPersonRole  String?
+  contactPersonEmail String?
+  contactPersonPhone String?
+  socialMedia        String?
+  onboardingStatus   String              @default("pending_review")
+  privacyProtocolAcceptedAt DateTime?
   internshipSlots    Int                 @default(0)
   currentInterns     Int                 @default(0)
   subscription       String              @default("free")

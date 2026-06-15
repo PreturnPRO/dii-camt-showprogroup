@@ -13,7 +13,6 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
-// ─── Types ───────────────────────────────────────────────────────────────────
 type ColKey = 'completed' | 'inProgress' | 'remaining';
 type RowKey = 'required' | 'ge' | 'free';
 
@@ -32,43 +31,10 @@ export interface CurriculumCourse {
     description: string;
 }
 
-// ─── Mock Curriculum ─────────────────────────────────────────────────────────
-const CURRICULUM: CurriculumCourse[] = [
-    // ── วิชาบังคับ 72 cr ──
-    { id: 'c01', code: 'DII101', nameTH: 'คณิตศาสตร์สำหรับอุตสาหกรรมดิจิทัล',      nameEN: 'Mathematics for Digital Industry',      credits: 3, year: 1, semester: 1, category: 'required', status: 'completed',  grade: 'A',  prerequisites: [],              description: 'ฟังก์ชัน แคลคูลัส ความน่าจะเป็น และสถิติพื้นฐาน' },
-    { id: 'c02', code: 'DII102', nameTH: 'การเขียนโปรแกรมขั้นพื้นฐาน',             nameEN: 'Fundamentals of Programming',           credits: 3, year: 1, semester: 1, category: 'required', status: 'completed',  grade: 'B+', prerequisites: [],              description: 'ตรรกะการคิด อัลกอริทึม ภาษา Python พื้นฐาน' },
-    { id: 'c03', code: 'DII103', nameTH: 'ระบบสารสนเทศและดิจิทัล',                 nameEN: 'Information Systems & Digital',         credits: 3, year: 1, semester: 1, category: 'required', status: 'completed',  grade: 'A',  prerequisites: [],              description: 'องค์ประกอบระบบสารสนเทศ ดิจิทัลทรานส์ฟอร์เมชัน' },
-    { id: 'c04', code: 'DII104', nameTH: 'โครงสร้างข้อมูลและอัลกอริทึม',           nameEN: 'Data Structures & Algorithms',          credits: 3, year: 1, semester: 2, category: 'required', status: 'completed',  grade: 'A-', prerequisites: ['DII102'],       description: 'อาร์เรย์ ลิงก์ลิสต์ ต้นไม้ กราฟ การเรียงลำดับ' },
-    { id: 'c05', code: 'DII105', nameTH: 'ฐานข้อมูลสำหรับอุตสาหกรรม',             nameEN: 'Industrial Database Systems',            credits: 3, year: 1, semester: 2, category: 'required', status: 'completed',  grade: 'B+', prerequisites: ['DII101'],       description: 'ออกแบบ ER Diagram, SQL, ฐานข้อมูลเชิงสัมพันธ์' },
-    { id: 'c06', code: 'DII106', nameTH: 'เครือข่ายคอมพิวเตอร์พื้นฐาน',           nameEN: 'Computer Networks Fundamentals',         credits: 3, year: 1, semester: 2, category: 'required', status: 'completed',  grade: 'B',  prerequisites: [],              description: 'TCP/IP, OSI model, Subnetting, เครือข่ายไร้สาย' },
-    { id: 'c07', code: 'DII201', nameTH: 'การออกแบบประสบการณ์ผู้ใช้',             nameEN: 'User Experience Design',                credits: 3, year: 2, semester: 1, category: 'required', status: 'completed',  grade: 'A',  prerequisites: ['DII103'],       description: 'UX Research, Wireframing, Prototyping, Usability Testing' },
-    { id: 'c08', code: 'DII202', nameTH: 'การพัฒนาเว็บแอปพลิเคชัน',               nameEN: 'Web Application Development',           credits: 3, year: 2, semester: 1, category: 'required', status: 'completed',  grade: 'A-', prerequisites: ['DII102','DII105'], description: 'HTML/CSS/JS, React, Node.js, REST API, Full-Stack' },
-    { id: 'c09', code: 'DII203', nameTH: 'Machine Learning พื้นฐาน',               nameEN: 'Introduction to Machine Learning',       credits: 3, year: 2, semester: 1, category: 'required', status: 'completed',  grade: 'B+', prerequisites: ['DII101','DII104'], description: 'Supervised/Unsupervised Learning, Neural Networks, Model Evaluation' },
-    { id: 'c10', code: 'DII204', nameTH: 'ความปลอดภัยในไซเบอร์',                  nameEN: 'Cybersecurity Fundamentals',             credits: 3, year: 2, semester: 2, category: 'required', status: 'completed',  grade: 'A',  prerequisites: ['DII106'],       description: 'Cryptography, Authentication, Threat Analysis, Penetration Testing' },
-    { id: 'c11', code: 'DII205', nameTH: 'การวิเคราะห์ข้อมูลธุรกิจ',              nameEN: 'Business Data Analytics',               credits: 3, year: 2, semester: 2, category: 'required', status: 'inProgress', prerequisites: ['DII105','DII203'], description: 'BI Tools, Tableau, Power BI, Data Storytelling, Dashboard Design' },
-    { id: 'c12', code: 'DII206', nameTH: 'วิศวกรรมซอฟต์แวร์',                    nameEN: 'Software Engineering',                  credits: 3, year: 2, semester: 2, category: 'required', status: 'inProgress', prerequisites: ['DII202'],       description: 'Agile, Scrum, Requirements Engineering, Testing, DevOps, CICD' },
-    { id: 'c13', code: 'DII301', nameTH: 'การพัฒนาแอปพลิเคชันมือถือ',             nameEN: 'Mobile Application Development',         credits: 3, year: 3, semester: 1, category: 'required', status: 'remaining',    prerequisites: ['DII202'],       description: 'React Native, Flutter, Cross-Platform Development, App Store Deployment' },
-    { id: 'c14', code: 'DII302', nameTH: 'Cloud Computing และ DevOps',             nameEN: 'Cloud Computing & DevOps',               credits: 3, year: 3, semester: 1, category: 'required', status: 'remaining',        prerequisites: ['DII206'],       description: 'AWS, Azure, GCP, Docker, Kubernetes, CI/CD Pipeline' },
-    { id: 'c15', code: 'DII303', nameTH: 'Internet of Things',                     nameEN: 'Internet of Things',                    credits: 3, year: 3, semester: 1, category: 'required', status: 'remaining',        prerequisites: ['DII106'],       description: 'Embedded Systems, Sensors, MQTT Protocol, Edge Computing' },
-    { id: 'c16', code: 'DII304', nameTH: 'Blockchain Technology',                  nameEN: 'Blockchain Technology',                 credits: 3, year: 3, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII204'],       description: 'Distributed Ledger, Smart Contracts, DeFi, Ethereum' },
-    { id: 'c17', code: 'DII305', nameTH: 'พัฒนาการประดิษฐ์ชั้นสูง',               nameEN: 'Advanced Artificial Intelligence',       credits: 3, year: 3, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII203'],       description: 'Deep Learning, Transformer, NLP, Computer Vision, Generative AI' },
-    { id: 'c18', code: 'DII306', nameTH: 'การจัดการนวัตกรรมดิจิทัล',              nameEN: 'Digital Innovation Management',          credits: 3, year: 3, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII103'],       description: 'Design Thinking, Lean Startup, OKR, Innovation Framework' },
-    { id: 'c19', code: 'DII401', nameTH: 'โครงงานดิจิทัลอุตสาหกรรม 1',            nameEN: 'Digital Industry Project I',             credits: 3, year: 4, semester: 1, category: 'required', status: 'remaining',        prerequisites: ['DII301','DII302'], description: 'กำหนดหัวข้อ วิเคราะห์ ออกแบบ พัฒนา Prototype โครงงาน' },
-    { id: 'c20', code: 'DII402', nameTH: 'โครงงานดิจิทัลอุตสาหกรรม 2',            nameEN: 'Digital Industry Project II',            credits: 3, year: 4, semester: 1, category: 'required', status: 'remaining',        prerequisites: ['DII401'],       description: 'พัฒนา ทดสอบ และนำเสนอโครงงานต่อคณะกรรมการ' },
-    { id: 'c21', code: 'DII403', nameTH: 'สหกิจศึกษา / ฝึกงาน',                   nameEN: 'Cooperative Education / Internship',     credits: 6, year: 4, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII401'],       description: 'ฝึกปฏิบัติงานในองค์กรอุตสาหกรรมอย่างน้อย 1 ภาคเรียน' },
-    { id: 'c22', code: 'DII404', nameTH: 'กฎหมายดิจิทัลและจริยธรรม',              nameEN: 'Digital Law & Ethics',                  credits: 3, year: 4, semester: 1, category: 'required', status: 'remaining',        prerequisites: [],              description: 'PDPA พ.ร.บ.คอมพิวเตอร์ Intellectual Property จริยธรรม AI' },
-    { id: 'c23', code: 'DII405', nameTH: 'การเป็นผู้ประกอบการดิจิทัล',             nameEN: 'Digital Entrepreneurship',               credits: 3, year: 4, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII306'],       description: 'Business Model Canvas, Pitch Deck, Startup Ecosystem, Funding' },
-    { id: 'c24', code: 'DII406', nameTH: 'สัมมนาอุตสาหกรรมดิจิทัล',               nameEN: 'Digital Industry Seminar',               credits: 3, year: 4, semester: 2, category: 'required', status: 'remaining',        prerequisites: ['DII403'],       description: 'บรรยายพิเศษ Case Study จากผู้เกี่ยวข้องอุตสาหกรรม' },
-    // ── GE คณะ 9 cr ──
-    { id: 'g01', code: 'GE601', nameTH: 'ภาษาอังกฤษสำหรับนักวิทยาการ',            nameEN: 'English for Data Scientists',            credits: 3, year: 1, semester: 1, category: 'ge',       status: 'completed',  grade: 'B+', prerequisites: [],              description: 'Reading, Writing, Speaking เชิงวิทยาศาสตร์และเทคโนโลยี' },
-    { id: 'g02', code: 'GE602', nameTH: 'ทักษะชีวิตและความเป็นผู้นำ',             nameEN: 'Life Skills & Leadership',               credits: 3, year: 2, semester: 1, category: 'ge',       status: 'inProgress', prerequisites: [],              description: 'Growth Mindset, EQ, Teamwork, Leadership, Communication Skills' },
-    { id: 'g03', code: 'GE603', nameTH: 'สุขภาพและสุขภาวะดิจิทัล',                nameEN: 'Health & Digital Wellness',              credits: 3, year: 3, semester: 1, category: 'ge',       status: 'remaining',        prerequisites: [],              description: 'Screen Time, Well-being, Mental Health, Work-Life Balance' },
-    // ── ตัวฟรี 6 cr ──
-    { id: 'f01', code: 'FREE01', nameTH: 'วิชาเลือกเสรี 1 (ยังไม่ได้เลือก)',       nameEN: 'Free Elective I (Not Selected)',         credits: 3, year: 3, semester: 2, category: 'free',     status: 'inProgress', prerequisites: [],              description: 'เลือกได้จากทุกคณะ ตามความสนใจของนักศึกษา' },
-    { id: 'f02', code: 'FREE02', nameTH: 'วิชาเลือกเสรี 2 (ยังไม่ได้เลือก)',       nameEN: 'Free Elective II (Not Selected)',        credits: 3, year: 4, semester: 1, category: 'free',     status: 'remaining',        prerequisites: [],              description: 'เลือกได้จากทุกคณะ ตามความสนใจของนักศึกษา' },
-];
+// Default to an empty curriculum so the UI never invents academic progress when live data is unavailable.
+const CURRICULUM: CurriculumCourse[] = [];
 
-const GPAX_VALUE = 3.42;
+const GPAX_VALUE = 0;
 
 // ─── Category Colors ─────────────────────────────────────────────────────────
 const STATUS_CONFIG: Record<ColKey, { labelTH: string; labelEN: string; icon: React.ReactNode; color: string; barColor: string; darkColor: string }> = {

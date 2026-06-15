@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
@@ -12,11 +13,14 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { mapStudent } from '@/lib/live-mappers';
+import { asRecord, asString } from '@/lib/live-data';
 import type { Student } from '@/types';
+import { toast } from 'sonner';
 
-type StudentRow = Student;
+type StudentRow = Student & { userId?: string };
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -31,10 +35,12 @@ const itemVariants = {
 export default function Students() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [yearFilter, setYearFilter] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [students, setStudents] = React.useState<StudentRow[]>([]);
+  const [selectedStudent, setSelectedStudent] = React.useState<StudentRow | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   React.useEffect(() => {
@@ -44,7 +50,14 @@ export default function Students() {
       .list()
       .then((response) => {
         if (!mounted) return;
-        setStudents(response.students.map(mapStudent));
+        setStudents(response.students.map((item, index) => {
+          const source = asRecord(item);
+          const user = asRecord(source.user);
+          return {
+            ...mapStudent(item, index),
+            userId: asString(source.userId, asString(user.id)),
+          };
+        }));
       })
       .catch((error) => {
         console.warn('Unable to load students from API', error);
@@ -72,6 +85,22 @@ export default function Students() {
   const atRiskCount = students.filter(s => s.academicStatus === 'probation' || s.academicStatus === 'risk').length;
   const avgGPA = (students.reduce((sum, s) => sum + s.gpa, 0) / Math.max(students.length, 1)).toFixed(2);
 
+  const handleMessageStudent = (student: StudentRow) => {
+    const recipientId = student.userId || student.id;
+    navigate('/messages', {
+      state: {
+        recipient: {
+          id: recipientId,
+          email: student.email,
+          name: student.name,
+          nameThai: student.nameThai,
+          role: student.role,
+        },
+      },
+    });
+    toast.info(`เปิดแชทกับ ${student.nameThai || student.name}`);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'normal': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.normal}</Badge>;
@@ -89,6 +118,46 @@ export default function Students() {
       animate="visible"
       className="space-y-6"
     >
+      <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedStudent?.nameThai || selectedStudent?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedStudent?.studentId} · {selectedStudent?.major}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStudent && (
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">GPA</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpa.toFixed(2)}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.credits}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.earnedCredits}/{selectedStudent.totalCredits}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.year}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.year}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.common.status}</div>
+                <div className="mt-1">{getStatusBadge(selectedStudent.academicStatus)}</div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedStudent(null)}>ปิด</Button>
+            {selectedStudent && (
+              <Button onClick={() => handleMessageStudent(selectedStudent)}>
+                <Mail className="mr-2 h-4 w-4" />
+                ส่งข้อความ
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
               <Users className="w-4 h-4 text-blue-500 dark:text-slate-400" />
@@ -232,6 +301,7 @@ export default function Students() {
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
                   className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group dark:border-slate-700"
+                  onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -255,10 +325,16 @@ export default function Students() {
                     </div>
                     {getStatusBadge(student.academicStatus)}
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedStudent(student);
+                      }}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={(event) => {
+                        event.stopPropagation();
+                        handleMessageStudent(student);
+                      }}>
                         <Mail className="w-4 h-4" />
                       </Button>
                     </div>

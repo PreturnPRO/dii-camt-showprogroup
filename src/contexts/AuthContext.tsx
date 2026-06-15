@@ -53,6 +53,8 @@ const demoAccountByRole: Record<UserRole, string> = {
   admin: 'admin@showpro.local',
 };
 
+const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
+
 const normalizeSessionUser = (rawUser: unknown): AuthUser => normalizeUser(rawUser as never);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -97,10 +99,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string, role?: UserRole): Promise<boolean> => {
-      const response = await api.auth.login(
-        role ? demoAccountByRole[role] : email,
-        role ? 'Password123!' : password,
-      );
+      const response = await api.auth.login(email, password);
       setStoredToken(response.token);
       await applySessionUser(response.user);
       return true;
@@ -145,6 +144,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = useCallback(
     async (role: UserRole) => {
+      if (!demoAccountsEnabled) {
+        throw new Error('Demo account switching is disabled.');
+      }
       await login(demoAccountByRole[role], 'Password123!', role);
     },
     [login],

@@ -3,67 +3,78 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Suspense, lazy } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { SocketProvider } from "@/contexts/SocketContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import LandingPage from "./pages/LandingPage";
-import LoginPage from "./pages/LoginPage";
-import RegisterPage from "./pages/RegisterPage";
-import ForgotPasswordPage from "./pages/ForgotPasswordPage";
-import Dashboard from "./pages/Dashboard";
-import Courses from "./pages/Courses";
-import Schedule from "./pages/Schedule";
-import Grades from "./pages/Grades";
-import Activities from "./pages/Activities";
-import Portfolio from "./pages/Portfolio";
-import Internships from "./pages/Internships";
-import Requests from "./pages/Requests";
-import Messages from "./pages/Messages";
-import Settings from "./pages/Settings";
-import NotFound from "./pages/NotFound";
-// New pages
-import Students from "./pages/Students";
-import Assignments from "./pages/Assignments";
-import Appointments from "./pages/Appointments";
-import Attendance from "./pages/Attendance";
-import Workload from "./pages/Workload";
-import UsersPage from "./pages/Users";
-import Reports from "./pages/Reports";
-import Notifications from "./pages/Notifications";
-import Audit from "./pages/Audit";
-import Budget from "./pages/Budget";
-import Network from "./pages/Network";
-import Documents from "./pages/Documents";
-import Personnel from "./pages/Personnel";
-import WorkloadTracking from "./pages/WorkloadTracking";
-import ScheduleManagement from "./pages/ScheduleManagement";
-import ActivitiesManagement from "./pages/ActivitiesManagement";
-import JobPostings from "./pages/JobPostings";
-import Applicants from "./pages/Applicants";
-import StudentProfiles from "./pages/StudentProfiles";
-import Cooperation from "./pages/Cooperation";
-import Subscription from "./pages/Subscription";
-import InternTracking from "./pages/InternTracking";
-import PersonalDashboard from "./pages/PersonalDashboard";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsOfService from "./pages/TermsOfService";
-import Training from "./pages/Training";
-import SkillsRequirement from "./pages/SkillsRequirement";
 import { GlobalPreloader } from "@/components/common/GlobalPreloader";
 
 const queryClient = new QueryClient();
+
+const LandingPage = lazy(() => import("./pages/LandingPage"));
+const LoginPage = lazy(() => import("./pages/LoginPage"));
+const RegisterPage = lazy(() => import("./pages/RegisterPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/ForgotPasswordPage"));
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Courses = lazy(() => import("./pages/Courses"));
+const Schedule = lazy(() => import("./pages/Schedule"));
+const Grades = lazy(() => import("./pages/Grades"));
+const Activities = lazy(() => import("./pages/Activities"));
+const Portfolio = lazy(() => import("./pages/Portfolio"));
+const Internships = lazy(() => import("./pages/Internships"));
+const Requests = lazy(() => import("./pages/Requests"));
+const Messages = lazy(() => import("./pages/Messages"));
+const Settings = lazy(() => import("./pages/Settings"));
+const NotFound = lazy(() => import("./pages/NotFound"));
+const Students = lazy(() => import("./pages/Students"));
+const Assignments = lazy(() => import("./pages/Assignments"));
+const Appointments = lazy(() => import("./pages/Appointments"));
+const Attendance = lazy(() => import("./pages/Attendance"));
+const Workload = lazy(() => import("./pages/Workload"));
+const UsersPage = lazy(() => import("./pages/Users"));
+const Reports = lazy(() => import("./pages/Reports"));
+const Notifications = lazy(() => import("./pages/Notifications"));
+const Audit = lazy(() => import("./pages/Audit"));
+const Budget = lazy(() => import("./pages/Budget"));
+const Network = lazy(() => import("./pages/Network"));
+const Documents = lazy(() => import("./pages/Documents"));
+const Personnel = lazy(() => import("./pages/Personnel"));
+const WorkloadTracking = lazy(() => import("./pages/WorkloadTracking"));
+const ScheduleManagement = lazy(() => import("./pages/ScheduleManagement"));
+const ActivitiesManagement = lazy(() => import("./pages/ActivitiesManagement"));
+const JobPostings = lazy(() => import("./pages/JobPostings"));
+const Applicants = lazy(() => import("./pages/Applicants"));
+const StudentProfiles = lazy(() => import("./pages/StudentProfiles"));
+const Cooperation = lazy(() => import("./pages/Cooperation"));
+const Subscription = lazy(() => import("./pages/Subscription"));
+const InternTracking = lazy(() => import("./pages/InternTracking"));
+const PersonalDashboard = lazy(() => import("./pages/PersonalDashboard"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const Training = lazy(() => import("./pages/Training"));
+const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
+const Automation = lazy(() => import("./pages/Automation"));
+
+const RouteFallback = () => (
+  <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+    <div className="h-10 w-10 animate-spin rounded-full border-4 border-slate-200 border-t-blue-600" />
+  </div>
+);
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
       <LanguageProvider>
         <AuthProvider>
+          <SocketProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
               <GlobalPreloader />
+              <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<LandingPage />} />
                 <Route path="/register" element={<RegisterPage />} />
@@ -99,6 +110,7 @@ const App = () => (
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/reports" element={<Reports />} />
                   <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/automation" element={<Automation />} />
                   <Route path="/audit" element={<Audit />} />
                   <Route path="/budget" element={<Budget />} />
                   <Route path="/network" element={<Network />} />
@@ -120,8 +132,10 @@ const App = () => (
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              </Suspense>
             </BrowserRouter>
           </TooltipProvider>
+          </SocketProvider>
         </AuthProvider>
       </LanguageProvider>
     </ThemeProvider>
