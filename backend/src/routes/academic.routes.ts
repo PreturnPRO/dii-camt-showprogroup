@@ -1,175 +1,60 @@
 import { Role } from "@prisma/client";
 import { Router } from "express";
-import { z } from "zod";
 import { requireAuth } from "../lib/passport";
-import { prisma } from "../lib/prisma";
 import { checkRole } from "../middleware/check-role";
 import { validate } from "../middleware/validate";
-import { prepareCourseSections } from "../services/facility.service";
-import { bulkUpdateGrades } from "../services/grade.service";
 import {
-  getLecturerProfileByUserId,
-  getStudentProfileByAnyId,
-  getStudentProfileByUserId,
-} from "../services/profile.service";
-import { asyncHandler } from "../utils/async-handler";
-import { AppError } from "../utils/errors";
-import { requireUser } from "../utils/user";
-import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, importCourses, getLecturerSchedule } from "../services/course.service";
-import { getEnrollments, createEnrollment, dropCourseByStudent } from "../services/enrollment.service";
-import { getGradesDistribution, getStudentTranscript, getAttendance, recordAttendance, getAssignments, createAssignment, submitAssignment } from "../services/academic-core.service";
+  courseQuerySchema,
+  courseCreateSchema,
+  courseUpdateSchema,
+  enrollSchema,
+  gradeBulkSchema,
+  gradesHistoryParamsSchema,
+  transcriptQuerySchema,
+  attendanceQuerySchema,
+  attendanceCheckInSchema,
+  assignmentsQuerySchema,
+  assignmentCreateSchema,
+  assignmentUpdateSchema,
+  assignmentParamsSchema,
+  submissionCreateSchema,
+  submissionUpdateSchema,
+} from "../schemas/academic.schema";
+import {
+  getCoursesHandler,
+  getCourseByIdHandler,
+  createCourseHandler,
+  updateCourseHandler,
+  scheduleHandler,
+  getEnrollmentsHandler,
+  createEnrollmentHandler,
+  dropCourseHandler,
+  gradeBulkHandler,
+  getGradesHistoryHandler,
+  getStudentTranscriptHandler,
+  getAttendanceReportHandler,
+  attendanceCheckInHandler,
+  getAssignmentsHandler,
+  getAssignmentByIdHandler,
+  createAssignmentHandler,
+  updateAssignmentHandler,
+  deleteCourseHandler,
+  deleteAssignmentHandler,
+  submitAssignmentHandler,
+  updateSubmissionHandler,
+} from "../controllers/academic.controller";
 
 const router = Router();
-
-const courseQuerySchema = z.object({
-  q: z.string().optional(),
-  semester: z.coerce.number().int().optional(),
-  academicYear: z.string().optional(),
-  lecturerId: z.string().optional(),
-});
-
-const courseCreateSchema = z.object({
-  code: z.string().min(1),
-  name: z.string().min(1),
-  nameThai: z.string().min(1),
-  credits: z.coerce.number().int().positive(),
-  semester: z.coerce.number().int().positive(),
-  academicYear: z.string().min(1),
-  year: z.coerce.number().int().positive(),
-  lecturerId: z.string().min(1),
-  description: z.string().optional(),
-  prerequisites: z.array(z.string()).default([]),
-  learningOutcomes: z.array(z.string()).default([]),
-  syllabus: z.string().optional(),
-  schedule: z.any().optional(),
-  room: z.string().optional(),
-  status: z.string().optional(),
-  maxStudents: z.coerce.number().int().positive().default(60),
-  minStudents: z.coerce.number().int().nonnegative().default(0),
-  sections: z
-    .array(
-      z.object({
-        number: z.string().min(1),
-        room: z.string().optional(),
-        facilityId: z.string().optional(),
-        maxStudents: z.coerce.number().int().positive().default(60),
-        schedule: z.any(),
-      }),
-    )
-    .default([]),
-  materials: z
-    .array(
-      z.object({
-        title: z.string().min(1),
-        type: z.string().min(1),
-        url: z.string().url(),
-        size: z.string().optional(),
-      }),
-    )
-    .default([]),
-});
-
-const courseUpdateSchema = courseCreateSchema.partial().extend({
-  code: z.string().min(1).optional(),
-  name: z.string().min(1).optional(),
-  nameThai: z.string().min(1).optional(),
-  credits: z.coerce.number().int().positive().optional(),
-  semester: z.coerce.number().int().positive().optional(),
-  academicYear: z.string().min(1).optional(),
-  year: z.coerce.number().int().positive().optional(),
-  lecturerId: z.string().min(1).optional(),
-});
-
-const enrollSchema = z.object({
-  studentId: z.string().min(1).optional(),
-  courseId: z.string().min(1),
-  sectionId: z.string().optional(),
-});
-
-const gradeBulkSchema = z.object({
-  grades: z.array(
-    z.object({
-      enrollmentId: z.string().optional(),
-      studentId: z.string().min(1),
-      courseId: z.string().min(1),
-      midterm: z.coerce.number().optional(),
-      final: z.coerce.number().optional(),
-      assignments: z.coerce.number().optional(),
-      participation: z.coerce.number().optional(),
-      project: z.coerce.number().optional(),
-      total: z.coerce.number().optional(),
-      letterGrade: z.string().optional(),
-      remarks: z.string().optional(),
-      reason: z.string().optional(),
-    }),
-  ),
-});
-
-const gradesHistoryParamsSchema = z.object({
-  studentId: z.string().min(1),
-});
-
-const transcriptQuerySchema = z.object({
-  studentId: z.string().optional(),
-});
-
-const attendanceQuerySchema = z.object({
-  courseId: z.string().optional(),
-  studentId: z.string().optional(),
-});
-
-const attendanceCheckInSchema = z.object({
-  enrollmentId: z.string().min(1),
-  date: z.coerce.date(),
-  status: z.string().default("present"),
-});
-
-const assignmentsQuerySchema = z.object({
-  courseId: z.string().optional(),
-  includeSubmissions: z.coerce.boolean().optional(),
-});
-
-const assignmentCreateSchema = z.object({
-  courseId: z.string().min(1),
-  title: z.string().min(1),
-  description: z.string().min(1),
-  type: z.string().min(1),
-  dueDate: z.coerce.date(),
-  maxScore: z.coerce.number().positive(),
-  isPublished: z.boolean().optional(),
-});
-
-const assignmentUpdateSchema = assignmentCreateSchema.partial();
-
-const assignmentParamsSchema = z.object({
-  id: z.string().min(1),
-});
-
-const submissionCreateSchema = z.object({
-  files: z.array(z.string().min(1)).min(1),
-});
-
-const submissionUpdateSchema = z.object({
-  score: z.coerce.number().min(0).optional(),
-  feedback: z.string().optional(),
-  status: z.string().optional(),
-});
 
 router.get(
   "/courses",
   validate(courseQuerySchema, "query"),
-  asyncHandler(async (req, res) => {
-    const courses = await getCourses(req.query as any);
-    res.json({ success: true, courses });
-  }),
+  getCoursesHandler
 );
 
 router.get(
   "/courses/:id",
-  asyncHandler(async (req, res) => {
-    const course = await getCourseById(String(req.params.id));
-    res.json({ success: true, course });
-  }),
+  getCourseByIdHandler
 );
 
 router.post(
@@ -177,16 +62,7 @@ router.post(
   requireAuth,
   checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
   validate(courseCreateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    // Add default status if missing for lecturer
-    const courseData = {
-      ...req.body,
-      status: req.body.status || (currentUser.role === Role.LECTURER ? "pending" : "active")
-    };
-    const course = await createCourse(courseData);
-    res.status(201).json({ success: true, course });
-  }),
+  createCourseHandler
 );
 
 router.patch(
@@ -194,59 +70,15 @@ router.patch(
   requireAuth,
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(courseUpdateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const courseId = String(req.params.id);
-    const course = await updateCourse(currentUser, courseId, req.body);
-
-    res.json({
-      success: true,
-      course,
-    });
-  }),
+  updateCourseHandler
 );
 
-const scheduleHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    return res.json({
-      success: true,
-      lecturer,
-      schedule: lecturer.courses,
-    });
-  }
-
-  if (req.query.lecturerId) {
-    const lecturer = await prisma.lecturerProfile.findFirst({
-      where: {
-        OR: [{ id: String(req.query.lecturerId) }, { lecturerId: String(req.query.lecturerId) }],
-      },
-      include: {
-        user: true,
-        courses: {
-          include: {
-            sections: { include: { facility: true } },
-            enrollments: true,
-          },
-        },
-      },
-    });
-
-    if (!lecturer) {
-      throw new AppError(404, "Lecturer profile not found");
-    }
-
-    return res.json({
-      success: true,
-      lecturer,
-      schedule: lecturer.courses,
-    });
-  }
-
-  throw new AppError(400, "lecturerId query is required for non-lecturer roles");
-});
+router.delete(
+  "/courses/:id",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
+  deleteCourseHandler
+);
 
 router.get("/lecturer/schedule", requireAuth, scheduleHandler);
 router.get("/courses/lecturer/schedule", requireAuth, scheduleHandler);
@@ -254,15 +86,7 @@ router.get("/courses/lecturer/schedule", requireAuth, scheduleHandler);
 router.get(
   "/enrollments",
   requireAuth,
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const enrollments = await getEnrollments(currentUser, req.query as any);
-
-    res.json({
-      success: true,
-      enrollments,
-    });
-  }),
+  getEnrollmentsHandler
 );
 
 router.post(
@@ -270,49 +94,22 @@ router.post(
   requireAuth,
   checkRole([Role.STUDENT, Role.STAFF, Role.ADMIN, Role.LECTURER]),
   validate(enrollSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const enrollment = await createEnrollment(currentUser, req.body);
-
-    res.status(201).json({
-      success: true,
-      enrollment,
-    });
-  }),
+  createEnrollmentHandler
 );
 
 router.delete(
   "/enrollments/course/:courseId",
   requireAuth,
   checkRole([Role.STUDENT]),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const result = await dropCourseByStudent(currentUser, String(req.params.courseId));
-
-    res.json({
-      success: true,
-      message: result.message,
-    });
-  }),
+  dropCourseHandler
 );
-
-const gradeBulkHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const updates = await bulkUpdateGrades(currentUser.id, req.body.grades, req.ip);
-
-  res.json({
-    success: true,
-    updatedCount: updates.length,
-    grades: updates,
-  });
-});
 
 router.patch(
   "/grades/bulk",
   requireAuth,
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(gradeBulkSchema),
-  gradeBulkHandler,
+  gradeBulkHandler
 );
 
 router.post(
@@ -320,75 +117,21 @@ router.post(
   requireAuth,
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(gradeBulkSchema),
-  gradeBulkHandler,
+  gradeBulkHandler
 );
 
 router.get(
   "/grades/history/:studentId",
   requireAuth,
   validate(gradesHistoryParamsSchema, "params"),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const student = await getStudentProfileByAnyId(String(req.params.studentId));
-
-    if (currentUser.role === Role.STUDENT && student.userId !== currentUser.id) {
-      throw new AppError(403, "Students can only view their own grade history");
-    }
-
-    const history = await prisma.enrollment.findMany({
-      where: { studentId: student.id },
-      include: {
-        course: true,
-        history: { orderBy: { modifiedAt: "desc" } },
-      },
-      orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
-    });
-
-    res.json({
-      success: true,
-      student: {
-        id: student.id,
-        studentId: student.studentId,
-        name: student.user.name,
-      },
-      history,
-    });
-  }),
+  getGradesHistoryHandler
 );
 
 router.get(
   "/student/transcript",
   requireAuth,
   validate(transcriptQuerySchema, "query"),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-
-    const student =
-      currentUser.role === Role.STUDENT
-        ? await getStudentProfileByUserId(currentUser.id)
-        : req.query.studentId
-          ? await getStudentProfileByAnyId(String(req.query.studentId))
-          : null;
-
-    if (!student) {
-      throw new AppError(400, "studentId query is required for non-student roles");
-    }
-
-    const enrollments = await getStudentTranscript(student.id);
-
-    res.json({
-      success: true,
-      student: {
-        id: student.id,
-        studentId: student.studentId,
-        name: student.user.name,
-        gpax: student.gpax,
-        earnedCredits: student.earnedCredits,
-        requiredCredits: student.requiredCredits,
-      },
-      transcript: enrollments,
-    });
-  }),
+  getStudentTranscriptHandler
 );
 
 router.get(
@@ -396,40 +139,7 @@ router.get(
   requireAuth,
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(attendanceQuerySchema, "query"),
-  asyncHandler(async (req, res) => {
-    const report = await prisma.attendanceRecord.findMany({
-      where: {
-        ...(req.query.courseId
-          ? {
-              enrollment: {
-                courseId: String(req.query.courseId),
-              },
-            }
-          : {}),
-        ...(req.query.studentId
-          ? {
-              enrollment: {
-                studentId: String(req.query.studentId),
-              },
-            }
-          : {}),
-      },
-      include: {
-        enrollment: {
-          include: {
-            student: { include: { user: true } },
-            course: true,
-          },
-        },
-      },
-      orderBy: { date: "desc" },
-    });
-
-    res.json({
-      success: true,
-      attendance: report,
-    });
-  }),
+  getAttendanceReportHandler
 );
 
 router.post(
@@ -437,38 +147,7 @@ router.post(
   requireAuth,
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(attendanceCheckInSchema),
-  asyncHandler(async (req, res) => {
-    const record = await prisma.attendanceRecord.upsert({
-      where: {
-        enrollmentId_date: {
-          enrollmentId: req.body.enrollmentId,
-          date: req.body.date,
-        },
-      },
-      update: {
-        status: req.body.status,
-        checkedInAt: new Date(),
-      },
-      create: {
-        enrollmentId: req.body.enrollmentId,
-        date: req.body.date,
-        status: req.body.status,
-      },
-      include: {
-        enrollment: {
-          include: {
-            student: { include: { user: true } },
-            course: true,
-          },
-        },
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      attendance: record,
-    });
-  }),
+  attendanceCheckInHandler
 );
 
 router.get(
@@ -476,82 +155,7 @@ router.get(
   requireAuth,
   checkRole([Role.STUDENT, Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(assignmentsQuerySchema, "query"),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const includeSubmissions = Boolean(req.query.includeSubmissions);
-    const courseId = req.query.courseId ? String(req.query.courseId) : undefined;
-
-    let where: Record<string, unknown> = {};
-
-    if (currentUser.role === Role.STUDENT) {
-      const student = await getStudentProfileByUserId(currentUser.id);
-      where = {
-        isPublished: true,
-        ...(courseId ? { courseId } : {}),
-        course: {
-          enrollments: {
-            some: {
-              studentId: student.id,
-            },
-          },
-        },
-      };
-    } else if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      where = {
-        ...(courseId ? { courseId } : {}),
-        course: {
-          lecturerId: lecturer.id,
-        },
-      };
-    } else {
-      where = courseId ? { courseId } : {};
-    }
-
-    const assignments = await prisma.assignment.findMany({
-      where,
-      include: {
-        course: {
-          include: {
-            lecturer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-        submissions:
-          includeSubmissions || currentUser.role === Role.STUDENT
-            ? {
-                where:
-                  currentUser.role === Role.STUDENT
-                    ? {
-                        student: {
-                          userId: currentUser.id,
-                        },
-                      }
-                    : undefined,
-                include: {
-                  student: {
-                    include: {
-                      user: true,
-                    },
-                  },
-                },
-                orderBy: {
-                  submittedAt: "desc",
-                },
-              }
-            : false,
-      },
-      orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
-    });
-
-    res.json({
-      success: true,
-      assignments,
-    });
-  }),
+  getAssignmentsHandler
 );
 
 router.get(
@@ -559,82 +163,7 @@ router.get(
   requireAuth,
   checkRole([Role.STUDENT, Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(assignmentParamsSchema, "params"),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const assignment = await prisma.assignment.findUnique({
-      where: { id: String(req.params.id) },
-      include: {
-        course: {
-          include: {
-            lecturer: {
-              include: {
-                user: true,
-              },
-            },
-            enrollments: {
-              select: {
-                studentId: true,
-                student: {
-                  select: {
-                    userId: true,
-                  },
-                },
-              },
-            },
-          },
-        },
-        submissions: {
-          include: {
-            student: {
-              include: {
-                user: true,
-              },
-            },
-          },
-          orderBy: {
-            submittedAt: "desc",
-          },
-        },
-      },
-    });
-
-    if (!assignment) {
-      throw new AppError(404, "Assignment not found");
-    }
-
-    if (currentUser.role === Role.STUDENT) {
-      const ownsEnrollment = assignment.course.enrollments.some(
-        (item) => item.student.userId === currentUser.id,
-      );
-
-      if (!ownsEnrollment || !assignment.isPublished) {
-        throw new AppError(403, "You do not have access to this assignment");
-      }
-
-      return res.json({
-        success: true,
-        assignment: {
-          ...assignment,
-          submissions: assignment.submissions.filter(
-            (item) => item.student.userId === currentUser.id,
-          ),
-        },
-      });
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-
-      if (assignment.course.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You do not manage this assignment");
-      }
-    }
-
-    res.json({
-      success: true,
-      assignment,
-    });
-  }),
+  getAssignmentByIdHandler
 );
 
 router.post(
@@ -642,60 +171,7 @@ router.post(
   requireAuth,
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(assignmentCreateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const course = await prisma.course.findUnique({
-      where: { id: req.body.courseId },
-    });
-
-    if (!course) {
-      throw new AppError(404, "Course not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      if (course.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You can only create assignments for your own courses");
-      }
-    }
-
-    const assignment = await prisma.assignment.create({
-      data: {
-        courseId: req.body.courseId,
-        title: req.body.title,
-        description: req.body.description,
-        type: req.body.type,
-        dueDate: req.body.dueDate,
-        maxScore: req.body.maxScore,
-        isPublished: req.body.isPublished ?? false,
-      },
-      include: {
-        course: {
-          include: {
-            lecturer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-        submissions: {
-          include: {
-            student: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      assignment,
-    });
-  }),
+  createAssignmentHandler
 );
 
 router.patch(
@@ -704,98 +180,7 @@ router.patch(
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(assignmentParamsSchema, "params"),
   validate(assignmentUpdateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const existing = await prisma.assignment.findUnique({
-      where: { id: String(req.params.id) },
-      include: {
-        course: true,
-      },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Assignment not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      if (existing.course.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You can only update assignments for your own courses");
-      }
-    }
-
-    const assignment = await prisma.assignment.update({
-      where: { id: existing.id },
-      data: {
-        title: req.body.title,
-        description: req.body.description,
-        type: req.body.type,
-        dueDate: req.body.dueDate,
-        maxScore: req.body.maxScore,
-        isPublished: req.body.isPublished,
-      },
-      include: {
-        course: {
-          include: {
-            lecturer: {
-              include: {
-                user: true,
-              },
-            },
-          },
-        },
-        submissions: {
-          include: {
-            student: {
-              include: {
-                user: true,
-              },
-            },
-          },
-          orderBy: {
-            submittedAt: "desc",
-          },
-        },
-      },
-    });
-
-    res.json({
-      success: true,
-      assignment,
-    });
-  }),
-);
-
-router.delete(
-  "/courses/:id",
-  requireAuth,
-  checkRole([Role.STAFF, Role.ADMIN, Role.LECTURER]),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const existing = await prisma.course.findUnique({
-      where: { id: String(req.params.id) },
-      include: { lecturer: true },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Course not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      if (existing.lecturer?.userId !== currentUser.id) {
-        throw new AppError(403, "You can only delete your own courses");
-      }
-    }
-
-    await prisma.course.delete({
-      where: { id: existing.id },
-    });
-
-    res.json({
-      success: true,
-      message: "Course deleted successfully",
-    });
-  }),
+  updateAssignmentHandler
 );
 
 router.delete(
@@ -803,35 +188,7 @@ router.delete(
   requireAuth,
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(assignmentParamsSchema, "params"),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const existing = await prisma.assignment.findUnique({
-      where: { id: String(req.params.id) },
-      include: {
-        course: true,
-      },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Assignment not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      if (existing.course.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You can only delete assignments for your own courses");
-      }
-    }
-
-    const assignment = await prisma.assignment.delete({
-      where: { id: existing.id },
-    });
-
-    res.json({
-      success: true,
-      assignment,
-    });
-  }),
+  deleteAssignmentHandler
 );
 
 router.post(
@@ -840,66 +197,7 @@ router.post(
   checkRole([Role.STUDENT]),
   validate(assignmentParamsSchema, "params"),
   validate(submissionCreateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const student = await getStudentProfileByUserId(currentUser.id);
-    const assignment = await prisma.assignment.findUnique({
-      where: { id: String(req.params.id) },
-      include: {
-        course: {
-          include: {
-            enrollments: true,
-          },
-        },
-      },
-    });
-
-    if (!assignment) {
-      throw new AppError(404, "Assignment not found");
-    }
-
-    const isEnrolled = assignment.course.enrollments.some((item) => item.studentId === student.id);
-    if (!assignment.isPublished || !isEnrolled) {
-      throw new AppError(403, "You do not have access to submit this assignment");
-    }
-
-    const submission = await prisma.submission.upsert({
-      where: {
-        assignmentId_studentId: {
-          assignmentId: assignment.id,
-          studentId: student.id,
-        },
-      },
-      update: {
-        files: req.body.files,
-        submittedAt: new Date(),
-        status: new Date() > assignment.dueDate ? "late" : "submitted",
-      },
-      create: {
-        assignmentId: assignment.id,
-        studentId: student.id,
-        files: req.body.files,
-        status: new Date() > assignment.dueDate ? "late" : "submitted",
-      },
-      include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
-        assignment: {
-          include: {
-            course: true,
-          },
-        },
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      submission,
-    });
-  }),
+  submitAssignmentHandler
 );
 
 router.patch(
@@ -908,61 +206,7 @@ router.patch(
   checkRole([Role.LECTURER, Role.ADMIN]),
   validate(assignmentParamsSchema, "params"),
   validate(submissionUpdateSchema),
-  asyncHandler(async (req, res) => {
-    const currentUser = requireUser(req);
-    const existing = await prisma.submission.findUnique({
-      where: { id: String(req.params.id) },
-      include: {
-        assignment: {
-          include: {
-            course: true,
-          },
-        },
-        student: {
-          include: {
-            user: true,
-          },
-        },
-      },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Submission not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      if (existing.assignment.course.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You can only grade submissions for your own courses");
-      }
-    }
-
-    const submission = await prisma.submission.update({
-      where: { id: existing.id },
-      data: {
-        score: req.body.score,
-        feedback: req.body.feedback,
-        status: req.body.status,
-      },
-      include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
-        assignment: {
-          include: {
-            course: true,
-          },
-        },
-      },
-    });
-
-    res.json({
-      success: true,
-      submission,
-    });
-  }),
+  updateSubmissionHandler
 );
 
 export const academicRoutes = router;
