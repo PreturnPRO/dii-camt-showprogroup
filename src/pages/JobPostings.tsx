@@ -98,7 +98,7 @@ export default function JobPostings() {
 
     const handleEdit = (job: JobPosting) => {
         setEditingJob(job);
-        const combinedSkills = [...job.preferredSkills, ...job.requirements].filter(Boolean);
+        const combinedSkills = Array.from(new Set([...job.preferredSkills, ...job.requirements].filter(Boolean)));
         setFormData({
             title: job.title,
             description: job.description || '',
@@ -131,8 +131,8 @@ export default function JobPostings() {
         positions: formData.positions,
         description: formData.description || formData.title,
         responsibilities: [],
-        requirements: formData.skills.map(s => s.name).filter(Boolean),
-        preferredSkills: formData.skills.map(s => s.name).filter(Boolean),
+        requirements: Array.from(new Set(formData.skills.map(s => s.name).filter(Boolean))),
+        preferredSkills: [], // Set to empty to prevent duplicating in requirements and preferredSkills
         salary: formData.salary,
         benefits: [],
         location: formData.location,
@@ -146,6 +146,32 @@ export default function JobPostings() {
             try {
                 const response = await api.jobs.update(editingJob.id, buildJobPayload());
                 setJobs(jobs.map(j => j.id === editingJob.id ? mapJob(response.job) : j));
+
+                // Notify active applicants about the job update
+                const activeApplicants = editingJob.applicants.filter(
+                    app => !['accepted', 'rejected'].includes(app.status)
+                );
+                
+                if (activeApplicants.length > 0) {
+                    const recipientIds = activeApplicants.map(app => app.studentId);
+                    try {
+                        await api.notifications.broadcast({
+                            title: language === 'th' ? 'มีการอัปเดตข้อมูลการจ้างงาน' : 'Job Posting Updated',
+                            message: language === 'th' 
+                                ? `ข้อมูลตำแหน่งงาน ${editingJob.title} ที่คุณสมัครไว้มีการอัปเดต โปรดตรวจสอบรายละเอียดใหม่`
+                                : `The job posting for ${editingJob.title} that you applied for has been updated. Please review the new details.`,
+                            type: 'application',
+                            priority: 'medium',
+                            recipientIds,
+                            actionUrl: `/internships`,
+                            actionLabel: language === 'th' ? 'ดูรายละเอียด' : 'View Details'
+                        });
+                        toast.success(language === 'th' ? 'แจ้งเตือนผู้สมัครเกี่ยวกับการอัปเดตแล้ว' : 'Notified applicants about the update.');
+                    } catch (err) {
+                        console.error('Failed to notify applicants:', err);
+                    }
+                }
+
                 toast.success(t.jobPostings.editSuccess);
             } catch (error) {
                 toast.error(error instanceof Error ? error.message : t.jobPostings.editJob);
@@ -302,10 +328,14 @@ export default function JobPostings() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-                                        transition={{ delay: index * 0.05 }}
-                                        className="p-5 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-900/70 dark:to-slate-950/70"
+                                        className={`relative overflow-hidden p-5 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-900/70 dark:to-slate-950/70 ${job.status === 'closed' ? 'opacity-70 grayscale' : ''}`}
                                     >
-                                        <div className="flex items-start justify-between mb-4">
+                                        {job.status === 'closed' && (
+                                            <div className="absolute top-5 -right-8 w-32 text-center transform rotate-45 bg-slate-800 text-white text-[10px] uppercase font-bold py-1 shadow-sm z-10 tracking-widest">
+                                                CLOSED
+                                            </div>
+                                        )}
+                                        <div className="flex items-start justify-between mb-4 relative z-0">
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <h3 className="font-semibold text-lg">{job.title}</h3>
@@ -328,17 +358,19 @@ export default function JobPostings() {
                                         <div className="flex items-center justify-between pt-4 border-t">
                                             <div className="flex-1 mr-6">
                                                 <div className="flex items-center justify-between text-sm mb-2">
-                                                    <span className="text-gray-600 dark:text-gray-400">{t.jobPostings.applicantsCount}</span>
-                                                    <span className="font-semibold">{job.applicants.length} {t.common.person}</span>
+                                                    <span className="text-gray-600 dark:text-gray-400">{language === 'th' ? 'ตอบรับเข้าทำงานแล้ว' : 'Accepted Candidates'}</span>
+                                                    <span className="font-semibold">{job.applicants.filter(app => app.status === 'accepted').length} / {job.positions} {t.common.person}</span>
                                                 </div>
-                                                <Progress value={job.maxApplicants ? (job.applicants.length / job.maxApplicants) * 100 : 50} className="h-2" />
+                                                <Progress value={(job.applicants.filter(app => app.status === 'accepted').length / Math.max(1, job.positions)) * 100} className="h-2" />
                                             </div>
                                             <div className="flex gap-2">
                                                 <Button size="sm" variant="outline" onClick={() => setSelectedJob(job)}><Eye className="w-4 h-4 mr-1" />{language === 'th' ? 'รายละเอียด' : 'Details'}</Button>
                                                 {canManageJob(job) && (
                                                     <>
                                                         <Button size="sm" variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
-                                                        <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
+                                                        {job.status !== 'closed' && (
+                                                            <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
+                                                        )}
                                                         <Button size="sm" variant="ghost" className="text-red-600 dark:text-slate-300" onClick={() => handleDelete(job.id)}><Trash2 className="w-4 h-4" /></Button>
                                                     </>
                                                 )}
@@ -370,6 +402,16 @@ export default function JobPostings() {
                         <DialogDescription>{t.jobPostings.fillDetails}</DialogDescription>
                     </DialogHeader>
                     <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                        <div className="grid gap-2">
+                            <Label>{language === 'th' ? 'สถานะการประกาศ' : 'Posting Status'}</Label>
+                            <Select value={formData.priority} onValueChange={v => setFormData({ ...formData, priority: v })}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="medium">{language === 'th' ? 'เปิดรับสมัคร' : 'Open'}</SelectItem>
+                                    <SelectItem value="low">{language === 'th' ? 'ปิดรับสมัคร' : 'Closed'}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.jobTitle}</Label>
                             <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
@@ -406,24 +448,18 @@ export default function JobPostings() {
                                 <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
                             </div>
                             <div className="grid gap-2">
-                                <Label>{language === 'th' ? 'ลำดับความสำคัญ (สถานะ)' : 'Priority (Status)'}</Label>
-                                <Select value={formData.priority} onValueChange={v => setFormData({ ...formData, priority: v })}>
-                                    <SelectTrigger><SelectValue /></SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="high">{language === 'th' ? 'สูง (เปิดรับ)' : 'High (Open)'}</SelectItem>
-                                        <SelectItem value="medium">{language === 'th' ? 'ปานกลาง (เปิดรับ)' : 'Medium (Open)'}</SelectItem>
-                                        <SelectItem value="low">{language === 'th' ? 'ต่ำ (ปิดรับ)' : 'Low (Closed)'}</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                <Label>{t.jobPostings.salary}</Label>
+                                <Input value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
                             </div>
                         </div>
                         <div className="grid gap-2">
-                            <Label>{t.jobPostings.salary}</Label>
-                            <Input value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
-                        </div>
-                        <div className="grid gap-2">
                             <Label>{t.jobPostings.deadline}</Label>
-                            <Input type="date" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
+                            <Input type="date" value={formData.deadline} onChange={e => {
+                                setFormData({ 
+                                    ...formData, 
+                                    deadline: e.target.value
+                                });
+                            }} />
                         </div>
                         <div className="grid gap-2">
                             <div className="flex items-center justify-between mb-2">
