@@ -403,6 +403,10 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    remove: (courseId: string) =>
+      request<ApiEnvelope<{ message: string }>>(`/enrollments/course/${courseId}`, {
+        method: "DELETE",
+      }),
   },
   assignments: {
     list: (query = "") => request<ApiEnvelope<{ assignments: unknown[] }>>(`/assignments${query}`),

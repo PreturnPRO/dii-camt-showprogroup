@@ -124,25 +124,54 @@ export default function Courses() {
   const [isImporting, setIsImporting] = React.useState(false);
   const importInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
+
   React.useEffect(() => {
     let mounted = true;
 
-    const coursesRequest = user?.role === 'lecturer'
-      ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
-      : api.courses.list();
-
-    coursesRequest
-      .then((response) => {
+    if (user?.role === 'student') {
+      Promise.allSettled([
+        api.courses.list(),
+        api.enrollments.list()
+      ]).then(([coursesResult, enrollmentsResult]) => {
         if (!mounted) return;
-        setCourses(response.courses.map(mapCourse));
-      })
-      .catch((error) => {
-        console.warn('Unable to load courses from API', error);
-        setCourses([]);
-      })
-      .finally(() => {
+        if (coursesResult.status === 'fulfilled') {
+          setCourses(coursesResult.value.courses.map(mapCourse));
+        } else {
+          setCourses([]);
+        }
+        if (enrollmentsResult.status === 'fulfilled') {
+          const mappedEnrollments = enrollmentsResult.value.enrollments.map((item, index) => {
+            const enrollment = asRecord(item);
+            return mapCourse(enrollment.course, index);
+          });
+          setEnrolledCourses(mappedEnrollments);
+        } else {
+          setEnrolledCourses([]);
+        }
+      }).catch((error) => {
+        console.warn('Unable to load data from API', error);
+      }).finally(() => {
         if (mounted) setIsLoading(false);
       });
+    } else {
+      const coursesRequest = user?.role === 'lecturer'
+        ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
+        : api.courses.list();
+
+      coursesRequest
+        .then((response) => {
+          if (!mounted) return;
+          setCourses(response.courses.map(mapCourse));
+        })
+        .catch((error) => {
+          console.warn('Unable to load courses from API', error);
+          setCourses([]);
+        })
+        .finally(() => {
+          if (mounted) setIsLoading(false);
+        });
+    }
 
     return () => {
       mounted = false;
@@ -182,6 +211,14 @@ export default function Courses() {
 
   const visibleCourses = user?.role === 'student' ? courses.filter(c => c.status === 'active') : courses;
 
+  const filteredEnrolledCourses = searchQuery
+    ? enrolledCourses.filter(c =>
+      c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.nameThai?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : enrolledCourses;
+
   const filteredCourses = searchQuery
     ? visibleCourses.filter(c =>
       c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -201,7 +238,7 @@ export default function Courses() {
       )
     ));
   }, [visibleCourses, registrationQuery]);
-  const totalCredits = visibleCourses.reduce((sum, course) => sum + course.credits, 0);
+  const totalCredits = user?.role === 'student' ? enrolledCourses.reduce((sum, course) => sum + course.credits, 0) : visibleCourses.reduce((sum, course) => sum + course.credits, 0);
   const creditProgress = Math.min((totalCredits / 22) * 100, 100);
 
   const handleRegistrationSearch = () => {
@@ -341,10 +378,35 @@ export default function Courses() {
         ...(sectionId ? { sectionId } : {}),
       });
       toast.success(language === 'th' ? 'ลงทะเบียนรายวิชาแล้ว' : 'Course registered');
-      const response = await api.courses.list();
-      setCourses(response.courses.map(mapCourse));
+      const [coursesResponse, enrollmentsResponse] = await Promise.all([
+        api.courses.list(),
+        api.enrollments.list()
+      ]);
+      setCourses(coursesResponse.courses.map(mapCourse));
+      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
+        const enrollment = asRecord(item);
+        return mapCourse(enrollment.course, index);
+      }));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ลงทะเบียนไม่สำเร็จ' : 'Unable to register'));
+    }
+  };
+
+  const dropCourse = async (courseId: string) => {
+    try {
+      await api.enrollments.remove(courseId);
+      toast.success(language === 'th' ? 'ถอนวิชาสำเร็จ' : 'Course dropped successfully');
+      const [coursesResponse, enrollmentsResponse] = await Promise.all([
+        api.courses.list(),
+        api.enrollments.list()
+      ]);
+      setCourses(coursesResponse.courses.map(mapCourse));
+      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
+        const enrollment = asRecord(item);
+        return mapCourse(enrollment.course, index);
+      }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ถอนวิชาไม่สำเร็จ' : 'Unable to drop course'));
     }
   };
 
@@ -770,12 +832,12 @@ export default function Courses() {
 
             {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.slice(0, 6).map((course, index) => (
+              {filteredEnrolledCourses.map((course, index) => (
                 <motion.div
                   key={course.id}
                   variants={itemVariants}
                   whileHover={{ y: -8, scale: 1.01 }}
-                  className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer overflow-hidden dark:bg-slate-900/50"
+                  className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 overflow-hidden dark:bg-slate-900/50"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
 
@@ -784,9 +846,13 @@ export default function Courses() {
                       <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors dark:bg-slate-900/50">
                         {(user as unknown as Student).year || 3}
                       </Badge>
-                      <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors dark:text-slate-300">
-                        <MoreHorizontal className="w-5 h-5" />
-                      </div>
+                      <button 
+                        onClick={() => dropCourse(course.id)}
+                        title={language === 'th' ? 'ถอนวิชา' : 'Drop Course'}
+                        className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors z-20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">{course.name}</h3>
@@ -803,7 +869,7 @@ export default function Courses() {
                       </div>
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span>{t.coursesPage.room}</span>
+                        <span>{course.room || t.coursesPage.room}</span>
                       </div>
                     </div>
 
@@ -811,12 +877,12 @@ export default function Courses() {
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                       <div className="flex justify-between text-xs font-medium mb-2">
                         <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.progress}</span>
-                        <span className="text-blue-600 dark:text-slate-300">85%</span>
+                        <span className="text-blue-600 dark:text-slate-300">0%</span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: '85%' }}
+                          animate={{ width: '0%' }}
                           className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
                         />
                       </div>
@@ -824,6 +890,11 @@ export default function Courses() {
                   </div>
                 </motion.div>
               ))}
+              {filteredEnrolledCourses.length === 0 && (
+                <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
+                  {language === 'th' ? 'ยังไม่มีวิชาที่ลงทะเบียน' : 'No enrolled courses'}
+                </div>
+              )}
             </div>
           </TabsContent>
 

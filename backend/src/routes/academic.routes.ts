@@ -15,6 +15,9 @@ import {
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
+import { getCourses, getCourseById, createCourse, updateCourse, deleteCourse, importCourses, getLecturerSchedule } from "../services/course.service";
+import { getEnrollments, createEnrollment, dropCourseByStudent } from "../services/enrollment.service";
+import { getGradesDistribution, getStudentTranscript, getAttendance, recordAttendance, getAssignments, createAssignment, submitAssignment } from "../services/academic-core.service";
 
 const router = Router();
 
@@ -156,74 +159,16 @@ router.get(
   "/courses",
   validate(courseQuerySchema, "query"),
   asyncHandler(async (req, res) => {
-    const { q, semester, academicYear, lecturerId } = req.query;
-
-    const courses = await prisma.course.findMany({
-      where: {
-        AND: [
-          q
-            ? {
-                OR: [
-                  { code: { contains: String(q), mode: "insensitive" } },
-                  { name: { contains: String(q), mode: "insensitive" } },
-                  { nameThai: { contains: String(q), mode: "insensitive" } },
-                ],
-              }
-            : {},
-          semester ? { semester: Number(semester) } : {},
-          academicYear ? { academicYear: String(academicYear) } : {},
-          lecturerId ? { lecturerId: String(lecturerId) } : {},
-        ],
-      },
-      include: {
-        lecturer: { include: { user: true } },
-        sections: { include: { facility: true } },
-        materials: true,
-        assignments: true,
-        enrollments: true,
-      },
-      orderBy: [{ academicYear: "desc" }, { semester: "desc" }, { code: "asc" }],
-    });
-
-    res.json({
-      success: true,
-      courses,
-    });
+    const courses = await getCourses(req.query as any);
+    res.json({ success: true, courses });
   }),
 );
 
 router.get(
   "/courses/:id",
   asyncHandler(async (req, res) => {
-    const courseIdentifier = String(req.params.id);
-    const course = await prisma.course.findFirst({
-      where: {
-        OR: [{ id: courseIdentifier }, { code: courseIdentifier }],
-      },
-      include: {
-        lecturer: { include: { user: true } },
-        sections: { include: { facility: true } },
-        materials: true,
-        assignments: { include: { submissions: true } },
-        enrollments: {
-          include: {
-            student: { include: { user: true } },
-            section: true,
-            history: true,
-            attendance: true,
-          },
-        },
-      },
-    });
-
-    if (!course) {
-      throw new AppError(404, "Course not found");
-    }
-
-    res.json({
-      success: true,
-      course,
-    });
+    const course = await getCourseById(String(req.params.id));
+    res.json({ success: true, course });
   }),
 );
 
@@ -234,50 +179,13 @@ router.post(
   validate(courseCreateSchema),
   asyncHandler(async (req, res) => {
     const currentUser = requireUser(req);
-    const sections = await prepareCourseSections(req.body.sections);
-    const course = await prisma.course.create({
-      data: {
-        code: req.body.code,
-        name: req.body.name,
-        nameThai: req.body.nameThai,
-        credits: req.body.credits,
-        semester: req.body.semester,
-        academicYear: req.body.academicYear,
-        year: req.body.year,
-        lecturerId: req.body.lecturerId,
-        description: req.body.description,
-        prerequisites: req.body.prerequisites,
-        learningOutcomes: req.body.learningOutcomes,
-        syllabus: req.body.syllabus,
-        schedule: req.body.schedule,
-        room: req.body.room,
-        status: req.body.status || (currentUser.role === Role.LECTURER ? "pending" : "active"),
-        maxStudents: req.body.maxStudents,
-        minStudents: req.body.minStudents,
-        sections: {
-          create: sections.map((section) => ({
-            number: section.number,
-            room: section.room,
-            facilityId: section.facilityId ?? undefined,
-            maxStudents: section.maxStudents,
-            schedule: section.schedule,
-          })),
-        },
-        materials: {
-          create: req.body.materials,
-        },
-      },
-      include: {
-        lecturer: { include: { user: true } },
-        sections: { include: { facility: true } },
-        materials: true,
-      },
-    });
-
-    res.status(201).json({
-      success: true,
-      course,
-    });
+    // Add default status if missing for lecturer
+    const courseData = {
+      ...req.body,
+      status: req.body.status || (currentUser.role === Role.LECTURER ? "pending" : "active")
+    };
+    const course = await createCourse(courseData);
+    res.status(201).json({ success: true, course });
   }),
 );
 
@@ -289,90 +197,7 @@ router.patch(
   asyncHandler(async (req, res) => {
     const currentUser = requireUser(req);
     const courseId = String(req.params.id);
-    const existing = await prisma.course.findUnique({
-      where: { id: courseId },
-      include: {
-        sections: { include: { facility: true } },
-        materials: true,
-      },
-    });
-
-    if (!existing) {
-      throw new AppError(404, "Course not found");
-    }
-
-    if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      if (existing.lecturerId !== lecturer.id) {
-        throw new AppError(403, "You can only update your own courses");
-      }
-      if (req.body.lecturerId && req.body.lecturerId !== lecturer.id) {
-        throw new AppError(403, "Lecturers cannot reassign courses");
-      }
-    }
-
-    const sections = req.body.sections
-      ? await prepareCourseSections(req.body.sections, existing.id)
-      : null;
-
-    const course = await prisma.$transaction(async (tx) => {
-      if (sections) {
-        await tx.section.deleteMany({
-          where: { courseId: existing.id },
-        });
-      }
-
-      if (req.body.materials) {
-        await tx.courseMaterial.deleteMany({
-          where: { courseId: existing.id },
-        });
-      }
-
-      return tx.course.update({
-        where: { id: existing.id },
-        data: {
-          code: req.body.code,
-          name: req.body.name,
-          nameThai: req.body.nameThai,
-          credits: req.body.credits,
-          semester: req.body.semester,
-          academicYear: req.body.academicYear,
-          year: req.body.year,
-          lecturerId: req.body.lecturerId,
-          description: req.body.description,
-          prerequisites: req.body.prerequisites,
-          learningOutcomes: req.body.learningOutcomes,
-          syllabus: req.body.syllabus,
-          schedule: req.body.schedule,
-          room: req.body.room,
-          status: req.body.status,
-          maxStudents: req.body.maxStudents,
-          minStudents: req.body.minStudents,
-          sections: sections
-            ? {
-                create: sections.map((section) => ({
-                  number: section.number,
-                  room: section.room,
-                  facilityId: section.facilityId ?? undefined,
-                  maxStudents: section.maxStudents,
-                  schedule: section.schedule,
-                })),
-              }
-            : undefined,
-          materials: req.body.materials
-            ? {
-                create: req.body.materials,
-              }
-            : undefined,
-        },
-        include: {
-          lecturer: { include: { user: true } },
-          sections: { include: { facility: true } },
-          materials: true,
-          assignments: true,
-        },
-      });
-    });
+    const course = await updateCourse(currentUser, courseId, req.body);
 
     res.json({
       success: true,
@@ -431,34 +256,7 @@ router.get(
   requireAuth,
   asyncHandler(async (req, res) => {
     const currentUser = requireUser(req);
-    const { studentId, courseId } = req.query;
-
-    let where: Record<string, unknown> = {};
-
-    if (currentUser.role === Role.STUDENT) {
-      const student = await getStudentProfileByUserId(currentUser.id);
-      where = { studentId: student.id };
-    } else if (currentUser.role === Role.LECTURER) {
-      const lecturer = await getLecturerProfileByUserId(currentUser.id);
-      where = { course: { lecturerId: lecturer.id } };
-    } else {
-      where = {
-        ...(studentId ? { studentId: String(studentId) } : {}),
-        ...(courseId ? { courseId: String(courseId) } : {}),
-      };
-    }
-
-    const enrollments = await prisma.enrollment.findMany({
-      where,
-      include: {
-        student: { include: { user: true } },
-        course: true,
-        section: true,
-        history: { orderBy: { modifiedAt: "desc" } },
-        attendance: { orderBy: { date: "desc" } },
-      },
-      orderBy: { createdAt: "desc" },
-    });
+    const enrollments = await getEnrollments(currentUser, req.query as any);
 
     res.json({
       success: true,
@@ -474,59 +272,26 @@ router.post(
   validate(enrollSchema),
   asyncHandler(async (req, res) => {
     const currentUser = requireUser(req);
-    const student =
-      currentUser.role === Role.STUDENT
-        ? await getStudentProfileByUserId(currentUser.id)
-        : req.body.studentId
-          ? await getStudentProfileByAnyId(req.body.studentId)
-          : null;
-
-    if (!student) {
-      throw new AppError(400, "studentId is required for staff, admin, and lecturer enrollments");
-    }
-
-    const existing = await prisma.enrollment.findFirst({
-      where: {
-        studentId: student.id,
-        courseId: req.body.courseId,
-      },
-    });
-
-    if (existing) {
-      throw new AppError(409, "Student is already enrolled in this course");
-    }
-
-    const enrollment = await prisma.enrollment.create({
-      data: {
-        studentId: student.id,
-        courseId: req.body.courseId,
-        sectionId: req.body.sectionId,
-      },
-      include: {
-        student: { include: { user: true } },
-        course: true,
-        section: true,
-      },
-    });
-
-    await prisma.timelineEvent.create({
-      data: {
-        studentId: enrollment.studentId,
-        type: "enrollment",
-        title: `Enrolled in ${enrollment.course.code}`,
-        titleThai: `ลงทะเบียน ${enrollment.course.code}`,
-        description: `ลงทะเบียนเรียนวิชา ${enrollment.course.name} สำเร็จ`,
-        semester: enrollment.course.semester,
-        academicYear: enrollment.course.academicYear,
-        relatedId: enrollment.courseId,
-        relatedType: "course",
-        tags: ["enrollment", enrollment.course.code],
-      },
-    });
+    const enrollment = await createEnrollment(currentUser, req.body);
 
     res.status(201).json({
       success: true,
       enrollment,
+    });
+  }),
+);
+
+router.delete(
+  "/enrollments/course/:courseId",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  asyncHandler(async (req, res) => {
+    const currentUser = requireUser(req);
+    const result = await dropCourseByStudent(currentUser, String(req.params.courseId));
+
+    res.json({
+      success: true,
+      message: result.message,
     });
   }),
 );
@@ -609,14 +374,7 @@ router.get(
       throw new AppError(400, "studentId query is required for non-student roles");
     }
 
-    const enrollments = await prisma.enrollment.findMany({
-      where: { studentId: student.id },
-      include: {
-        course: true,
-        section: true,
-      },
-      orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
-    });
+    const enrollments = await getStudentTranscript(student.id);
 
     res.json({
       success: true,
