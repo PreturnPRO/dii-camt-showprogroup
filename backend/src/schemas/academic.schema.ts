@@ -133,3 +133,24 @@ export const submissionUpdateSchema = z.object({
   feedback: z.string().optional(),
   status: z.string().optional(),
 });
+
+export const startAttendanceSessionSchema = z.object({
+  courseId: z.string().min(1),
+  durationMinutes: z.coerce.number().int().positive().default(15),
+});
+
+export const qrCheckInSchema = z.object({
+  token: z.string().min(1),
+});
+export const attendanceSummaryParamsSchema = z.object({
+  courseId: z.string().min(1),
+});
+
+export const attendanceHistoryParamsSchema = z.object({
+  courseId: z.string().min(1),
+  studentId: z.string().min(1),
+});
+
+export const closeSessionParamsSchema = z.object({
+  id: z.string().min(1),
+});

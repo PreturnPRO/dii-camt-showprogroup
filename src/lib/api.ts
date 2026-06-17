@@ -480,6 +480,24 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    startSession: (payload: Record<string, unknown>) =>
+      request<ApiEnvelope<{ session: unknown }>>("/attendance/sessions", {
+        method: "POST",
+        body: payload,
+      }),
+    checkInSession: (payload: Record<string, unknown>) =>
+      request<ApiEnvelope<{ attendance: unknown }>>("/attendance/sessions/check-in", {
+        method: "POST",
+        body: payload,
+      }),
+    closeSession: (id: string) =>
+      request<ApiEnvelope<{ session: unknown }>>(`/attendance/sessions/${id}/close`, {
+        method: "PATCH",
+      }),
+    summary: (courseId: string) =>
+      request<ApiEnvelope<{ totalSessions: number; summary: unknown[] }>>(`/attendance/summary/${courseId}`),
+    history: (courseId: string, studentId: string) =>
+      request<ApiEnvelope<{ history: unknown[] }>>(`/attendance/history/${courseId}/${studentId}`),
   },
   activities: {
     list: (query = "") => request<ApiEnvelope<{ activities: unknown[] }>>(`/activities${query}`),

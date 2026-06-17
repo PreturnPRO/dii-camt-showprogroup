@@ -191,6 +191,7 @@ model Course {
   materials        CourseMaterial[]
   assignments      Assignment[]
   enrollments      Enrollment[]
+  attendanceSessions AttendanceSession[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -241,11 +242,25 @@ model AttendanceRecord {
   id           String     @id @default(cuid())
   enrollmentId String
   enrollment   Enrollment @relation(fields: [enrollmentId], references: [id])
+  sessionId    String?
+  session      AttendanceSession? @relation(fields: [sessionId], references: [id])
   date         DateTime
   status       String
   checkedInAt  DateTime   @default(now())
 
   @@unique([enrollmentId, date])
+}
+
+model AttendanceSession {
+  id          String   @id @default(cuid())
+  courseId    String
+  course      Course   @relation(fields: [courseId], references: [id])
+  token       String   @unique
+  date        DateTime @default(now())
+  expiresAt   DateTime
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  records     AttendanceRecord[]
 }
 
 model Assignment {

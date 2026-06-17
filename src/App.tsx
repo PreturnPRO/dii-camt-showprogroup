@@ -57,6 +57,7 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Training = lazy(() => import("./pages/Training"));
 const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
 const Automation = lazy(() => import("./pages/Automation"));
+const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -100,6 +101,7 @@ const App = () => (
                   <Route path="/application-history" element={<ApplicationHistory />} />
                   <Route path="/requests" element={<Requests />} />
                   <Route path="/training" element={<Training />} />
+                  <Route path="/student/checkin" element={<StudentQRCheckIn />} />
 
                   {/* Lecturer Routes */}
                   <Route path="/students" element={<Students />} />

@@ -12,7 +12,11 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
     where = { studentId: student.id };
   } else if (currentUser.role === Role.LECTURER) {
     const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    where = { course: { lecturerId: lecturer.id } };
+    where = { 
+      course: { lecturerId: lecturer.id },
+      ...(studentId ? { studentId: String(studentId) } : {}),
+      ...(courseId ? { courseId: String(courseId) } : {}),
+    };
   } else {
     where = {
       ...(studentId ? { studentId: String(studentId) } : {}),

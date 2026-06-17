@@ -19,6 +19,11 @@ import {
   assignmentParamsSchema,
   submissionCreateSchema,
   submissionUpdateSchema,
+  startAttendanceSessionSchema,
+  qrCheckInSchema,
+  attendanceSummaryParamsSchema,
+  attendanceHistoryParamsSchema,
+  closeSessionParamsSchema,
 } from "../schemas/academic.schema";
 import {
   getCoursesHandler,
@@ -42,6 +47,11 @@ import {
   deleteAssignmentHandler,
   submitAssignmentHandler,
   updateSubmissionHandler,
+  startAttendanceSessionHandler,
+  qrCheckInHandler,
+  getAttendanceSummaryHandler,
+  getStudentAttendanceHistoryHandler,
+  closeAttendanceSessionHandler,
 } from "../controllers/academic.controller";
 
 const router = Router();
@@ -148,6 +158,46 @@ router.post(
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(attendanceCheckInSchema),
   attendanceCheckInHandler
+);
+
+router.post(
+  "/attendance/sessions",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  validate(startAttendanceSessionSchema),
+  startAttendanceSessionHandler
+);
+
+router.post(
+  "/attendance/sessions/check-in",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  validate(qrCheckInSchema),
+  qrCheckInHandler
+);
+
+router.get(
+  "/attendance/summary/:courseId",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  validate(attendanceSummaryParamsSchema, "params"),
+  getAttendanceSummaryHandler
+);
+
+router.get(
+  "/attendance/history/:courseId/:studentId",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN, Role.STUDENT]),
+  validate(attendanceHistoryParamsSchema, "params"),
+  getStudentAttendanceHistoryHandler
+);
+
+router.patch(
+  "/attendance/sessions/:id/close",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  validate(closeSessionParamsSchema, "params"),
+  closeAttendanceSessionHandler
 );
 
 router.get(
