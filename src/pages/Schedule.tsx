@@ -29,7 +29,7 @@ const itemVariants = {
 
 export default function Schedule() {
   const { user } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [currentWeek, setCurrentWeek] = React.useState(0);
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [courses, setCourses] = React.useState<Course[]>([]);
@@ -69,7 +69,7 @@ export default function Schedule() {
         day: dayIndexByName[slot.day.toLowerCase()] ?? 0,
         startTime: slot.startTime,
         endTime: slot.endTime,
-        room: slot.room
+        room: slot.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
       }))
     ).filter(item => item.day > 0);
   }, [courses]);

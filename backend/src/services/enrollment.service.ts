@@ -24,7 +24,12 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
     where,
     include: {
       student: { include: { user: true } },
-      course: true,
+      course: {
+        include: {
+          lecturer: { include: { user: true } },
+          sections: { include: { facility: true } },
+        },
+      },
       section: true,
       history: { orderBy: { modifiedAt: "desc" } },
       attendance: { orderBy: { date: "desc" } },

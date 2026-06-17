@@ -23,6 +23,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
+import { getRoleProfile } from '@/lib/user-profile';
 import type { Course } from '@/types';
 
 type CourseRow = Course;
@@ -209,7 +210,12 @@ export default function Courses() {
     };
   }, [user?.role]);
 
-  const visibleCourses = user?.role === 'student' ? courses.filter(c => c.status === 'active') : courses;
+  const studentProfile = user?.role === 'student' ? getRoleProfile(user) : null;
+  const studentSemester = String(studentProfile?.semester ?? '1');
+
+  const visibleCourses = user?.role === 'student' 
+    ? courses.filter(c => c.status === 'active' && String(c.semester) === studentSemester) 
+    : courses;
 
   const filteredEnrolledCourses = searchQuery
     ? enrolledCourses.filter(c =>
@@ -559,7 +565,17 @@ export default function Courses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-semester">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-              <Input id="course-semester" type="number" min="1" value={courseForm.semester} onChange={(event) => updateCourseForm('semester', event.target.value)} />
+              <Select value={String(courseForm.semester)} onValueChange={(value) => updateCourseForm('semester', value)}>
+                <SelectTrigger id="course-semester">
+                  <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Pre-school</SelectItem>
+                  <SelectItem value="1">{language === 'th' ? 'เทอม 1' : 'Term 1'}</SelectItem>
+                  <SelectItem value="2">{language === 'th' ? 'เทอม 2' : 'Term 2'}</SelectItem>
+                  <SelectItem value="3">Summer</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-year">{language === 'th' ? 'ปีการศึกษา' : 'Academic year'}</Label>
@@ -903,71 +919,47 @@ export default function Courses() {
               <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
               <div className="relative z-10">
                 <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
-                  <Sparkles className="w-6 h-6 text-yellow-300" />
-                  {t.coursesPage.recommended}
+                  <BookMarked className="w-6 h-6 text-yellow-300" />
+                  {language === 'th' ? 'วิชาที่ต้องเรียนในภาคเรียนนี้' : 'Required courses this semester'}
                 </h2>
                 <p className="text-indigo-100 mb-8 max-w-2xl">
-                  {t.coursesPage.recommendedDesc}
+                  {language === 'th' ? 'รายวิชาที่คุณสามารถลงทะเบียนเรียนได้ในภาคการศึกษานี้' : 'Courses you can register for in this semester'}
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {courses.filter((course) => course.enrolledStudents.length < course.maxStudents).slice(0, 3).map((rec) => (
-                    <div key={rec.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50">
-                      <div className="flex justify-between items-start mb-3">
-                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{rec.code}</Badge>
-                        <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{rec.lecturerName || t.coursesPage.instructorTBA}</span>
-                      </div>
-                      <h3 className="font-bold text-lg mb-1">{rec.name}</h3>
-                      <p className="text-sm text-indigo-200">{rec.credits} {t.coursesPage.credits}</p>
-                      <Button size="sm" className="w-full mt-4 bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200" onClick={() => enrollCourse(rec)}>
-                        {t.coursesPage.addCourse}
-                      </Button>
-                    </div>
-                  ))}
-                  {!isLoading && courses.filter((course) => course.enrolledStudents.length < course.maxStudents).length === 0 && (
-                    <div className="md:col-span-3 rounded-2xl border border-white/20 bg-white/10 p-6 text-center text-sm text-indigo-100">
-                      {t.coursesPage.registrationClosed}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* General Search Placeholder */}
-            <motion.div variants={itemVariants} className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-12 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
-              <Search className="w-12 h-12 mb-4 opacity-50" />
-              <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">{t.coursesPage.searchOther}</h3>
-              <p className="text-sm mb-6">{t.coursesPage.searchDesc}</p>
-              <div className="flex gap-2 w-full max-w-md">
-                <Input
-                  placeholder={t.coursesPage.searchPlaceholder}
-                  value={registrationQuery}
-                  onChange={(event) => setRegistrationQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') handleRegistrationSearch();
-                  }}
-                  className="bg-white dark:bg-slate-900"
-                />
-                <Button onClick={handleRegistrationSearch}>{t.coursesPage.searchButton}</Button>
-              </div>
-              {registrationQuery.trim() && (
-                <div className="mt-6 w-full max-w-2xl space-y-3">
-                  {registrationMatches.slice(0, 5).map((course) => (
-                    <div key={course.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleCourses.map((course) => (
+                    <div key={course.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50 flex flex-col justify-between">
                       <div>
-                        <div className="font-bold text-slate-900 dark:text-white">{course.code} · {course.name}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">{course.nameThai}</div>
+                        <div className="flex justify-between items-start mb-3">
+                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{course.code}</Badge>
+                          <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{course.lecturerName || t.coursesPage.instructorTBA}</span>
+                        </div>
+                        <h3 className="font-bold text-lg mb-1">{course.name}</h3>
+                        <div className="text-sm text-indigo-200 mb-3">{course.nameThai}</div>
                       </div>
-                      <Button size="sm" onClick={() => enrollCourse(course)}>{t.coursesPage.addCourse}</Button>
+                      <div>
+                        <div className="flex justify-between items-center mb-4 text-sm text-indigo-100">
+                          <span>{course.credits} {t.coursesPage.credits}</span>
+                          <span>{course.enrolledStudents.length}/{course.maxStudents} {language === 'th' ? 'คน' : 'students'}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={() => enrollCourse(course)}
+                          disabled={course.enrolledStudents.length >= course.maxStudents}
+                        >
+                          {course.enrolledStudents.length >= course.maxStudents ? (language === 'th' ? 'เต็มแล้ว' : 'Full') : t.coursesPage.addCourse}
+                        </Button>
+                      </div>
                     </div>
                   ))}
-                  {registrationMatches.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                      {language === 'th' ? 'ไม่พบรายวิชาที่เปิดลงทะเบียน' : 'No open courses found'}
+                  {!isLoading && visibleCourses.length === 0 && (
+                    <div className="md:col-span-3 rounded-2xl border border-white/20 bg-white/10 p-6 text-center text-sm text-indigo-100">
+                      {language === 'th' ? 'ไม่มีวิชาที่เปิดสอนในภาคเรียนนี้' : 'No courses available this semester'}
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </motion.div>
           </TabsContent>
         </Tabs>

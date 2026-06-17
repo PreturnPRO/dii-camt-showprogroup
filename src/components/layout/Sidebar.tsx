@@ -54,8 +54,8 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
     case 'student':
       return [
         ...commonItems,
-        // { icon: BookOpen, label: nav.courses, href: '/courses' }, // ถูกตัดออกตาม Request
-        // { icon: Calendar, label: nav.schedule, href: '/schedule' }, // ถูกตัดออกตาม Request
+        { icon: BookOpen, label: nav.courses, href: '/courses' },
+        { icon: Calendar, label: nav.schedule, href: '/schedule' },
         { icon: GraduationCap, label: nav.grades, href: '/grades' },
         { icon: Trophy, label: nav.activities, href: '/activities' },
         { icon: FileText, label: nav.portfolio, href: '/portfolio' },

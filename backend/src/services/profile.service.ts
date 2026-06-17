@@ -100,7 +100,7 @@ export const getLecturerProfileByUserId = async (userId: string) => {
     include: {
       user: true,
       officeHours: true,
-      courses: { include: { sections: true, enrollments: true } },
+      courses: { include: { sections: { include: { facility: true } }, enrollments: true, lecturer: { include: { user: true } } } },
       advisees: { include: { user: true } },
       appointments: { include: { student: { include: { user: true } } } },
       workload: true,
