@@ -21,6 +21,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Courses = lazy(() => import("./pages/Courses"));
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Grades = lazy(() => import("./pages/Grades"));
+const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Internships = lazy(() => import("./pages/Internships"));
@@ -89,6 +90,7 @@ const App = () => (
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/personal-dashboard" element={<PersonalDashboard />} />
                   <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses/:courseId/grading" element={<CourseGradingSettings />} />
                   <Route path="/schedule" element={<Schedule />} />
                   <Route path="/grades" element={<Grades />} />
                   <Route path="/activities" element={<Activities />} />

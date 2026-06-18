@@ -52,6 +52,7 @@ import {
   getAttendanceSummaryHandler,
   getStudentAttendanceHistoryHandler,
   closeAttendanceSessionHandler,
+  exportGradesCsvHandler,
 } from "../controllers/academic.controller";
 
 const router = Router();
@@ -142,6 +143,13 @@ router.get(
   requireAuth,
   validate(transcriptQuerySchema, "query"),
   getStudentTranscriptHandler
+);
+
+router.get(
+  "/courses/:courseId/grades/export",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.ADMIN]),
+  exportGradesCsvHandler
 );
 
 router.get(

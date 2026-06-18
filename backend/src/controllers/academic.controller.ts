@@ -132,6 +132,61 @@ export const gradeBulkHandler = asyncHandler(async (req, res) => {
   });
 });
 
+export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const courseId = String(req.params.courseId);
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      gradingCriteria: { orderBy: { orderIndex: 'asc' } },
+      enrollments: {
+        include: {
+          student: { include: { user: true } },
+          scores: true,
+        },
+      },
+    },
+  });
+
+  if (!course) {
+    throw new AppError(404, "Course not found");
+  }
+
+  if (currentUser.role === Role.LECTURER) {
+    const lecturer = await getLecturerProfileByUserId(currentUser.id);
+    if (course.lecturerId !== lecturer.id) {
+      throw new AppError(403, "You can only export grades for your own courses");
+    }
+  }
+
+  const criteriaList = course.gradingCriteria;
+  
+  // CSV Header
+  let csv = "Student ID,Name,";
+  criteriaList.forEach(c => {
+    csv += `"${c.name} (${c.maxScore})",`;
+  });
+  // Dynamic criteria headers are used directly
+  csv += "Total,Grade,Remarks\n";
+
+  // CSV Rows
+  course.enrollments.forEach(enrollment => {
+    csv += `"${enrollment.student.studentId}","${enrollment.student.user.name}",`;
+    
+    criteriaList.forEach(c => {
+      const scoreObj = enrollment.scores.find(s => s.criteriaId === c.id);
+      csv += `${scoreObj ? scoreObj.score : ""},`;
+    });
+
+    csv += `${enrollment.total ?? ""},"${enrollment.letterGrade ?? ""}","${enrollment.remarks ?? ""}"\n`;
+  });
+
+  res.setHeader("Content-Type", "text/csv");
+  res.setHeader("Content-Disposition", `attachment; filename="grades_${course.code}.csv"`);
+  res.send(csv);
+});
+
 export const getGradesHistoryHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student = await getStudentProfileByAnyId(String(req.params.studentId));
@@ -873,7 +928,6 @@ async function checkAttendanceWarning(enrollmentId: string) {
       where: {
         userId: enrollment.student.userId,
         type: 'ATTENDANCE_WARNING',
-        relatedId: enrollment.courseId,
         createdAt: {
           gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Don't warn more than once a week
         }
@@ -889,8 +943,6 @@ async function checkAttendanceWarning(enrollmentId: string) {
           message: `Your attendance is currently at ${percentage.toFixed(1)}%, which is below the 80% requirement.`,
           messageThai: `เวลาเรียนของคุณในวิชานี้อยู่ที่ ${percentage.toFixed(1)}% ซึ่งต่ำกว่าเกณฑ์ 80%`,
           type: 'ATTENDANCE_WARNING',
-          relatedId: enrollment.courseId,
-          relatedType: 'course',
         }
       });
       emitToUser(enrollment.student.userId, 'notification:created', { type: 'ATTENDANCE_WARNING' });
@@ -900,9 +952,10 @@ async function checkAttendanceWarning(enrollmentId: string) {
 
 export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
+  const courseIdStr = String(courseId);
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { courseId },
+    where: { courseId: String(courseId) },
     include: {
       student: { include: { user: true } },
     },
@@ -910,14 +963,14 @@ export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
 
   const records = await prisma.attendanceRecord.findMany({
     where: {
-      enrollment: { courseId },
+      enrollment: { courseId: String(courseId) },
     },
   });
 
   const distinctDaysResult = await prisma.attendanceRecord.groupBy({
     by: ['date'],
     where: {
-      enrollment: { courseId },
+      enrollment: { courseId: String(courseId) },
     },
   });
   const totalSessions = distinctDaysResult.length;
@@ -937,7 +990,7 @@ export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
     }
 
     return {
-      studentId: enrollment.student.id,
+      studentId: enrollment.studentId,
       studentCode: enrollment.student.studentId,
       name: enrollment.student.user.name,
       present: presentCount,
@@ -969,8 +1022,8 @@ export const getStudentAttendanceHistoryHandler = asyncHandler(async (req, res) 
   const records = await prisma.attendanceRecord.findMany({
     where: {
       enrollment: {
-        courseId,
-        studentId,
+        courseId: String(courseId),
+        studentId: String(studentId),
       },
     },
     orderBy: { date: 'desc' },
@@ -984,7 +1037,7 @@ export const getStudentAttendanceHistoryHandler = asyncHandler(async (req, res) 
 
 export const closeAttendanceSessionHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
-  const { id } = req.params;
+  const id = String(req.params.id);
 
   const session = await prisma.attendanceSession.findUnique({
     where: { id },

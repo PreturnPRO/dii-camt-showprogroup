@@ -472,6 +472,8 @@ export const api = {
       request<ApiEnvelope<{ student: unknown; transcript: unknown[] }>>(
         `/student/transcript${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
       ),
+    exportCsv: (courseId: string) =>
+      requestBlob(`/courses/${encodeURIComponent(courseId)}/grades/export`),
   },
   attendance: {
     report: (query = "") => request<ApiEnvelope<{ attendance: unknown[] }>>(`/attendance/report${query}`),

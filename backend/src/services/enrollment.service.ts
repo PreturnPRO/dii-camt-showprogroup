@@ -37,6 +37,7 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
       section: true,
       history: { orderBy: { modifiedAt: "desc" } },
       attendance: { orderBy: { date: "desc" } },
+      scores: { include: { criteria: true } },
     },
     orderBy: { createdAt: "desc" },
   });

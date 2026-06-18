@@ -192,6 +192,8 @@ model Course {
   assignments      Assignment[]
   enrollments      Enrollment[]
   attendanceSessions AttendanceSession[]
+  gradingCriteria  CourseGradingCriteria[]
+  gradeCutoffs     CourseGradeCutoff[]
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -219,11 +221,6 @@ model Enrollment {
   course        Course             @relation(fields: [courseId], references: [id])
   sectionId     String?
   section       Section?           @relation(fields: [sectionId], references: [id])
-  midterm       Float?
-  final         Float?
-  assignments   Float?
-  participation Float?
-  project       Float?
   total         Float?
   letterGrade   String?
   status        String             @default("enrolled")
@@ -232,10 +229,52 @@ model Enrollment {
   remarks       String?
   history       GradeHistory[]
   attendance    AttendanceRecord[]
+  scores        EnrollmentScore[]
   createdAt     DateTime           @default(now())
   updatedAt     DateTime           @updatedAt
 
   @@unique([studentId, courseId])
+}
+
+model CourseGradingCriteria {
+  id               String       @id @default(cuid())
+  courseId         String
+  course           Course       @relation(fields: [courseId], references: [id])
+  name             String
+  weightPercentage Float
+  maxScore         Float        @default(100)
+  orderIndex       Int          @default(0)
+  scores           EnrollmentScore[]
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@index([courseId])
+}
+
+model CourseGradeCutoff {
+  id        String   @id @default(cuid())
+  courseId  String
+  course    Course   @relation(fields: [courseId], references: [id])
+  grade     String
+  minScore  Float
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([courseId, grade])
+}
+
+model EnrollmentScore {
+  id           String                @id @default(cuid())
+  enrollmentId String
+  enrollment   Enrollment            @relation(fields: [enrollmentId], references: [id])
+  criteriaId   String
+  criteria     CourseGradingCriteria @relation(fields: [criteriaId], references: [id], onDelete: Cascade)
+  score        Float
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  @@unique([enrollmentId, criteriaId])
+  @@index([enrollmentId])
 }
 
 model AttendanceRecord {

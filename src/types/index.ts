@@ -202,7 +202,8 @@ export interface Course {
 
   // Grading
   grades: Grade[];
-  gradingCriteria?: GradingCriteria;
+  gradingCriteria?: CourseGradingCriteria[];
+  gradeCutoffs?: CourseGradeCutoff[];
 }
 
 export interface Section {
@@ -256,24 +257,36 @@ export interface Submission {
   status: 'submitted' | 'graded' | 'late' | 'missing';
 }
 
-export interface GradingCriteria {
-  midterm: number; // percentage
-  final: number;
-  assignments: number;
-  participation: number;
-  project?: number;
+export interface CourseGradingCriteria {
+  id: string;
+  courseId: string;
+  name: string;
+  weightPercentage: number;
+  maxScore: number;
+  orderIndex: number;
+}
+
+export interface CourseGradeCutoff {
+  id: string;
+  courseId: string;
+  grade: string;
+  minScore: number;
+}
+
+export interface EnrollmentScore {
+  id: string;
+  enrollmentId: string;
+  criteriaId: string;
+  score: number;
 }
 
 export interface Grade {
   studentId: string;
   courseId: string;
-  midterm?: number;
-  final?: number;
-  assignments?: number;
-  participation?: number;
-  project?: number;
+
+  scores?: EnrollmentScore[];
   total?: number;
-  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W';
+  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W' | string;
   gradedBy: string;
   gradedAt?: Date;
   remarks?: string;

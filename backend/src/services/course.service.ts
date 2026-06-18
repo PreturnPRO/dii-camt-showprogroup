@@ -60,7 +60,40 @@ export const getCourseById = async (courseIdentifier: string) => {
 };
 
 export const createCourse = async (data: any) => {
-  const { sections, materials, ...courseData } = data;
+  const { sections, materials, gradingCriteria: inputGradingCriteria, gradeCutoffs, ...courseData } = data;
+  
+  let gradingCriteria = inputGradingCriteria;
+  if (!gradingCriteria || gradingCriteria.length === 0) {
+    gradingCriteria = [
+      { name: 'Midterm', weightPercentage: 30, maxScore: 100, orderIndex: 0 },
+      { name: 'Final', weightPercentage: 40, maxScore: 100, orderIndex: 1 },
+      { name: 'Assignments', weightPercentage: 10, maxScore: 100, orderIndex: 2 },
+      { name: 'Participation', weightPercentage: 10, maxScore: 100, orderIndex: 3 },
+      { name: 'Project', weightPercentage: 10, maxScore: 100, orderIndex: 4 },
+    ];
+  }
+  
+  let finalGradeCutoffs = gradeCutoffs;
+  if (!finalGradeCutoffs || finalGradeCutoffs.length === 0) {
+    finalGradeCutoffs = [
+      { grade: 'A', minScore: 80 },
+      { grade: 'B+', minScore: 75 },
+      { grade: 'B', minScore: 70 },
+      { grade: 'C+', minScore: 65 },
+      { grade: 'C', minScore: 60 },
+      { grade: 'D+', minScore: 55 },
+      { grade: 'D', minScore: 50 },
+      { grade: 'F', minScore: 0 },
+    ];
+  }
+  
+  if (gradingCriteria) {
+    const totalWeight = gradingCriteria.reduce((sum: number, c: any) => sum + (Number(c.weightPercentage) || 0), 0);
+    if (totalWeight > 100) {
+      throw new AppError(400, "Total grading criteria weight cannot exceed 100%");
+    }
+  }
+
   const existing = await prisma.course.findFirst({
     where: {
       code: courseData.code,
@@ -80,17 +113,29 @@ export const createCourse = async (data: any) => {
       ...courseData,
       sections: { create: processedSections },
       materials: { create: materials },
+      gradingCriteria: { create: gradingCriteria },
+      gradeCutoffs: { create: finalGradeCutoffs },
     },
     include: {
       lecturer: { include: { user: true } },
       sections: { include: { facility: true } },
       materials: true,
+      gradingCriteria: true,
+      gradeCutoffs: true,
     },
   });
 };
 
 export const updateCourse = async (currentUser: any, id: string, data: any) => {
-  const { sections, materials, ...courseData } = data;
+  const { sections, materials, gradingCriteria, gradeCutoffs, ...courseData } = data;
+
+  if (gradingCriteria) {
+    const totalWeight = gradingCriteria.reduce((sum: number, c: any) => sum + (Number(c.weightPercentage) || 0), 0);
+    if (totalWeight > 100) {
+      throw new AppError(400, "Total grading criteria weight cannot exceed 100%");
+    }
+  }
+
   const existing = await prisma.course.findUnique({
     where: { id },
   });
@@ -122,6 +167,48 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
       });
     }
 
+    if (gradingCriteria) {
+      const incomingIds = gradingCriteria.filter((c: any) => c.id).map((c: any) => c.id);
+
+      await tx.courseGradingCriteria.deleteMany({
+        where: {
+          courseId: existing.id,
+          id: { notIn: incomingIds }
+        },
+      });
+
+      for (let i = 0; i < gradingCriteria.length; i++) {
+        const item = gradingCriteria[i];
+        if (item.id) {
+          await tx.courseGradingCriteria.update({
+            where: { id: item.id },
+            data: {
+              name: item.name,
+              weightPercentage: item.weightPercentage,
+              maxScore: item.maxScore,
+              orderIndex: i
+            }
+          });
+        } else {
+          await tx.courseGradingCriteria.create({
+            data: {
+              courseId: existing.id,
+              name: item.name,
+              weightPercentage: item.weightPercentage,
+              maxScore: item.maxScore,
+              orderIndex: i
+            }
+          });
+        }
+      }
+    }
+
+    if (gradeCutoffs) {
+      await tx.courseGradeCutoff.deleteMany({
+        where: { courseId: existing.id },
+      });
+    }
+
     return tx.course.update({
       where: { id: existing.id },
       data: {
@@ -136,11 +223,19 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
             create: materials,
           },
         }),
+
+        ...(gradeCutoffs && {
+          gradeCutoffs: {
+            create: gradeCutoffs,
+          },
+        }),
       },
       include: {
         lecturer: { include: { user: true } },
         sections: { include: { facility: true } },
         materials: true,
+        gradingCriteria: { orderBy: { orderIndex: 'asc' } },
+        gradeCutoffs: true,
       },
     });
   });
@@ -234,6 +329,8 @@ export const getLecturerSchedule = async (lecturerId: string) => {
     include: {
       sections: true,
       enrollments: true,
+      gradingCriteria: { orderBy: { orderIndex: 'asc' } },
+      gradeCutoffs: true,
     },
     orderBy: {
       code: "asc",

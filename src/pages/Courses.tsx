@@ -1,5 +1,6 @@
 import React from 'react';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Student } from '@/types';
@@ -8,7 +9,7 @@ import { toast } from 'sonner';
 import {
   BookOpen, Users, Calendar, MapPin, Filter, Search,
   GraduationCap, Clock, AlertCircle, ChevronRight,
-  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download, Trash2
+  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download, Trash2, Settings
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -115,6 +116,7 @@ const itemVariants = {
 export default function Courses() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [registrationQuery, setRegistrationQuery] = React.useState('');
   const [courses, setCourses] = React.useState<CourseRow[]>([]);
@@ -1145,7 +1147,11 @@ export default function Courses() {
               </div>
               <div className="flex gap-2 mt-5">
                 <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => openCourseEditor(course)}>
-                  {language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course'}
+                  {language === 'th' ? 'แก้ไข' : 'Edit'}
+                </Button>
+                <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => navigate(`/courses/${course.id}/grading`)}>
+                  <Settings className="w-4 h-4 mr-1" />
+                  {language === 'th' ? 'เกณฑ์ให้คะแนน' : 'Grading'}
                 </Button>
                 <Button className="rounded-xl px-3" variant="destructive" onClick={() => deleteCourse(course.id)}>
                   <Trash2 className="w-4 h-4" />
@@ -1310,8 +1316,15 @@ export default function Courses() {
                       className="rounded-xl"
                       onClick={() => openCourseEditor(course)}
                     >
-                      {t.common.viewAll}
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      {language === 'th' ? 'แก้ไข' : 'Edit'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() => navigate(`/courses/${course.id}/grading`)}
+                    >
+                      <Settings className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
