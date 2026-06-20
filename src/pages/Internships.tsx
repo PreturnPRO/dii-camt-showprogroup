@@ -45,8 +45,8 @@ export default function Internships() {
   const portfolio = studentProfile?.portfolio;
   const hasCV = Boolean(studentProfile?.cvUrl);
   const hasProjects = Boolean(portfolio?.projects?.length > 0);
-  const hasSummary = Boolean(portfolio?.summary || portfolio?.summaryThai);
-  const hasPortfolio = hasCV || hasProjects || hasSummary;
+  const isPublic = portfolio?.isPublic !== false;
+  const hasPortfolio = hasCV || (isPublic && hasProjects);
 
   React.useEffect(() => {
     let mounted = true;
@@ -387,7 +387,9 @@ export default function Internships() {
                         </Button>
                         {!hasApplied && !hasPortfolio && (
                           <div className="absolute -top-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-slate-800 text-white text-xs py-2 px-3 rounded-lg whitespace-nowrap pointer-events-none z-50">
-                            {language === 'th' ? 'คุณต้องเพิ่ม Portfolio หรือ CV อย่างน้อย 1 อย่างก่อนกดสมัคร' : 'You must add a Portfolio or CV before applying'}
+                            {!isPublic && !hasCV && hasProjects 
+                              ? (language === 'th' ? 'กรุณาตั้งค่า Portfolio เป็น Public ก่อนกดสมัคร' : 'Please set your Portfolio to Public before applying') 
+                              : (language === 'th' ? 'คุณต้องมีอย่างน้อย 1 โปรเจกต์ หรือแนบ CV ก่อนกดสมัคร' : 'You must have at least 1 project or a CV before applying')}
                             <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-800 rotate-45"></div>
                           </div>
                         )}

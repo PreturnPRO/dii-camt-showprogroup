@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Award, Code, Download, Share2, Edit, Plus,
   Github, Linkedin, Globe, Mail, Phone, MapPin, Calendar,
-  Trophy, GraduationCap, Target, Zap, ArrowUpRight, Layers
+  Trophy, GraduationCap, Target, Zap, ArrowUpRight, Layers, Upload, Trash
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { api } from '@/lib/api';
 import { mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
@@ -85,7 +87,124 @@ export default function Portfolio() {
     role: '',
     startDate: new Date().toISOString().split('T')[0],
     url: '',
+    images: [] as string[],
   });
+
+  const [isBioDialogOpen, setIsBioDialogOpen] = React.useState(false);
+  const [bioForm, setBioForm] = React.useState({
+    githubUrl: '',
+    linkedinUrl: '',
+    personalWebsite: '',
+  });
+
+  const [isSkillDialogOpen, setIsSkillDialogOpen] = React.useState(false);
+  const [skillForm, setSkillForm] = React.useState({
+    name: '',
+    category: 'programming',
+    level: 'intermediate',
+  });
+
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleEditBio = () => {
+    setBioForm({
+      githubUrl: student.portfolio?.githubUrl || '',
+      linkedinUrl: student.portfolio?.linkedinUrl || '',
+      personalWebsite: student.portfolio?.personalWebsite || '',
+    });
+    setIsBioDialogOpen(true);
+  };
+
+  const handleUpdateBio = async () => {
+    const currentPortfolio = student.portfolio;
+    try {
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary || '',
+          summaryThai: currentPortfolio?.summaryThai || '',
+          isPublic: currentPortfolio?.isPublic ?? true,
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: currentPortfolio?.projects ?? [],
+          githubUrl: bioForm.githubUrl,
+          linkedinUrl: bioForm.linkedinUrl,
+          personalWebsite: bioForm.personalWebsite,
+        },
+      });
+      setStudent(mapStudent(response.profile));
+      setIsBioDialogOpen(false);
+      toast.success('อัปเดตข้อมูลลิงก์เรียบร้อย');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ไม่สามารถอัปเดตข้อมูลลิงก์ได้');
+    }
+  };
+
+  const handleAddSkill = async () => {
+    if (!skillForm.name.trim()) {
+      toast.error('กรุณากรอกชื่อทักษะ');
+      return;
+    }
+    try {
+      const response = await api.students.updateProfile({
+        skills: [...student.skills, { ...skillForm, verifiedBy: '', yearsOfExperience: 0 }]
+      });
+      setStudent(mapStudent(response.profile));
+      setIsSkillDialogOpen(false);
+      setSkillForm({ name: '', category: 'programming', level: 'intermediate' });
+      toast.success('เพิ่มทักษะเรียบร้อย');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ไม่สามารถเพิ่มทักษะได้');
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('ขนาดไฟล์เกิน 5MB กรุณาเลือกไฟล์ที่มีขนาดเล็กกว่านี้');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const upload = await api.files.upload(file, { category: 'project', visibility: 'public' });
+      const asset = upload.asset as any;
+      const url = asset?.url || asset?.publicUrl || asset?.signedUrl;
+      if (url) {
+        setProjectForm(prev => ({ ...prev, images: [...prev.images, url] }));
+      } else {
+        throw new Error('No URL returned for image');
+      }
+    } catch (error) {
+      toast.error('อัปโหลดรูปภาพไม่สำเร็จ');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const togglePublic = async (checked: boolean) => {
+    if (!student.id) return; // Prevent data race
+    const currentPortfolio = student.portfolio;
+    try {
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary || '',
+          summaryThai: currentPortfolio?.summaryThai || '',
+          githubUrl: currentPortfolio?.githubUrl || '',
+          linkedinUrl: currentPortfolio?.linkedinUrl || '',
+          personalWebsite: currentPortfolio?.personalWebsite || '',
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: currentPortfolio?.projects ?? [],
+          isPublic: checked,
+        },
+      });
+      setStudent(mapStudent(response.profile));
+      toast.success(checked ? 'เปิดให้ดู Portfolio แบบ Public' : 'ตั้งเป็น Private แล้ว');
+    } catch (error) {
+      toast.error('ไม่สามารถอัปเดตสถานะ Public ได้');
+    }
+  };
 
   React.useEffect(() => {
     let mounted = true;
@@ -149,7 +268,7 @@ export default function Portfolio() {
       role: projectForm.role.trim(),
       startDate: projectForm.startDate,
       url: projectForm.url.trim(),
-      images: [],
+      images: projectForm.images,
       highlights: [],
     };
 
@@ -164,17 +283,7 @@ export default function Portfolio() {
           isPublic: currentPortfolio?.isPublic ?? true,
           sharedWith: currentPortfolio?.sharedWith ?? [],
           projects: [
-            ...projects.map((project) => ({
-              title: project.title,
-              description: project.description,
-              technologies: project.technologies,
-              role: project.role,
-              startDate: project.startDate,
-              endDate: project.endDate,
-              url: project.url || '',
-              images: project.images || [],
-              highlights: project.highlights || [],
-            })),
+            ...projects,
             projectPayload,
           ],
         },
@@ -187,11 +296,38 @@ export default function Portfolio() {
         role: '',
         startDate: new Date().toISOString().split('T')[0],
         url: '',
+        images: [],
       });
       setIsProjectDialogOpen(false);
       toast.success('เพิ่มผลงานลง Portfolio แล้ว');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'ไม่สามารถเพิ่มผลงานได้');
+    }
+  };
+
+  const handleDeleteProject = async (indexToDelete: number) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบผลงานนี้?')) return;
+    const currentPortfolio = student.portfolio;
+    const newProjects = [...projects];
+    newProjects.splice(indexToDelete, 1);
+    
+    try {
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary || '',
+          summaryThai: currentPortfolio?.summaryThai || '',
+          githubUrl: currentPortfolio?.githubUrl || '',
+          linkedinUrl: currentPortfolio?.linkedinUrl || '',
+          personalWebsite: currentPortfolio?.personalWebsite || '',
+          isPublic: currentPortfolio?.isPublic ?? true,
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: newProjects,
+        },
+      });
+      setStudent(mapStudent(response.profile));
+      toast.success('ลบผลงานเรียบร้อยแล้ว');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ไม่สามารถลบผลงานได้');
     }
   };
 
@@ -262,12 +398,19 @@ export default function Portfolio() {
             Portfolio<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600"> & CV</span>
           </motion.h1>
         </div>
+        <div className="flex gap-4 items-center">
+          <div className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <Switch checked={student.portfolio?.isPublic ?? true} onCheckedChange={togglePublic} id="public-mode" />
+            <Label htmlFor="public-mode" className="text-sm font-medium cursor-pointer">
+              {student.portfolio?.isPublic !== false ? 'Public Mode' : 'Private Mode'}
+            </Label>
+          </div>
         <div className="flex gap-3">
           <Button
             variant="outline"
             className="rounded-xl border-slate-200 dark:border-slate-700"
             onClick={() => {
-              const url = `${window.location.origin}/student-profiles?studentId=${encodeURIComponent(student.id)}`;
+              const url = `${window.location.origin}/portfolio/${encodeURIComponent(student.studentId)}`;
               void navigator.clipboard?.writeText(url);
               toast.success('Portfolio link copied');
             }}
@@ -287,6 +430,7 @@ export default function Portfolio() {
             <Download className="w-4 h-4 mr-2" /> ดาวน์โหลด CV
           </Button>
         </div>
+      </div>
       </div>
 
       {/* Dashboard-style Stats Grid */}
@@ -359,6 +503,9 @@ export default function Portfolio() {
                           {t.portfolioPage.viewDetails}
                         </Button>
                       </div>
+                      <button onClick={(e) => { e.stopPropagation(); handleDeleteProject(index); }} className="absolute top-4 right-4 z-20 p-2 bg-red-500/80 text-white rounded-xl hover:bg-red-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Trash className="w-4 h-4" />
+                      </button>
                     </div>
                     <div className="p-6">
                       <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-indigo-600 transition-colors">{project.title}</h3>
@@ -470,6 +617,11 @@ export default function Portfolio() {
                   <Globe className="w-5 h-5" />
                 </Button>
               </div>
+              <div className="flex gap-2 justify-center mt-4">
+                <Button variant="outline" size="sm" onClick={handleEditBio} className="w-full">
+                  <Edit className="w-4 h-4 mr-2" /> Edit Links & Bio
+                </Button>
+              </div>
             </div>
 
             <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 space-y-3">
@@ -492,10 +644,15 @@ export default function Portfolio() {
             variants={itemVariants}
             className="bg-white rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm dark:bg-slate-900"
           >
-            <h3 className="font-bold text-lg mb-6 flex items-center gap-2">
-              <Zap className="w-5 h-5 text-yellow-500" />
-              {t.portfolioPage.skills}
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                <Zap className="w-5 h-5 text-yellow-500" />
+                {t.portfolioPage.skills}
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setIsSkillDialogOpen(true)} className="h-8">
+                <Plus className="w-4 h-4 mr-1" /> Add Skill
+              </Button>
+            </div>
             <div className="space-y-5">
               {skills.map((skill, idx) => (
                 <div key={idx}>
@@ -552,10 +709,103 @@ export default function Portfolio() {
               <Label>ลิงก์ผลงาน</Label>
               <Input type="url" value={projectForm.url} onChange={(event) => setProjectForm((current) => ({ ...current, url: event.target.value }))} placeholder="https://example.com" />
             </div>
+            <div className="space-y-2">
+              <Label>รูปภาพผลงาน</Label>
+              <div className="flex gap-4 items-start">
+                {projectForm.images.map((img, idx) => (
+                  <div key={idx} className="relative w-20 h-20 rounded-lg overflow-hidden border">
+                    <img src={img} alt="preview" className="w-full h-full object-cover" />
+                    <button type="button" onClick={() => setProjectForm(prev => ({ ...prev, images: prev.images.filter((_, i) => i !== idx) }))} className="absolute top-1 right-1 p-1 bg-red-500/80 text-white rounded-md hover:bg-red-600">
+                      <Trash className="w-3 h-3" />
+                    </button>
+                  </div>
+                ))}
+                {projectForm.images.length < 3 && (
+                  <div className="flex-1">
+                    <input type="file" ref={fileInputRef} className="hidden" accept="image/png, image/jpeg, image/webp" onChange={handleImageUpload} />
+                    <Button variant="outline" type="button" onClick={() => fileInputRef.current?.click()} disabled={isUploadingImage} className="w-full h-20 border-dashed">
+                      {isUploadingImage ? <span className="animate-spin mr-2 border-2 border-indigo-600 border-t-transparent rounded-full w-4 h-4" /> : <Upload className="w-4 h-4 mr-2" />}
+                      {isUploadingImage ? 'Uploading...' : 'อัปโหลดรูปภาพ (สูงสุด 3 รูป)'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsProjectDialogOpen(false)}>ยกเลิก</Button>
             <Button onClick={handleAddProject}>บันทึกผลงาน</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isBioDialogOpen} onOpenChange={setIsBioDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Links & Bio</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>GitHub URL</Label>
+              <Input value={bioForm.githubUrl} onChange={(e) => setBioForm(prev => ({ ...prev, githubUrl: e.target.value }))} placeholder="https://github.com/username" />
+            </div>
+            <div className="space-y-2">
+              <Label>LinkedIn URL</Label>
+              <Input value={bioForm.linkedinUrl} onChange={(e) => setBioForm(prev => ({ ...prev, linkedinUrl: e.target.value }))} placeholder="https://linkedin.com/in/username" />
+            </div>
+            <div className="space-y-2">
+              <Label>Personal Website</Label>
+              <Input value={bioForm.personalWebsite} onChange={(e) => setBioForm(prev => ({ ...prev, personalWebsite: e.target.value }))} placeholder="https://mywebsite.com" />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBioDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleUpdateBio}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isSkillDialogOpen} onOpenChange={setIsSkillDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader>
+            <DialogTitle>เพิ่มทักษะ</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label>ชื่อทักษะ</Label>
+              <Input value={skillForm.name} onChange={(e) => setSkillForm(prev => ({ ...prev, name: e.target.value }))} placeholder="e.g. React, Python, Public Speaking" />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>หมวดหมู่</Label>
+                <Select value={skillForm.category} onValueChange={(val) => setSkillForm(prev => ({ ...prev, category: val }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="programming">Programming</SelectItem>
+                    <SelectItem value="framework">Framework</SelectItem>
+                    <SelectItem value="tool">Tool</SelectItem>
+                    <SelectItem value="soft_skill">Soft Skill</SelectItem>
+                    <SelectItem value="language">Language</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>ระดับความชำนาญ</Label>
+                <Select value={skillForm.level} onValueChange={(val) => setSkillForm(prev => ({ ...prev, level: val }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="beginner">Beginner</SelectItem>
+                    <SelectItem value="intermediate">Intermediate</SelectItem>
+                    <SelectItem value="advanced">Advanced</SelectItem>
+                    <SelectItem value="expert">Expert</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSkillDialogOpen(false)}>ยกเลิก</Button>
+            <Button onClick={handleAddSkill}>เพิ่มทักษะ</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

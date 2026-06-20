@@ -323,6 +323,8 @@ export const api = {
       request<ApiEnvelope<{ profile: unknown }>>(
         `/students/profile${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
       ),
+    profileById: (id: string) =>
+      request<ApiEnvelope<{ profile: unknown }>>(`/students/profile/${encodeURIComponent(id)}`),
     stats: (studentId?: string) =>
       request<ApiEnvelope<{ stats: unknown }>>(
         `/students/stats${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
