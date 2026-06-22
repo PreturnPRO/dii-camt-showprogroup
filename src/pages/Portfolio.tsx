@@ -21,7 +21,7 @@ import { mockStudent } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
-import type { Student } from '@/types';
+import type { Student, Project } from '@/types';
 
 const emptyStudent: Student = {
   id: '',
@@ -328,12 +328,15 @@ export default function Portfolio() {
     }
 
     const currentPortfolio = student.portfolio;
-    const projectPayload = {
+    const projectPayload: Project = {
+      id: editingProjectIndex !== null 
+        ? (projects[editingProjectIndex]?.id || `project-${Date.now()}`)
+        : `project-${Date.now()}`,
       title: projectForm.title.trim(),
       description: projectForm.description.trim(),
       technologies: projectForm.technologies.split(',').map((item) => item.trim()).filter(Boolean),
       role: projectForm.role.trim(),
-      startDate: projectForm.startDate,
+      startDate: new Date(projectForm.startDate),
       url: projectForm.url.trim(),
       images: projectForm.images,
       highlights: [],
