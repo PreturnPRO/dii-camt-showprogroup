@@ -22,6 +22,7 @@ import Requests from "./pages/Requests";
 import Messages from "./pages/Messages";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+import PublicPortfolio from "./pages/PublicPortfolio";
 // New pages
 import Students from "./pages/Students";
 import Assignments from "./pages/Assignments";
@@ -72,6 +73,7 @@ const App = () => (
                 <Route path="/reset-password" element={<ForgotPasswordPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/portfolio/:id" element={<PublicPortfolio />} />
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/personal-dashboard" element={<PersonalDashboard />} />

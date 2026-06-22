@@ -12,7 +12,10 @@ import {
   User,
   Globe,
   Search,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -65,6 +68,7 @@ interface HeaderProps {
 export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
   const { user, logout, switchRole } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
@@ -193,6 +197,15 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
           >
             <Globe className="h-3.5 w-3.5" />
             {language === 'th' ? 'EN' : 'TH'}
+          </button>
+
+          {/* Dark mode toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="toggle dark mode"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
           </button>
 
           {/* Notifications */}
