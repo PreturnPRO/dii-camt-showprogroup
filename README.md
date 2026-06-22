@@ -1,4 +1,4 @@
-# 🎓 DII CAMT ShowPro Group
+# 🎓 DII CAMT ShowPro Group (biw)
 
 **ระบบบริหารจัดการสาขาบูรณาการอุตสาหกรรมดิจิทัล (Digital Industry Integration)**  
 College of Arts, Media and Technology (CAMT) — Chiang Mai University
