@@ -1,5 +1,6 @@
 import React from 'react';
 import * as XLSX from 'xlsx';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Student } from '@/types';
@@ -8,9 +9,10 @@ import { toast } from 'sonner';
 import {
   BookOpen, Users, Calendar, MapPin, Filter, Search,
   GraduationCap, Clock, AlertCircle, ChevronRight,
-  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download, Trash2
+  MoreHorizontal, Plus, Sparkles, BookMarked, Upload, Download, Trash2, Settings
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -23,6 +25,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
+import { getRoleProfile } from '@/lib/user-profile';
 import type { Course } from '@/types';
 
 type CourseRow = Course;
@@ -41,6 +44,7 @@ type CourseFormState = {
   syllabus: string;
   status: string;
   room: string;
+  sectionNumber: string;
   scheduleDays: string[];
   scheduleStartTime: string;
   scheduleEndTime: string;
@@ -112,6 +116,7 @@ const itemVariants = {
 export default function Courses() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [registrationQuery, setRegistrationQuery] = React.useState('');
   const [courses, setCourses] = React.useState<CourseRow[]>([]);
@@ -124,25 +129,55 @@ export default function Courses() {
   const [isImporting, setIsImporting] = React.useState(false);
   const importInputRef = React.useRef<HTMLInputElement | null>(null);
 
+  const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
+  const [viewingCourse, setViewingCourse] = React.useState<CourseRow | null>(null);
+
   React.useEffect(() => {
     let mounted = true;
 
-    const coursesRequest = user?.role === 'lecturer'
-      ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
-      : api.courses.list();
-
-    coursesRequest
-      .then((response) => {
+    if (user?.role === 'student') {
+      Promise.allSettled([
+        api.courses.list(),
+        api.enrollments.list()
+      ]).then(([coursesResult, enrollmentsResult]) => {
         if (!mounted) return;
-        setCourses(response.courses.map(mapCourse));
-      })
-      .catch((error) => {
-        console.warn('Unable to load courses from API', error);
-        setCourses([]);
-      })
-      .finally(() => {
+        if (coursesResult.status === 'fulfilled') {
+          setCourses(coursesResult.value.courses.map(mapCourse));
+        } else {
+          setCourses([]);
+        }
+        if (enrollmentsResult.status === 'fulfilled') {
+          const mappedEnrollments = enrollmentsResult.value.enrollments.map((item, index) => {
+            const enrollment = asRecord(item);
+            return mapCourse(enrollment.course, index);
+          });
+          setEnrolledCourses(mappedEnrollments);
+        } else {
+          setEnrolledCourses([]);
+        }
+      }).catch((error) => {
+        console.warn('Unable to load data from API', error);
+      }).finally(() => {
         if (mounted) setIsLoading(false);
       });
+    } else {
+      const coursesRequest = user?.role === 'lecturer'
+        ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
+        : api.courses.list();
+
+      coursesRequest
+        .then((response) => {
+          if (!mounted) return;
+          setCourses(response.courses.map(mapCourse));
+        })
+        .catch((error) => {
+          console.warn('Unable to load courses from API', error);
+          setCourses([]);
+        })
+        .finally(() => {
+          if (mounted) setIsLoading(false);
+        });
+    }
 
     return () => {
       mounted = false;
@@ -180,7 +215,20 @@ export default function Courses() {
     };
   }, [user?.role]);
 
-  const visibleCourses = user?.role === 'student' ? courses.filter(c => c.status === 'active') : courses;
+  const studentProfile = user?.role === 'student' ? getRoleProfile(user) : null;
+  const studentSemester = String(studentProfile?.semester ?? '1');
+
+  const visibleCourses = user?.role === 'student' 
+    ? courses.filter(c => c.status === 'active' && String(c.semester) === studentSemester) 
+    : courses;
+
+  const filteredEnrolledCourses = searchQuery
+    ? enrolledCourses.filter(c =>
+      c.code?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.nameThai?.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    : enrolledCourses;
 
   const filteredCourses = searchQuery
     ? visibleCourses.filter(c =>
@@ -201,7 +249,7 @@ export default function Courses() {
       )
     ));
   }, [visibleCourses, registrationQuery]);
-  const totalCredits = visibleCourses.reduce((sum, course) => sum + course.credits, 0);
+  const totalCredits = user?.role === 'student' ? enrolledCourses.reduce((sum, course) => sum + course.credits, 0) : visibleCourses.reduce((sum, course) => sum + course.credits, 0);
   const creditProgress = Math.min((totalCredits / 22) * 100, 100);
 
   const handleRegistrationSearch = () => {
@@ -230,6 +278,7 @@ export default function Courses() {
       syllabus: course.syllabus || '',
       status: course.status || 'active',
       room: course.room || '',
+      sectionNumber: course.sections?.[0]?.number || '001',
       scheduleDays: course.schedule?.map(s => s.day) || [],
       scheduleStartTime: course.schedule?.[0]?.startTime || '09:00',
       scheduleEndTime: course.schedule?.[0]?.endTime || '12:00',
@@ -259,6 +308,7 @@ export default function Courses() {
       syllabus: '',
       status: user?.role === 'lecturer' ? 'pending' : 'active',
       room: '',
+      sectionNumber: '001',
       scheduleDays: [],
       scheduleStartTime: '09:00',
       scheduleEndTime: '12:00',
@@ -292,6 +342,17 @@ export default function Courses() {
         syllabus: courseForm.syllabus.trim(),
         status: courseForm.status,
         room: courseForm.room.trim(),
+        sections: [{
+          number: courseForm.sectionNumber.trim() || '001',
+          room: courseForm.room.trim(),
+          maxStudents: Number(courseForm.maxStudents),
+          schedule: courseForm.scheduleDays.map(day => ({
+            day,
+            startTime: courseForm.scheduleStartTime,
+            endTime: courseForm.scheduleEndTime,
+            type: 'lecture',
+          }))
+        }],
         schedule: courseForm.scheduleDays.map(day => ({
           day,
           startTime: courseForm.scheduleStartTime,
@@ -341,10 +402,35 @@ export default function Courses() {
         ...(sectionId ? { sectionId } : {}),
       });
       toast.success(language === 'th' ? 'ลงทะเบียนรายวิชาแล้ว' : 'Course registered');
-      const response = await api.courses.list();
-      setCourses(response.courses.map(mapCourse));
+      const [coursesResponse, enrollmentsResponse] = await Promise.all([
+        api.courses.list(),
+        api.enrollments.list()
+      ]);
+      setCourses(coursesResponse.courses.map(mapCourse));
+      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
+        const enrollment = asRecord(item);
+        return mapCourse(enrollment.course, index);
+      }));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ลงทะเบียนไม่สำเร็จ' : 'Unable to register'));
+    }
+  };
+
+  const dropCourse = async (courseId: string) => {
+    try {
+      await api.enrollments.remove(courseId);
+      toast.success(language === 'th' ? 'ถอนวิชาสำเร็จ' : 'Course dropped successfully');
+      const [coursesResponse, enrollmentsResponse] = await Promise.all([
+        api.courses.list(),
+        api.enrollments.list()
+      ]);
+      setCourses(coursesResponse.courses.map(mapCourse));
+      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
+        const enrollment = asRecord(item);
+        return mapCourse(enrollment.course, index);
+      }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ถอนวิชาไม่สำเร็จ' : 'Unable to drop course'));
     }
   };
 
@@ -497,7 +583,17 @@ export default function Courses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-semester">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-              <Input id="course-semester" type="number" min="1" value={courseForm.semester} onChange={(event) => updateCourseForm('semester', event.target.value)} />
+              <Select value={String(courseForm.semester)} onValueChange={(value) => updateCourseForm('semester', value)}>
+                <SelectTrigger id="course-semester">
+                  <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="0">Pre-school</SelectItem>
+                  <SelectItem value="1">{language === 'th' ? 'เทอม 1' : 'Term 1'}</SelectItem>
+                  <SelectItem value="2">{language === 'th' ? 'เทอม 2' : 'Term 2'}</SelectItem>
+                  <SelectItem value="3">Summer</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-year">{language === 'th' ? 'ปีการศึกษา' : 'Academic year'}</Label>
@@ -574,9 +670,15 @@ export default function Courses() {
                 <Input id="course-time-end" type="time" value={courseForm.scheduleEndTime} onChange={(event) => updateCourseForm('scheduleEndTime', event.target.value)} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-room">{language === 'th' ? 'ห้องเรียน' : 'Room Location'}</Label>
-              <Input id="course-room" placeholder="Ex. CAMT 113" value={courseForm.room} onChange={(event) => updateCourseForm('room', event.target.value)} />
+            <div className="space-y-2 flex gap-2">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="course-section">{language === 'th' ? 'ตอนเรียน (Section)' : 'Section'}</Label>
+                <Input id="course-section" placeholder="Ex. 001, 801" value={courseForm.sectionNumber} onChange={(event) => updateCourseForm('sectionNumber', event.target.value)} />
+              </div>
+              <div className="flex-[2] space-y-2">
+                <Label htmlFor="course-room">{language === 'th' ? 'ห้องเรียน' : 'Room Location'}</Label>
+                <Input id="course-room" placeholder="Ex. CAMT 113" value={courseForm.room} onChange={(event) => updateCourseForm('room', event.target.value)} />
+              </div>
             </div>
 
             <div className="md:col-span-2 space-y-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -751,6 +853,21 @@ export default function Courses() {
           </TabsList>
 
           <TabsContent value="my-courses" className="space-y-6">
+            <motion.div variants={itemVariants} className="flex justify-between items-center bg-white/60 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-4 rounded-2xl">
+              <div>
+                <h3 className="font-semibold text-slate-800 dark:text-slate-200">
+                  {language === 'th' ? 'ความคืบหน้าการลงทะเบียน' : 'Registration Progress'}
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {language === 'th' ? `คุณได้ลงทะเบียนไปแล้ว ${enrolledCourses.length} จาก ${visibleCourses.length} วิชาที่แนะนำในภาคเรียนนี้` : `You have enrolled in ${enrolledCourses.length} out of ${visibleCourses.length} recommended courses this semester`}
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enrolledCourses.length}/{visibleCourses.length}</span>
+                <span className="text-sm text-slate-500 dark:text-slate-400 block">{language === 'th' ? 'วิชา' : 'Courses'}</span>
+              </div>
+            </motion.div>
+
             {/* Search Bar */}
             <motion.div variants={itemVariants} className="flex flex-col md:flex-row gap-4">
               <div className="relative flex-1">
@@ -770,23 +887,28 @@ export default function Courses() {
 
             {/* Courses Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredCourses.slice(0, 6).map((course, index) => (
+              {filteredEnrolledCourses.map((course, index) => (
                 <motion.div
                   key={course.id}
                   variants={itemVariants}
                   whileHover={{ y: -8, scale: 1.01 }}
-                  className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer overflow-hidden dark:bg-slate-900/50"
+                  className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 overflow-hidden dark:bg-slate-900/50 cursor-pointer"
+                  onClick={() => setViewingCourse(course as unknown as CourseRow)}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
                       <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors dark:bg-slate-900/50">
                         {(user as unknown as Student).year || 3}
                       </Badge>
-                      <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors dark:text-slate-300">
-                        <MoreHorizontal className="w-5 h-5" />
-                      </div>
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); dropCourse(course.id); }}
+                        title={language === 'th' ? 'ถอนวิชา' : 'Drop Course'}
+                        className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors z-20"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
                     </div>
 
                     <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-1 group-hover:text-blue-600 transition-colors line-clamp-1">{course.name}</h3>
@@ -803,7 +925,7 @@ export default function Courses() {
                       </div>
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span>{t.coursesPage.room}</span>
+                        <span>{course.room || t.coursesPage.room}</span>
                       </div>
                     </div>
 
@@ -811,12 +933,12 @@ export default function Courses() {
                     <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
                       <div className="flex justify-between text-xs font-medium mb-2">
                         <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.progress}</span>
-                        <span className="text-blue-600 dark:text-slate-300">85%</span>
+                        <span className="text-blue-600 dark:text-slate-300">0%</span>
                       </div>
                       <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                         <motion.div
                           initial={{ width: 0 }}
-                          animate={{ width: '85%' }}
+                          animate={{ width: '0%' }}
                           className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
                         />
                       </div>
@@ -824,6 +946,11 @@ export default function Courses() {
                   </div>
                 </motion.div>
               ))}
+              {filteredEnrolledCourses.length === 0 && (
+                <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
+                  {language === 'th' ? 'ยังไม่มีวิชาที่ลงทะเบียน' : 'No enrolled courses'}
+                </div>
+              )}
             </div>
           </TabsContent>
 
@@ -832,74 +959,132 @@ export default function Courses() {
               <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
               <div className="relative z-10">
                 <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
-                  <Sparkles className="w-6 h-6 text-yellow-300" />
-                  {t.coursesPage.recommended}
+                  <BookMarked className="w-6 h-6 text-yellow-300" />
+                  {language === 'th' ? 'วิชาที่ต้องเรียนในภาคเรียนนี้' : 'Required courses this semester'}
                 </h2>
                 <p className="text-indigo-100 mb-8 max-w-2xl">
-                  {t.coursesPage.recommendedDesc}
+                  {language === 'th' ? 'รายวิชาที่คุณสามารถลงทะเบียนเรียนได้ในภาคการศึกษานี้' : 'Courses you can register for in this semester'}
                 </p>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {courses.filter((course) => course.enrolledStudents.length < course.maxStudents).slice(0, 3).map((rec) => (
-                    <div key={rec.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50">
-                      <div className="flex justify-between items-start mb-3">
-                        <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{rec.code}</Badge>
-                        <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{rec.lecturerName || t.coursesPage.instructorTBA}</span>
-                      </div>
-                      <h3 className="font-bold text-lg mb-1">{rec.name}</h3>
-                      <p className="text-sm text-indigo-200">{rec.credits} {t.coursesPage.credits}</p>
-                      <Button size="sm" className="w-full mt-4 bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200" onClick={() => enrollCourse(rec)}>
-                        {t.coursesPage.addCourse}
-                      </Button>
-                    </div>
-                  ))}
-                  {!isLoading && courses.filter((course) => course.enrolledStudents.length < course.maxStudents).length === 0 && (
-                    <div className="md:col-span-3 rounded-2xl border border-white/20 bg-white/10 p-6 text-center text-sm text-indigo-100">
-                      {t.coursesPage.registrationClosed}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </motion.div>
-
-            {/* General Search Placeholder */}
-            <motion.div variants={itemVariants} className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl p-12 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 dark:bg-slate-900/50">
-              <Search className="w-12 h-12 mb-4 opacity-50" />
-              <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300">{t.coursesPage.searchOther}</h3>
-              <p className="text-sm mb-6">{t.coursesPage.searchDesc}</p>
-              <div className="flex gap-2 w-full max-w-md">
-                <Input
-                  placeholder={t.coursesPage.searchPlaceholder}
-                  value={registrationQuery}
-                  onChange={(event) => setRegistrationQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') handleRegistrationSearch();
-                  }}
-                  className="bg-white dark:bg-slate-900"
-                />
-                <Button onClick={handleRegistrationSearch}>{t.coursesPage.searchButton}</Button>
-              </div>
-              {registrationQuery.trim() && (
-                <div className="mt-6 w-full max-w-2xl space-y-3">
-                  {registrationMatches.slice(0, 5).map((course) => (
-                    <div key={course.id} className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 text-left shadow-sm dark:border-slate-800 dark:bg-slate-950 sm:flex-row sm:items-center sm:justify-between">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {visibleCourses.map((course) => (
+                    <div key={course.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50 flex flex-col justify-between" onClick={() => setViewingCourse(course)}>
                       <div>
-                        <div className="font-bold text-slate-900 dark:text-white">{course.code} · {course.name}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">{course.nameThai}</div>
+                        <div className="flex justify-between items-start mb-3">
+                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{course.code}</Badge>
+                          <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{course.lecturerName || t.coursesPage.instructorTBA}</span>
+                        </div>
+                        <h3 className="font-bold text-lg mb-1">{course.name}</h3>
+                        <div className="text-sm text-indigo-200 mb-3">{course.nameThai}</div>
                       </div>
-                      <Button size="sm" onClick={() => enrollCourse(course)}>{t.coursesPage.addCourse}</Button>
+                      <div>
+                        <div className="flex justify-between items-center mb-4 text-sm text-indigo-100">
+                          <span>{course.credits} {t.coursesPage.credits}</span>
+                          <span>{course.enrolledStudents.length}/{course.maxStudents} {language === 'th' ? 'คน' : 'students'}</span>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          className="w-full bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" 
+                          onClick={(e) => { e.stopPropagation(); enrollCourse(course); }}
+                          disabled={enrolledCourses.some(c => c.id === course.id) || course.enrolledStudents.length >= course.maxStudents}
+                        >
+                          {enrolledCourses.some(c => c.id === course.id) 
+                            ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered') 
+                            : course.enrolledStudents.length >= course.maxStudents 
+                              ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
+                              : t.coursesPage.addCourse}
+                        </Button>
+                      </div>
                     </div>
                   ))}
-                  {registrationMatches.length === 0 && (
-                    <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-4 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                      {language === 'th' ? 'ไม่พบรายวิชาที่เปิดลงทะเบียน' : 'No open courses found'}
+                  {!isLoading && visibleCourses.length === 0 && (
+                    <div className="md:col-span-3 rounded-2xl border border-white/20 bg-white/10 p-6 text-center text-sm text-indigo-100">
+                      {language === 'th' ? 'ไม่มีวิชาที่เปิดสอนในภาคเรียนนี้' : 'No courses available this semester'}
                     </div>
                   )}
                 </div>
-              )}
+              </div>
             </motion.div>
           </TabsContent>
         </Tabs>
+
+        {/* Course Details Dialog */}
+        <Dialog open={!!viewingCourse} onOpenChange={(open) => !open && setViewingCourse(null)}>
+          <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
+                  {viewingCourse?.code}
+                </Badge>
+                <span className="dark:text-slate-100">{language === 'th' ? viewingCourse?.nameThai : viewingCourse?.name}</span>
+              </DialogTitle>
+              <DialogDescription className="text-slate-500 dark:text-slate-400">
+                {language === 'en' ? viewingCourse?.nameThai : viewingCourse?.name}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5 pt-4">
+              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'อาจารย์ผู้สอน' : 'Instructor'}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.lecturerName || (language === 'th' ? 'อ.ไม่ระบุ' : 'TBA')}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'หน่วยกิต' : 'Credits'}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.credits} {t.coursesPage.credits}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'สถานที่เรียน' : 'Room Location'}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.room || (language === 'th' ? 'ไม่ระบุ' : 'TBA')}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'ที่นั่งว่าง' : 'Available Seats'}</p>
+                  <p className="font-medium text-slate-900 dark:text-slate-200">
+                    {viewingCourse && (viewingCourse.maxStudents - (viewingCourse.enrolledStudents?.length || 0))} / {viewingCourse?.maxStudents}
+                  </p>
+                </div>
+              </div>
+              
+              {viewingCourse?.description && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{language === 'th' ? 'คำอธิบายรายวิชา' : 'Description'}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{viewingCourse.description}</p>
+                </div>
+              )}
+
+              {viewingCourse?.schedule && viewingCourse.schedule.length > 0 && (
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{language === 'th' ? 'เวลาเรียน' : 'Schedule'}</p>
+                  <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
+                    {viewingCourse.schedule.map((s, i) => (
+                      <div key={i} className="flex items-center gap-2">
+                        <span className="capitalize">{s.day}</span>
+                        <span>{s.startTime} - {s.endTime}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
+              <Button 
+                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-xl"
+                onClick={() => {
+                  if (viewingCourse) {
+                    enrollCourse(viewingCourse);
+                    setViewingCourse(null);
+                  }
+                }}
+                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || (viewingCourse.enrolledStudents?.length || 0) >= viewingCourse.maxStudents}
+              >
+                {viewingCourse && enrolledCourses.some(c => c.id === viewingCourse.id)
+                  ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered')
+                  : viewingCourse && (viewingCourse.enrolledStudents?.length || 0) >= viewingCourse.maxStudents 
+                    ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
+                    : t.coursesPage.addCourse}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </motion.div>
     );
   }
@@ -962,7 +1147,11 @@ export default function Courses() {
               </div>
               <div className="flex gap-2 mt-5">
                 <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => openCourseEditor(course)}>
-                  {language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course'}
+                  {language === 'th' ? 'แก้ไข' : 'Edit'}
+                </Button>
+                <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => navigate(`/courses/${course.id}/grading`)}>
+                  <Settings className="w-4 h-4 mr-1" />
+                  {language === 'th' ? 'เกณฑ์ให้คะแนน' : 'Grading'}
                 </Button>
                 <Button className="rounded-xl px-3" variant="destructive" onClick={() => deleteCourse(course.id)}>
                   <Trash2 className="w-4 h-4" />
@@ -1127,8 +1316,15 @@ export default function Courses() {
                       className="rounded-xl"
                       onClick={() => openCourseEditor(course)}
                     >
-                      {t.common.viewAll}
-                      <ChevronRight className="w-4 h-4 ml-1" />
+                      {language === 'th' ? 'แก้ไข' : 'Edit'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="rounded-xl"
+                      onClick={() => navigate(`/courses/${course.id}/grading`)}
+                    >
+                      <Settings className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"

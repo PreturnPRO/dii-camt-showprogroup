@@ -52,6 +52,8 @@ const emptyCourse = (index = 0): Course => ({
   materials: [],
   assignments: [],
   grades: [],
+  gradingCriteria: [],
+  gradeCutoffs: [],
 });
 
 const emptyStudent = (index = 0): Student => ({
@@ -460,6 +462,23 @@ export const mapCourse = (value: unknown, index = 0): Course => {
       };
     }),
     grades: fallback.grades,
+    gradingCriteria: asArray(source.gradingCriteria).map(item => {
+      const c = asRecord(item);
+      return {
+        id: asString(c.id),
+        name: asString(c.name),
+        weightPercentage: asNumber(c.weightPercentage, 0),
+        maxScore: asNumber(c.maxScore, 100),
+        orderIndex: asNumber(c.orderIndex, 0)
+      };
+    }),
+    gradeCutoffs: asArray(source.gradeCutoffs).map(item => {
+      const c = asRecord(item);
+      return {
+        grade: asString(c.grade),
+        minScore: asNumber(c.minScore, 0)
+      };
+    }),
   };
 };
 
@@ -808,11 +827,7 @@ export const mapGrade = (value: unknown, index = 0): Grade => {
     ...fallback,
     studentId: asString(source.studentId, fallback.studentId),
     courseId: asString(source.courseId, asString(course.id, fallback.courseId)),
-    midterm: source.midterm === null || typeof source.midterm === "undefined" ? undefined : asNumber(source.midterm, 0),
-    final: source.final === null || typeof source.final === "undefined" ? undefined : asNumber(source.final, 0),
-    assignments: source.assignments === null || typeof source.assignments === "undefined" ? undefined : asNumber(source.assignments, 0),
-    participation: source.participation === null || typeof source.participation === "undefined" ? undefined : asNumber(source.participation, 0),
-    project: source.project === null || typeof source.project === "undefined" ? undefined : asNumber(source.project, 0),
+
     total: source.total === null || typeof source.total === "undefined" ? undefined : asNumber(source.total, 0),
     letterGrade: (asString(source.letterGrade) || undefined) as Grade["letterGrade"],
     gradedBy: asString(source.gradedBy),

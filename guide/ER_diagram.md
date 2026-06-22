@@ -1,196 +1,13 @@
-# ShowPro - DBML (แบ่งตามหมวดหมู่) 10/6/69
+# ShowPro - Full Database DBML
 
-โค้ด DBML ด้านล่างถูกแบ่งย่อยออกเป็นหลายๆ ส่วนตามการใช้งานของแต่ละระบบย่อย (Module) เพื่อให้สามารถนำไปวางในเว็บเช่น [dbdiagram.io](https://dbdiagram.io) ได้ง่ายขึ้นและไม่ซับซ้อนจนเกินไป คุณสามารถคัดลอกเฉพาะระบบที่สนใจไปสร้างเป็นแผนภาพได้เลย
+นี่คือโครงสร้างฐานข้อมูลทั้งหมดของระบบ (Full Database ER Diagram) ที่อิงตาม `schema.prisma` โดยได้รวมทุกตารางไว้ในที่เดียว และเชื่อมความสัมพันธ์ (Relationships) แบบ `1:1`, `1:N` อย่างถูกต้องตาม Prisma schema 
 
-## Users & Profiles (ระบบผู้ใช้งานและโปรไฟล์)
+สามารถนำโค้ดด้านล่างไปวางใน [dbdiagram.io](https://dbdiagram.io) เพื่อสร้างเป็นแผนภาพ ER Diagram รวมได้เลย
+
 ```dbml
-Table User {
-  id String [primary key]
-  email String [unique]
-  passwordHash String
-  name String
-  nameThai String
-  role Role
-  avatar String
-  phone String
-  isActive Boolean
-  createdAt DateTime
-  updatedAt DateTime
-  lastLogin DateTime
-  studentProfile StudentProfile
-  lecturerProfile LecturerProfile
-  staffProfile StaffProfile
-  companyProfile CompanyProfile
-  adminProfile AdminProfile
-  notifications NotificationArray
-  auditLogs AuditLogArray
-  uploadedFiles FileAssetArray
-}
-
-Table StudentProfile {
-  id String [primary key]
-  userId String [unique]
-  studentId String [unique]
-  major String
-  program String
-  year Int
-  semester Int
-  academicYear String
-  gpa Float
-  gpax Float
-  totalCredits Int
-  earnedCredits Int
-  requiredCredits Int
-  academicStatus String
-  cvUrl String
-  advisorId String
-  skills StudentSkillArray
-  enrollments EnrollmentArray
-  activityEnrollments ActivityEnrollmentArray
-  questEnrollments QuestEnrollmentArray
-  portfolio Portfolio
-  internship InternshipRecord
-  requests RequestArray
-  timeline TimelineEventArray
-  consent DataConsent
-  xp Int
-  coins Int
-  gamificationPoints Int
-  totalActivityHours Int
-  badges BadgeArray
-  applications ApplicationArray
-  skillRubrics SkillRubricArray
-  submissions SubmissionArray
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table LecturerProfile {
-  id String [primary key]
-  userId String [unique]
-  lecturerId String [unique]
-  department String
-  position String
-  specialization StringArray
-  researchInterests StringArray
-  courses CourseArray
-  officeHours OfficeHourArray
-  workload WorkloadRecordArray
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table StaffProfile {
-  id String [primary key]
-  userId String [unique]
-  staffId String [unique]
-  department String
-  position String
-  permissions StringArray
-  canManageUsers Boolean
-  canManageCourses Boolean
-  canManageSchedules Boolean
-  canViewReports Boolean
-  canManageInternships Boolean
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table CompanyProfile {
-  id String [primary key]
-  userId String [unique]
-  companyId String [unique]
-  companyName String
-  companyNameThai String
-  industry String
-  size String
-  website String
-  address String
-  locationMapUrl String
-  productsServices String
-  contactPersonName String
-  contactPersonRole String
-  contactPersonEmail String
-  contactPersonPhone String
-  socialMedia String
-  onboardingStatus String
-  privacyProtocolAcceptedAt DateTime
-  internshipSlots Int
-  currentInterns Int
-  subscription String
-  subscriptionStatus String
-  canContactStudents Boolean
-  jobPostings JobPostingArray
-  cooperation CooperationRecordArray
-  payments PaymentHistoryArray
-  interns InternshipRecordArray
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table AdminProfile {
-  id String [primary key]
-  userId String [unique]
-  adminId String [unique]
-  isSuperAdmin Boolean
-  permissions StringArray
-  automationRules AutomationRuleArray
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table DataConsent {
-  id String [primary key]
-  studentId String [unique]
-  allowDataSharing Boolean
-  allowPortfolioSharing Boolean
-  sharedWithCompanies StringArray
-  emailNotifications Boolean
-  smsNotifications Boolean
-  inAppNotifications Boolean
-  showInLeaderboard Boolean
-  profileVisibility String
-  consentDate DateTime
-  updatedAt DateTime
-  history Json
-}
-
-Table OfficeHour {
-  id String [primary key]
-  lecturerId String
-  day String
-  startTime String
-  endTime String
-  location String
-  isAvailable Boolean
-}
-
-Table WorkloadRecord {
-  id String [primary key]
-  lecturerId String
-  academicYear String
-  semester Int
-  teachingHours Int
-  researchHours Int
-  advisingHours Int
-  serviceHours Int
-  createdAt DateTime
-}
-
-Table AutomationRule {
-  id String [primary key]
-  adminId String
-  name String
-  description String
-  trigger Json
-  action Json
-  isActive Boolean
-  lastRun DateTime
-  nextRun DateTime
-  executionCount Int
-  createdAt DateTime
-}
-
+// ==========================
+// Enums
+// ==========================
 Enum Role {
   STUDENT
   LECTURER
@@ -199,21 +16,131 @@ Enum Role {
   ADMIN
 }
 
-Ref: StudentProfile.id - User.id
-Ref: StudentProfile.id < LecturerProfile.id
-Ref: LecturerProfile.id - User.id
-Ref: StaffProfile.id - User.id
-Ref: CompanyProfile.id - User.id
-Ref: AdminProfile.id - User.id
-Ref: DataConsent.id - StudentProfile.id
-Ref: OfficeHour.id - LecturerProfile.id
-Ref: WorkloadRecord.id - LecturerProfile.id
-Ref: AutomationRule.id - AdminProfile.id
-```
+Enum FileVisibility {
+  PUBLIC
+  PRIVATE
+}
 
-## Academic & Courses (ระบบการเรียนการสอน)
-```dbml
+// ==========================
+// Users & Core Profiles
+// ==========================
+Table User {
+  Note: 'ข้อมูลบัญชีผู้ใช้งานระบบทั้งหมด (Login credentials & Core info)'
+  id String [primary key]
+  email String [unique]
+  passwordHash String
+  name String
+  nameThai String
+  role Role
+  avatar String [null]
+  phone String [null]
+  isActive Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+  lastLogin DateTime [null]
+}
+
+Table StudentProfile {
+  Note: 'ข้อมูลส่วนตัวและประวัติการศึกษาของนักศึกษา'
+  id String [primary key]
+  userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
+  studentId String [unique, note: 'รหัสนักศึกษา เช่น 64061xxxx (Business Key)']
+  major String
+  program String
+  year Int
+  semester Int
+  academicYear String
+  gpa Float [default: 0]
+  gpax Float [default: 0]
+  totalCredits Int [default: 120]
+  earnedCredits Int [default: 0]
+  requiredCredits Int [default: 120]
+  academicStatus String [default: 'normal']
+  cvUrl String [null]
+  advisorId String [null, note: 'อ้างอิง LecturerProfile.id (อาจารย์ที่ปรึกษา)']
+  xp Int [default: 0]
+  coins Int [default: 0]
+  gamificationPoints Int [default: 0]
+  totalActivityHours Int [default: 0]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table LecturerProfile {
+  Note: 'ข้อมูลอาจารย์และความเชี่ยวชาญ'
+  id String [primary key]
+  userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
+  lecturerId String [unique, note: 'รหัสประจำตัวอาจารย์ (Business Key)']
+  department String
+  position String
+  specialization "String[]"
+  researchInterests "String[]"
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table StaffProfile {
+  Note: 'ข้อมูลเจ้าหน้าที่และสิทธิ์การจัดการระบบ'
+  id String [primary key]
+  userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
+  staffId String [unique, note: 'รหัสประจำตัวเจ้าหน้าที่ (Business Key)']
+  department String
+  position String
+  permissions "String[]"
+  canManageUsers Boolean [default: false]
+  canManageCourses Boolean [default: false]
+  canManageSchedules Boolean [default: false]
+  canViewReports Boolean [default: false]
+  canManageInternships Boolean [default: false]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table CompanyProfile {
+  Note: 'ข้อมูลสถานประกอบการและบริษัทที่เข้าร่วม'
+  id String [primary key]
+  userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
+  companyId String [unique, note: 'เลขทะเบียนหรือรหัสบริษัท (Business Key)']
+  companyName String
+  companyNameThai String
+  industry String
+  size String
+  website String [null]
+  address String [null]
+  locationMapUrl String [null]
+  productsServices String [null]
+  contactPersonName String [null]
+  contactPersonRole String [null]
+  contactPersonEmail String [null]
+  contactPersonPhone String [null]
+  socialMedia String [null]
+  onboardingStatus String [default: 'pending_review']
+  privacyProtocolAcceptedAt DateTime [null]
+  internshipSlots Int [default: 0]
+  currentInterns Int [default: 0]
+  subscription String [default: 'free']
+  subscriptionStatus String [default: 'inactive']
+  canContactStudents Boolean [default: true]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table AdminProfile {
+  Note: 'ข้อมูลผู้ดูแลระบบและสิทธิ์การใช้งานขั้นสูง'
+  id String [primary key]
+  userId String [unique, note: 'อ้างอิง User.id (Foreign Key)']
+  adminId String [unique, note: 'รหัสประจำตัวแอดมิน (Business Key)']
+  isSuperAdmin Boolean [default: false]
+  permissions "String[]"
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+// ==========================
+// Academic & Courses
+// ==========================
 Table Course {
+  Note: 'ข้อมูลรายวิชาที่เปิดสอนในหลักสูตร'
   id String [primary key]
   code String [unique]
   name String
@@ -222,80 +149,63 @@ Table Course {
   semester Int
   academicYear String
   year Int
-  lecturerId String
-  description String
-  prerequisites StringArray
-  learningOutcomes StringArray
-  syllabus String
-  schedule Json
-  maxStudents Int
-  minStudents Int
-  sections SectionArray
-  materials CourseMaterialArray
-  assignments AssignmentArray
-  enrollments EnrollmentArray
-  createdAt DateTime
+  lecturerId String [note: 'อ้างอิง LecturerProfile.id (Foreign Key ไม่ใช่รหัสอาจารย์)']
+  description String [null]
+  prerequisites "String[]"
+  learningOutcomes "String[]"
+  syllabus String [null]
+  schedule Json [null]
+  room String [null]
+  status String [default: 'active']
+  maxStudents Int [default: 60]
+  minStudents Int [default: 1]
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table Section {
+  Note: 'ตอนเรียน (กลุ่มเรียน) ของแต่ละรายวิชา'
   id String [primary key]
   courseId String
   number String
-  room String
-  facilityId String
-  maxStudents Int
+  room String [null]
+  facilityId String [null]
+  maxStudents Int [default: 60]
   schedule Json
-  enrollments EnrollmentArray
-}
-
-Table Facility {
-  id String [primary key]
-  code String [unique]
-  name String
-  building String
-  room String
-  floor String
-  type String
-  capacity Int
-  isActive Boolean
-  notes String
-  createdAt DateTime
-  updatedAt DateTime
-  sections SectionArray
 }
 
 Table Enrollment {
+  Note: 'การลงทะเบียนเรียนของนักศึกษาในแต่ละวิชา (เก็บเกรดและคะแนน)'
   id String [primary key]
-  studentId String
+  studentId String [note: 'อ้างอิง StudentProfile.id (Foreign Key ไม่ใช่รหัสนักศึกษา)']
   courseId String
-  sectionId String
-  midterm Float
-  final Float
-  assignments Float
-  participation Float
-  project Float
-  total Float
-  letterGrade String
-  status String
-  gradedBy String
-  gradedAt DateTime
-  remarks String
-  history GradeHistoryArray
-  attendance AttendanceRecordArray
-  createdAt DateTime
+  sectionId String [null]
+  midterm Float [null]
+  final Float [null]
+  assignments Float [null]
+  participation Float [null]
+  project Float [null]
+  total Float [null]
+  letterGrade String [null]
+  status String [default: 'enrolled']
+  gradedBy String [null]
+  gradedAt DateTime [null]
+  remarks String [null]
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table AttendanceRecord {
+  Note: 'บันทึกการเช็คชื่อเข้าเรียน'
   id String [primary key]
   enrollmentId String
   date DateTime
   status String
-  checkedInAt DateTime
+  checkedInAt DateTime [default: `now()`]
 }
 
 Table Assignment {
+  Note: 'งานหรือการบ้านที่สั่งในรายวิชา'
   id String [primary key]
   courseId String
   title String
@@ -303,104 +213,99 @@ Table Assignment {
   type String
   dueDate DateTime
   maxScore Int
-  isPublished Boolean
-  submissions SubmissionArray
-  createdAt DateTime
+  isPublished Boolean [default: false]
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table Submission {
+  Note: 'การส่งงานของนักศึกษาและคะแนนที่ได้'
   id String [primary key]
   assignmentId String
   studentId String
-  files StringArray
-  submittedAt DateTime
-  score Float
-  feedback String
-  status String
+  files "String[]"
+  submittedAt DateTime [default: `now()`]
+  score Float [null]
+  feedback String [null]
+  status String [default: 'submitted']
 }
 
 Table CourseMaterial {
+  Note: 'เอกสารประกอบการเรียนการสอน'
   id String [primary key]
   courseId String
   title String
   type String
   url String
-  uploadDate DateTime
-  size String
+  uploadDate DateTime [default: `now()`]
+  size String [null]
 }
 
 Table GradeHistory {
+  Note: 'ประวัติการแก้ไขหรือเปลี่ยนแปลงเกรด'
   id String [primary key]
   enrollmentId String
   modifiedBy String
-  previousGrade String
+  previousGrade String [null]
   newGrade String
   reason String
-  modifiedAt DateTime
+  modifiedAt DateTime [default: `now()`]
 }
 
-Ref: Section.id - Course.id
-Ref: Section.id - Facility.id
-Ref: Enrollment.id - Course.id
-Ref: Enrollment.id - Section.id
-Ref: AttendanceRecord.id - Enrollment.id
-Ref: Assignment.id - Course.id
-Ref: Submission.id - Assignment.id
-Ref: CourseMaterial.id - Course.id
-Ref: GradeHistory.id - Enrollment.id
-```
-
-## Skills & Portfolio (ระบบทักษะและแฟ้มสะสมผลงาน)
-```dbml
+// ==========================
+// Skills & Portfolio
+// ==========================
 Table Skill {
+  Note: 'คลังทักษะ (Skills Dictionary) ของระบบ'
   id String [primary key]
   name String [unique]
   category String
-  description String
-  students StudentSkillArray
-  createdAt DateTime
+  description String [null]
+  createdAt DateTime [default: `now()`]
 }
 
 Table StudentSkill {
+  Note: 'ระดับทักษะที่นักศึกษาแต่ละคนมี'
   id String [primary key]
   studentId String
   skillId String
   level String
-  verifiedBy String
-  yearsOfExperience Int
+  verifiedBy String [null]
+  yearsOfExperience Int [default: 0]
   updatedAt DateTime
 }
 
 Table Portfolio {
+  Note: 'หน้าพอร์ตโฟลิโอรวมของนักศึกษา'
   id String [primary key]
   studentId String [unique]
   summary String
   summaryThai String
-  githubUrl String
-  linkedinUrl String
-  personalWebsite String
-  isPublic Boolean
-  sharedWith StringArray
-  projects ProjectArray
+  githubUrl String [null]
+  linkedinUrl String [null]
+  personalWebsite String [null]
+  isPublic Boolean [default: true]
+  sharedWith "String[]"
   updatedAt DateTime
 }
 
 Table Project {
+  Note: 'ผลงานหรือโปรเจกต์ในพอร์ตโฟลิโอ'
   id String [primary key]
   portfolioId String
   title String
   description String
-  technologies StringArray
+  technologies "String[]"
   role String
   startDate DateTime
-  endDate DateTime
-  url String
-  images StringArray
-  highlights StringArray
+  endDate DateTime [null]
+  url String [null]
+  images "String[]"
+  highlights "String[]"
 }
 
 Table SkillRubric {
+  Note: 'การประเมินทักษะนักศึกษา (รูบริก)'
   id String [primary key]
   studentId String
   category String
@@ -411,52 +316,50 @@ Table SkillRubric {
   updatedAt DateTime
 }
 
-Ref: StudentSkill.id - Skill.id
-Ref: Project.id - Portfolio.id
-```
-
-## Internships & Jobs (ระบบฝึกงานและการจ้างงาน)
-```dbml
+// ==========================
+// Internships & Jobs
+// ==========================
 Table InternshipRecord {
+  Note: 'ประวัติการฝึกงานหรือสหกิจศึกษาของนักศึกษา'
   id String [primary key]
-  studentId String [unique]
-  startMonth String
-  endMonth String
-  duration Int
-  companyId String
-  companyName String
-  position String
-  supervisor String
-  supervisorContact String
-  status String
-  documents InternshipDocumentArray
-  logs InternshipLogArray
-  evaluation InternshipEvaluation
-  createdAt DateTime
+  studentId String [unique, note: 'อ้างอิง StudentProfile.id (Foreign Key)']
+  startMonth String [null]
+  endMonth String [null]
+  duration Int [default: 0]
+  companyId String [null, note: 'อ้างอิง CompanyProfile.id (Foreign Key)']
+  companyName String [null]
+  position String [null]
+  supervisor String [null]
+  supervisorContact String [null]
+  status String [default: 'not_started']
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table InternshipLog {
+  Note: 'บันทึกการปฏิบัติงานรายวัน/สัปดาห์ (Logbook)'
   id String [primary key]
   recordId String
   date DateTime
   activities String
   hours Int
-  learnings String
-  challenges String
+  learnings String [null]
+  challenges String [null]
 }
 
 Table InternshipDocument {
+  Note: 'เอกสารที่เกี่ยวข้องกับการฝึกงาน (เช่น ใบรับรอง)'
   id String [primary key]
   recordId String
   type String
   title String
   url String
-  uploadedAt DateTime
-  status String
+  uploadedAt DateTime [default: `now()`]
+  status String [default: 'pending']
 }
 
 Table InternshipEvaluation {
+  Note: 'การประเมินผลการฝึกงานโดยสถานประกอบการ'
   id String [primary key]
   recordId String [unique]
   evaluatedBy String
@@ -465,113 +368,77 @@ Table InternshipEvaluation {
   workEthic Float
   problemSolving Float
   overallScore Float
-  comments String
-  recommendations String
-  evaluatedAt DateTime
+  comments String [null]
+  recommendations String [null]
+  evaluatedAt DateTime [default: `now()`]
 }
 
 Table JobPosting {
+  Note: 'ประกาศรับสมัครงานหรือฝึกงานจากบริษัท'
   id String [primary key]
-  companyId String
+  companyId String [note: 'อ้างอิง CompanyProfile.id (Foreign Key ไม่ใช่รหัสบริษัท)']
   title String
   type String
-  positions Int
+  positions Int [default: 1]
   description String
-  responsibilities StringArray
-  requirements StringArray
-  preferredSkills StringArray
-  salary String
-  benefits StringArray
+  responsibilities "String[]"
+  requirements "String[]"
+  preferredSkills "String[]"
+  salary String [null]
+  benefits "String[]"
   location String
   workType String
-  startDate DateTime
+  startDate DateTime [null]
   deadline DateTime
-  maxApplicants Int
-  status String
-  isActive Boolean
-  postedAt DateTime
-  applications ApplicationArray
-  createdAt DateTime
+  maxApplicants Int [null]
+  status String [default: 'open']
+  isActive Boolean [default: true]
+  postedAt DateTime [default: `now()`]
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table Application {
+  Note: 'การยื่นใบสมัครงานของนักศึกษา'
   id String [primary key]
   jobPostingId String
   studentId String
-  appliedAt DateTime
-  status String
-  coverLetter String
-  resumeUrl String
-  notes String
+  appliedAt DateTime [default: `now()`]
+  status String [default: 'pending']
+  coverLetter String [null]
+  resumeUrl String [null]
+  notes String [null]
 }
 
 Table CooperationRecord {
+  Note: 'บันทึกความร่วมมือ (MOU) กับสถานประกอบการ'
   id String [primary key]
   companyId String
   title String
   type String
-  details String
-  expiryDate DateTime
-  status String
-  createdAt DateTime
+  details String [null]
+  expiryDate DateTime [null]
+  status String [default: 'active']
+  createdAt DateTime [default: `now()`]
 }
 
 Table PaymentHistory {
+  Note: 'ประวัติการชำระเงินของบริษัท (ถ้ามีแพ็คเกจ)'
   id String [primary key]
   companyId String
   amount Float
   planName String
-  referenceNumber String
-  date DateTime
-  status String
-  receiptUrl String
+  referenceNumber String [null]
+  date DateTime [default: `now()`]
+  status String [default: 'paid']
+  receiptUrl String [null]
 }
 
-Ref: InternshipLog.id - InternshipRecord.id
-Ref: InternshipDocument.id - InternshipRecord.id
-Ref: InternshipEvaluation.id - InternshipRecord.id
-Ref: Application.id - JobPosting.id
-```
-
-## Quests & Activities (ระบบกิจกรรมและภารกิจ)
-```dbml
-Table Activity {
-  id String [primary key]
-  title String
-  titleThai String
-  description String
-  type String
-  startDate DateTime
-  endDate DateTime
-  location String
-  organizer String
-  activityHours Int
-  gamificationPoints Int
-  maxParticipants Int
-  isGroupActivity Boolean
-  teamSize Int
-  qrCode String
-  checkInEnabled Boolean
-  status String
-  registrationStatus String
-  requiresPeerEvaluation Boolean
-  evaluations Json
-  enrollments ActivityEnrollmentArray
-  createdAt DateTime
-  updatedAt DateTime
-}
-
-Table ActivityEnrollment {
-  id String [primary key]
-  activityId String
-  studentId String
-  status String
-  rewardGranted Boolean
-  checkedInAt DateTime
-}
-
+// ==========================
+// Quests & Activities
+// ==========================
 Table Quest {
+  Note: 'ภารกิจหรือเควสที่ให้นักศึกษาทำเพื่อสะสมแต้ม'
   id String [primary key]
   title String
   titleEn String
@@ -585,33 +452,70 @@ Table Quest {
   deadline DateTime
   assignerId String
   assignerType String
-  tasks QuestTaskArray
-  enrollments QuestEnrollmentArray
-  createdAt DateTime
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table QuestTask {
+  Note: 'งานย่อยในแต่ละภารกิจ'
   id String [primary key]
   questId String
   title String
   titleEn String
-  sortOrder Int
+  sortOrder Int [default: 0]
 }
 
 Table QuestEnrollment {
+  Note: 'การเข้าร่วมภารกิจและความคืบหน้าของนักศึกษา'
   id String [primary key]
   questId String
   studentId String
-  status String
-  progress Int
-  completedTasks StringArray
-  rewardGranted Boolean
-  startedAt DateTime
-  completedAt DateTime
+  status String [default: 'in-progress']
+  progress Int [default: 0]
+  completedTasks "String[]"
+  rewardGranted Boolean [default: false]
+  startedAt DateTime [default: `now()`]
+  completedAt DateTime [null]
+}
+
+Table Activity {
+  Note: 'กิจกรรมเสริมหลักสูตรหรือกิจกรรมพิเศษ'
+  id String [primary key]
+  title String
+  titleThai String
+  description String
+  type String
+  startDate DateTime
+  endDate DateTime
+  location String
+  organizer String
+  activityHours Int
+  gamificationPoints Int
+  maxParticipants Int [null]
+  isGroupActivity Boolean [default: false]
+  teamSize Int [null]
+  qrCode String [null]
+  checkInEnabled Boolean [default: false]
+  status String [default: 'upcoming']
+  registrationStatus String [default: 'open']
+  requiresPeerEvaluation Boolean [default: false]
+  evaluations Json [null]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
+}
+
+Table ActivityEnrollment {
+  Note: 'การลงทะเบียนเข้าร่วมกิจกรรมของนักศึกษา'
+  id String [primary key]
+  activityId String
+  studentId String
+  status String [default: 'registered']
+  rewardGranted Boolean [default: false]
+  checkedInAt DateTime [null]
 }
 
 Table Badge {
+  Note: 'เหรียญรางวัลตราสัญลักษณ์ที่นักศึกษาได้รับ'
   id String [primary key]
   studentId String
   name String
@@ -619,42 +523,40 @@ Table Badge {
   description String
   icon String
   criteria String
-  earnedAt DateTime
+  earnedAt DateTime [default: `now()`]
 }
 
-Ref: ActivityEnrollment.id - Activity.id
-Ref: QuestTask.id - Quest.id
-Ref: QuestEnrollment.id - Quest.id
-```
-
-## System & Communications (ระบบคำร้องและการสื่อสารอื่นๆ)
-```dbml
+// ==========================
+// System & Communications
+// ==========================
 Table Request {
+  Note: 'คำร้องต่างๆ ที่นักศึกษายื่นต่อระบบ/เจ้าหน้าที่'
   id String [primary key]
   studentId String
   type String
   title String
   description String
-  documents StringArray
-  status String
-  assignedTo String
-  reviewedBy String
-  reviewNotes String
-  submittedAt DateTime
-  reviewedAt DateTime
-  completedAt DateTime
-  comments RequestCommentArray
+  documents "String[]"
+  status String [default: 'pending']
+  assignedTo String [null]
+  reviewedBy String [null]
+  reviewNotes String [null]
+  submittedAt DateTime [default: `now()`]
+  reviewedAt DateTime [null]
+  completedAt DateTime [null]
 }
 
 Table RequestComment {
+  Note: 'ความคิดเห็นหรือการตอบกลับในคำร้อง'
   id String [primary key]
   requestId String
   authorId String
   text String
-  createdAt DateTime
+  createdAt DateTime [default: `now()`]
 }
 
 Table Appointment {
+  Note: 'การนัดหมายระหว่างนักศึกษากับอาจารย์/เจ้าหน้าที่'
   id String [primary key]
   studentId String
   lecturerId String
@@ -663,107 +565,281 @@ Table Appointment {
   endTime String
   location String
   purpose String
-  notes String
-  status String
-  meetingNotes String
-  followUp String
-  createdAt DateTime
+  notes String [null]
+  status String [default: 'pending']
+  meetingNotes String [null]
+  followUp String [null]
+  createdAt DateTime [default: `now()`]
 }
 
 Table Message {
+  Note: 'ข้อความสื่อสารภายในระบบ (Inbox)'
   id String [primary key]
   fromId String
   toId String
   subject String
   preview String
   body String
-  read Boolean
-  starred Boolean
-  hasAttachment Boolean
-  attachments Json
+  read Boolean [default: false]
+  starred Boolean [default: false]
+  hasAttachment Boolean [default: false]
+  attachments Json [null]
   category String
-  timestamp DateTime
+  timestamp DateTime [default: `now()`]
 }
 
 Table Notification {
+  Note: 'การแจ้งเตือนต่างๆ ถึงผู้ใช้งาน'
   id String [primary key]
   userId String
   title String
-  titleThai String
+  titleThai String [null]
   message String
-  messageThai String
+  messageThai String [null]
   type String
-  priority String
-  channels StringArray
-  isRead Boolean
-  readAt DateTime
-  actionUrl String
-  actionLabel String
-  createdAt DateTime
-  expiresAt DateTime
+  priority String [default: 'medium']
+  channels "String[]"
+  isRead Boolean [default: false]
+  readAt DateTime [null]
+  actionUrl String [null]
+  actionLabel String [null]
+  createdAt DateTime [default: `now()`]
+  expiresAt DateTime [null]
 }
 
 Table AuditLog {
+  Note: 'บันทึกประวัติการกระทำสำคัญในระบบ (Security & Tracking)'
   id String [primary key]
-  userId String
+  userId String [null]
   action String
   resource String
-  resourceId String
-  changes Json
-  ipAddress String
-  timestamp DateTime
-  status String
-  errorMessage String
+  resourceId String [null]
+  changes Json [null]
+  ipAddress String [null]
+  timestamp DateTime [default: `now()`]
+  status String [default: 'success']
+  errorMessage String [null]
 }
 
 Table TimelineEvent {
+  Note: 'เหตุการณ์สำคัญหรือไทม์ไลน์ชีวิตของนักศึกษา'
   id String [primary key]
   studentId String
   type String
   title String
   titleThai String
   description String
-  date DateTime
+  date DateTime [default: `now()`]
   semester Int
   academicYear String
-  relatedId String
-  relatedType String
-  isImportant Boolean
-  tags StringArray
-  metadata Json
+  relatedId String [null]
+  relatedType String [null]
+  isImportant Boolean [default: false]
+  tags "String[]"
+  metadata Json [null]
 }
 
 Table FileAsset {
+  Note: 'ไฟล์ที่ถูกอัปโหลดเข้าระบบทั้งหมด (Images, Documents)'
   id String [primary key]
-  uploaderId String
+  uploaderId String [null]
   originalName String
   filename String
   mimeType String
   size Int
   storagePath String [unique]
-  visibility FileVisibility
-  category String
-  checksum String
-  createdAt DateTime
+  visibility FileVisibility [default: 'PRIVATE']
+  category String [default: 'general']
+  checksum String [null]
+  createdAt DateTime [default: `now()`]
   updatedAt DateTime
 }
 
 Table BudgetRecord {
+  Note: 'บันทึกงบประมาณและค่าใช้จ่ายของโครงการ'
   id String [primary key]
   title String
   amount Float
   type String
   category String
   date DateTime
-  status String
-  note String
-  createdAt DateTime
+  status String [default: 'pending']
+  note String [null]
+  createdAt DateTime [default: `now()`]
 }
 
-Enum FileVisibility {
-  PUBLIC
-  PRIVATE
+Table Facility {
+  Note: 'ข้อมูลห้องเรียนและสิ่งอำนวยความสะดวก'
+  id String [primary key]
+  code String [unique]
+  name String
+  building String
+  room String [null]
+  floor String [null]
+  type String
+  capacity Int [default: 0]
+  isActive Boolean [default: true]
+  notes String [null]
+  createdAt DateTime [default: `now()`]
+  updatedAt DateTime
 }
 
-Ref: RequestComment.id - Request.id
-```
+Table OfficeHour {
+  Note: 'เวลาเข้าพบอาจารย์ที่ปรึกษา (Office Hours)'
+  id String [primary key]
+  lecturerId String
+  day String
+  startTime String
+  endTime String
+  location String
+  isAvailable Boolean [default: true]
+}
+
+Table WorkloadRecord {
+  Note: 'บันทึกภาระงานของอาจารย์'
+  id String [primary key]
+  lecturerId String
+  academicYear String
+  semester Int
+  teachingHours Int
+  researchHours Int
+  advisingHours Int
+  serviceHours Int [default: 0]
+  createdAt DateTime [default: `now()`]
+}
+
+Table DataConsent {
+  Note: 'การยินยอมให้ใช้ข้อมูลส่วนบุคคล (PDPA)'
+  id String [primary key]
+  studentId String [unique]
+  allowDataSharing Boolean [default: false]
+  allowPortfolioSharing Boolean [default: false]
+  sharedWithCompanies "String[]"
+  emailNotifications Boolean [default: true]
+  smsNotifications Boolean [default: false]
+  inAppNotifications Boolean [default: true]
+  showInLeaderboard Boolean [default: true]
+  profileVisibility String [default: 'university']
+  consentDate DateTime [default: `now()`]
+  updatedAt DateTime
+  history Json [null]
+}
+
+Table AutomationRule {
+  Note: 'กฎการทำงานอัตโนมัติของระบบ (กำหนดโดยแอดมิน)'
+  id String [primary key]
+  adminId String [note: 'อ้างอิง AdminProfile.id (Foreign Key ไม่ใช่รหัสแอดมิน)']
+  name String
+  description String
+  trigger Json
+  action Json
+  isActive Boolean [default: true]
+  lastRun DateTime [null]
+  nextRun DateTime [null]
+  executionCount Int [default: 0]
+  createdAt DateTime [default: `now()`]
+}
+
+// ==========================
+// Relationships
+// ==========================
+
+// -----------------------------------------
+// 1. One-to-One / Zero-to-One (1:1 / 1:0..1)
+// -----------------------------------------
+// Profiles (User can have 0 or 1 of each profile)
+Ref: StudentProfile.userId - User.id
+Ref: LecturerProfile.userId - User.id
+Ref: StaffProfile.userId - User.id
+Ref: CompanyProfile.userId - User.id
+Ref: AdminProfile.userId - User.id
+
+// Student Specific 1:1
+Ref: Portfolio.studentId - StudentProfile.id
+Ref: InternshipRecord.studentId - StudentProfile.id
+Ref: DataConsent.studentId - StudentProfile.id
+
+// Internship Evaluation 1:1
+Ref: InternshipEvaluation.recordId - InternshipRecord.id
+
+// -----------------------------------------
+// 2. One-to-Many (1:N)
+// -----------------------------------------
+// User 1:N
+Ref: Message.fromId > User.id
+Ref: Message.toId > User.id
+Ref: Notification.userId > User.id
+Ref: AuditLog.userId > User.id
+Ref: FileAsset.uploaderId > User.id
+
+// Lecturer 1:N
+Ref: StudentProfile.advisorId > LecturerProfile.id // Advisor -> Advisees
+Ref: Course.lecturerId > LecturerProfile.id
+Ref: OfficeHour.lecturerId > LecturerProfile.id
+Ref: Appointment.lecturerId > LecturerProfile.id
+Ref: WorkloadRecord.lecturerId > LecturerProfile.id
+
+// Company 1:N
+Ref: JobPosting.companyId > CompanyProfile.id
+Ref: CooperationRecord.companyId > CompanyProfile.id
+Ref: PaymentHistory.companyId > CompanyProfile.id
+Ref: InternshipRecord.companyId > CompanyProfile.id // 1 Company has many Interns
+
+// Admin 1:N
+Ref: AutomationRule.adminId > AdminProfile.id
+
+// Course 1:N
+Ref: Section.courseId > Course.id
+Ref: CourseMaterial.courseId > Course.id
+Ref: Assignment.courseId > Course.id
+
+// Student 1:N
+Ref: Request.studentId > StudentProfile.id
+Ref: TimelineEvent.studentId > StudentProfile.id
+Ref: Badge.studentId > StudentProfile.id
+Ref: Appointment.studentId > StudentProfile.id
+Ref: SkillRubric.studentId > StudentProfile.id
+
+// Portfolio 1:N
+Ref: Project.portfolioId > Portfolio.id
+
+// Internship 1:N
+Ref: InternshipLog.recordId > InternshipRecord.id
+Ref: InternshipDocument.recordId > InternshipRecord.id
+
+// Others 1:N
+Ref: Section.facilityId > Facility.id
+Ref: RequestComment.requestId > Request.id
+Ref: QuestTask.questId > Quest.id
+
+// -----------------------------------------
+// 3. Many-to-Many (M:N) via Join Tables
+// -----------------------------------------
+// Student <-> Course (via Enrollment)
+Ref: Enrollment.studentId > StudentProfile.id
+Ref: Enrollment.courseId > Course.id
+Ref: Enrollment.sectionId > Section.id
+
+// Enrollment <-> Grade/Attendance
+Ref: GradeHistory.enrollmentId > Enrollment.id
+Ref: AttendanceRecord.enrollmentId > Enrollment.id
+
+// Student <-> Skill (via StudentSkill)
+Ref: StudentSkill.studentId > StudentProfile.id
+Ref: StudentSkill.skillId > Skill.id
+
+// Student <-> Assignment (via Submission)
+Ref: Submission.studentId > StudentProfile.id
+Ref: Submission.assignmentId > Assignment.id
+
+// Student <-> Activity (via ActivityEnrollment)
+Ref: ActivityEnrollment.studentId > StudentProfile.id
+Ref: ActivityEnrollment.activityId > Activity.id
+
+// Student <-> Quest (via QuestEnrollment)
+Ref: QuestEnrollment.studentId > StudentProfile.id
+Ref: QuestEnrollment.questId > Quest.id
+
+// Student <-> JobPosting (via Application)
+Ref: Application.studentId > StudentProfile.id
+Ref: Application.jobPostingId > JobPosting.id

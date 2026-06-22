@@ -337,12 +337,12 @@ export default function SkillsRequirement() {
         })}
         {isLoading && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'เธเธณเธฅเธฑเธเนเธซเธฅเธ” Requirements...' : 'Loading requirements...'}
+            {language === 'th' ? 'กำลังโหลด Requirements...' : 'Loading requirements...'}
           </div>
         )}
         {!isLoading && requirements.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธต Requirement เธเธฒเธ API' : 'No requirements from API yet.'}
+            {language === 'th' ? 'ยังไม่มี Requirement จาก API' : 'No requirements from API yet.'}
           </div>
         )}
       </div>
@@ -352,7 +352,7 @@ export default function SkillsRequirement() {
         <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'เนเธเนเนเธ Requirement' : 'Edit Requirement') : tr.createNew}
+              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'แก้ไข Requirement' : 'Edit Requirement') : tr.createNew}
             </DialogTitle>
             <DialogDescription>{tr.description}</DialogDescription>
           </DialogHeader>
@@ -447,7 +447,7 @@ export default function SkillsRequirement() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{language === 'th' ? match.name : match.nameEn}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} โ€ข {t.studentsPage?.year || 'Year'} {match.year}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} • {t.studentsPage?.year || 'Year'} {match.year}</div>
                   <div className="flex gap-1 mt-1">
                     {match.skills.map((s, si) => (
                       <Badge key={si} variant="outline" className="text-[10px] px-1.5 py-0">{s}</Badge>
@@ -462,7 +462,7 @@ export default function SkillsRequirement() {
             ))}
             {matches.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธตเธเธฅเธเธฑเธเธเธนเนเธเธฒเธ API' : 'No match results from API yet.'}
+                {language === 'th' ? 'ยังไม่มีผลจับคู่จาก API' : 'No match results from API yet.'}
               </div>
             )}
           </div>

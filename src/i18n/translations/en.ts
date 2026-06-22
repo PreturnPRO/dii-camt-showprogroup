@@ -60,6 +60,7 @@ export const en = {
     activities: 'Activities & Points',
     portfolio: 'Portfolio & CV',
     internships: 'Internships',
+    applicationHistory: 'Application History',
     requests: 'Requests / Forms',
     messages: 'Messages',
     settings: 'Settings',

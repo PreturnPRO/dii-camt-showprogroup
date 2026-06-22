@@ -8,11 +8,8 @@ type GradeInput = {
   enrollmentId?: string;
   studentId: string;
   courseId: string;
-  midterm?: number;
-  final?: number;
-  assignments?: number;
-  participation?: number;
-  project?: number;
+
+  scores?: { criteriaId: string; score: number }[];
   total?: number;
   letterGrade?: string;
   remarks?: string;
@@ -88,7 +85,7 @@ export const bulkUpdateGrades = async (
       (grade.enrollmentId
         ? await prisma.enrollment.findUnique({
             where: { id: grade.enrollmentId },
-            include: { course: true },
+            include: { course: { include: { gradingCriteria: true, gradeCutoffs: true } } },
           })
         : await prisma.enrollment.findUnique({
             where: {
@@ -97,7 +94,7 @@ export const bulkUpdateGrades = async (
                 courseId: grade.courseId,
               },
             },
-            include: { course: true },
+            include: { course: { include: { gradingCriteria: true, gradeCutoffs: true } } },
           })) ?? null;
 
     if (!enrollment) {
@@ -112,30 +109,60 @@ export const bulkUpdateGrades = async (
     }
 
     const previousGrade = enrollment.letterGrade;
-    const computedTotal =
-      grade.total ??
-      [grade.midterm, grade.final, grade.assignments, grade.participation, grade.project]
-        .filter((value): value is number => typeof value === "number")
-        .reduce((sum, value) => sum + value, 0);
+    
+    let computedTotal = grade.total ?? 0;
+    if (grade.scores && grade.scores.length > 0 && enrollment.course.gradingCriteria) {
+      let calcTotal = 0;
+      for (const s of grade.scores) {
+        const c = enrollment.course.gradingCriteria.find(x => x.id === s.criteriaId);
+        if (c) {
+          calcTotal += (s.score / c.maxScore) * c.weightPercentage;
+        }
+      }
+      computedTotal = Math.round(calcTotal * 100) / 100;
+    } else if (grade.total !== undefined) {
+      computedTotal = grade.total;
+    }
 
-    const result = await prisma.enrollment.update({
-      where: { id: enrollment.id },
-      data: {
-        midterm: grade.midterm,
-        final: grade.final,
-        assignments: grade.assignments,
-        participation: grade.participation,
-        project: grade.project,
-        total: computedTotal,
-        letterGrade: grade.letterGrade,
-        remarks: grade.remarks,
-        gradedBy: actorUserId,
-        gradedAt: new Date(),
-      },
-      include: {
-        course: true,
-        student: { include: { user: true } },
-      },
+    let finalLetterGrade = grade.letterGrade;
+    if (!finalLetterGrade && enrollment.course.gradeCutoffs && enrollment.course.gradeCutoffs.length > 0) {
+      const cutoffs = [...enrollment.course.gradeCutoffs].sort((a, b) => b.minScore - a.minScore);
+      const cutoff = cutoffs.find(c => computedTotal >= c.minScore);
+      finalLetterGrade = cutoff ? cutoff.grade : "F";
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      if (grade.scores && grade.scores.length > 0) {
+        for (const s of grade.scores) {
+          await tx.enrollmentScore.upsert({
+            where: {
+              enrollmentId_criteriaId: {
+                enrollmentId: enrollment.id,
+                criteriaId: s.criteriaId,
+              },
+            },
+            update: { score: s.score },
+            create: { enrollmentId: enrollment.id, criteriaId: s.criteriaId, score: s.score },
+          });
+        }
+      }
+
+      return tx.enrollment.update({
+        where: { id: enrollment.id },
+        data: {
+
+          total: computedTotal,
+          letterGrade: finalLetterGrade,
+          remarks: grade.remarks,
+          gradedBy: actorUserId,
+          gradedAt: new Date(),
+        },
+        include: {
+          course: true,
+          student: { include: { user: true } },
+          scores: true,
+        },
+      });
     });
 
     await prisma.gradeHistory.create({
@@ -143,7 +170,7 @@ export const bulkUpdateGrades = async (
         enrollmentId: enrollment.id,
         modifiedBy: actorUserId,
         previousGrade,
-        newGrade: grade.letterGrade ?? "N/A",
+        newGrade: finalLetterGrade ?? "N/A",
         reason: grade.reason ?? "Bulk grade update",
       },
     });
@@ -156,7 +183,7 @@ export const bulkUpdateGrades = async (
       req: reqIp ? ({ ip: reqIp } as never) : undefined,
       changes: {
         previousGrade,
-        newGrade: grade.letterGrade,
+        newGrade: finalLetterGrade,
         total: computedTotal,
       },
     });
@@ -167,7 +194,7 @@ export const bulkUpdateGrades = async (
         type: "grade",
         title: `Grade updated: ${result.course.code}`,
         titleThai: `อัปเดตผลการเรียน: ${result.course.code}`,
-        description: `ผลการเรียนวิชา ${result.course.name} ถูกบันทึกเป็น ${grade.letterGrade ?? "-"}`,
+        description: `ผลการเรียนวิชา ${result.course.name} ถูกบันทึกเป็น ${finalLetterGrade ?? "-"}`,
         semester: result.course.semester,
         academicYear: result.course.academicYear,
         relatedId: result.courseId,
@@ -180,8 +207,8 @@ export const bulkUpdateGrades = async (
       userId: result.student.userId,
       title: "Grade updated",
       titleThai: "ผลการเรียนมีการอัปเดต",
-      message: `Your grade for ${result.course.code} has been updated to ${grade.letterGrade ?? "-"}.`,
-      messageThai: `ผลการเรียนวิชา ${result.course.code} ถูกอัปเดตเป็น ${grade.letterGrade ?? "-"}`,
+      message: `Your grade for ${result.course.code} has been updated to ${finalLetterGrade ?? "-"}.`,
+      messageThai: `ผลการเรียนวิชา ${result.course.code} ถูกอัปเดตเป็น ${finalLetterGrade ?? "-"}`,
       type: "grade",
       priority: "high",
       channels: ["in-app"],

@@ -21,9 +21,11 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Courses = lazy(() => import("./pages/Courses"));
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Grades = lazy(() => import("./pages/Grades"));
+const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Internships = lazy(() => import("./pages/Internships"));
+const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const Requests = lazy(() => import("./pages/Requests"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -56,6 +58,8 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Training = lazy(() => import("./pages/Training"));
 const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
 const Automation = lazy(() => import("./pages/Automation"));
+const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
+const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -83,10 +87,12 @@ const App = () => (
                 <Route path="/reset-password" element={<ForgotPasswordPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/portfolio/:id" element={<PublicPortfolio />} />
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/personal-dashboard" element={<PersonalDashboard />} />
                   <Route path="/courses" element={<Courses />} />
+                  <Route path="/courses/:courseId/grading" element={<CourseGradingSettings />} />
                   <Route path="/schedule" element={<Schedule />} />
                   <Route path="/grades" element={<Grades />} />
                   <Route path="/activities" element={<Activities />} />
@@ -96,8 +102,10 @@ const App = () => (
                   {/* Student Routes */}
                   <Route path="/portfolio" element={<Portfolio />} />
                   <Route path="/internships" element={<Internships />} />
+                  <Route path="/application-history" element={<ApplicationHistory />} />
                   <Route path="/requests" element={<Requests />} />
                   <Route path="/training" element={<Training />} />
+                  <Route path="/student/checkin" element={<StudentQRCheckIn />} />
 
                   {/* Lecturer Routes */}
                   <Route path="/students" element={<Students />} />
