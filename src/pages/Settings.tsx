@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
@@ -16,6 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { asNumber, asRecord, asString, getRoleProfile } from '@/lib/user-profile';
 import { api } from '@/lib/api';
 
@@ -43,7 +44,7 @@ export default function Settings() {
   const [nameEn, setNameEn] = React.useState(user?.name || '');
   const [email, setEmail] = React.useState(user?.email || '');
   const [phone, setPhone] = React.useState(user?.phone || '');
-
+  const [semester, setSemester] = React.useState('1');
   // Password form state
   const [currentPwd, setCurrentPwd] = React.useState('');
   const [newPwd, setNewPwd] = React.useState('');
@@ -88,6 +89,10 @@ export default function Settings() {
     setNameEn(user?.name || '');
     setEmail(user?.email || '');
     setPhone(user?.phone || '');
+    if (user?.role === 'student') {
+      const profile = getRoleProfile(user);
+      setSemester(String(profile?.semester ?? '1'));
+    }
   }, [user]);
 
   const buildRoleData = () => {
@@ -99,7 +104,7 @@ export default function Settings() {
           major: asString(profile.major, 'Digital Industry Integration'),
           program: asString(profile.program, 'bachelor'),
           year: asNumber(profile.year, 1),
-          semester: asNumber(profile.semester, 1),
+          semester: asNumber(semester, 1),
           academicYear: asString(profile.academicYear, '2569'),
           cvUrl: asString(profile.cvUrl) || undefined,
         };
@@ -417,6 +422,22 @@ export default function Settings() {
                       <Label className="ml-1 text-slate-700 dark:text-slate-300 font-bold">{t.settingsPage.phoneNumber}</Label>
                       <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+66 XX XXX XXXX" className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500" />
                     </div>
+                    {user?.role === 'student' && (
+                      <div className="space-y-2">
+                        <Label className="ml-1 text-slate-700 dark:text-slate-300 font-bold">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
+                        <Select value={semester} onValueChange={setSemester}>
+                          <SelectTrigger className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500">
+                            <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">Pre-school</SelectItem>
+                            <SelectItem value="1">{language === 'th' ? 'เทอม 1' : 'Term 1'}</SelectItem>
+                            <SelectItem value="2">{language === 'th' ? 'เทอม 2' : 'Term 2'}</SelectItem>
+                            <SelectItem value="3">Summer</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               )}

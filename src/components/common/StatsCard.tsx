@@ -17,79 +17,56 @@ interface StatsCardProps {
   className?: string;
 }
 
-export function StatsCard({ 
-  title, 
-  value, 
+const variantIcon: Record<string, string> = {
+  student: 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20',
+  teacher: 'text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/20',
+  staff:   'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
+  company: 'text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20',
+  success: 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20',
+  warning: 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20',
+  default: 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800',
+};
+
+export function StatsCard({
+  title,
+  value,
   subtitle,
-  description, 
-  icon, 
-  trend, 
+  description,
+  icon,
+  trend,
   variant = 'default',
-  className 
+  className,
 }: StatsCardProps) {
-  const getVariantStyles = () => {
-    switch (variant) {
-      case 'student':
-        return 'bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200';
-      case 'teacher':
-        return 'bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200';
-      case 'staff':
-        return 'bg-gradient-to-br from-green-50 to-green-100 border-green-200';
-      case 'company':
-        return 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200';
-      case 'success':
-        return 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200';
-      case 'warning':
-        return 'bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200';
-      default:
-        return 'bg-white border-gray-200';
-    }
-  };
-
-  const getIconColor = () => {
-    switch (variant) {
-      case 'student': return 'text-blue-600';
-      case 'teacher': return 'text-purple-600';
-      case 'staff': return 'text-green-600';
-      case 'company': return 'text-orange-600';
-      case 'success': return 'text-emerald-600';
-      case 'warning': return 'text-yellow-600';
-      default: return 'text-gray-600';
-    }
-  };
-
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={cn(
-        "relative overflow-hidden rounded-xl border p-6 shadow-sm transition-all hover:shadow-md",
-        getVariantStyles(),
+        'bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800',
+        'rounded-xl p-5 hover:border-slate-300 dark:hover:border-slate-700 transition-colors',
         className
       )}
     >
-      <div className="flex items-start justify-between">
-        <div className="space-y-2 flex-1">
-          <p className="text-sm font-medium text-gray-600 dark:text-slate-300">{title}</p>
-          <p className="text-3xl font-bold text-gray-900 dark:text-slate-200">{value}</p>
-          {subtitle && (
-            <p className="text-sm text-gray-600 dark:text-slate-300">{subtitle}</p>
-          )}
-          {description && (
-            <p className="text-sm text-gray-600 dark:text-slate-300">{description}</p>
-          )}
+      <div className="flex items-start justify-between gap-4">
+        <div className="space-y-1 flex-1 min-w-0">
+          <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400 truncate">{title}</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+          {subtitle && <p className="text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>}
+          {description && <p className="text-sm text-slate-500 dark:text-slate-400">{description}</p>}
           {trend && (
-            <div className="flex items-center gap-1 text-sm">
-              <span className={trend.isPositive ? 'text-green-600' : 'text-red-600'}>
+            <div className="flex items-center gap-1 text-xs font-medium">
+              <span className={trend.isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}>
                 {trend.isPositive ? '↑' : '↓'} {Math.abs(trend.value)}%
               </span>
-              {trend.label && <span className="text-gray-500 dark:text-slate-400">{trend.label}</span>}
+              {trend.label && <span className="text-slate-400 dark:text-slate-500">{trend.label}</span>}
             </div>
           )}
         </div>
-        <div className={cn("p-3 rounded-xl bg-white/50", getIconColor())}>
-          {React.cloneElement(icon, { className: cn("h-6 w-6", getIconColor()) })}
+        <div className={cn('p-2.5 rounded-lg shrink-0', variantIcon[variant] ?? variantIcon.default)}>
+          {React.cloneElement(icon, {
+            className: cn('h-5 w-5', (variantIcon[variant] ?? variantIcon.default).split(' ')[0]),
+          })}
         </div>
       </div>
     </motion.div>

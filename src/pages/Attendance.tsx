@@ -1,20 +1,25 @@
-﻿import React from 'react';
+import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { CalendarCheck, Users, Save, FileSpreadsheet, CheckCircle2, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { CalendarCheck, Users, Save, FileSpreadsheet, CheckCircle2, XCircle, Clock, AlertCircle, QrCode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { QRCodeSVG } from 'qrcode.react';
+import { useSocket } from '@/contexts/SocketContext';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
+import { toast } from 'sonner';
 
 type CourseRow = ReturnType<typeof mapCourse>;
 type AttendanceRow = {
     enrollmentId: string;
+    studentId: string;
     studentName: string;
     studentCode: string;
     status: 'present' | 'late' | 'absent' | 'leave';
@@ -33,10 +38,55 @@ const itemVariants = {
 export default function Attendance() {
     const { t } = useLanguage();
     const { user } = useAuth();
+    const { socket } = useSocket();
     const [courses, setCourses] = React.useState<CourseRow[]>([]);
     const [selectedCourse, setSelectedCourse] = React.useState('');
     const [date, setDate] = React.useState(new Date().toISOString().split('T')[0]);
     const [attendanceRows, setAttendanceRows] = React.useState<AttendanceRow[]>([]);
+    
+    // QR Modal State
+    const [qrModalOpen, setQrModalOpen] = React.useState(false);
+    const [qrSession, setQrSession] = React.useState<{id: string, token: string, expiresAt: Date} | null>(null);
+    const [timeRemaining, setTimeRemaining] = React.useState<number>(0);
+
+    // Summary Modal State
+    const [summaryModalOpen, setSummaryModalOpen] = React.useState(false);
+    const [summaryData, setSummaryData] = React.useState<any[] | null>(null);
+
+    // History Modal State
+    const [historyModalOpen, setHistoryModalOpen] = React.useState(false);
+    const [selectedStudentForHistory, setSelectedStudentForHistory] = React.useState<{id: string, name: string} | null>(null);
+    const [historyData, setHistoryData] = React.useState<any[]>([]);
+
+    React.useEffect(() => {
+        if (!qrSession) return;
+        const interval = setInterval(() => {
+            const remaining = Math.max(0, Math.floor((qrSession.expiresAt.getTime() - Date.now()) / 1000));
+            setTimeRemaining(remaining);
+            if (remaining === 0) {
+                setQrSession(null);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [qrSession]);
+
+    React.useEffect(() => {
+        if (!socket) return;
+        
+        const handleCheckedIn = (record: any) => {
+            if (!record || !record.enrollment) return;
+            const enrollmentId = String(record.enrollmentId);
+            setAttendanceRows(current => current.map(row => 
+                row.enrollmentId === enrollmentId ? { ...row, status: 'present' } : row
+            ));
+            toast.success(`${record.enrollment.student.user.name} checked in successfully`);
+        };
+
+        socket.on('attendance:checked-in', handleCheckedIn);
+        return () => {
+            socket.off('attendance:checked-in', handleCheckedIn);
+        };
+    }, [socket]);
 
     React.useEffect(() => {
         let mounted = true;
@@ -94,6 +144,7 @@ export default function Attendance() {
                 const enrollmentId = asString(enrollment.id);
                 return {
                     enrollmentId,
+                    studentId: asString(student.id),
                     studentName: asString(studentUser.nameThai, asString(studentUser.name, 'Student')),
                     studentCode: asString(student.studentId, asString(student.id)),
                     status: statusByEnrollment.get(enrollmentId) ?? 'absent',
@@ -125,6 +176,68 @@ export default function Attendance() {
             console.warn('Unable to save attendance status', error);
         }
     };
+
+    const handleGenerateQR = async () => {
+        if (!selectedCourse) {
+            toast.error("Please select a course first");
+            return;
+        }
+        try {
+            const response = await api.attendance.startSession({
+                courseId: selectedCourse,
+                durationMinutes: 15
+            });
+            const session = (response as any).session;
+            if (session && session.token) {
+                setQrSession({
+                    id: session.id,
+                    token: session.token,
+                    expiresAt: new Date(session.expiresAt)
+                });
+                setTimeRemaining(15 * 60);
+                setQrModalOpen(true);
+            }
+        } catch (error: any) {
+            toast.error(error.message || "Failed to start session");
+        }
+    };
+
+    const handleCloseSession = async () => {
+        if (!qrSession?.id) return;
+        try {
+            await api.attendance.closeSession(qrSession.id);
+            setQrSession(null);
+            setTimeRemaining(0);
+            toast.success("Session closed successfully");
+        } catch (error: any) {
+            toast.error(error.message || "Failed to close session");
+        }
+    };
+
+    const handleViewSummary = async () => {
+        if (!selectedCourse) return;
+        try {
+            const res = await api.attendance.summary(selectedCourse);
+            setSummaryData((res as any).summary);
+            setSummaryModalOpen(true);
+        } catch (err: any) {
+            toast.error("Failed to load summary");
+        }
+    };
+
+    const handleViewHistory = async (studentId: string, studentName: string) => {
+        if (!selectedCourse) return;
+        try {
+            const res = await api.attendance.history(selectedCourse, studentId);
+            setHistoryData((res as any).history);
+            setSelectedStudentForHistory({ id: studentId, name: studentName });
+            setHistoryModalOpen(true);
+        } catch (err: any) {
+            toast.error("Failed to load history");
+        }
+    };
+
+    const qrCheckInUrl = `${window.location.origin}/student/checkin?token=${qrSession?.token || ''}`;
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
@@ -192,7 +305,10 @@ export default function Attendance() {
                         <Button className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11 shadow-lg shadow-emerald-200">
                             <CalendarCheck className="w-4 h-4 mr-2" /> {t.attendancePage.startChecking}
                         </Button>
-                        <Button variant="outline" className="w-full rounded-xl border-dashed">
+                        <Button variant="outline" className="w-full rounded-xl border-dashed border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-11" onClick={handleGenerateQR}>
+                            <QrCode className="w-4 h-4 mr-2" /> Generate QR Code
+                        </Button>
+                        <Button variant="outline" className="w-full rounded-xl border-dashed" onClick={handleViewSummary}>
                             <FileSpreadsheet className="w-4 h-4 mr-2" /> {t.attendancePage.summaryReport}
                         </Button>
                     </div>
@@ -218,7 +334,9 @@ export default function Attendance() {
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">{row.studentName.charAt(0)}</div>
                                     <div>
-                                        <div className="font-medium text-slate-800 dark:text-slate-200">{row.studentName}</div>
+                                        <button onClick={() => handleViewHistory(row.studentId, row.studentName)} className="font-medium text-slate-800 dark:text-slate-200 hover:text-emerald-600 transition-colors text-left underline decoration-dotted underline-offset-4">
+                                            {row.studentName}
+                                        </button>
                                         <div className="text-xs text-slate-400">{row.studentCode}</div>
                                     </div>
                                 </div>
@@ -239,6 +357,164 @@ export default function Attendance() {
                     </div>
                 </motion.div>
             </div>
+
+            <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
+                <DialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 text-center bg-white/90 backdrop-blur-xl rounded-3xl border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
+                    <DialogHeader className="mb-4">
+                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">Scan to Check-in</DialogTitle>
+                        <DialogDescription className="text-slate-500">
+                            {selectedCourseInfo ? `${selectedCourseInfo.code} ${selectedCourseInfo.name}` : ''}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    {qrSession ? (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                            <QRCodeSVG 
+                                value={qrCheckInUrl} 
+                                size={280} 
+                                level="H"
+                                fgColor="#022c22" // Emerald-950
+                            />
+                        </div>
+                    ) : (
+                        <div className="w-[280px] h-[280px] bg-slate-100 dark:bg-slate-800 rounded-2xl flex flex-col items-center justify-center text-slate-400">
+                            <AlertCircle className="w-12 h-12 mb-2" />
+                            <p>Session Expired</p>
+                        </div>
+                    )}
+                    
+                    <div className="mt-6 flex flex-col items-center">
+                        <div className="text-4xl font-mono font-bold text-emerald-600 mb-2">
+                            {Math.floor(timeRemaining / 60).toString().padStart(2, '0')}:{(timeRemaining % 60).toString().padStart(2, '0')}
+                        </div>
+                        <p className="text-sm text-slate-500 font-medium">Time remaining</p>
+                    </div>
+
+                    <div className="mt-8 flex gap-3 w-full">
+                        {qrSession && (
+                            <Button variant="destructive" className="flex-1 rounded-xl" onClick={handleCloseSession}>
+                                Close Session Early
+                            </Button>
+                        )}
+                        <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setQrModalOpen(false)}>
+                            Close
+                        </Button>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Summary Report Modal */}
+            <Dialog open={summaryModalOpen} onOpenChange={setSummaryModalOpen}>
+                <DialogContent className="sm:max-w-4xl max-h-[80vh] flex flex-col p-6 bg-white dark:bg-slate-900 rounded-3xl border-slate-100 dark:border-slate-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <FileSpreadsheet className="w-5 h-5 text-emerald-500" />
+                            Attendance Summary Report
+                        </DialogTitle>
+                        <DialogDescription>
+                            Overall attendance statistics for {selectedCourseInfo?.code} {selectedCourseInfo?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-auto mt-4 pr-2">
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 uppercase sticky top-0 shadow-sm z-10">
+                                <tr>
+                                    <th className="px-4 py-3 rounded-l-lg">Student ID</th>
+                                    <th className="px-4 py-3">Name</th>
+                                    <th className="px-4 py-3 text-center">Present</th>
+                                    <th className="px-4 py-3 text-center">Late</th>
+                                    <th className="px-4 py-3 text-center">Absent</th>
+                                    <th className="px-4 py-3 text-center">Leave</th>
+                                    <th className="px-4 py-3 text-center rounded-r-lg">% Attendance</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {summaryData?.map((row, i) => (
+                                    <tr key={i} className="border-b border-slate-50 dark:border-slate-800/50 hover:bg-slate-50/50 dark:hover:bg-slate-800/30">
+                                        <td className="px-4 py-3 font-mono text-slate-500">{row.studentCode}</td>
+                                        <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{row.name}</td>
+                                        <td className="px-4 py-3 text-center text-emerald-600 font-medium">{row.present}</td>
+                                        <td className="px-4 py-3 text-center text-amber-600 font-medium">{row.late}</td>
+                                        <td className="px-4 py-3 text-center text-red-600 font-medium">{row.absent}</td>
+                                        <td className="px-4 py-3 text-center text-slate-600 font-medium">{row.leave}</td>
+                                        <td className="px-4 py-3 text-center">
+                                            <Badge variant={row.percentage >= 80 ? "default" : "destructive"} className={row.percentage >= 80 ? "bg-emerald-500" : ""}>
+                                                {row.percentage}%
+                                            </Badge>
+                                        </td>
+                                    </tr>
+                                ))}
+                                {(!summaryData || summaryData.length === 0) && (
+                                    <tr>
+                                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No data available</td>
+                                    </tr>
+                                )}
+                            </tbody>
+                        </table>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Student History Modal */}
+            <Dialog open={historyModalOpen} onOpenChange={setHistoryModalOpen}>
+                <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col p-6 bg-white dark:bg-slate-900 rounded-3xl border-slate-100 dark:border-slate-800">
+                    <DialogHeader>
+                        <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-indigo-500" />
+                            Attendance History
+                        </DialogTitle>
+                        <DialogDescription>
+                            Showing all records for <strong className="text-slate-800 dark:text-slate-200">{selectedStudentForHistory?.name}</strong>
+                        </DialogDescription>
+                    </DialogHeader>
+                    
+                    <div className="flex-1 overflow-auto mt-4 pr-2 space-y-3">
+                        {historyData.length > 0 ? historyData.map((record, i) => {
+                            const d = new Date(record.date);
+                            const isPresent = record.status === 'present';
+                            const isLate = record.status === 'late';
+                            const isAbsent = record.status === 'absent';
+                            const isLeave = record.status === 'leave';
+                            
+                            let colorClass = 'bg-slate-100 text-slate-700';
+                            let icon = <CheckCircle2 className="w-5 h-5" />;
+                            
+                            if (isPresent) {
+                                colorClass = 'bg-emerald-50 text-emerald-700 border-emerald-100';
+                            } else if (isLate) {
+                                colorClass = 'bg-amber-50 text-amber-700 border-amber-100';
+                                icon = <Clock className="w-5 h-5" />;
+                            } else if (isAbsent) {
+                                colorClass = 'bg-red-50 text-red-700 border-red-100';
+                                icon = <XCircle className="w-5 h-5" />;
+                            } else if (isLeave) {
+                                colorClass = 'bg-blue-50 text-blue-700 border-blue-100';
+                            }
+
+                            return (
+                                <div key={i} className={`flex items-center justify-between p-4 rounded-2xl border ${colorClass}`}>
+                                    <div className="flex items-center gap-3">
+                                        {icon}
+                                        <div>
+                                            <div className="font-semibold">{d.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</div>
+                                            <div className="text-xs opacity-75 mt-0.5">Checked in at: {record.checkedInAt ? new Date(record.checkedInAt).toLocaleTimeString() : 'N/A'}</div>
+                                        </div>
+                                    </div>
+                                    <Badge variant="outline" className={`uppercase tracking-wider font-bold bg-white/50 border-current`}>
+                                        {record.status}
+                                    </Badge>
+                                </div>
+                            );
+                        }) : (
+                            <div className="py-12 text-center text-slate-500">
+                                <AlertCircle className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                                <p>No attendance records found for this student.</p>
+                            </div>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </motion.div>
     );
 }

@@ -115,11 +115,11 @@ export function Timetable({ courses, semester, academicYear }: TimetableProps) {
                               </div>
                               <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-slate-300">
                                 <MapPin className="w-3 h-3" />
-                                {schedule.room}
+                                {schedule.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}
                               </div>
                               <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-slate-300">
                                 <User className="w-3 h-3" />
-                                <span className="truncate">{course.lecturerName}</span>
+                                <span className="truncate">{course.lecturerName || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}</span>
                               </div>
                             </div>
                           </td>
@@ -169,11 +169,11 @@ export function Timetable({ courses, semester, academicYear }: TimetableProps) {
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
                         <MapPin className="w-4 h-4" />
-                        {schedule.room} {schedule.building}
+                        {schedule.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')} {schedule.building}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
                         <User className="w-4 h-4" />
-                        {course.lecturerName}
+                        {course.lecturerName || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}
                       </div>
                     </div>
                   ))}

@@ -60,6 +60,7 @@ export const th = {
     activities: 'กิจกรรม & สะสมแต้ม',
     portfolio: 'Portfolio & CV',
     internships: 'ฝึกงาน',
+    applicationHistory: 'ประวัติการสมัครงาน',
     requests: 'คำร้อง/ฟอร์ม',
     messages: 'ข้อความ',
     settings: 'ตั้งค่า',

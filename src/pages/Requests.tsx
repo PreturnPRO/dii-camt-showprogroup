@@ -105,6 +105,28 @@ export default function Requests() {
     title: '',
     description: ''
   });
+  const [files, setFiles] = React.useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    const validFiles = selectedFiles.filter(file => {
+      const isAllowedType = ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type);
+      const isUnder10MB = file.size <= 10 * 1024 * 1024;
+      if (!isAllowedType) {
+        toast.error(language === 'th' ? `ไฟล์ ${file.name} ไม่รองรับ (เฉพาะ PDF, JPG, PNG)` : `File ${file.name} is not supported (PDF, JPG, PNG only)`);
+      } else if (!isUnder10MB) {
+        toast.error(language === 'th' ? `ไฟล์ ${file.name} มีขนาดเกิน 10MB` : `File ${file.name} exceeds 10MB`);
+      }
+      return isAllowedType && isUnder10MB;
+    });
+    setFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -153,7 +175,7 @@ export default function Requests() {
         type: formData.type,
         title: formData.title,
         description: formData.description,
-        documents: [],
+        documents: files.map(f => f.name),
       });
       const request = asRecord(response.request);
       const createdAt = asDate(request.submittedAt, new Date()).toISOString().split('T')[0];
@@ -173,6 +195,7 @@ export default function Requests() {
       setRequests([newRequest, ...requests]);
       setIsDialogOpen(false);
       setFormData({ type: '', title: '', description: '' });
+      setFiles([]);
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
@@ -305,7 +328,7 @@ export default function Requests() {
               <DialogDescription className="mt-1 text-slate-400">{t.requestsPage.formDesc}</DialogDescription>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 <Label htmlFor="type" className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.requestType}</Label>
                 <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
@@ -349,13 +372,50 @@ export default function Requests() {
 
               <div className="space-y-2">
                 <Label className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.attachments}</Label>
-                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-10 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-400 transition-all cursor-pointer group dark:bg-slate-800">
+                <div 
+                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-10 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-400 transition-all cursor-pointer group dark:bg-slate-800"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    multiple 
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                  />
                   <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-50 transition-all">
                     <Upload className="w-8 h-8 opacity-50 text-slate-400 group-hover:text-indigo-500 dark:text-slate-400" />
                   </div>
                   <p className="font-bold">{t.requestsPage.uploadClick}</p>
                   <p className="text-xs mt-1 opacity-60">{t.requestsPage.fileSupport}</p>
                 </div>
+
+                {files.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {files.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shrink-0">
+                            <FileText className="w-4 h-4 text-indigo-500" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{file.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="shrink-0 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 

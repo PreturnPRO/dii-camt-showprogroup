@@ -12,6 +12,7 @@ dist
 dist-ssr
 *.local
 backend/.env
+.env
 
 # Editor directories and files
 .vscode/*
@@ -23,3 +24,14 @@ backend/.env
 *.njsproj
 *.sln
 *.sw?
+
+guide/*
+
+.env
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
