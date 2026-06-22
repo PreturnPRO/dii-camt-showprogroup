@@ -59,9 +59,14 @@ async function resetDatabase() {
   await prisma.submission.deleteMany();
   await prisma.assignment.deleteMany();
   await prisma.courseMaterial.deleteMany();
+  await prisma.enrollmentScore.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.section.deleteMany();
+  await prisma.courseGradingCriteria.deleteMany();
+  await prisma.courseGradeCutoff.deleteMany();
+  await prisma.attendanceSession.deleteMany();
   await prisma.course.deleteMany();
+  await prisma.facility.deleteMany();
   await prisma.studentSkill.deleteMany();
   await prisma.skillRubric.deleteMany();
   await prisma.skill.deleteMany();
