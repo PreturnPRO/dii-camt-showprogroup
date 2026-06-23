@@ -26,6 +26,8 @@ const requireFields = (profile: Record<string, unknown>, fields: string[]) => {
   }
 };
 
+const normalizePhone = (value: unknown) => String(value ?? "").replace(/\D/g, "");
+
 const passwordMarker = (passwordHash: string) =>
   createHash("sha256").update(passwordHash).digest("hex");
 
@@ -290,6 +292,55 @@ export const login = asyncHandler(async (req, res) => {
   });
 });
 
+export const companyLogin = asyncHandler(async (req, res) => {
+  const submittedPhone = normalizePhone(req.body.phone);
+
+  const users = await prisma.user.findMany({
+    where: {
+      role: Role.COMPANY,
+      isActive: true,
+    },
+    include: {
+      companyProfile: true,
+    },
+  });
+
+  const user = users.find((item) => {
+    const userPhone = normalizePhone(item.phone);
+    const contactPhone = normalizePhone(item.companyProfile?.contactPersonPhone);
+    return (
+      (userPhone && userPhone === submittedPhone) ||
+      (contactPhone && contactPhone === submittedPhone)
+    );
+  });
+
+  if (!user) {
+    throw new AppError(401, "Invalid company phone number");
+  }
+
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { lastLogin: new Date() },
+  });
+
+  const token = signToken({ sub: user.id, role: user.role, email: user.email });
+
+  await createAuditLog({
+    userId: user.id,
+    action: "COMPANY_PHONE_LOGIN",
+    resource: "User",
+    resourceId: user.id,
+    changes: { phoneLoginAt: new Date().toISOString() },
+  });
+
+  res.json({
+    success: true,
+    token,
+    expiresIn: env.JWT_EXPIRES_IN,
+    user: await getUserWithProfiles(user.id),
+  });
+});
+
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await prisma.user.findUnique({
@@ -414,6 +465,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({
     where: { id: currentUser.id },
+    include: { companyProfile: true },
   });
 
   if (!existingUser) {
@@ -422,13 +474,19 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   let passwordHash: string | undefined;
   if (newPassword) {
-    if (!currentPassword) {
+    const canSetCompanyFirstPassword =
+      currentUser.role === Role.COMPANY &&
+      existingUser.companyProfile?.onboardingStatus !== "completed";
+
+    if (!currentPassword && !canSetCompanyFirstPassword) {
       throw new AppError(400, "currentPassword is required to set a new password");
     }
 
-    const isPasswordValid = await comparePassword(currentPassword, existingUser.passwordHash);
-    if (!isPasswordValid) {
-      throw new AppError(401, "Current password is incorrect");
+    if (currentPassword) {
+      const isPasswordValid = await comparePassword(currentPassword, existingUser.passwordHash);
+      if (!isPasswordValid) {
+        throw new AppError(401, "Current password is incorrect");
+      }
     }
 
     passwordHash = await hashPassword(newPassword);

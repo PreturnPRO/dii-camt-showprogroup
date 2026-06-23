@@ -6,6 +6,7 @@ import { validate } from "../middleware/validate";
 import {
   registerSchema,
   loginSchema,
+  companyLoginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateUserProfileSchema,
@@ -13,6 +14,7 @@ import {
 import {
   register,
   login,
+  companyLogin,
   forgotPassword,
   resetPassword,
   getMe,
@@ -33,6 +35,12 @@ router.post(
   "/auth/login",
   validate(loginSchema),
   login
+);
+
+router.post(
+  "/auth/company-login",
+  validate(companyLoginSchema),
+  companyLogin
 );
 
 router.post(

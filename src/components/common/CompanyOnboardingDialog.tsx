@@ -1,12 +1,14 @@
 import React from 'react';
 import { Building2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { asRecord, asString } from '@/lib/live-data';
-import { toast } from 'sonner';
+
+const FIRST_ACCESS_KEY = 'showpro_company_first_access';
 
 const requiredCompanyFields = [
   'companyName',
@@ -22,8 +24,10 @@ export function CompanyOnboardingDialog() {
   const rawUser = asRecord(user?.raw);
   const companyProfile = asRecord(rawUser.companyProfile);
   const isCompany = user?.role === 'company';
+  const isFirstAccess =
+    typeof sessionStorage !== 'undefined' && sessionStorage.getItem(FIRST_ACCESS_KEY) === 'true';
   const missingRequiredField = requiredCompanyFields.some((field) => !asString(companyProfile[field]));
-  const shouldOpen = Boolean(isCompany && missingRequiredField);
+  const shouldOpen = Boolean(isCompany && (missingRequiredField || isFirstAccess));
   const [open, setOpen] = React.useState(shouldOpen);
   const [isSaving, setIsSaving] = React.useState(false);
   const [formData, setFormData] = React.useState({
@@ -39,7 +43,6 @@ export function CompanyOnboardingDialog() {
     contactPersonEmail: asString(companyProfile.contactPersonEmail, user?.email ?? ''),
     contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
     socialMedia: asString(companyProfile.socialMedia),
-    currentPassword: '',
     newPassword: '',
   });
 
@@ -58,7 +61,6 @@ export function CompanyOnboardingDialog() {
       contactPersonEmail: asString(companyProfile.contactPersonEmail, user?.email ?? ''),
       contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
       socialMedia: asString(companyProfile.socialMedia),
-      currentPassword: '',
       newPassword: '',
     });
   }, [companyProfile, shouldOpen, user?.email, user?.phone]);
@@ -70,13 +72,17 @@ export function CompanyOnboardingDialog() {
   };
 
   const handleSave = async () => {
+    if (isFirstAccess && formData.newPassword.length < 8) {
+      toast.error('กรุณาตั้งรหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร');
+      return;
+    }
+
     setIsSaving(true);
     try {
       await updateProfile({
         name: formData.companyName,
         nameThai: formData.companyNameThai,
         phone: formData.contactPersonPhone || user?.phone,
-        currentPassword: formData.currentPassword || undefined,
         newPassword: formData.newPassword || undefined,
         roleData: {
           companyName: formData.companyName,
@@ -95,6 +101,7 @@ export function CompanyOnboardingDialog() {
           privacyProtocolAcceptedAt: new Date().toISOString(),
         },
       });
+      sessionStorage.removeItem(FIRST_ACCESS_KEY);
       toast.success('บันทึกข้อมูลบริษัทแล้ว');
       setOpen(false);
     } catch (error) {
@@ -113,7 +120,7 @@ export function CompanyOnboardingDialog() {
             กรอกข้อมูลบริษัทให้ครบ
           </DialogTitle>
           <DialogDescription>
-            ระบบต้องมีข้อมูลบริษัทและผู้ประสานงานก่อนใช้งานต่อ ส่วนรหัสผ่านสามารถเปลี่ยนได้โดยกรอกรหัสผ่านปัจจุบันพร้อมรหัสผ่านใหม่
+            กรอกข้อมูลบริษัทและตั้งรหัสผ่านใหม่เพื่อใช้เข้าสู่ระบบครั้งถัดไป
           </DialogDescription>
         </DialogHeader>
 
@@ -150,13 +157,14 @@ export function CompanyOnboardingDialog() {
             <Label>ตำแหน่งผู้ประสานงาน</Label>
             <Input value={formData.contactPersonRole} onChange={(event) => updateField('contactPersonRole', event.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>รหัสผ่านปัจจุบัน</Label>
-            <Input type="password" value={formData.currentPassword} onChange={(event) => updateField('currentPassword', event.target.value)} />
-          </div>
-          <div className="space-y-2">
+          <div className="space-y-2 md:col-span-2">
             <Label>รหัสผ่านใหม่</Label>
-            <Input type="password" value={formData.newPassword} onChange={(event) => updateField('newPassword', event.target.value)} />
+            <Input
+              type="password"
+              value={formData.newPassword}
+              onChange={(event) => updateField('newPassword', event.target.value)}
+              placeholder="อย่างน้อย 8 ตัวอักษร"
+            />
           </div>
         </div>
 

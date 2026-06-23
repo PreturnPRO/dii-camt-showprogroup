@@ -194,6 +194,14 @@ export const api = {
         method: "POST",
         body: { email, password },
       }),
+    companyLogin: (phone: string) =>
+      request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
+        "/auth/company-login",
+        {
+          method: "POST",
+          body: { phone },
+        },
+      ),
     register: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
         "/auth/register",
