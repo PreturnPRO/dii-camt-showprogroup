@@ -351,6 +351,22 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    importCompanies: (rows: Record<string, unknown>[]) =>
+      request<ApiEnvelope<{ createdCount: number; updatedCount: number; failedCount: number; results: unknown[] }>>(
+        "/users/import/companies",
+        {
+          method: "POST",
+          body: { rows },
+        },
+      ),
+    importStudents: (rows: Record<string, unknown>[]) =>
+      request<ApiEnvelope<{ createdCount: number; updatedCount: number; failedCount: number; results: unknown[] }>>(
+        "/users/import/students",
+        {
+          method: "POST",
+          body: { rows },
+        },
+      ),
     update: (id: string, payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ user: unknown }>>(`/users/${id}`, {
         method: "PATCH",

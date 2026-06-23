@@ -265,27 +265,23 @@ export default function UsersPage() {
     };
 
     const handleCompanyImport = async (rows: MappedImportRow[]) => {
-        let successCount = 0;
-        let failureCount = 0;
-
-        for (const row of rows) {
-            try {
-                const response = await api.users.create(buildCompanyImportPayload(row));
-                setUsers((current) => [mapBackendUser(response.user), ...current]);
-                successCount += 1;
-            } catch (error) {
-                console.warn(`Company import row ${row.rowNumber} failed`, error);
-                failureCount += 1;
-            }
-        }
+        const response = await api.users.importCompanies(
+            rows.map((row) => ({
+                rowNumber: row.rowNumber,
+                ...asRecord(buildCompanyImportPayload(row).profile),
+                email: buildCompanyImportPayload(row).email,
+                phone: buildCompanyImportPayload(row).phone,
+                password: buildCompanyImportPayload(row).password,
+            })),
+        );
 
         await loadUsers();
-        toast.success(`Import บริษัทสำเร็จ ${successCount} รายการ`);
-        if (failureCount > 0) {
-            toast.error(`Import บริษัทไม่สำเร็จ ${failureCount} รายการ`);
+        toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
+        if (response.failedCount > 0) {
+            toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
         }
 
-        return { successCount, failureCount };
+        return { successCount: response.createdCount, failureCount: response.failedCount };
     };
 
     const handleAdd = () => {

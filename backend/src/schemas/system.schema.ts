@@ -19,6 +19,51 @@ export const userCreateSchema = z.object({
   profile: z.record(z.any()).default({}),
 });
 
+const companyImportRowSchema = z.object({
+  rowNumber: z.number().int().positive().optional(),
+  companyId: z.string().min(1),
+  companyName: z.string().min(1),
+  companyNameThai: z.string().optional(),
+  phone: z.string().min(1),
+  email: z.string().email().optional(),
+  password: z.string().min(8).optional(),
+  industry: z.string().min(1),
+  size: z.string().min(1),
+  website: z.string().optional(),
+  address: z.string().optional(),
+  locationMapUrl: z.string().optional(),
+  productsServices: z.string().optional(),
+  contactPersonName: z.string().optional(),
+  contactPersonRole: z.string().optional(),
+  contactPersonEmail: z.string().email().optional(),
+  contactPersonPhone: z.string().optional(),
+  socialMedia: z.string().optional(),
+});
+
+const studentImportRowSchema = z.object({
+  rowNumber: z.number().int().positive().optional(),
+  studentId: z.string().min(1),
+  name: z.string().min(1),
+  nameThai: z.string().optional(),
+  email: z.string().email().optional(),
+  phone: z.string().optional(),
+  password: z.string().min(8).optional(),
+  major: z.string().min(1),
+  program: z.string().min(1),
+  year: z.coerce.number().int().positive(),
+  semester: z.coerce.number().int().positive(),
+  academicYear: z.string().min(1),
+  academicStatus: z.string().optional(),
+});
+
+export const companyImportSchema = z.object({
+  rows: z.array(companyImportRowSchema).min(1).max(1000),
+});
+
+export const studentImportSchema = z.object({
+  rows: z.array(studentImportRowSchema).min(1).max(1000),
+});
+
 export const userUpdateSchema = z.object({
   name: z.string().min(1).optional(),
   nameThai: z.string().min(1).optional(),

@@ -10,6 +10,18 @@ import { requireUser } from "../utils/user";
 
 
 const profileId = (prefix: string) => `${prefix}${Date.now().toString().slice(-7)}`;
+const normalizePhone = (value: unknown) => String(value ?? "").replace(/\D/g, "");
+const safeIdentifier = (value: string, fallback: string) =>
+  value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || fallback.toLowerCase();
+
+type ImportResult = {
+  rowNumber: number;
+  status: "created" | "failed";
+  userId?: string;
+  identifier?: string;
+  temporaryPassword?: string;
+  message?: string;
+};
 
 export const getUsersHandler = asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany({
@@ -184,6 +196,216 @@ export const createUserHandler = asyncHandler(async (req, res) => {
     success: true,
     user,
     temporaryPassword,
+  });
+});
+
+export const importCompaniesHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const results: ImportResult[] = [];
+
+  for (const [index, row] of req.body.rows.entries()) {
+    const rowNumber = Number(row.rowNumber ?? index + 2);
+    const temporaryPassword = row.password ?? "Password123!";
+    const email =
+      row.email ??
+      `${safeIdentifier(row.phone || row.companyId, `company${rowNumber}`)}@company.showpro.local`;
+
+    try {
+      const normalizedPhone = normalizePhone(row.phone);
+      const companies = await prisma.user.findMany({
+        where: { role: Role.COMPANY },
+        include: { companyProfile: true },
+      });
+      const duplicatePhone = companies.some((item) => {
+        const userPhone = normalizePhone(item.phone);
+        const contactPhone = normalizePhone(item.companyProfile?.contactPersonPhone);
+        return normalizedPhone && (userPhone === normalizedPhone || contactPhone === normalizedPhone);
+      });
+      const duplicateEmail = await prisma.user.findUnique({ where: { email } });
+      const duplicateCompany = await prisma.companyProfile.findUnique({
+        where: { companyId: row.companyId },
+      });
+
+      if (duplicateEmail || duplicatePhone || duplicateCompany) {
+        results.push({
+          rowNumber,
+          status: "failed",
+          identifier: row.companyId,
+          message: "Duplicate company email, phone, or companyId",
+        });
+        continue;
+      }
+
+      const created = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email,
+            passwordHash: await hashPassword(temporaryPassword),
+            name: row.companyName,
+            nameThai: row.companyNameThai || row.companyName,
+            role: Role.COMPANY,
+            phone: row.phone,
+            isActive: true,
+            companyProfile: {
+              create: {
+                companyId: row.companyId,
+                companyName: row.companyName,
+                companyNameThai: row.companyNameThai || row.companyName,
+                industry: row.industry,
+                size: row.size,
+                website: row.website || undefined,
+                address: row.address || undefined,
+                locationMapUrl: row.locationMapUrl || undefined,
+                productsServices: row.productsServices || undefined,
+                contactPersonName: row.contactPersonName || undefined,
+                contactPersonRole: row.contactPersonRole || undefined,
+                contactPersonEmail: row.contactPersonEmail || row.email || undefined,
+                contactPersonPhone: row.contactPersonPhone || row.phone || undefined,
+                socialMedia: row.socialMedia || undefined,
+                onboardingStatus: "profile_incomplete",
+              },
+            },
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: currentUser.id,
+            action: "COMPANY_IMPORTED",
+            resource: "User",
+            resourceId: user.id,
+            changes: { companyId: row.companyId, email },
+          },
+        });
+
+        return user;
+      });
+
+      results.push({
+        rowNumber,
+        status: "created",
+        userId: created.id,
+        identifier: row.companyId,
+        temporaryPassword,
+      });
+    } catch (error) {
+      results.push({
+        rowNumber,
+        status: "failed",
+        identifier: row.companyId,
+        message: error instanceof Error ? error.message : "Import failed",
+      });
+    }
+  }
+
+  const createdCount = results.filter((item) => item.status === "created").length;
+  const failedCount = results.length - createdCount;
+
+  res.status(201).json({
+    success: failedCount === 0,
+    createdCount,
+    updatedCount: 0,
+    failedCount,
+    results,
+  });
+});
+
+export const importStudentsHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const results: ImportResult[] = [];
+
+  for (const [index, row] of req.body.rows.entries()) {
+    const rowNumber = Number(row.rowNumber ?? index + 2);
+    const temporaryPassword = row.password ?? "Password123!";
+    const email =
+      row.email ??
+      `${safeIdentifier(row.studentId, `student${rowNumber}`)}@student.showpro.local`;
+
+    try {
+      const duplicateEmail = await prisma.user.findUnique({ where: { email } });
+      const duplicateStudent = await prisma.studentProfile.findUnique({
+        where: { studentId: row.studentId },
+      });
+
+      if (duplicateEmail || duplicateStudent) {
+        results.push({
+          rowNumber,
+          status: "failed",
+          identifier: row.studentId,
+          message: "Duplicate student email or studentId",
+        });
+        continue;
+      }
+
+      const created = await prisma.$transaction(async (tx) => {
+        const user = await tx.user.create({
+          data: {
+            email,
+            passwordHash: await hashPassword(temporaryPassword),
+            name: row.name,
+            nameThai: row.nameThai || row.name,
+            role: Role.STUDENT,
+            phone: row.phone || undefined,
+            isActive: true,
+            studentProfile: {
+              create: {
+                studentId: row.studentId,
+                major: row.major,
+                program: row.program,
+                year: Number(row.year),
+                semester: Number(row.semester),
+                academicYear: row.academicYear,
+                academicStatus: row.academicStatus || "normal",
+                consent: {
+                  create: {
+                    allowDataSharing: false,
+                    allowPortfolioSharing: false,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+        await tx.auditLog.create({
+          data: {
+            userId: currentUser.id,
+            action: "STUDENT_IMPORTED",
+            resource: "User",
+            resourceId: user.id,
+            changes: { studentId: row.studentId, email },
+          },
+        });
+
+        return user;
+      });
+
+      results.push({
+        rowNumber,
+        status: "created",
+        userId: created.id,
+        identifier: row.studentId,
+        temporaryPassword,
+      });
+    } catch (error) {
+      results.push({
+        rowNumber,
+        status: "failed",
+        identifier: row.studentId,
+        message: error instanceof Error ? error.message : "Import failed",
+      });
+    }
+  }
+
+  const createdCount = results.filter((item) => item.status === "created").length;
+  const failedCount = results.length - createdCount;
+
+  res.status(201).json({
+    success: failedCount === 0,
+    createdCount,
+    updatedCount: 0,
+    failedCount,
+    results,
   });
 });
 

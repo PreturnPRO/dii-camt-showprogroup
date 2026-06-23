@@ -117,26 +117,25 @@ export default function Students() {
   };
 
   const handleStudentImport = async (rows: MappedImportRow[]) => {
-    let successCount = 0;
-    let failureCount = 0;
-
-    for (const row of rows) {
-      try {
-        await api.users.create(buildStudentImportPayload(row));
-        successCount += 1;
-      } catch (error) {
-        console.warn(`Student import row ${row.rowNumber} failed`, error);
-        failureCount += 1;
-      }
-    }
+    const response = await api.users.importStudents(
+      rows.map((row) => ({
+        rowNumber: row.rowNumber,
+        ...asRecord(buildStudentImportPayload(row).profile),
+        name: buildStudentImportPayload(row).name,
+        nameThai: buildStudentImportPayload(row).nameThai,
+        email: buildStudentImportPayload(row).email,
+        phone: buildStudentImportPayload(row).phone,
+        password: buildStudentImportPayload(row).password,
+      })),
+    );
 
     await loadStudents();
-    toast.success(`Import นักศึกษาสำเร็จ ${successCount} รายการ`);
-    if (failureCount > 0) {
-      toast.error(`Import นักศึกษาไม่สำเร็จ ${failureCount} รายการ`);
+    toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
+    if (response.failedCount > 0) {
+      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
     }
 
-    return { successCount, failureCount };
+    return { successCount: response.createdCount, failureCount: response.failedCount };
   };
 
   const filteredStudents = students.filter(student => {

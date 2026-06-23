@@ -7,6 +7,8 @@ import {
   userQuerySchema,
   userCreateSchema,
   userUpdateSchema,
+  companyImportSchema,
+  studentImportSchema,
   directoryQuerySchema,
   lecturerQuerySchema,
   companyQuerySchema,
@@ -15,6 +17,8 @@ import {
 import {
   getUsersHandler,
   createUserHandler,
+  importCompaniesHandler,
+  importStudentsHandler,
   updateUserHandler,
   deleteUserHandler,
   getDirectoryUsersHandler,
@@ -45,6 +49,22 @@ router.post(
   checkRole([Role.ADMIN, Role.STAFF]),
   validate(userCreateSchema),
   createUserHandler
+);
+
+router.post(
+  "/users/import/companies",
+  requireAuth,
+  checkRole([Role.ADMIN, Role.STAFF]),
+  validate(companyImportSchema),
+  importCompaniesHandler
+);
+
+router.post(
+  "/users/import/students",
+  requireAuth,
+  checkRole([Role.ADMIN, Role.STAFF]),
+  validate(studentImportSchema),
+  importStudentsHandler
 );
 
 router.patch(
