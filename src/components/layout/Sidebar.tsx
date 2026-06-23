@@ -106,8 +106,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Search, label: nav.searchStudents, href: '/student-profiles' },
         { icon: Users, label: nav.applicants, href: '/applicants' },
         { icon: UserCog, label: nav.internTracking, href: '/intern-tracking' },
-        { icon: Building2, label: nav.cooperationMOU, href: '/cooperation' },
-        { icon: DollarSign, label: nav.subscriptionPackage, href: '/subscription' },
         { icon: Settings, label: nav.settings, href: '/settings' },
       ];
     case 'admin':

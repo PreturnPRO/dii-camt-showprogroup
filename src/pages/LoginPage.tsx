@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowLeft, Loader2, Globe, Moon, Sun } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, Loader2, Globe, Moon, Sun, Smartphone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -18,11 +18,16 @@ export default function LoginPage() {
   const { theme, setTheme } = useTheme();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [loginMode, setLoginMode] = useState<'standard' | 'company'>('standard');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
+      if (loginMode === 'company' && !formData.email.includes('@')) {
+        toast.info('โหมดเข้าสู่ระบบด้วยเบอร์มือถือรอ Backend phone-login ตาม guide ที่แนบไว้');
+        return;
+      }
       await login(formData.email, formData.password);
       toast.success(t.login.loginSuccess, { description: t.login.loginSuccessDesc });
       navigate('/dashboard');
@@ -118,15 +123,48 @@ export default function LoginPage() {
             <p className="text-sm text-slate-500 dark:text-slate-400">{t.login.enterCredentials}</p>
           </div>
 
+          <div className="mb-5 grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
+            <button
+              type="button"
+              onClick={() => setLoginMode('standard')}
+              className={`flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
+                loginMode === 'standard'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Email
+            </button>
+            <button
+              type="button"
+              onClick={() => setLoginMode('company')}
+              className={`flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
+                loginMode === 'company'
+                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
+                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Building2 className="h-4 w-4" />
+              Company
+            </button>
+          </div>
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
-              <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.login.email}</Label>
+              <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                {loginMode === 'company' ? 'เบอร์มือถือบริษัท' : t.login.email}
+              </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                {loginMode === 'company' ? (
+                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                ) : (
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                )}
                 <Input
                   id="email"
-                  type="email"
-                  placeholder="name@example.com"
+                  type={loginMode === 'company' ? 'tel' : 'email'}
+                  placeholder={loginMode === 'company' ? '08x-xxx-xxxx' : 'name@example.com'}
                   className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
                   value={formData.email}
                   onChange={e => setFormData({ ...formData, email: e.target.value })}
