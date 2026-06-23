@@ -278,7 +278,7 @@ export default function Courses() {
       syllabus: course.syllabus || '',
       status: course.status || 'active',
       room: course.room || '',
-      sectionNumber: course.sections?.[0]?.number || '001',
+      sectionNumber: course.sections?.[0]?.sectionNumber || '001',
       scheduleDays: course.schedule?.map(s => s.day) || [],
       scheduleStartTime: course.schedule?.[0]?.startTime || '09:00',
       scheduleEndTime: course.schedule?.[0]?.endTime || '12:00',

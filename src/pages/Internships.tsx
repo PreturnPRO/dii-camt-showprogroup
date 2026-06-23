@@ -45,6 +45,7 @@ export default function Internships() {
   const portfolio = studentProfile?.portfolio;
   const hasCV = Boolean(studentProfile?.cvUrl);
   const hasProjects = Boolean(portfolio?.projects?.length > 0);
+  const hasSummary = Boolean(portfolio?.summary || portfolio?.summaryThai);
   const isPublic = portfolio?.isPublic !== false;
   const hasPortfolio = hasCV || (isPublic && hasProjects);
 

@@ -3,6 +3,7 @@ import { Outlet, Navigate } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
+import { CompanyOnboardingDialog } from '@/components/common/CompanyOnboardingDialog';
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -34,6 +35,7 @@ export function DashboardLayout() {
               <Outlet />
             </div>
           </main>
+          <CompanyOnboardingDialog />
         </div>
       </div>
     </div>

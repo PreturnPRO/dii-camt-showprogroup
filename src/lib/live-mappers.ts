@@ -466,6 +466,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
       const c = asRecord(item);
       return {
         id: asString(c.id),
+        courseId: asString(c.courseId, fallback.id),
         name: asString(c.name),
         weightPercentage: asNumber(c.weightPercentage, 0),
         maxScore: asNumber(c.maxScore, 100),
@@ -475,6 +476,8 @@ export const mapCourse = (value: unknown, index = 0): Course => {
     gradeCutoffs: asArray(source.gradeCutoffs).map(item => {
       const c = asRecord(item);
       return {
+        id: asString(c.id, `${fallback.id}-cutoff-${asString(c.grade, "grade")}`),
+        courseId: asString(c.courseId, fallback.id),
         grade: asString(c.grade),
         minScore: asNumber(c.minScore, 0)
       };
