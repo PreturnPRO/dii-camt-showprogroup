@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -50,6 +51,21 @@ export default function Messages() {
   const [composeSubject, setComposeSubject] = React.useState('');
   const [composeBody, setComposeBody] = React.useState('');
   const [isSending, setIsSending] = React.useState(false);
+
+  // Pre-fill recipient from URL query param (e.g. from StudentProfiles page)
+  const [searchParams, setSearchParams] = useSearchParams();
+  React.useEffect(() => {
+    const toParam = searchParams.get('to');
+    if (toParam) {
+      setRecipientQuery(toParam);
+      // Clean up the URL param after reading
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('to');
+        return next;
+      }, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     let mounted = true;
