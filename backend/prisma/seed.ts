@@ -59,9 +59,14 @@ async function resetDatabase() {
   await prisma.submission.deleteMany();
   await prisma.assignment.deleteMany();
   await prisma.courseMaterial.deleteMany();
+  await prisma.enrollmentScore.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.section.deleteMany();
+  await prisma.courseGradingCriteria.deleteMany();
+  await prisma.courseGradeCutoff.deleteMany();
+  await prisma.attendanceSession.deleteMany();
   await prisma.course.deleteMany();
+  await prisma.facility.deleteMany();
   await prisma.studentSkill.deleteMany();
   await prisma.skillRubric.deleteMany();
   await prisma.skill.deleteMany();
@@ -653,10 +658,6 @@ async function main() {
       studentId: studentA.id,
       courseId: courseA.id,
       sectionId: courseA.sections[0].id,
-      midterm: 33,
-      final: 40,
-      assignments: 17,
-      participation: 5,
       total: 95,
       letterGrade: "A",
       gradedBy: lecturerA.id,
@@ -670,10 +671,6 @@ async function main() {
       studentId: studentB.id,
       courseId: courseA.id,
       sectionId: courseA.sections[0].id,
-      midterm: 28,
-      final: 36,
-      assignments: 16,
-      participation: 5,
       total: 85,
       letterGrade: "B+",
       gradedBy: lecturerA.id,
@@ -687,10 +684,6 @@ async function main() {
       studentId: studentA.id,
       courseId: courseB.id,
       sectionId: courseB.sections[0].id,
-      midterm: 32,
-      final: 38,
-      assignments: 17,
-      participation: 5,
       total: 92,
       letterGrade: "A",
       gradedBy: lecturerB.id,
@@ -703,10 +696,6 @@ async function main() {
       studentId: studentC.id,
       courseId: courseB.id,
       sectionId: courseB.sections[0].id,
-      midterm: 24,
-      final: 27,
-      assignments: 14,
-      participation: 4,
       total: 69,
       letterGrade: "C+",
       gradedBy: lecturerB.id,

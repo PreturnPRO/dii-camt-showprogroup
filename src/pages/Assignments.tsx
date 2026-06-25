@@ -151,7 +151,7 @@ export default function Assignments() {
                     <div className="relative z-10 flex items-start justify-between">
                         <div>
                             <h1 className="text-2xl font-bold mb-1">{selectedAssignment.title}</h1>
-                            <p className="text-white/80">{selectedAssignment.courseCode} โ€ข {selectedAssignment.courseName}</p>
+                            <p className="text-white/80">{selectedAssignment.courseCode} • {selectedAssignment.courseName}</p>
                             <div className="flex gap-3 mt-3">
                                 <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{selectedAssignment.type === 'group' ? t.assignmentsPage.group : t.assignmentsPage.individual}</Badge>
                                 <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{t.assignmentsPage.deadline} {selectedAssignment.dueDate.toLocaleDateString('th-TH')}</Badge>
@@ -180,7 +180,7 @@ export default function Assignments() {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {submissions.length === 0 ? (
-                                <div className="text-center py-8 text-gray-400">เธขเธฑเธเนเธกเนเธกเธตเธเธฑเธเธจเธถเธเธฉเธฒเธชเนเธเธเธฒเธ</div>
+                                <div className="text-center py-8 text-gray-400">ยังไม่มีนักศึกษาส่งงาน</div>
                             ) : submissions.map((sub) => (
                                 <div key={sub.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors dark:bg-slate-800">
                                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-sm dark:text-slate-300 dark:bg-slate-800">
@@ -188,7 +188,7 @@ export default function Assignments() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-medium text-sm">{sub.name}</div>
-                                        <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} โ€ข เธชเนเธเน€เธกเธทเนเธญ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
+                                        <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} • ส่งเมื่อ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {viewMode === 'grade' ? (
@@ -207,11 +207,11 @@ export default function Assignments() {
                                             sub.score !== null ? (
                                                 <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{sub.score}/{selectedAssignment.maxScore}</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="text-gray-500 dark:text-slate-400">เธฃเธญเธ•เธฃเธงเธ</Badge>
+                                                <Badge variant="outline" className="text-gray-500 dark:text-slate-400">รอตรวจ</Badge>
                                             )
                                         )}
                                         <Button size="sm" variant="ghost" className="text-xs text-blue-500 hover:bg-blue-50 dark:text-slate-400 dark:bg-slate-800">
-                                            <Upload className="w-3.5 h-3.5 mr-1" /> เธ”เธนเนเธเธฅเน
+                                            <Upload className="w-3.5 h-3.5 mr-1" /> ดูไฟล์
                                         </Button>
                                     </div>
                                 </div>
@@ -220,7 +220,7 @@ export default function Assignments() {
                                 <div className="pt-4 flex justify-end">
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200"
                                         onClick={() => { setSelectedAssignment(null); }}>
-                                        <CheckCircle className="w-4 h-4 mr-2" /> เธเธฑเธเธ—เธถเธเธเธฐเนเธเธ
+                                        <CheckCircle className="w-4 h-4 mr-2" /> บันทึกคะแนน
                                     </Button>
                                 </div>
                             )}
@@ -243,7 +243,7 @@ export default function Assignments() {
                 <div>
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
                         <ClipboardList className="w-4 h-4 text-blue-500 dark:text-slate-400" />
-                        <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} โ€ข ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
+                        <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} • ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
                     </motion.div>
                     <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.assignmentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.assignmentsPage.titleHighlight}</span>
@@ -351,7 +351,7 @@ export default function Assignments() {
                                     {isLoading ? (
                                         <div className="text-center py-8 text-gray-400">{t.common.loading}</div>
                                     ) : filterAssignments(assignments).length === 0 ? (
-                                        <div className="text-center py-8 text-gray-400">เนเธกเนเธเธเธเธฒเธเธ—เธตเนเธเนเธเธซเธฒ</div>
+                                        <div className="text-center py-8 text-gray-400">ไม่พบงานที่ค้นหา</div>
                                     ) : filterAssignments(assignments).map((assignment, index) => (
                                         <motion.div
                                             key={assignment.id}
@@ -375,7 +375,7 @@ export default function Assignments() {
                                                         </Badge>
                                                     </div>
                                                     <p className="text-sm text-gray-600 dark:text-slate-300">
-                                                        {assignment.courseCode} โ€ข {assignment.courseName}
+                                                        {assignment.courseCode} • {assignment.courseName}
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
@@ -428,7 +428,7 @@ export default function Assignments() {
                                             <div className="flex items-start justify-between mb-4">
                                                 <div>
                                                     <h3 className="font-semibold text-lg">{assignment.title}</h3>
-                                                    <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} โ€ข {assignment.courseName}</p>
+                                                    <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} • {assignment.courseName}</p>
                                                 </div>
                                                 {getStatusBadge(assignment.status)}
                                             </div>

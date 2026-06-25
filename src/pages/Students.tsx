@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Users, Search, Filter, GraduationCap, AlertTriangle, 
-  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen
+  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen, Upload
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,6 +17,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { api } from '@/lib/api';
 import { mapStudent } from '@/lib/live-mappers';
 import { asRecord, asString } from '@/lib/live-data';
+import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
+import { buildSafeIdentifier, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { Student } from '@/types';
 import { toast } from 'sonner';
 
@@ -42,6 +44,26 @@ export default function Students() {
   const [students, setStudents] = React.useState<StudentRow[]>([]);
   const [selectedStudent, setSelectedStudent] = React.useState<StudentRow | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isStudentImportOpen, setIsStudentImportOpen] = React.useState(false);
+
+  const mapStudentResponse = React.useCallback((item: unknown, index: number): StudentRow => {
+    const source = asRecord(item);
+    const user = asRecord(source.user);
+    return {
+      ...mapStudent(item, index),
+      userId: asString(source.userId, asString(user.id)),
+    };
+  }, []);
+
+  const loadStudents = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.students.list();
+      setStudents(response.students.map(mapStudentResponse));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapStudentResponse]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -50,14 +72,7 @@ export default function Students() {
       .list()
       .then((response) => {
         if (!mounted) return;
-        setStudents(response.students.map((item, index) => {
-          const source = asRecord(item);
-          const user = asRecord(source.user);
-          return {
-            ...mapStudent(item, index),
-            userId: asString(source.userId, asString(user.id)),
-          };
-        }));
+        setStudents(response.students.map(mapStudentResponse));
       })
       .catch((error) => {
         console.warn('Unable to load students from API', error);
@@ -70,7 +85,58 @@ export default function Students() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [mapStudentResponse]);
+
+  const buildStudentImportPayload = (row: MappedImportRow) => {
+    const values = row.values;
+    const studentId = values.studentId;
+    const name = values.name;
+    const nameThai = values.nameThai || name;
+    const email =
+      values.email ||
+      `${buildSafeIdentifier(studentId, `student${row.rowNumber}`)}@student.showpro.local`;
+
+    return {
+      name,
+      nameThai,
+      email,
+      phone: values.phone || undefined,
+      password: values.password || undefined,
+      role: 'STUDENT',
+      isActive: true,
+      profile: {
+        studentId,
+        major: values.major || 'Digital Industry Integration',
+        program: values.program || 'bachelor',
+        year: Number(values.year || 1),
+        semester: Number(values.semester || 1),
+        academicYear: values.academicYear,
+        academicStatus: values.academicStatus || 'normal',
+      },
+    };
+  };
+
+  const handleStudentImport = async (rows: MappedImportRow[]) => {
+    const response = await api.users.importStudents(
+      rows.map((row) => ({
+        rowNumber: row.rowNumber,
+        ...asRecord(buildStudentImportPayload(row).profile),
+        name: buildStudentImportPayload(row).name,
+        nameThai: buildStudentImportPayload(row).nameThai,
+        email: buildStudentImportPayload(row).email,
+        phone: buildStudentImportPayload(row).phone,
+        password: buildStudentImportPayload(row).password,
+      })),
+    );
+
+    await loadStudents();
+    toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
+    if (response.failedCount > 0) {
+      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
+    }
+
+    return { successCount: response.createdCount, failureCount: response.failedCount };
+  };
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
@@ -167,6 +233,23 @@ export default function Students() {
               {t.studentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.studentsPage.titleHighlight}</span>
           </motion.h1>
       </div>
+      {(user?.role === 'staff' || user?.role === 'admin') && (
+        <motion.div variants={itemVariants} className="flex justify-end">
+          <Button variant="outline" onClick={() => setIsStudentImportOpen(true)} className="rounded-xl">
+            <Upload className="mr-2 h-4 w-4" />
+            Import รายชื่อนักศึกษา
+          </Button>
+        </motion.div>
+      )}
+
+      <ImportMappingDialog
+        open={isStudentImportOpen}
+        onOpenChange={setIsStudentImportOpen}
+        title="Import รายชื่อนักศึกษา"
+        description="อัปโหลด Excel/CSV ของรุ่นนั้น ๆ แล้วกำหนดคอลัมน์ก่อนสร้างบัญชีนักศึกษา"
+        fields={studentImportFields}
+        onImport={handleStudentImport}
+      />
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
