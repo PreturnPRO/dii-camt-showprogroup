@@ -241,7 +241,7 @@ export default function Courses() {
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.coursesPage.registrationStatus}</span>
               </div>
               <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{t.coursesPage.confirmed}</div>
-              <div className="mt-2 text-sm text-green-600 flex items-center gap-1 bg-green-50 w-fit px-2 py-1 rounded-lg">
+              <div className="mt-2 text-sm text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-950/30 dark:text-green-400 w-fit px-2 py-1 rounded-lg">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 {t.coursesPage.paid}
               </div>
@@ -287,11 +287,11 @@ export default function Courses() {
                   whileHover={{ y: -8, scale: 1.01 }}
                   className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 cursor-pointer overflow-hidden dark:bg-slate-900/50"
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 opacity-0 group-hover:opacity-100 transition-opacity" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 opacity-0 group-hover:opacity-100 transition-opacity" />
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 transition-colors dark:bg-slate-900/50">
+                      <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors dark:bg-slate-900/50">
                         {(user as unknown as Student).year || 3}
                       </Badge>
                       <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center text-slate-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors dark:text-slate-300">

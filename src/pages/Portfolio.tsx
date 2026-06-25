@@ -700,9 +700,9 @@ export default function Portfolio() {
                     });
                     setIsProjectDialogOpen(true);
                   }}
-                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl flex flex-col items-center justify-center p-8 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 transition-all cursor-pointer min-h-[300px] dark:text-slate-300"
+                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl flex flex-col items-center justify-center p-8 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer min-h-[300px] dark:text-slate-300 dark:hover:border-indigo-500"
                 >
-                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:bg-white">
+                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:bg-white dark:group-hover:bg-slate-900">
                     <Plus className="w-8 h-8" />
                   </div>
                   <span className="font-bold">{t.portfolioPage.addProject}</span>

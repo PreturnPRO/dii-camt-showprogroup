@@ -204,7 +204,7 @@ export default function UsersPage() {
             nameThai: user.nameThai || user.name,
             email: user.email || '',
             phone: user.phone || '',
-            role: user.type === 'admin' ? 'staff' : user.type,
+            role: user.type === 'admin' ? 'student' : user.type,
             status: user.isActive === false ? 'inactive' : 'active',
             identifier: user.identifier || '',
             department: user.department || 'Digital Industry Integration',
@@ -276,12 +276,15 @@ export default function UsersPage() {
     const handleSave = async () => {
         if (editingUser) {
             try {
+                const selectedRole = formData.role;
+                const isRoleChanging = selectedRole !== editingUser.type && !(editingUser.type === 'admin' && selectedRole === 'student');
                 const response = await api.users.update(editingUser.id, {
                     name: formData.name,
                     nameThai: formData.nameThai || formData.name,
                     phone: formData.phone,
                     isActive: formData.status === 'active',
-                    roleData: buildProfile(editingUser.type === 'admin' ? 'staff' : editingUser.type),
+                    ...(isRoleChanging ? { role: selectedRole.toUpperCase() } : {}),
+                    roleData: buildProfile(selectedRole),
                 });
                 setUsers(users.map(u => u.id === editingUser.id ? mapBackendUser(response.user) : u));
                 toast.success(t.users.editSuccess);
@@ -546,7 +549,6 @@ export default function UsersPage() {
                             <Select
                                 value={formData.role}
                                 onValueChange={(val) => setFormData({ ...formData, role: val as Exclude<UserType, 'admin'> })}
-                                disabled={!!editingUser} // Prevent role change on edit for simplicity
                             >
                                 <SelectTrigger>
                                     <SelectValue />

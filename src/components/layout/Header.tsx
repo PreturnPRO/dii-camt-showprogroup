@@ -309,37 +309,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                   {t.header?.systemSettings || 'Settings'}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
 
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="rounded-lg cursor-pointer text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <Users className="h-4 w-4 mr-2 text-slate-400" />
-                    {t.header?.switchRole || 'Switch role'}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg p-1">
-                      {(
-                        [
-                          { label: 'Student', value: 'student' },
-                          { label: 'Lecturer', value: 'lecturer' },
-                          { label: 'Staff', value: 'staff' },
-                          { label: 'Company', value: 'company' },
-                          { label: 'Admin', value: 'admin' },
-                        ] as const
-                      ).map(({ label, value }) => (
-                        <DropdownMenuItem
-                          key={value}
-                          onClick={() => switchRole(value)}
-                          className="rounded-lg cursor-pointer text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-
-                <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
 
                 <DropdownMenuItem
                   onClick={handleLogout}

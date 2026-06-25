@@ -75,7 +75,7 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section className="min-h-screen flex flex-col justify-center pt-16 pb-24 bg-white dark:bg-slate-950">
+      <section className="min-h-screen flex flex-col pt-36 md:pt-48 pb-24 bg-white dark:bg-slate-950">
         <div className="container mx-auto px-6 max-w-5xl">
           <FadeIn delay={0.1}>
             <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
@@ -399,21 +399,7 @@ export default function LandingPage() {
                     <p className="text-sm font-medium text-slate-900 dark:text-white">053-942110</p>
                   </div>
                 </div>
-                <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 p-5">
-                  <p className="text-xs text-slate-400 mb-3">{language === 'th' ? 'Demo Accounts' : 'Demo accounts'}</p>
-                  <div className="space-y-2">
-                    {[
-                      { role: 'Student', email: 'alice@student.showpro.local' },
-                      { role: 'Lecturer', email: 'narin@showpro.local' },
-                      { role: 'Admin', email: 'admin@showpro.local' },
-                    ].map((acc) => (
-                      <div key={acc.role} className="flex items-center justify-between">
-                        <span className="text-xs font-medium text-slate-600 dark:text-slate-400 w-16">{acc.role}</span>
-                        <span className="text-xs text-slate-400 dark:text-slate-500 font-mono">{acc.email}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+
               </div>
             </FadeIn>
           </div>

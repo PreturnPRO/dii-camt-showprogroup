@@ -161,7 +161,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:group-hover:bg-emerald-950/30 dark:group-hover:text-emerald-400 transition-colors">
                                 <Star className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.gpa35Plus}</span>
@@ -178,7 +178,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 dark:group-hover:bg-purple-950/30 dark:group-hover:text-purple-400 transition-colors">
                                 <Code className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasSkills}</span>
@@ -195,7 +195,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/30 dark:group-hover:text-orange-400 transition-colors">
                                 <Award className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasBadge}</span>

@@ -349,7 +349,7 @@ export default function SkillsRequirement() {
               </div>
 
               {/* Match stats */}
-              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 mb-4">
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/30 dark:border-indigo-900/30 mb-4">
                 <div className="flex-1">
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{tr.matchScore}</div>
                   <Progress value={req.avgMatch} className="h-2" />

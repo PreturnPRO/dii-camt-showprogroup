@@ -381,7 +381,7 @@ export default function Grades() {
           >
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 transition-colors">
                   <Award className="w-6 h-6" />
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.gpaSemester}</span>
@@ -400,7 +400,7 @@ export default function Grades() {
           >
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 dark:group-hover:bg-purple-950/30 dark:group-hover:text-purple-400 transition-colors">
                   <BookOpen className="w-6 h-6" />
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.creditsCumulative}</span>
@@ -427,13 +427,13 @@ export default function Grades() {
           >
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/30 dark:group-hover:text-orange-400 transition-colors">
                   <Target className="w-6 h-6" />
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.statusLabel}</span>
               </div>
               <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{t.grades.normal}</div>
-              <div className="mt-3 text-sm text-green-600 font-medium bg-green-50 w-fit px-2 py-1 rounded-lg">
+              <div className="mt-3 text-sm text-green-600 font-medium bg-green-50 dark:bg-green-950/30 dark:text-green-400 w-fit px-2 py-1 rounded-lg">
                 {t.grades.noRisk}
               </div>
             </div>
