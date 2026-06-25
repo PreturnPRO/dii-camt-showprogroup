@@ -20,7 +20,7 @@ const requiredCompanyFields = [
 ];
 
 export function CompanyOnboardingDialog() {
-  const { user, updateProfile } = useAuth();
+  const { user, updateProfile, logout } = useAuth();
   const rawUser = asRecord(user?.raw);
   const companyProfile = asRecord(rawUser.companyProfile);
   const isCompany = user?.role === 'company';
@@ -71,10 +71,38 @@ export function CompanyOnboardingDialog() {
     setFormData((current) => ({ ...current, [field]: value }));
   };
 
-  const handleSave = async () => {
-    if (isFirstAccess && formData.newPassword.length < 8) {
-      toast.error('กรุณาตั้งรหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร');
+  const handleOpenChange = (nextOpen: boolean) => {
+    if (!nextOpen && shouldOpen) {
+      toast.error('กรุณากรอกข้อมูลบริษัทให้ครบก่อนเข้าใช้งาน');
+      void logout();
       return;
+    }
+    setOpen(nextOpen);
+  };
+
+  const handleSave = async () => {
+    if (isFirstAccess) {
+      const pwd = formData.newPassword;
+      if (pwd.length < 8) {
+        toast.error('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
+        return;
+      }
+      if (!/[A-Z]/.test(pwd)) {
+        toast.error('รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว');
+        return;
+      }
+      if (!/[a-z]/.test(pwd)) {
+        toast.error('รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว');
+        return;
+      }
+      if (!/[0-9]/.test(pwd)) {
+        toast.error('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว');
+        return;
+      }
+      if (!/[^A-Za-z0-9]/.test(pwd)) {
+        toast.error('รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว (เช่น !@#$%)');
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -112,7 +140,7 @@ export function CompanyOnboardingDialog() {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -163,7 +191,7 @@ export function CompanyOnboardingDialog() {
               type="password"
               value={formData.newPassword}
               onChange={(event) => updateField('newPassword', event.target.value)}
-              placeholder="อย่างน้อย 8 ตัวอักษร"
+              placeholder="อย่างน้อย 8 ตัว (พิมพ์ใหญ่, พิมพ์เล็ก, ตัวเลข, อักขระพิเศษ)"
             />
           </div>
         </div>

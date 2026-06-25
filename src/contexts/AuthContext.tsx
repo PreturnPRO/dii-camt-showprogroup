@@ -111,7 +111,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const companyLogin = useCallback(
     async (phone: string): Promise<boolean> => {
       const response = await api.auth.companyLogin(phone);
-      sessionStorage.setItem('showpro_company_first_access', 'true');
+      
+      const rawUser: any = response.user.raw || response.user;
+      const onboardingStatus = rawUser?.companyProfile?.onboardingStatus;
+      
+      if (onboardingStatus !== 'completed') {
+        sessionStorage.setItem('showpro_company_first_access', 'true');
+      } else {
+        sessionStorage.removeItem('showpro_company_first_access');
+      }
+      
       setStoredToken(response.token);
       await applySessionUser(response.user);
       return true;
