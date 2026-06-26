@@ -604,8 +604,8 @@ export default function Requests() {
             </h3>
             <div className="space-y-2">
               {(language === 'en' ? ['How many days does a certificate request take?', 'Steps for leave of absence', 'How to reset password?', 'Download form G.01'] : ['การขอใบรับรองใช้เวลากี่วัน?', 'ขั้นตอนการลาพักการศึกษา', 'ลืมรหัสผ่านทำอย่างไร?', 'ดาวน์โหลดแบบฟอร์ม ก.01']).map((q, i) => (
-                <div key={i} className="flex items-center justify-between p-4 hover:bg-white rounded-2xl cursor-pointer group transition-all shadow-none hover:shadow-md border border-transparent hover:border-slate-100 dark:bg-slate-900 dark:border-slate-700" onClick={() => toast.info(q)}>
-                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 font-medium">{q}</span>
+                <div key={i} className="flex items-center justify-between p-4 hover:bg-white dark:hover:bg-slate-800 rounded-2xl cursor-pointer group transition-all shadow-none hover:shadow-md border border-transparent hover:border-slate-100 dark:bg-slate-900 dark:border-slate-700" onClick={() => toast.info(q)}>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white font-medium">{q}</span>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-1 dark:text-slate-400" />
                 </div>
               ))}

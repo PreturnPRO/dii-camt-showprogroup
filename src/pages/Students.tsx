@@ -383,7 +383,7 @@ export default function Students() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group dark:border-slate-700"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-800 dark:to-slate-800/60 rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group dark:border-slate-700"
                   onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
@@ -403,7 +403,7 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold">GPA {student.gpa.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPA {student.gpa.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}

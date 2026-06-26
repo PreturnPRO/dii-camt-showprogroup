@@ -43,9 +43,11 @@ const requiredCompanyFields = [
 ];
 
 export function CompanyOnboardingDialog() {
-  const { user, updateProfile, logout } = useAuth();
-  const rawUser = asRecord(user?.raw);
-  const companyProfile = asRecord(rawUser.companyProfile);
+  const { user, updateProfile } = useAuth();
+  // memoize ป้องกัน asRecord() คืน object ใหม่ทุก render → useEffect deps เปลี่ยนทุกครั้ง
+  // → setState วนไม่หยุด (Maximum update depth exceeded / infinite re-render loop, D-33)
+  const rawUser = React.useMemo(() => asRecord(user?.raw), [user?.raw]);
+  const companyProfile = React.useMemo(() => asRecord(rawUser.companyProfile), [rawUser]);
   const isCompany = user?.role === 'company';
   const isFirstAccess =
     typeof sessionStorage !== 'undefined' && sessionStorage.getItem(FIRST_ACCESS_KEY) === 'true';

@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Users, BookOpen, Building, Activity, Settings, Database, Bell } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +23,8 @@ const itemVariants = {
 
 export default function AdminDashboard() {
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const [apiOnline, setApiOnline] = React.useState<boolean | null>(null); // D-17: สถานะจริงจาก API
   const [stats, setStats] = React.useState({
     totalUsers: 0,
     totalCourses: 0,
@@ -39,6 +43,7 @@ export default function AdminDashboard() {
       api.lecturers.list(),
     ]).then(([reportResult, companiesResult, studentsResult, lecturersResult]) => {
       if (!mounted) return;
+      setApiOnline(reportResult.status === 'fulfilled'); // D-17: query DB ผ่าน = API+DB online
       const report = reportResult.status === 'fulfilled' ? asRecord(reportResult.value.report) : {};
       setStats(() => ({
         totalUsers: asNumber(report.totalUsers, 0),
@@ -63,7 +68,7 @@ export default function AdminDashboard() {
           <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-200">{t.adminDashboard.title}</h1>
           <p className="text-gray-600 mt-1 dark:text-slate-300">{t.adminDashboard.subtitle}</p>
         </div>
-        <Button><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.systemSettings}</Button>
+        <Button onClick={() => navigate('/settings')}><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.systemSettings}</Button>
       </motion.div>
 
       <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -77,25 +82,25 @@ export default function AdminDashboard() {
         <Card>
           <CardHeader><CardTitle>{t.adminDashboard.manageUsers}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start"><Users className="w-4 h-4 mr-2" />{t.adminDashboard.manageStudents} ({stats.totalStudents})</Button>
-            <Button variant="outline" className="w-full justify-start"><Users className="w-4 h-4 mr-2" />{t.adminDashboard.manageLecturers} ({stats.totalLecturers})</Button>
-            <Button variant="outline" className="w-full justify-start"><Building className="w-4 h-4 mr-2" />{t.adminDashboard.manageCompanies} ({stats.totalCompanies})</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/users')}><Users className="w-4 h-4 mr-2" />{t.adminDashboard.manageStudents} ({stats.totalStudents})</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/personnel')}><Users className="w-4 h-4 mr-2" />{t.adminDashboard.manageLecturers} ({stats.totalLecturers})</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/cooperation')}><Building className="w-4 h-4 mr-2" />{t.adminDashboard.manageCompanies} ({stats.totalCompanies})</Button>
           </CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle>{t.adminDashboard.systemAndSettings}</CardTitle></CardHeader>
           <CardContent className="space-y-2">
-            <Button variant="outline" className="w-full justify-start"><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.generalSettings}</Button>
-            <Button variant="outline" className="w-full justify-start"><Bell className="w-4 h-4 mr-2" />{t.adminDashboard.autoNotifications}</Button>
-            <Button variant="outline" className="w-full justify-start"><Database className="w-4 h-4 mr-2" />{t.adminDashboard.backup}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/settings')}><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.generalSettings}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/automation')}><Bell className="w-4 h-4 mr-2" />{t.adminDashboard.autoNotifications}</Button>
+            <Button variant="outline" className="w-full justify-start" onClick={() => toast.info(language === 'th' ? 'ระบบสำรองข้อมูลจะเปิดใช้งานเมื่อเชื่อมต่อ backend service แล้ว' : 'Backup will be available once the backend service is connected')}><Database className="w-4 h-4 mr-2" />{t.adminDashboard.backup}</Button>
           </CardContent>
         </Card>
         <Card>
           <CardHeader><CardTitle>{t.adminDashboard.systemStatus}</CardTitle></CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center justify-between"><span className="text-sm">Database</span><Badge variant="default">Online</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-sm">API Server</span><Badge variant="default">Running</Badge></div>
-            <div className="flex items-center justify-between"><span className="text-sm">Backup</span><Badge variant="default">OK</Badge></div>
+            <div className="flex items-center justify-between"><span className="text-sm">Database</span>{apiOnline === null ? <Badge variant="secondary">…</Badge> : <Badge variant={apiOnline ? 'default' : 'destructive'}>{apiOnline ? 'Online' : 'Offline'}</Badge>}</div>
+            <div className="flex items-center justify-between"><span className="text-sm">API Server</span>{apiOnline === null ? <Badge variant="secondary">…</Badge> : <Badge variant={apiOnline ? 'default' : 'destructive'}>{apiOnline ? 'Running' : 'Down'}</Badge>}</div>
+            <div className="flex items-center justify-between"><span className="text-sm">Backup</span><Badge variant="secondary">Manual</Badge></div>
           </CardContent>
         </Card>
       </motion.div>

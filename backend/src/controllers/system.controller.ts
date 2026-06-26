@@ -50,7 +50,7 @@ export const getUsersHandler = asyncHandler(async (req, res) => {
         req.query.role ? { role: req.query.role as Role } : {},
         typeof req.query.isActive !== "undefined"
           ? { isActive: req.query.isActive === "true" }
-          : {},
+          : { isActive: true }, // D-19: default ไม่แสดง user ที่ถูก soft delete (isActive=false)
       ],
     },
     include: {
@@ -441,6 +441,9 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
   }
 
   const roleData = req.body.roleData ?? {};
+  const newRole = req.body.role as Role | undefined;
+  const roleChanged = Boolean(newRole && newRole !== user.role);
+  const newPasswordHash = req.body.password ? await hashPassword(req.body.password) : undefined;
 
   const updated = await prisma.$transaction(async (tx) => {
     await tx.user.update({
@@ -451,8 +454,92 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
         phone: req.body.phone ?? undefined,
         avatar: req.body.avatar ?? undefined,
         isActive: req.body.isActive,
+        ...(roleChanged ? { role: newRole } : {}), // D-14: เปลี่ยน role
+        ...(newPasswordHash ? { passwordHash: newPasswordHash } : {}), // D-15: reset password
       },
     });
+
+    // D-14: เปลี่ยน role แล้วสร้าง profile ใหม่ของ role นั้นถ้ายังไม่มี (เก็บ profile เดิมไว้กันข้อมูลหาย)
+    if (roleChanged && newRole) {
+      switch (newRole) {
+        case Role.STUDENT:
+          if (!user.studentProfile) {
+            await tx.studentProfile.create({
+              data: {
+                userId: user.id,
+                studentId: profileId("STU"),
+                major: "Digital Industry Integration",
+                program: "bachelor",
+                year: 1,
+                semester: 1,
+                academicYear: "2569",
+                consent: { create: { allowDataSharing: false, allowPortfolioSharing: false } },
+              },
+            });
+          }
+          break;
+        case Role.LECTURER:
+          if (!user.lecturerProfile) {
+            await tx.lecturerProfile.create({
+              data: {
+                userId: user.id,
+                lecturerId: profileId("LEC"),
+                department: "Digital Industry Integration",
+                position: "Lecturer",
+                specialization: [],
+                researchInterests: [],
+              },
+            });
+          }
+          break;
+        case Role.STAFF:
+          if (!user.staffProfile) {
+            await tx.staffProfile.create({
+              data: {
+                userId: user.id,
+                staffId: profileId("STA"),
+                department: "DII Office",
+                position: "Staff",
+                permissions: [],
+                canManageUsers: true,
+                canManageCourses: true,
+                canManageSchedules: true,
+                canViewReports: true,
+                canManageInternships: true,
+              },
+            });
+          }
+          break;
+        case Role.COMPANY:
+          if (!user.companyProfile) {
+            await tx.companyProfile.create({
+              data: {
+                userId: user.id,
+                companyId: profileId("COM"),
+                companyName: user.name,
+                companyNameThai: user.nameThai ?? user.name,
+                industry: "Technology",
+                size: "small",
+                onboardingStatus: "pending_review",
+                internshipSlots: 0,
+              },
+            });
+          }
+          break;
+        case Role.ADMIN:
+          if (!user.adminProfile) {
+            await tx.adminProfile.create({
+              data: {
+                userId: user.id,
+                adminId: profileId("ADM"),
+                isSuperAdmin: false,
+                permissions: ["*"],
+              },
+            });
+          }
+          break;
+      }
+    }
 
     switch (user.role) {
       case Role.STUDENT:
@@ -919,7 +1006,9 @@ export const getSystemUsageReportHandler = asyncHandler(async (_req, res) => {
   });
   const totalCourses = await prisma.course.count();
   const totalJobs = await prisma.jobPosting.count();
-  const pendingRequests = await prisma.request.count({ where: { status: "pending" } });
+  const pendingRequests = await prisma.request.count({
+    where: { status: { in: ["pending", "under_review"] } }, // D-12: รวม under_review ด้วย
+  });
   const totalAppointments = await prisma.appointment.count();
   const unreadNotifications = await prisma.notification.count({ where: { isRead: false } });
   const totalAuditLogs = await prisma.auditLog.count();
