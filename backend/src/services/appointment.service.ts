@@ -1,5 +1,8 @@
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
+import { createNotification } from "./notification.service";
+
+let reminderInterval: NodeJS.Timeout | null = null;
 
 const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
@@ -97,4 +100,81 @@ export const replaceOfficeHours = async (
     where: { lecturerId: lecturerProfileId },
     orderBy: [{ day: "asc" }, { startTime: "asc" }],
   });
+};
+
+export const startAppointmentReminders = () => {
+  if (reminderInterval) return reminderInterval;
+  
+  reminderInterval = setInterval(async () => {
+    try {
+      const now = new Date();
+      const in30Mins = new Date(now.getTime() + 30 * 60000);
+      
+      const todayStart = new Date(in30Mins);
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date(in30Mins);
+      todayEnd.setUTCHours(23, 59, 59, 999);
+
+      const appointments = await prisma.appointment.findMany({
+        where: {
+          status: "confirmed",
+          date: {
+            gte: todayStart,
+            lte: todayEnd,
+          },
+        },
+        include: {
+          student: { include: { user: true } },
+          lecturer: { include: { user: true } },
+        }
+      });
+
+      for (const appt of appointments) {
+        const [hours, mins] = appt.startTime.split(":").map(Number);
+        
+        const apptTime = new Date(appt.date);
+        apptTime.setUTCHours(hours, mins, 0, 0);
+
+        const diffMs = apptTime.getTime() - now.getTime();
+        const diffMinutes = Math.floor(diffMs / 60000);
+
+        if (diffMinutes === 30) {
+          await createNotification({
+            userId: appt.student.userId,
+            title: "Upcoming Appointment",
+            titleThai: "การนัดหมายกำลังจะเริ่ม",
+            message: `You have an appointment with ${appt.lecturer.user.name} in 30 minutes at ${appt.location}.`,
+            messageThai: `คุณมีการนัดหมายกับ ${appt.lecturer.user.nameThai} ในอีก 30 นาที ที่ ${appt.location}`,
+            type: "appointment",
+            priority: "high",
+            channels: ["in-app"],
+            actionUrl: "/appointments",
+          });
+
+          await createNotification({
+            userId: appt.lecturer.userId,
+            title: "Upcoming Appointment",
+            titleThai: "การนัดหมายกำลังจะเริ่ม",
+            message: `You have an appointment with ${appt.student.user.name} in 30 minutes at ${appt.location}.`,
+            messageThai: `คุณมีการนัดหมายกับ ${appt.student.user.nameThai} ในอีก 30 นาที ที่ ${appt.location}`,
+            type: "appointment",
+            priority: "high",
+            channels: ["in-app"],
+            actionUrl: "/appointments",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Failed to process appointment reminders", err);
+    }
+  }, 60 * 1000);
+
+  return reminderInterval;
+};
+
+export const stopAppointmentReminders = () => {
+  if (reminderInterval) {
+    clearInterval(reminderInterval);
+    reminderInterval = null;
+  }
 };

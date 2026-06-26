@@ -250,6 +250,18 @@ export const createAppointment = asyncHandler(async (req, res) => {
     actionUrl: "/appointments",
   });
 
+  await createNotification({
+    userId: student.userId,
+    title: "Appointment requested",
+    titleThai: "ส่งคำขอนัดหมายแล้ว",
+    message: `You have successfully requested an appointment with ${appointment.lecturer.user.name} on ${appointment.date.toISOString().slice(0, 10)}.`,
+    messageThai: `คุณได้ส่งคำขอนัดหมายกับ ${appointment.lecturer.user.nameThai} ในวันที่ ${appointment.date.toISOString().slice(0, 10)} สำเร็จแล้ว`,
+    type: "appointment",
+    priority: "low",
+    channels: ["in-app"],
+    actionUrl: "/appointments",
+  });
+
   res.status(201).json({
     success: true,
     appointment,
