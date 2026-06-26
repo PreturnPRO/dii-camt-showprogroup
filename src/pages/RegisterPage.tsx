@@ -344,29 +344,27 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {role === 'enterprise' && (
-                    <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Enterprise Details</p>
-                      {[
-                        { label: 'Company Registration Block', field: 'regBlock' as const, placeholder: 'e.g. Block A, 12th Floor...' },
-                        { label: 'Tax ID', field: 'taxId' as const, placeholder: '13-digit Tax ID' },
-                        { label: 'Company Website', field: 'website' as const, placeholder: 'https://www.example.com', type: 'url' },
-                        { label: 'Industry', field: 'industry' as const, placeholder: 'e.g. Technology, Finance...' },
-                      ].map(({ label, field, placeholder, type }) => (
-                        <div key={field} className="space-y-1.5">
-                          <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{label}</Label>
-                          <Input
-                            type={type || 'text'}
-                            className="h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 rounded-md text-sm"
-                            placeholder={placeholder}
-                            required
-                            value={enterpriseData[field]}
-                            onChange={e => setEnterpriseData({ ...enterpriseData, [field]: e.target.value })}
-                          />
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                                    {role === 'enterprise' && (
+                                        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+                                            <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">Enterprise Entity Details</h3>
+                                            <div className="space-y-2">
+                                                <Label>Company Registration Block</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Block A, 12th Floor..." value={enterpriseData.regBlock} onChange={e => setEnterpriseData({ ...enterpriseData, regBlock: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Tax ID</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="13-digit Tax ID" value={enterpriseData.taxId} onChange={e => setEnterpriseData({ ...enterpriseData, taxId: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Company Website Link</Label>
+                                                <Input type="url" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="https://www.example.com" value={enterpriseData.website} onChange={e => setEnterpriseData({ ...enterpriseData, website: e.target.value })} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Industry</Label>
+                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Technology, Finance, Education..." value={enterpriseData.industry} onChange={e => setEnterpriseData({ ...enterpriseData, industry: e.target.value })} />
+                                            </div>
+                                        </div>
+                                    )}
 
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.password}</Label>

@@ -30,6 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
+  companyLogin: (phone: string) => Promise<boolean>;
   register: (payload: RegisterPayload) => Promise<boolean>;
   updateProfile: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -52,6 +53,8 @@ const demoAccountByRole: Record<UserRole, string> = {
   company: 'talent@northernsoft.local',
   admin: 'admin@showpro.local',
 };
+
+const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
 
 const normalizeSessionUser = (rawUser: unknown): AuthUser => normalizeUser(rawUser as never);
 
@@ -97,10 +100,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback(
     async (email: string, password: string, role?: UserRole): Promise<boolean> => {
-      const response = await api.auth.login(
-        role ? demoAccountByRole[role] : email,
-        role ? 'Password123!' : password,
-      );
+      const response = await api.auth.login(email, password);
+      setStoredToken(response.token);
+      await applySessionUser(response.user);
+      return true;
+    },
+    [applySessionUser],
+  );
+
+  const companyLogin = useCallback(
+    async (phone: string): Promise<boolean> => {
+      const response = await api.auth.companyLogin(phone);
+      sessionStorage.setItem('showpro_company_first_access', 'true');
       setStoredToken(response.token);
       await applySessionUser(response.user);
       return true;
@@ -145,6 +156,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const switchRole = useCallback(
     async (role: UserRole) => {
+      if (!demoAccountsEnabled) {
+        throw new Error('Demo account switching is disabled.');
+      }
       await login(demoAccountByRole[role], 'Password123!', role);
     },
     [login],
@@ -156,13 +170,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
+      companyLogin,
       register,
       updateProfile,
       logout,
       switchRole,
       refreshSession,
     }),
-    [isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
+    [companyLogin, isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

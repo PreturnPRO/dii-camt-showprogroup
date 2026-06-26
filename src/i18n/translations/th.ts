@@ -45,7 +45,7 @@ export const th = {
     notifications: 'การแจ้งเตือน',
     profile: 'โปรไฟล์ของฉัน',
     systemSettings: 'ตั้งค่าระบบ',
-    switchRole: 'เปลี่ยนบทบาท (Demo)',
+    switchRole: 'เปลี่ยนบัญชี',
     logout: 'ออกจากระบบ',
     language: 'ภาษา',
   },
@@ -60,6 +60,7 @@ export const th = {
     activities: 'กิจกรรม & สะสมแต้ม',
     portfolio: 'Portfolio & CV',
     internships: 'ฝึกงาน',
+    applicationHistory: 'ประวัติการสมัครงาน',
     requests: 'คำร้อง/ฟอร์ม',
     messages: 'ข้อความ',
     settings: 'ตั้งค่า',
@@ -101,6 +102,7 @@ export const th = {
     teachingScheduleAdmin: 'ตารางเรียน/สอน',
     documentsRequests: 'เอกสาร & คำร้อง',
     activityAdmin: 'กิจกรรม',
+    automation: 'Automation',
     jobsInternships: 'งาน & ฝึกงาน',
     studentDatabase: 'ฐานข้อมูลนักศึกษา',
     partnerCompanies: 'บริษัทพันธมิตร',
@@ -1380,9 +1382,7 @@ export const th = {
     title: 'แดชบอร์ดเจ้าหน้าที่',
     hello: 'สวัสดี,',
     manageSchedule: 'จัดการตารางเรียน',
-    scheduleComingSoon: 'ระบบจัดการตารางเรียนกำลังเปิดใช้งานเร็วๆนี้',
     systemSettings: 'ตั้งค่าระบบ',
-    settingsComingSoon: 'ระบบตั้งค่ากำลังเปิดใช้งานเร็วๆนี้',
     totalStudents: 'นักศึกษาทั้งหมด',
     atRisk: 'เสี่ยง',
     courses: 'รายวิชา',
@@ -1462,14 +1462,6 @@ export const th = {
     description: 'หน้าที่คุณกำลังมองหาอาจถูกย้าย ลบ หรือไม่เคยมีอยู่',
     goHome: 'กลับหน้าหลัก',
     goBack: 'กลับหน้าก่อนหน้า',
-  },
-
-  // Placeholder Page
-  placeholderPage: {
-    thisPage: 'หน้านี้',
-    underDevelopment: 'อยู่ระหว่างการพัฒนา',
-    developingMessage: 'ฟีเจอร์นี้กำลังถูกสร้างและจะพร้อมใช้งานในเร็วๆ นี้ ขอบคุณที่รอคอย!',
-    defaultSubtitle: 'กำลังพัฒนาระบบนี้',
   },
 
   // Privacy Policy

@@ -59,9 +59,14 @@ async function resetDatabase() {
   await prisma.submission.deleteMany();
   await prisma.assignment.deleteMany();
   await prisma.courseMaterial.deleteMany();
+  await prisma.enrollmentScore.deleteMany();
   await prisma.enrollment.deleteMany();
   await prisma.section.deleteMany();
+  await prisma.courseGradingCriteria.deleteMany();
+  await prisma.courseGradeCutoff.deleteMany();
+  await prisma.attendanceSession.deleteMany();
   await prisma.course.deleteMany();
+  await prisma.facility.deleteMany();
   await prisma.studentSkill.deleteMany();
   await prisma.skillRubric.deleteMany();
   await prisma.skill.deleteMany();
@@ -648,15 +653,35 @@ async function main() {
     },
   });
 
+  // D-30: seed grading criteria + grade cutoffs ให้ทุก course
+  // ไม่งั้นหน้า Grades ไม่มีหัวข้อประเมิน = อาจารย์กรอกคะแนนไม่ได้ (กระทบ D-26/D-30)
+  for (const course of [courseA, courseB]) {
+    await prisma.courseGradingCriteria.createMany({
+      data: [
+        { courseId: course.id, name: "Midterm", weightPercentage: 30, maxScore: 100, orderIndex: 0 },
+        { courseId: course.id, name: "Final", weightPercentage: 40, maxScore: 100, orderIndex: 1 },
+        { courseId: course.id, name: "Assignment", weightPercentage: 30, maxScore: 100, orderIndex: 2 },
+      ],
+    });
+    await prisma.courseGradeCutoff.createMany({
+      data: [
+        { courseId: course.id, grade: "A", minScore: 80 },
+        { courseId: course.id, grade: "B+", minScore: 75 },
+        { courseId: course.id, grade: "B", minScore: 70 },
+        { courseId: course.id, grade: "C+", minScore: 65 },
+        { courseId: course.id, grade: "C", minScore: 60 },
+        { courseId: course.id, grade: "D+", minScore: 55 },
+        { courseId: course.id, grade: "D", minScore: 50 },
+        { courseId: course.id, grade: "F", minScore: 0 },
+      ],
+    });
+  }
+
   const enrollmentA1 = await prisma.enrollment.create({
     data: {
       studentId: studentA.id,
       courseId: courseA.id,
       sectionId: courseA.sections[0].id,
-      midterm: 33,
-      final: 40,
-      assignments: 17,
-      participation: 5,
       total: 95,
       letterGrade: "A",
       gradedBy: lecturerA.id,
@@ -670,10 +695,6 @@ async function main() {
       studentId: studentB.id,
       courseId: courseA.id,
       sectionId: courseA.sections[0].id,
-      midterm: 28,
-      final: 36,
-      assignments: 16,
-      participation: 5,
       total: 85,
       letterGrade: "B+",
       gradedBy: lecturerA.id,
@@ -687,10 +708,6 @@ async function main() {
       studentId: studentA.id,
       courseId: courseB.id,
       sectionId: courseB.sections[0].id,
-      midterm: 32,
-      final: 38,
-      assignments: 17,
-      participation: 5,
       total: 92,
       letterGrade: "A",
       gradedBy: lecturerB.id,
@@ -703,10 +720,6 @@ async function main() {
       studentId: studentC.id,
       courseId: courseB.id,
       sectionId: courseB.sections[0].id,
-      midterm: 24,
-      final: 27,
-      assignments: 14,
-      participation: 4,
       total: 69,
       letterGrade: "C+",
       gradedBy: lecturerB.id,

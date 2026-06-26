@@ -58,7 +58,18 @@ export default function Subscription() {
                 if (plansResponse.status === 'fulfilled') {
                     const mappedPlans = plansResponse.value.plans.map((item, index) => {
                         const plan = asRecord(item);
-                        const fallback = plans[index % plans.length];
+                        const fallback = {
+                            name: asString(plan.name, 'Plan'),
+                            price: '',
+                            description: '',
+                            icon: [Zap, Crown, Sparkles][index % 3],
+                            current: false,
+                            gradient: 'from-slate-50 to-slate-100',
+                            border: 'border-slate-200 dark:border-slate-800',
+                            text: 'text-slate-800 dark:text-slate-200',
+                            btnClass: '',
+                            features: [] as string[],
+                        };
                         const name = asString(plan.name, fallback.name);
                         const price = asNumber(plan.price, 0);
                         return {

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -29,9 +30,24 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-const initialRequests = [
+type RequestRow = {
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  step: number;
+  totalSteps: number;
+  createdAt: string;
+  updatedAt: string;
+  description: string;
+  documents: string[];
+  studentName?: string;
+  studentId?: string;
+};
+
+const initialRequests: RequestRow[] = [
   {
-    id: 1,
+    id: '1',
     type: 'Over-registration / ลงทะเบียนเรียนเกิน',
     title: 'ขอลงทะเบียนเรียนเกิน 22 หน่วยกิต',
     status: 'pending',
@@ -43,7 +59,7 @@ const initialRequests = [
     documents: ['transcript.pdf', 'reg_form.pdf']
   },
   {
-    id: 2,
+    id: '2',
     type: 'Certificate Request / ขอใบรับรอง',
     title: 'ขอใบรับรองนักศึกษา (ภาษาอังกฤษ)',
     status: 'approved',
@@ -55,7 +71,7 @@ const initialRequests = [
     documents: []
   },
   {
-    id: 3,
+    id: '3',
     type: 'Section Change / ขอเปลี่ยนกลุ่ม',
     title: 'ขอเปลี่ยนกลุ่มเรียน DII345',
     status: 'rejected',
@@ -71,6 +87,9 @@ const initialRequests = [
 export default function Requests() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
+  const canCreateRequest = user?.role === 'student';
+  const canReviewRequest = user?.role === 'staff' || user?.role === 'admin';
 
   const requestTypes = [
     { id: 'reg_over', name: language === 'en' ? 'Over-registration' : 'ลงทะเบียนเรียนเกิน', icon: <FileText className="w-5 h-5" />, color: 'bg-blue-50 text-blue-600' },
@@ -80,12 +99,34 @@ export default function Requests() {
     { id: 'general', name: language === 'en' ? 'General Request' : 'คำร้องทั่วไป', icon: <FileQuestion className="w-5 h-5" />, color: 'bg-slate-50 text-slate-600' },
   ];
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [requests, setRequests] = React.useState<typeof initialRequests>([]);
+  const [requests, setRequests] = React.useState<RequestRow[]>([]);
   const [formData, setFormData] = React.useState({
     type: '',
     title: '',
     description: ''
   });
+  const [files, setFiles] = React.useState<File[]>([]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files || []);
+    const validFiles = selectedFiles.filter(file => {
+      const isAllowedType = ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type);
+      const isUnder10MB = file.size <= 10 * 1024 * 1024;
+      if (!isAllowedType) {
+        toast.error(language === 'th' ? `ไฟล์ ${file.name} ไม่รองรับ (เฉพาะ PDF, JPG, PNG)` : `File ${file.name} is not supported (PDF, JPG, PNG only)`);
+      } else if (!isUnder10MB) {
+        toast.error(language === 'th' ? `ไฟล์ ${file.name} มีขนาดเกิน 10MB` : `File ${file.name} exceeds 10MB`);
+      }
+      return isAllowedType && isUnder10MB;
+    });
+    setFiles(prev => [...prev, ...validFiles]);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -100,16 +141,18 @@ export default function Requests() {
           const status = asString(request.status, 'pending');
           const totalSteps = status === 'pending' ? 4 : 3;
           return {
-            id: asString(request.id, String(index + 1)) as never,
+            id: asString(request.id, String(index + 1)),
             type: asString(request.type, '-'),
             title: asString(request.title, '-'),
-            status: status as never,
+            status,
             step: status === 'pending' ? 2 : status === 'rejected' ? 1 : totalSteps,
             totalSteps,
             createdAt: asDate(request.submittedAt, asDate(request.createdAt)).toISOString().split('T')[0],
             updatedAt: asDate(request.reviewedAt, asDate(request.updatedAt, asDate(request.submittedAt))).toISOString().split('T')[0],
             description: asString(request.description, asString(studentUser.nameThai, '')),
             documents: asArray<string>(request.documents),
+            studentName: asString(studentUser.nameThai, asString(studentUser.name, '-')),
+            studentId: asString(student.studentId),
           };
         });
         setRequests(mapped);
@@ -132,16 +175,16 @@ export default function Requests() {
         type: formData.type,
         title: formData.title,
         description: formData.description,
-        documents: [],
+        documents: files.map(f => f.name),
       });
       const request = asRecord(response.request);
       const createdAt = asDate(request.submittedAt, new Date()).toISOString().split('T')[0];
       const newRequest = {
-        id: asString(request.id, String(Date.now())) as never,
+        id: asString(request.id, String(Date.now())),
         type: asString(request.type, formData.type),
         title: asString(request.title, formData.title),
         description: asString(request.description, formData.description),
-        status: asString(request.status, 'pending') as never,
+        status: asString(request.status, 'pending'),
         step: asNumber(request.step, 1),
         totalSteps: 3,
         createdAt,
@@ -152,15 +195,47 @@ export default function Requests() {
       setRequests([newRequest, ...requests]);
       setIsDialogOpen(false);
       setFormData({ type: '', title: '', description: '' });
+      setFiles([]);
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
     }
   };
 
+  const handleUpdateRequestStatus = async (request: RequestRow, status: 'approved' | 'rejected' | 'completed') => {
+    try {
+      const response = await api.requests.updateStatus(request.id, { status });
+      const updated = asRecord(response.request);
+      setRequests((current) => current.map((item) => item.id === request.id ? {
+        ...item,
+        status: asString(updated.status, status),
+        step: status === 'rejected' ? 1 : item.totalSteps,
+        updatedAt: asDate(updated.reviewedAt, new Date()).toISOString().split('T')[0],
+      } : item));
+      toast.success(status === 'approved' ? 'อนุมัติคำร้องแล้ว' : status === 'completed' ? 'ปิดคำร้องแล้ว' : 'ปฏิเสธคำร้องแล้ว');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update request');
+    }
+  };
+
+  const handleCancelRequest = async (request: RequestRow) => {
+    if (canReviewRequest) {
+      await handleUpdateRequestStatus(request, 'rejected');
+      return;
+    }
+
+    toast.info(language === 'th' ? 'การยกเลิกคำร้องต้องติดต่อเจ้าหน้าที่' : 'Please contact staff to cancel this request.');
+  };
+
+  const openRequestDetails = (request: RequestRow) => {
+    const student = request.studentName ? `${request.studentName}${request.studentId ? ` (${request.studentId})` : ''}` : '';
+    toast.info([request.title, student, request.description].filter(Boolean).join(' • '));
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'approved': return 'bg-emerald-50 text-emerald-600 border-emerald-100';
+      case 'completed': return 'bg-blue-50 text-blue-600 border-blue-100';
       case 'rejected': return 'bg-red-50 text-red-600 border-red-100';
       default: return 'bg-amber-50 text-amber-600 border-amber-100';
     }
@@ -168,6 +243,7 @@ export default function Requests() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
+      case 'completed':
       case 'approved': return <CheckCircle className="w-4 h-4 mr-1" />;
       case 'rejected': return <XCircle className="w-4 h-4 mr-1" />;
       default: return <Hourglass className="w-4 h-4 mr-1" />;
@@ -176,6 +252,7 @@ export default function Requests() {
 
   const getStatusText = (status: string) => {
     switch (status) {
+      case 'completed': return language === 'th' ? 'เสร็จสิ้น' : 'Completed';
       case 'approved': return t.requestsPage.approved;
       case 'rejected': return t.requestsPage.rejected;
       default: return t.requestsPage.processing;
@@ -237,11 +314,13 @@ export default function Requests() {
           </motion.h1>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="lg" className="rounded-2xl px-8 bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 h-12 font-bold transform active:scale-95 transition-all">
-              <Plus className="w-5 h-5 mr-2" /> {t.requestsPage.newRequest}
-            </Button>
-          </DialogTrigger>
+          {canCreateRequest && (
+            <DialogTrigger asChild>
+              <Button size="lg" className="rounded-2xl px-8 bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 h-12 font-bold transform active:scale-95 transition-all">
+                <Plus className="w-5 h-5 mr-2" /> {t.requestsPage.newRequest}
+              </Button>
+            </DialogTrigger>
+          )}
           <DialogContent className="sm:max-w-[600px] bg-white/90 backdrop-blur-2xl p-0 overflow-hidden gap-0 rounded-[2.5rem] border-white/50 shadow-2xl dark:bg-slate-900/50">
             <div className="p-8 bg-slate-900 text-white relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -249,10 +328,10 @@ export default function Requests() {
               <DialogDescription className="mt-1 text-slate-400">{t.requestsPage.formDesc}</DialogDescription>
             </div>
 
-            <div className="p-8 space-y-6">
+            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
               <div className="space-y-2">
                 <Label htmlFor="type" className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.requestType}</Label>
-                <Select onValueChange={(val) => setFormData({ ...formData, type: val })}>
+                <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
                   <SelectTrigger className="rounded-2xl h-14 bg-slate-50/50 border-slate-100 dark:border-slate-800 focus:ring-indigo-500 text-base dark:bg-slate-900/50">
                     <SelectValue placeholder={t.requestsPage.selectTopic} />
                   </SelectTrigger>
@@ -293,13 +372,50 @@ export default function Requests() {
 
               <div className="space-y-2">
                 <Label className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.attachments}</Label>
-                <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-10 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-400 transition-all cursor-pointer group dark:bg-slate-800">
+                <div 
+                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-10 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-400 transition-all cursor-pointer group dark:bg-slate-800"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <input 
+                    type="file" 
+                    ref={fileInputRef} 
+                    className="hidden" 
+                    multiple 
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={handleFileChange}
+                  />
                   <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-50 transition-all">
                     <Upload className="w-8 h-8 opacity-50 text-slate-400 group-hover:text-indigo-500 dark:text-slate-400" />
                   </div>
                   <p className="font-bold">{t.requestsPage.uploadClick}</p>
                   <p className="text-xs mt-1 opacity-60">{t.requestsPage.fileSupport}</p>
                 </div>
+
+                {files.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {files.map((file, index) => (
+                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shrink-0">
+                            <FileText className="w-4 h-4 text-indigo-500" />
+                          </div>
+                          <div className="truncate">
+                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{file.name}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
+                          </div>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="shrink-0 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
+                          onClick={() => removeFile(index)}
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -323,7 +439,9 @@ export default function Requests() {
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between px-2">
             <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t.requestsPage.trackStatus}</h3>
-            <Button variant="ghost" className="text-slate-500 hover:text-indigo-600 font-bold dark:text-slate-300">{t.requestsPage.viewHistory} <ArrowRight className="w-4 h-4 ml-2" /></Button>
+            <Button variant="ghost" className="text-slate-500 hover:text-indigo-600 font-bold dark:text-slate-300" onClick={() => setRequests((current) => [...current].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))}>
+              {t.requestsPage.viewHistory} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
           </div>
 
           <div className="space-y-5">
@@ -391,11 +509,21 @@ export default function Requests() {
                   </div>
 
                   <div className="flex md:flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-6 md:pt-0 md:pl-8 md:w-40 shrink-0">
-                    <Button variant="outline" className="flex-1 rounded-2xl h-12 text-sm font-bold border-slate-200 dark:border-slate-700 hover:text-indigo-600 hover:border-indigo-200 hover:bg-slate-50 transition-all shadow-sm dark:text-slate-300 dark:bg-slate-800">
+                    <Button variant="outline" className="flex-1 rounded-2xl h-12 text-sm font-bold border-slate-200 dark:border-slate-700 hover:text-indigo-600 hover:border-indigo-200 hover:bg-slate-50 transition-all shadow-sm dark:text-slate-300 dark:bg-slate-800" onClick={() => openRequestDetails(req)}>
                       {t.common.details}
                     </Button>
+                    {canReviewRequest && req.status === 'pending' && (
+                      <Button className="flex-1 rounded-2xl h-12 text-sm font-bold bg-emerald-600 hover:bg-emerald-700" onClick={() => handleUpdateRequestStatus(req, 'approved')}>
+                        {t.requestsPage.approved}
+                      </Button>
+                    )}
+                    {canReviewRequest && (req.status === 'approved' || req.status === 'pending') && (
+                      <Button variant="outline" className="flex-1 rounded-2xl h-12 text-sm font-bold border-blue-200 text-blue-600 hover:bg-blue-50 dark:bg-slate-800" onClick={() => handleUpdateRequestStatus(req, 'completed')}>
+                        {language === 'th' ? 'ปิดงาน' : 'Complete'}
+                      </Button>
+                    )}
                     {req.status === 'pending' && (
-                      <Button variant="ghost" className="flex-1 rounded-2xl h-12 text-sm font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:bg-slate-800">
+                      <Button variant="ghost" className="flex-1 rounded-2xl h-12 text-sm font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:bg-slate-800" onClick={() => handleCancelRequest(req)}>
                         {t.common.cancel}
                       </Button>
                     )}
@@ -414,6 +542,14 @@ export default function Requests() {
                 key={type.id}
                 variants={itemVariants}
                 whileHover={{ y: -5, scale: 1.05 }}
+                onClick={() => {
+                  if (canCreateRequest) {
+                    setFormData((current) => ({ ...current, type: type.name }));
+                    setIsDialogOpen(true);
+                  } else {
+                    toast.info(type.name);
+                  }
+                }}
                 className="bg-white/60 backdrop-blur-xl p-5 rounded-3xl shadow-sm border border-white/60 dark:border-slate-800/60 flex flex-col items-center text-center gap-3 hover:shadow-xl transition-all cursor-pointer group dark:bg-slate-900/50"
               >
                 <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${type.color} bg-opacity-40 group-hover:scale-110 shadow-sm group-hover:shadow-md`}>
@@ -437,7 +573,7 @@ export default function Requests() {
               <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">{t.requestsPage.helpDesc}</p>
 
               <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50">
+                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50" onClick={() => window.location.href = 'tel:053942123'}>
                   <div className="w-12 h-12 rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center font-black shadow-lg group-hover:scale-110 transition-transform dark:bg-slate-900/50">
                     CS
                   </div>
@@ -446,7 +582,7 @@ export default function Requests() {
                     <div className="font-bold text-base">053-942123</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50">
+                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50" onClick={() => toast.info('LINE Official: @diicamt')}>
                   <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black shadow-lg group-hover:scale-110 transition-transform">
                     Li
                   </div>
@@ -457,7 +593,7 @@ export default function Requests() {
                 </div>
               </div>
 
-              <Button className="w-full mt-8 rounded-2xl h-14 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 font-bold transform active:scale-95 transition-all">{t.requestsPage.chatStaff}</Button>
+              <Button className="w-full mt-8 rounded-2xl h-14 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 font-bold transform active:scale-95 transition-all" onClick={() => navigate('/messages')}>{t.requestsPage.chatStaff}</Button>
             </div>
           </div>
 
@@ -468,13 +604,13 @@ export default function Requests() {
             </h3>
             <div className="space-y-2">
               {(language === 'en' ? ['How many days does a certificate request take?', 'Steps for leave of absence', 'How to reset password?', 'Download form G.01'] : ['การขอใบรับรองใช้เวลากี่วัน?', 'ขั้นตอนการลาพักการศึกษา', 'ลืมรหัสผ่านทำอย่างไร?', 'ดาวน์โหลดแบบฟอร์ม ก.01']).map((q, i) => (
-                <div key={i} className="flex items-center justify-between p-4 hover:bg-white rounded-2xl cursor-pointer group transition-all shadow-none hover:shadow-md border border-transparent hover:border-slate-100 dark:bg-slate-900 dark:border-slate-700">
-                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 font-medium">{q}</span>
+                <div key={i} className="flex items-center justify-between p-4 hover:bg-white dark:hover:bg-slate-800 rounded-2xl cursor-pointer group transition-all shadow-none hover:shadow-md border border-transparent hover:border-slate-100 dark:bg-slate-900 dark:border-slate-700" onClick={() => toast.info(q)}>
+                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white font-medium">{q}</span>
                   <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-1 dark:text-slate-400" />
                 </div>
               ))}
             </div>
-            <Button variant="ghost" className="w-full mt-4 text-xs font-bold text-slate-400 rounded-xl">{t.requestsPage.viewAllFAQ}</Button>
+            <Button variant="ghost" className="w-full mt-4 text-xs font-bold text-slate-400 rounded-xl" onClick={() => toast.info(language === 'th' ? 'FAQ ทั้งหมดจะเปิดในศูนย์ช่วยเหลือเมื่อเชื่อมต่อ knowledge base แล้ว' : 'Full FAQ will open after the knowledge base is connected.')}>{t.requestsPage.viewAllFAQ}</Button>
           </div>
         </div>
       </div>

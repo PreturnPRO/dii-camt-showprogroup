@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Users, FileText, Building, Send, Sparkles, BrainCircuit, Bookmark, PlusCircle, CheckCircle2, TrendingUp, BellRing, Target, Trophy, Flame } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -18,11 +18,6 @@ import { mapCompany, mapJob, mapStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import type { Company, JobPosting, Student } from '@/types';
 
-const mockNotifications = [
-  { id: 1, type: 'interest', message: 'พีรดนย์ ศรีประเสริฐ (Year 3) has expressed interest in your Data Scientist requirement.', time: '2 hours ago', read: false },
-  { id: 2, type: 'threshold', message: 'THRESHOLD MET: สมใจ รักดี (Followed) has just reached the required 3.5 GPA criteria.', time: '5 hours ago', read: false },
-  { id: 3, type: 'competition', message: 'COMPETITION ALERT: Another company is viewing your top matched talent. Send an early offer now!', time: '1 day ago', read: true }
-];
 
 type RequirementRow = {
   id: string;
@@ -88,32 +83,32 @@ export default function CompanyDashboard() {
     : (company?.companyName || company?.companyNameThai || user?.name || '');
   const copy = language === 'th'
     ? {
-        submitRequirement: 'ส่ง Requirement ใหม่',
-        submitRequirementTitle: 'ส่ง Requirement ใหม่',
-        submitRequirementDesc: 'ระบุบทบาท ทักษะ และรายละเอียดงานเพื่อให้ระบบช่วยจับคู่กับนักศึกษา',
-        role: 'โปรเจกต์/ตำแหน่ง',
-        skills: 'ทักษะหลัก',
+        submitRequirement: 'ส่ง Requirement',
+        submitRequirementTitle: 'ส่งคำขอ Requirement ใหม่',
+        submitRequirementDesc: 'ระบุตำแหน่งงาน ทักษะ และรายละเอียดต่างๆ เพื่อให้ AI สามารถจับคู่คุณกับนักเรียนได้',
+        role: 'ตำแหน่งงาน',
+        skills: 'ทักษะสำคัญ',
         details: 'รายละเอียด',
-        submitToAi: 'ส่งให้ AI Matching',
-        liveAlerts: 'แจ้งเตือนการสรรหา',
+        submitToAi: 'ส่งไปยัง AI Matching',
+        liveAlerts: 'การแจ้งเตือนการจ้างงานแบบเรียลไทม์',
         new: 'ใหม่',
         viewDetails: 'ดูรายละเอียด',
-        requirements: 'Requirements และ AI Matches',
-        followed: 'Talent ที่ติดตาม',
-        activeRequirements: 'Requirements ที่เปิดอยู่',
+        requirements: 'Requirements & AI Matches',
+        followed: 'ติดตาม Talent',
+        activeRequirements: 'Requirement ที่เปิดอยู่',
         total: 'ทั้งหมด',
         postedCriteria: 'เงื่อนไขที่ประกาศไว้สำหรับจับคู่นักศึกษา',
         matches: 'Matches',
         aiTalentMatching: 'AI Talent Matching',
         bestMatches: 'นักศึกษาที่เหมาะกับ Requirement ของคุณที่สุด',
         exclusiveAccess: 'สิทธิ์เข้าถึงพิเศษ',
-        fastTrackOffer: 'ส่งข้อเสนอเร็ว',
+        fastTrackOffer: 'ส่งข้อเสนอแบบ Fast-track',
         follow: 'ติดตาม',
         viewProfile: 'ดูโปรไฟล์',
         trackedProgress: 'ติดตามความคืบหน้าของนักศึกษาที่สนใจ',
         followedDate: 'ติดตามเมื่อ',
         currentGpa: 'GPA ปัจจุบัน',
-        profileOverview: 'ดูโปรไฟล์',
+        profileOverview: 'ดูภาพรวมโปรไฟล์',
         noJobs: 'ยังไม่มีประกาศงานจาก API',
         noStudents: 'ยังไม่มีนักศึกษาที่เปิดสิทธิ์ให้ดู',
         noRequirements: 'ยังไม่มี Requirement',
@@ -263,7 +258,7 @@ export default function CompanyDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [language, user?.id]);
+  }, [language, user?.id, user?.name]);
 
   const handleSubmitRequirement = async () => {
     const skills = requirementForm.skills.split(',').map(skill => skill.trim()).filter(Boolean);

@@ -1,10 +1,11 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Users, Search, Filter, GraduationCap, AlertTriangle, 
-  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen
+  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen, Upload
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,11 +13,16 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api } from '@/lib/api';
 import { mapStudent } from '@/lib/live-mappers';
+import { asRecord, asString } from '@/lib/live-data';
+import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
+import { buildSafeIdentifier, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { Student } from '@/types';
+import { toast } from 'sonner';
 
-type StudentRow = Student;
+type StudentRow = Student & { userId?: string };
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -31,11 +37,33 @@ const itemVariants = {
 export default function Students() {
   const { t } = useLanguage();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [yearFilter, setYearFilter] = React.useState('all');
   const [statusFilter, setStatusFilter] = React.useState('all');
   const [students, setStudents] = React.useState<StudentRow[]>([]);
+  const [selectedStudent, setSelectedStudent] = React.useState<StudentRow | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [isStudentImportOpen, setIsStudentImportOpen] = React.useState(false);
+
+  const mapStudentResponse = React.useCallback((item: unknown, index: number): StudentRow => {
+    const source = asRecord(item);
+    const user = asRecord(source.user);
+    return {
+      ...mapStudent(item, index),
+      userId: asString(source.userId, asString(user.id)),
+    };
+  }, []);
+
+  const loadStudents = React.useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.students.list();
+      setStudents(response.students.map(mapStudentResponse));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapStudentResponse]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -44,7 +72,7 @@ export default function Students() {
       .list()
       .then((response) => {
         if (!mounted) return;
-        setStudents(response.students.map(mapStudent));
+        setStudents(response.students.map(mapStudentResponse));
       })
       .catch((error) => {
         console.warn('Unable to load students from API', error);
@@ -57,7 +85,58 @@ export default function Students() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [mapStudentResponse]);
+
+  const buildStudentImportPayload = (row: MappedImportRow) => {
+    const values = row.values;
+    const studentId = values.studentId;
+    const name = values.name;
+    const nameThai = values.nameThai || name;
+    const email =
+      values.email ||
+      `${buildSafeIdentifier(studentId, `student${row.rowNumber}`)}@student.showpro.local`;
+
+    return {
+      name,
+      nameThai,
+      email,
+      phone: values.phone || undefined,
+      password: values.password || undefined,
+      role: 'STUDENT',
+      isActive: true,
+      profile: {
+        studentId,
+        major: values.major || 'Digital Industry Integration',
+        program: values.program || 'bachelor',
+        year: Number(values.year || 1),
+        semester: Number(values.semester || 1),
+        academicYear: values.academicYear,
+        academicStatus: values.academicStatus || 'normal',
+      },
+    };
+  };
+
+  const handleStudentImport = async (rows: MappedImportRow[]) => {
+    const response = await api.users.importStudents(
+      rows.map((row) => ({
+        rowNumber: row.rowNumber,
+        ...asRecord(buildStudentImportPayload(row).profile),
+        name: buildStudentImportPayload(row).name,
+        nameThai: buildStudentImportPayload(row).nameThai,
+        email: buildStudentImportPayload(row).email,
+        phone: buildStudentImportPayload(row).phone,
+        password: buildStudentImportPayload(row).password,
+      })),
+    );
+
+    await loadStudents();
+    toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
+    if (response.failedCount > 0) {
+      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
+    }
+
+    return { successCount: response.createdCount, failureCount: response.failedCount };
+  };
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
@@ -71,6 +150,22 @@ export default function Students() {
 
   const atRiskCount = students.filter(s => s.academicStatus === 'probation' || s.academicStatus === 'risk').length;
   const avgGPA = (students.reduce((sum, s) => sum + s.gpa, 0) / Math.max(students.length, 1)).toFixed(2);
+
+  const handleMessageStudent = (student: StudentRow) => {
+    const recipientId = student.userId || student.id;
+    navigate('/messages', {
+      state: {
+        recipient: {
+          id: recipientId,
+          email: student.email,
+          name: student.name,
+          nameThai: student.nameThai,
+          role: student.role,
+        },
+      },
+    });
+    toast.info(`เปิดแชทกับ ${student.nameThai || student.name}`);
+  };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -89,6 +184,46 @@ export default function Students() {
       animate="visible"
       className="space-y-6"
     >
+      <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedStudent?.nameThai || selectedStudent?.name}</DialogTitle>
+            <DialogDescription>
+              {selectedStudent?.studentId} · {selectedStudent?.major}
+            </DialogDescription>
+          </DialogHeader>
+          {selectedStudent && (
+            <div className="grid gap-3 text-sm sm:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">GPA</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpa.toFixed(2)}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.credits}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.earnedCredits}/{selectedStudent.totalCredits}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.year}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.year}</div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
+                <div className="text-slate-500 dark:text-slate-400">{t.common.status}</div>
+                <div className="mt-1">{getStatusBadge(selectedStudent.academicStatus)}</div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSelectedStudent(null)}>ปิด</Button>
+            {selectedStudent && (
+              <Button onClick={() => handleMessageStudent(selectedStudent)}>
+                <Mail className="mr-2 h-4 w-4" />
+                ส่งข้อความ
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <div>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
               <Users className="w-4 h-4 text-blue-500 dark:text-slate-400" />
@@ -98,6 +233,23 @@ export default function Students() {
               {t.studentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.studentsPage.titleHighlight}</span>
           </motion.h1>
       </div>
+      {(user?.role === 'staff' || user?.role === 'admin') && (
+        <motion.div variants={itemVariants} className="flex justify-end">
+          <Button variant="outline" onClick={() => setIsStudentImportOpen(true)} className="rounded-xl">
+            <Upload className="mr-2 h-4 w-4" />
+            Import รายชื่อนักศึกษา
+          </Button>
+        </motion.div>
+      )}
+
+      <ImportMappingDialog
+        open={isStudentImportOpen}
+        onOpenChange={setIsStudentImportOpen}
+        title="Import รายชื่อนักศึกษา"
+        description="อัปโหลด Excel/CSV ของรุ่นนั้น ๆ แล้วกำหนดคอลัมน์ก่อนสร้างบัญชีนักศึกษา"
+        fields={studentImportFields}
+        onImport={handleStudentImport}
+      />
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -232,6 +384,7 @@ export default function Students() {
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
                   className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
+                  onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
@@ -250,15 +403,21 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold">GPA {student.gpa.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPA {student.gpa.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}
                     <div className="flex gap-1">
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={(event) => {
+                        event.stopPropagation();
+                        setSelectedStudent(student);
+                      }}>
                         <Eye className="w-4 h-4" />
                       </Button>
-                      <Button size="sm" variant="ghost">
+                      <Button size="sm" variant="ghost" onClick={(event) => {
+                        event.stopPropagation();
+                        handleMessageStudent(student);
+                      }}>
                         <Mail className="w-4 h-4" />
                       </Button>
                     </div>

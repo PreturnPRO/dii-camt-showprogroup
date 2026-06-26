@@ -13,15 +13,15 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { mockStudent, mockGrades, mockCourses } from '@/lib/mockData';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import type { Course, Grade, Student } from '@/types';
 
-type StudentRow = typeof mockStudent;
-type GradeRow = (typeof mockGrades)[number];
-type CourseRow = (typeof mockCourses)[number];
+type StudentRow = Student;
+type GradeRow = Grade;
+type CourseRow = Course;
 type EnrollmentRow = {
   id: string;
   studentId: string;
@@ -30,33 +30,51 @@ type EnrollmentRow = {
   courseId: string;
   courseCode: string;
   courseName: string;
-  midterm?: number;
-  final?: number;
-  assignments?: number;
-  participation?: number;
-  project?: number;
+  scores?: { criteriaId: string; score: number }[];
   total?: number;
   letterGrade?: string;
   remarks?: string;
 };
 
 const emptyStudent: StudentRow = {
-  ...mockStudent,
   id: '',
   email: '',
   name: '',
   nameThai: '',
+  role: 'student',
+  createdAt: new Date(),
+  isActive: true,
   studentId: '',
   major: '',
+  program: 'bachelor',
+  year: 1,
+  semester: 1,
+  academicYear: '',
   gpa: 0,
   gpax: 0,
   totalCredits: 0,
   earnedCredits: 0,
   requiredCredits: 0,
+  academicStatus: 'normal',
   skills: [],
   badges: [],
   activities: [],
-  portfolio: { ...mockStudent.portfolio, projects: [] },
+  totalActivityHours: 0,
+  gamificationPoints: 0,
+  dataConsent: {
+    studentId: '',
+    allowDataSharing: false,
+    allowPortfolioSharing: false,
+    sharedWithCompanies: [],
+    emailNotifications: true,
+    smsNotifications: false,
+    inAppNotifications: true,
+    showInLeaderboard: false,
+    profileVisibility: 'private',
+    consentDate: new Date(),
+    lastModified: new Date(),
+    history: [],
+  },
   timeline: [],
 };
 
@@ -170,11 +188,10 @@ export default function Grades() {
                 courseId: asString(enrollment.courseId),
                 courseCode: asString(course.code),
                 courseName: asString(course.nameThai, asString(course.name)),
-                midterm: enrollment.midterm === null ? undefined : asNumber(enrollment.midterm, 0),
-                final: enrollment.final === null ? undefined : asNumber(enrollment.final, 0),
-                assignments: enrollment.assignments === null ? undefined : asNumber(enrollment.assignments, 0),
-                participation: enrollment.participation === null ? undefined : asNumber(enrollment.participation, 0),
-                project: enrollment.project === null ? undefined : asNumber(enrollment.project, 0),
+                scores: asArray(enrollment.scores).map((s: any) => ({
+                  criteriaId: asString(s.criteriaId),
+                  score: asNumber(s.score, 0),
+                })),
                 total,
                 letterGrade: asString(enrollment.letterGrade),
                 remarks: asString(enrollment.remarks),
@@ -211,11 +228,50 @@ export default function Grades() {
     }
   };
 
+  const updateEnrollmentScore = (enrollmentId: string, criteriaId: string, newScoreStr: string) => {
+    setEnrollments((current) => current.map((item) => {
+      if (item.id !== enrollmentId) return item;
+      
+      const parsedScore = newScoreStr === '' ? 0 : Number(newScoreStr);
+      const scores = item.scores ? [...item.scores] : [];
+      const scoreIndex = scores.findIndex(s => s.criteriaId === criteriaId);
+      
+      if (scoreIndex >= 0) {
+        scores[scoreIndex] = { ...scores[scoreIndex], score: parsedScore };
+      } else {
+        scores.push({ criteriaId, score: parsedScore });
+      }
+      // Auto-calculate total and grade
+      const course = courses.find(c => c.id === item.courseId);
+      let newTotal = item.total;
+      let newGrade = item.letterGrade;
+
+      if (course && course.gradingCriteria) {
+        let calcTotal = 0;
+        for (const s of scores) {
+          const c = course.gradingCriteria.find(x => x.id === s.criteriaId);
+          if (c) {
+            calcTotal += (s.score / c.maxScore) * c.weightPercentage;
+          }
+        }
+        newTotal = Math.round(calcTotal * 100) / 100;
+
+        if (course.gradeCutoffs && course.gradeCutoffs.length > 0) {
+          const cutoffs = [...course.gradeCutoffs].sort((a, b) => b.minScore - a.minScore);
+          const cutoff = cutoffs.find(c => newTotal! >= c.minScore);
+          newGrade = cutoff ? cutoff.grade : "F";
+        }
+      }
+      
+      return { ...item, scores, total: newTotal, letterGrade: newGrade };
+    }));
+  };
+
   const updateEnrollmentDraft = (id: string, field: keyof EnrollmentRow, value: string) => {
     setEnrollments((current) => current.map((item) => {
       if (item.id !== id) return item;
-      if (['midterm', 'final', 'assignments', 'participation', 'project', 'total'].includes(field)) {
-        return { ...item, [field]: value === '' ? undefined : Number(value) };
+      if (field === 'scores' && Array.isArray(value)) {
+        return { ...item, scores: value };
       }
       return { ...item, [field]: value };
     }));
@@ -230,11 +286,7 @@ export default function Grades() {
           enrollmentId: item.id,
           studentId: item.studentId,
           courseId: item.courseId,
-          midterm: item.midterm,
-          final: item.final,
-          assignments: item.assignments,
-          participation: item.participation,
-          project: item.project,
+          scores: item.scores,
           total: item.total,
           letterGrade: item.letterGrade || undefined,
           remarks: item.remarks || undefined,
@@ -252,23 +304,43 @@ export default function Grades() {
         if (!updated) return item;
         return {
           ...item,
-          midterm: updated.midterm === null ? undefined : asNumber(updated.midterm, item.midterm),
-          final: updated.final === null ? undefined : asNumber(updated.final, item.final),
-          assignments: updated.assignments === null ? undefined : asNumber(updated.assignments, item.assignments),
-          participation: updated.participation === null ? undefined : asNumber(updated.participation, item.participation),
-          project: updated.project === null ? undefined : asNumber(updated.project, item.project),
+          scores: asArray(updated.scores).map((s: any) => ({
+            criteriaId: asString(s.criteriaId),
+            score: asNumber(s.score, 0),
+          })),
           total: updated.total === null ? undefined : asNumber(updated.total, item.total),
           letterGrade: asString(updated.letterGrade, item.letterGrade),
           remarks: asString(updated.remarks, item.remarks),
         };
       }));
 
-      toast.success(language === 'th' ? 'บันทึกคะแนนแล้ว' : 'Grades saved');
+      toast.success(language === 'th' ? `บันทึกคะแนนเรียบร้อย (${response.updatedCount} รายการ)` : `Grades saved successfully (${response.updatedCount} records)`);
     } catch (error) {
       console.warn('Unable to save grades', error);
-      toast.error(language === 'th' ? 'บันทึกคะแนนไม่สำเร็จ' : 'Unable to save grades');
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้' : 'Unable to save grades');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleExportCsv = async () => {
+    if (selectedCourseId === 'all') {
+      toast.error(language === 'th' ? 'กรุณาเลือกวิชาก่อน Export' : 'Please select a course to export');
+      return;
+    }
+    try {
+      const blob = await api.grades.exportCsv(selectedCourseId);
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `grades_${selectedCourseId}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(error);
+      toast.error(language === 'th' ? 'ส่งออก CSV ล้มเหลว' : 'Failed to export CSV');
     }
   };
 
@@ -495,20 +567,17 @@ export default function Grades() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-2 mb-6">
-                      <div className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-xs text-slate-400 mb-1">Mid</div>
-                        <div className="font-bold text-slate-700 dark:text-slate-300">{grade.midterm || '-'}</div>
-                      </div>
-                      <div className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-xs text-slate-400 mb-1">Final</div>
-                        <div className="font-bold text-slate-700 dark:text-slate-300">{grade.final || '-'}</div>
-                      </div>
-                      <div className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800">
-                        <div className="text-xs text-slate-400 mb-1">Assign</div>
-                        <div className="font-bold text-slate-700 dark:text-slate-300">{grade.assignments || '-'}</div>
-                      </div>
-                      <div className="text-center p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-slate-800">
+                    <div className="flex flex-wrap gap-2 mb-6">
+                      {course.gradingCriteria && course.gradingCriteria.map(c => {
+                        const scoreObj = grade.scores?.find(s => s.criteriaId === c.id);
+                        return (
+                          <div key={c.id} className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800 flex-1 min-w-[80px]">
+                            <div className="text-xs text-slate-400 mb-1 truncate" title={c.name}>{c.name}</div>
+                            <div className="font-bold text-slate-700 dark:text-slate-300">{scoreObj?.score ?? '-'}</div>
+                          </div>
+                        );
+                      })}
+                      <div className="text-center p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-slate-800 flex-1 min-w-[80px]">
                         <div className="text-xs text-emerald-600 mb-1 dark:text-slate-300">Total</div>
                         <div className="font-bold text-emerald-700 dark:text-slate-300">{grade.total}</div>
                       </div>
@@ -696,61 +765,87 @@ export default function Grades() {
               onChange={(event) => setSelectedCourseId(event.target.value)}
               className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
-              <option value="all">{language === 'th' ? 'ทุกวิชา' : 'All courses'}</option>
+              {courses.length === 0 && <option value="all">{language === 'th' ? 'กำลังโหลดวิชา...' : 'Loading courses...'}</option>}
+              {courses.length > 0 && <option value="all">{language === 'th' ? 'เลือกวิชาเพื่อกรอกคะแนน...' : 'Select a course to enter grades...'}</option>}
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
               ))}
             </select>
+            <Button variant="outline" onClick={handleExportCsv} disabled={selectedCourseId === 'all'} className="h-11 rounded-2xl">
+              <Download className="w-4 h-4 mr-2" />
+              {language === 'th' ? 'ส่งออก CSV' : 'Export CSV'}
+            </Button>
             <Button onClick={saveLecturerGrades} disabled={isSaving || filteredEnrollments.length === 0} className="h-11 rounded-2xl">
               {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึกคะแนน' : 'Save grades')}
             </Button>
           </div>
         </div>
 
-        {!isLoading && filteredEnrollments.length === 0 ? (
+        {!isLoading && (selectedCourseId === 'all' || filteredEnrollments.length === 0) ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-            {language === 'th' ? 'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่เลือก' : 'No enrollments found for the selected course.'}
+            {selectedCourseId === 'all' 
+              ? (language === 'th' ? 'กรุณาเลือกวิชาที่ต้องการกรอกคะแนน' : 'Please select a course to enter grades.')
+              : (language === 'th' ? 'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่เลือก' : 'No enrollments found for the selected course.')}
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <div className="min-w-[980px] space-y-2">
-              <div className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400">
-                <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
-                <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
-                <span>Mid</span>
-                <span>Final</span>
-                <span>Assign</span>
-                <span>Part.</span>
-                <span>Project</span>
-                <span>Total</span>
-                <span>Grade</span>
-                <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>
-              </div>
-              {filteredEnrollments.map((row) => (
-                <div key={row.id} className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{row.studentName}</div>
-                    <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.studentCode}</div>
+                <div className="min-w-[980px] space-y-2">
+                  <div 
+                    className="grid gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400"
+                    style={{ gridTemplateColumns: `1.3fr 1fr repeat(${(courses.find(c => c.id === selectedCourseId)?.gradingCriteria?.length || 0) + 1}, 88px) 100px 1.2fr` }}
+                  >
+                    <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
+                    <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
+                    {courses.find(c => c.id === selectedCourseId)?.gradingCriteria?.map(c => (
+                      <span key={c.id} className="truncate" title={c.name}>{c.name}</span>
+                    ))}
+                    <span>Total</span>
+                    <span>Grade</span>
+                    <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>
                   </div>
-                  <div className="min-w-0">
-                    <div className="truncate text-sm font-bold text-emerald-700 dark:text-emerald-300">{row.courseCode}</div>
-                    <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
-                  </div>
-                  {(['midterm', 'final', 'assignments', 'participation', 'project', 'total'] as const).map((field) => (
-                    <Input
-                      key={field}
-                      type="number"
-                      min="0"
-                      value={row[field] ?? ''}
-                      onChange={(event) => updateEnrollmentDraft(row.id, field, event.target.value)}
-                      className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center dark:border-slate-700 dark:bg-slate-900"
-                    />
-                  ))}
+                  {filteredEnrollments.map((row) => {
+                    const courseCriteria = courses.find(c => c.id === row.courseId)?.gradingCriteria || [];
+                    return (
+                      <div 
+                        key={row.id} 
+                        className="grid items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
+                        style={{ gridTemplateColumns: `1.3fr 1fr repeat(${courseCriteria.length + 1}, 88px) 100px 1.2fr` }}
+                      >
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{row.studentName}</div>
+                          <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.studentCode}</div>
+                        </div>
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-bold text-emerald-700 dark:text-emerald-300">{row.courseCode}</div>
+                          <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
+                        </div>
+                        
+                        {courseCriteria.map(criteria => {
+                          const scoreObj = row.scores?.find(s => s.criteriaId === criteria.id);
+                          return (
+                            <Input
+                              key={criteria.id}
+                              type="number"
+                              min="0"
+                              max={criteria.maxScore}
+                              value={scoreObj?.score ?? ''}
+                              onChange={(event) => updateEnrollmentScore(row.id, criteria.id, event.target.value)}
+                              className="h-10 rounded-xl border-slate-200 text-center bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
+                            />
+                          );
+                        })}
+                        
+                        <Input
+                          type="number"
+                          readOnly
+                          value={row.total ?? ''}
+                          className="h-10 rounded-xl border-slate-200 text-center bg-slate-100 text-emerald-700 font-bold dark:border-slate-700 dark:bg-slate-800"
+                        />
                   <Input
                     value={row.letterGrade ?? ''}
-                    onChange={(event) => updateEnrollmentDraft(row.id, 'letterGrade', event.target.value.toUpperCase())}
+                    readOnly
                     placeholder="A"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center font-bold dark:border-slate-700 dark:bg-slate-900"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-100 text-center font-bold dark:border-slate-700 dark:bg-slate-800 text-emerald-700"
                   />
                   <Input
                     value={row.remarks ?? ''}
@@ -759,7 +854,8 @@ export default function Grades() {
                     className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
                   />
                 </div>
-              ))}
+              );
+            })}
             </div>
           </div>
         )}

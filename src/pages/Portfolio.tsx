@@ -17,7 +17,6 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { mockStudent } from '@/lib/mockData';
 import { api } from '@/lib/api';
 import { mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
@@ -108,16 +107,82 @@ export default function Portfolio() {
     url: '',
     images: [] as string[],
   });
-  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
-  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
-
-  // Skill dialog states
   const [isSkillDialogOpen, setIsSkillDialogOpen] = React.useState(false);
   const [skillForm, setSkillForm] = React.useState({
     name: '',
     category: 'programming',
     level: 'intermediate',
   });
+
+  const [isUploadingImage, setIsUploadingImage] = React.useState(false);
+  const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+  const handleAddSkill = async () => {
+    if (!skillForm.name.trim()) {
+      toast.error('กรุณากรอกชื่อทักษะ');
+      return;
+    }
+    try {
+      const response = await api.students.updateProfile({
+        skills: [...student.skills, { ...skillForm, verifiedBy: '', yearsOfExperience: 0 }]
+      });
+      setStudent(mapStudent(response.profile));
+      setIsSkillDialogOpen(false);
+      setSkillForm({ name: '', category: 'programming', level: 'intermediate' });
+      toast.success('เพิ่มทักษะเรียบร้อย');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ไม่สามารถเพิ่มทักษะได้');
+    }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('ขนาดไฟล์เกิน 5MB กรุณาเลือกไฟล์ที่มีขนาดเล็กกว่านี้');
+      return;
+    }
+
+    setIsUploadingImage(true);
+    try {
+      const upload = await api.files.upload(file, { category: 'project', visibility: 'public' });
+      const asset = upload.asset as any;
+      const url = asset?.url || asset?.publicUrl || asset?.signedUrl;
+      if (url) {
+        setProjectForm(prev => ({ ...prev, images: [...prev.images, url] }));
+      } else {
+        throw new Error('No URL returned for image');
+      }
+    } catch (error) {
+      toast.error('อัปโหลดรูปภาพไม่สำเร็จ');
+    } finally {
+      setIsUploadingImage(false);
+    }
+  };
+
+  const togglePublic = async (checked: boolean) => {
+    if (!student.id) return; // Prevent data race
+    const currentPortfolio = student.portfolio;
+    try {
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary || '',
+          summaryThai: currentPortfolio?.summaryThai || '',
+          githubUrl: currentPortfolio?.githubUrl || '',
+          linkedinUrl: currentPortfolio?.linkedinUrl || '',
+          personalWebsite: currentPortfolio?.personalWebsite || '',
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: currentPortfolio?.projects ?? [],
+          isPublic: checked,
+        },
+      });
+      setStudent(mapStudent(response.profile));
+      toast.success(checked ? 'เปิดให้ดู Portfolio แบบ Public' : 'ตั้งเป็น Private แล้ว');
+    } catch (error) {
+      toast.error('ไม่สามารถอัปเดตสถานะ Public ได้');
+    }
+  };
 
   React.useEffect(() => {
     let mounted = true;
@@ -454,6 +519,32 @@ export default function Portfolio() {
     }
   };
 
+  const handleDeleteProject = async (indexToDelete: number) => {
+    if (!window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบผลงานนี้?')) return;
+    const currentPortfolio = student.portfolio;
+    const newProjects = [...projects];
+    newProjects.splice(indexToDelete, 1);
+    
+    try {
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary || '',
+          summaryThai: currentPortfolio?.summaryThai || '',
+          githubUrl: currentPortfolio?.githubUrl || '',
+          linkedinUrl: currentPortfolio?.linkedinUrl || '',
+          personalWebsite: currentPortfolio?.personalWebsite || '',
+          isPublic: currentPortfolio?.isPublic ?? true,
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: newProjects,
+        },
+      });
+      setStudent(mapStudent(response.profile));
+      toast.success('ลบผลงานเรียบร้อยแล้ว');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ไม่สามารถลบผลงานได้');
+    }
+  };
+
   if (user?.role !== 'student') {
     return (
       <div className="p-8 text-center text-slate-500 dark:text-slate-400">
@@ -560,6 +651,7 @@ export default function Portfolio() {
             </Button>
           </div>
         </div>
+      </div>
       </div>
 
       {/* Dashboard-style Stats Grid */}
@@ -778,7 +870,6 @@ export default function Portfolio() {
                   <Globe className="w-5 h-5" />
                 </Button>
               </div>
-
               <div className="flex gap-2 justify-center mt-6">
                 <Button variant="outline" size="sm" onClick={handleEditProfile} className="w-full rounded-xl">
                   <Edit className="w-4 h-4 mr-2" /> Edit Profile & Links
@@ -1116,6 +1207,7 @@ export default function Portfolio() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
     </motion.div>
   );
 }

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -35,61 +35,7 @@ const skillIcons: Record<string, React.ElementType> = {
   'English Communication': Globe, 'Cybersecurity': Shield,
 };
 
-const mockRequirements = [
-  {
-    id: '1',
-    name: 'Full-Stack Developer', nameEn: 'Full-Stack Developer',
-    description: 'พัฒนาเว็บแอปพลิเคชันทั้ง Frontend และ Backend',
-    descriptionEn: 'Develop web applications, both Frontend and Backend',
-    skills: [
-      { name: 'React', level: 'intermediate' },
-      { name: 'Node.js', level: 'intermediate' },
-      { name: 'TypeScript', level: 'beginner' },
-      { name: 'PostgreSQL', level: 'beginner' },
-    ],
-    priority: 'high',
-    matchedStudents: 12,
-    avgMatch: 78,
-    positions: 2,
-  },
-  {
-    id: '2',
-    name: 'UX/UI Designer', nameEn: 'UX/UI Designer',
-    description: 'ออกแบบ UX/UI สำหรับแอปพลิเคชันมือถือและเว็บ',
-    descriptionEn: 'Design UX/UI for mobile and web applications',
-    skills: [
-      { name: 'Figma', level: 'advanced' },
-      { name: 'UI/UX Design', level: 'intermediate' },
-      { name: 'English Communication', level: 'beginner' },
-    ],
-    priority: 'medium',
-    matchedStudents: 8,
-    avgMatch: 85,
-    positions: 1,
-  },
-  {
-    id: '3',
-    name: 'Data Analyst', nameEn: 'Data Analyst',
-    description: 'วิเคราะห์ข้อมูลและสร้าง Dashboard สำหรับ Business Intelligence',
-    descriptionEn: 'Analyze data and build dashboards for Business Intelligence',
-    skills: [
-      { name: 'Python', level: 'intermediate' },
-      { name: 'SQL', level: 'advanced' },
-      { name: 'Data Analysis', level: 'intermediate' },
-      { name: 'Machine Learning', level: 'beginner' },
-    ],
-    priority: 'high',
-    matchedStudents: 6,
-    avgMatch: 72,
-    positions: 3,
-  },
-];
 
-const mockMatches = [
-  { name: 'สมชาย ดีมาก', nameEn: 'Somchai Deemak', gpa: 3.78, year: 3, matchScore: 92, skills: ['React', 'Node.js', 'TypeScript'] },
-  { name: 'สมหญิง ใจดี', nameEn: 'Somying Jaidee', gpa: 3.55, year: 4, matchScore: 85, skills: ['React', 'PostgreSQL'] },
-  { name: 'วิชัย พยายาม', nameEn: 'Wichai Phayayam', gpa: 3.42, year: 3, matchScore: 78, skills: ['Node.js', 'TypeScript', 'MongoDB'] },
-];
 
 type RequirementRow = {
   id: string;

@@ -36,7 +36,7 @@ export default function PublicPortfolio() {
     if (!id) return;
     let mounted = true;
 
-    api.students.profile(id)
+    api.students.profileById(id)
       .then((response) => {
         if (!mounted) return;
         setStudent(mapStudent(response.profile));

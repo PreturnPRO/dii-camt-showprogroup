@@ -24,6 +24,7 @@ import {
   Building,
   Swords,
   Target,
+  Bot,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -53,12 +54,13 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
     case 'student':
       return [
         ...commonItems,
-        // { icon: BookOpen, label: nav.courses, href: '/courses' }, // ถูกตัดออกตาม Request
-        // { icon: Calendar, label: nav.schedule, href: '/schedule' }, // ถูกตัดออกตาม Request
+        { icon: BookOpen, label: nav.courses, href: '/courses' },
+        { icon: Calendar, label: nav.schedule, href: '/schedule' },
         { icon: GraduationCap, label: nav.grades, href: '/grades' },
         { icon: Trophy, label: nav.activities, href: '/activities' },
         { icon: FileText, label: nav.portfolio, href: '/portfolio' },
         { icon: Briefcase, label: nav.internships, href: '/internships' },
+        { icon: Clock, label: nav.applicationHistory || 'ประวัติการสมัคร', href: '/application-history' },
         { icon: ClipboardList, label: nav.requests, href: '/requests' },
         // { icon: Swords, label: nav.training, href: '/training' }, // ปิดชั่วคราว
         { icon: MessageSquare, label: nav.messages, href: '/messages' },
@@ -73,7 +75,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: ClipboardList, label: nav.attendanceBehavior, href: '/attendance' },
         { icon: GraduationCap, label: nav.grading, href: '/grades' },
         { icon: FileText, label: nav.appointments, href: '/appointments' },
-        { icon: BarChart3, label: nav.workloadReport, href: '/workload' },
         { icon: MessageSquare, label: nav.messages, href: '/messages' },
         { icon: Settings, label: nav.settings, href: '/settings' },
       ];
@@ -81,6 +82,10 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
       return [
         ...commonItems,
         { icon: Users, label: nav.users, href: '/users' },
+        { icon: GraduationCap, label: nav.studentDatabase, href: '/students' },
+        { icon: BookOpen, label: nav.curriculumCourses, href: '/courses' },
+        { icon: ClipboardList, label: nav.requests, href: '/requests' },
+        { icon: MessageSquare, label: nav.messages, href: '/messages' },
         { icon: DollarSign, label: nav.budgetProcurement, href: '/budget' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: FileText, label: nav.issueDocuments, href: '/documents' },
@@ -101,8 +106,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Search, label: nav.searchStudents, href: '/student-profiles' },
         { icon: Users, label: nav.applicants, href: '/applicants' },
         { icon: UserCog, label: nav.internTracking, href: '/intern-tracking' },
-        { icon: Building2, label: nav.cooperationMOU, href: '/cooperation' },
-        { icon: DollarSign, label: nav.subscriptionPackage, href: '/subscription' },
         { icon: Settings, label: nav.settings, href: '/settings' },
       ];
     case 'admin':
@@ -117,6 +120,7 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: FileText, label: nav.documentsRequests, href: '/documents' },
         { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
         { icon: Trophy, label: nav.activityAdmin, href: '/activities-management' },
+        { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
         { icon: Briefcase, label: nav.jobsInternships, href: '/job-postings' },
         { icon: Search, label: nav.studentDatabase, href: '/student-profiles' },
         { icon: Building, label: nav.partnerCompanies, href: '/cooperation' },

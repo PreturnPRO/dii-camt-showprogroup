@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles } from 'lucide-react';
+import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -13,6 +14,8 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asRecord, asString, roleToClient } from '@/lib/live-data';
+import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
+import { buildSafeIdentifier, companyImportFields, type MappedImportRow } from '@/lib/import-mapping';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -52,6 +55,13 @@ export default function UsersPage() {
         size?: string;
         website?: string;
         address?: string;
+        locationMapUrl?: string;
+        productsServices?: string;
+        contactPersonName?: string;
+        contactPersonRole?: string;
+        contactPersonEmail?: string;
+        contactPersonPhone?: string;
+        socialMedia?: string;
         [key: string]: unknown;
     };
 
@@ -76,6 +86,13 @@ export default function UsersPage() {
         size: string;
         website: string;
         address: string;
+        locationMapUrl: string;
+        productsServices: string;
+        contactPersonName: string;
+        contactPersonRole: string;
+        contactPersonEmail: string;
+        contactPersonPhone: string;
+        socialMedia: string;
     };
 
     const emptyForm: UserFormData = {
@@ -99,6 +116,13 @@ export default function UsersPage() {
         size: 'small',
         website: '',
         address: '',
+        locationMapUrl: '',
+        productsServices: '',
+        contactPersonName: '',
+        contactPersonRole: 'HR / Company Coordinator',
+        contactPersonEmail: '',
+        contactPersonPhone: '',
+        socialMedia: '',
     };
 
     const getRoleText = React.useCallback((role: UserType) => {
@@ -161,6 +185,13 @@ export default function UsersPage() {
             size: asString(companyProfile.size),
             website: asString(companyProfile.website),
             address: asString(companyProfile.address),
+            locationMapUrl: asString(companyProfile.locationMapUrl),
+            productsServices: asString(companyProfile.productsServices),
+            contactPersonName: asString(companyProfile.contactPersonName),
+            contactPersonRole: asString(companyProfile.contactPersonRole),
+            contactPersonEmail: asString(companyProfile.contactPersonEmail),
+            contactPersonPhone: asString(companyProfile.contactPersonPhone),
+            socialMedia: asString(companyProfile.socialMedia),
             studentProfile,
             lecturerProfile,
             staffProfile,
@@ -171,10 +202,16 @@ export default function UsersPage() {
     const [users, setUsers] = useState<UserRow[]>([]);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isCompanyImportOpen, setIsCompanyImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
     const [formData, setFormData] = useState<UserFormData>(emptyForm);
 
     const totalUsers = users.length;
+
+    const loadUsers = React.useCallback(async () => {
+        const response = await api.users.list();
+        setUsers(response.users.map(mapBackendUser));
+    }, [mapBackendUser]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -190,6 +227,62 @@ export default function UsersPage() {
             isMounted = false;
         };
     }, [mapBackendUser]);
+
+    const buildCompanyImportPayload = (row: MappedImportRow) => {
+        const values = row.values;
+        const companyId = values.companyId;
+        const companyName = values.companyName;
+        const phone = values.phone;
+        const email =
+            values.email ||
+            `${buildSafeIdentifier(phone || companyId, `company${row.rowNumber}`)}@company.showpro.local`;
+
+        return {
+            name: companyName,
+            nameThai: values.companyNameThai || companyName,
+            email,
+            phone,
+            password: values.password || undefined,
+            role: 'COMPANY',
+            isActive: true,
+            profile: {
+                companyId,
+                companyName,
+                companyNameThai: values.companyNameThai || companyName,
+                industry: values.industry,
+                size: values.size || 'small',
+                website: values.website || undefined,
+                address: values.address || undefined,
+                productsServices: values.productsServices || undefined,
+                contactPersonName: values.contactPersonName || undefined,
+                contactPersonRole: values.contactPersonRole || undefined,
+                contactPersonEmail: values.contactPersonEmail || values.email || undefined,
+                contactPersonPhone: values.contactPersonPhone || phone || undefined,
+                socialMedia: values.socialMedia || undefined,
+                onboardingStatus: 'profile_incomplete',
+            },
+        };
+    };
+
+    const handleCompanyImport = async (rows: MappedImportRow[]) => {
+        const response = await api.users.importCompanies(
+            rows.map((row) => ({
+                rowNumber: row.rowNumber,
+                ...asRecord(buildCompanyImportPayload(row).profile),
+                email: buildCompanyImportPayload(row).email,
+                phone: buildCompanyImportPayload(row).phone,
+                password: buildCompanyImportPayload(row).password,
+            })),
+        );
+
+        await loadUsers();
+        toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
+        if (response.failedCount > 0) {
+            toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
+        }
+
+        return { successCount: response.createdCount, failureCount: response.failedCount };
+    };
 
     const handleAdd = () => {
         setEditingUser(null);
@@ -220,6 +313,13 @@ export default function UsersPage() {
             size: user.size || 'small',
             website: user.website || '',
             address: user.address || '',
+            locationMapUrl: user.locationMapUrl || '',
+            productsServices: user.productsServices || '',
+            contactPersonName: user.contactPersonName || '',
+            contactPersonRole: user.contactPersonRole || 'HR / Company Coordinator',
+            contactPersonEmail: user.contactPersonEmail || user.email || '',
+            contactPersonPhone: user.contactPersonPhone || user.phone || '',
+            socialMedia: user.socialMedia || '',
         });
         setIsDialogOpen(true);
     };
@@ -270,6 +370,15 @@ export default function UsersPage() {
             size: formData.size,
             website: formData.website || undefined,
             address: formData.address || undefined,
+            locationMapUrl: formData.locationMapUrl || undefined,
+            productsServices: formData.productsServices || undefined,
+            contactPersonName: formData.contactPersonName || undefined,
+            contactPersonRole: formData.contactPersonRole || undefined,
+            contactPersonEmail: formData.contactPersonEmail || formData.email || undefined,
+            contactPersonPhone: formData.contactPersonPhone || undefined,
+            socialMedia: formData.socialMedia || undefined,
+            onboardingStatus: 'pending_review',
+            privacyProtocolAcceptedAt: new Date().toISOString(),
         };
     };
 
@@ -319,13 +428,15 @@ export default function UsersPage() {
             case 'lecturer': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.lecturer}</Badge>;
             case 'staff': return <Badge className="bg-purple-100 text-purple-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.staff}</Badge>;
             case 'company': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.roles.company}</Badge>;
+            case 'admin': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.admin}</Badge>; // D-18
             default: return <Badge>{role}</Badge>;
         }
     };
 
     const filteredUsers = users.filter(u =>
     (u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getRoleText(u.type).toLowerCase().includes(searchQuery.toLowerCase())) // D-20: ค้นด้วย role ได้
     );
 
     return (
@@ -352,11 +463,23 @@ export default function UsersPage() {
                 </div>
 
                 <motion.div className="flex gap-3" variants={itemVariants}>
+                    <Button variant="outline" onClick={() => setIsCompanyImportOpen(true)} className="rounded-xl">
+                        <Upload className="w-4 h-4 mr-2" />Import บริษัท
+                    </Button>
                     <Button onClick={handleAdd} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20">
                         <Plus className="w-4 h-4 mr-2" />{t.users.addNew}
                     </Button>
                 </motion.div>
             </div>
+
+            <ImportMappingDialog
+                open={isCompanyImportOpen}
+                onOpenChange={setIsCompanyImportOpen}
+                title="Import ข้อมูลบริษัท"
+                description="อัปโหลด Excel/CSV แล้วกำหนดว่าคอลัมน์ใดตรงกับข้อมูลบริษัทก่อนสร้างบัญชี"
+                fields={companyImportFields}
+                onImport={handleCompanyImport}
+            />
 
             {/* Stats Grid - Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -448,9 +571,10 @@ export default function UsersPage() {
                         <TabsTrigger value="lecturer">{t.roles.lecturer}</TabsTrigger>
                         <TabsTrigger value="staff">{t.roles.staff}</TabsTrigger>
                         <TabsTrigger value="company">{t.roles.company}</TabsTrigger>
+                        <TabsTrigger value="admin">{t.roles.admin}</TabsTrigger>
                     </TabsList>
 
-                    {['all', 'student', 'lecturer', 'staff', 'company'].map(tab => (
+                    {['all', 'student', 'lecturer', 'staff', 'company', 'admin'].map(tab => (
                         <TabsContent key={tab} value={tab}>
                             <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50"><CardContent className="pt-6">
                                 <div className="space-y-3">
@@ -644,6 +768,38 @@ export default function UsersPage() {
                                 <div className="space-y-2">
                                     <Label>ที่อยู่</Label>
                                     <Input value={formData.address} onChange={(e) => setFormData({ ...formData, address: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Location map URL</Label>
+                                    <Input value={formData.locationMapUrl} onChange={(e) => setFormData({ ...formData, locationMapUrl: e.target.value })} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Products / Services / Digital Industry</Label>
+                                    <Textarea value={formData.productsServices} onChange={(e) => setFormData({ ...formData, productsServices: e.target.value })} />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Coordinator / HR Name</Label>
+                                        <Input value={formData.contactPersonName} onChange={(e) => setFormData({ ...formData, contactPersonName: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Role</Label>
+                                        <Input value={formData.contactPersonRole} onChange={(e) => setFormData({ ...formData, contactPersonRole: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Email</Label>
+                                        <Input value={formData.contactPersonEmail} onChange={(e) => setFormData({ ...formData, contactPersonEmail: e.target.value })} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Coordinator Phone</Label>
+                                        <Input value={formData.contactPersonPhone} onChange={(e) => setFormData({ ...formData, contactPersonPhone: e.target.value })} />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Social / Line / Facebook</Label>
+                                    <Input value={formData.socialMedia} onChange={(e) => setFormData({ ...formData, socialMedia: e.target.value })} />
                                 </div>
                             </>
                         )}

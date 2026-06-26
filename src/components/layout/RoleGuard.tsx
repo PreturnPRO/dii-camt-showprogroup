@@ -10,14 +10,11 @@ interface RoleGuardProps {
 }
 
 /**
- * Frontend route guard that checks the current user's role against a list of
- * allowed roles.  When the role does not match, the user is redirected to
- * `/dashboard` and a toast notification is shown.
+ * Frontend route guard (D-04) — เช็ค role ของ user ปัจจุบันกับ allowedRoles
+ * ถ้าไม่ตรง → redirect ไป /dashboard + แจ้ง toast (กัน student พิมพ์ URL เข้าหน้า staff/admin)
  *
  * Usage:
- *   <RoleGuard allowedRoles={['staff', 'admin']}>
- *     <UsersPage />
- *   </RoleGuard>
+ *   <RoleGuard allowedRoles={['staff', 'admin']}><UsersPage /></RoleGuard>
  */
 export function RoleGuard({ allowedRoles, children }: RoleGuardProps) {
   const { user } = useAuth();

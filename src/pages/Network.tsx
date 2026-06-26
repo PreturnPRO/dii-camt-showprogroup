@@ -1,7 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Globe, Building, Search, MapPin, Users, Handshake, ExternalLink, Edit, Mail, FilePlus } from 'lucide-react';
+import { Globe, Building, Search, MapPin, Users, Handshake, ExternalLink, Edit, Briefcase, FilePlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -50,7 +51,9 @@ const emptyCompanyForm = {
 
 export default function Network() {
     const { t } = useLanguage();
+    const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = React.useState('');
+    const [industryFilter, setIndustryFilter] = React.useState('all');
     const [companies, setCompanies] = React.useState<CompanyRow[]>([]);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingCompany, setEditingCompany] = React.useState<CompanyRow | null>(null);
@@ -94,10 +97,20 @@ export default function Network() {
         };
     }, [mapCompanyRow]);
 
-    const filteredCompanies = companies.filter(c =>
-        c.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        c.companyNameThai.toLowerCase().includes(searchQuery.toLowerCase())
+    const industries = React.useMemo(
+        () => Array.from(new Set(companies.map((company) => company.industry).filter(Boolean))).sort(),
+        [companies],
     );
+
+    const filteredCompanies = companies.filter(c => {
+        const query = searchQuery.toLowerCase();
+        const matchesSearch =
+            c.companyName.toLowerCase().includes(query) ||
+            c.companyNameThai.toLowerCase().includes(query) ||
+            c.industry.toLowerCase().includes(query);
+        const matchesIndustry = industryFilter === 'all' || c.industry === industryFilter;
+        return matchesSearch && matchesIndustry;
+    });
 
     const openCreateDialog = () => {
         setEditingCompany(null);
@@ -187,6 +200,14 @@ export default function Network() {
         }
     };
 
+    const openInternTracking = (company: CompanyRow) => {
+        const params = new URLSearchParams({
+            companyId: company.id,
+            company: company.companyNameThai || company.companyName,
+        });
+        navigate(`/intern-tracking?${params.toString()}`);
+    };
+
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
             {/* Header */}
@@ -216,7 +237,17 @@ export default function Network() {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input placeholder={t.networkPage.searchPlaceholder} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700 dark:bg-slate-900/50" />
                 </div>
-                <Button variant="outline" className="rounded-xl">{t.networkPage.industryFilter}</Button>
+                <Select value={industryFilter} onValueChange={setIndustryFilter}>
+                    <SelectTrigger className="w-full rounded-xl bg-white/80 border-slate-200 dark:border-slate-700 dark:bg-slate-900/50 md:w-56">
+                        <SelectValue placeholder={t.networkPage.industryFilter} />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">{t.common?.all || 'All industries'}</SelectItem>
+                        {industries.map((industry) => (
+                            <SelectItem key={industry} value={industry}>{industry}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </motion.div>
 
             {/* Company Cards Grid */}
@@ -258,8 +289,8 @@ export default function Network() {
                             ))}
                         </div>
                         <div className="flex gap-2 pt-4 border-t border-slate-100 dark:border-slate-700">
-                            <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => window.location.assign('/messages')}>
-                                <Mail className="w-3.5 h-3.5 mr-1.5" /> {t.networkPage.sendIntern}
+                            <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => openInternTracking(company)}>
+                                <Briefcase className="w-3.5 h-3.5 mr-1.5" /> {t.networkPage.sendIntern}
                             </Button>
                             <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => createCooperation(company)}>
                                 <FilePlus className="w-3.5 h-3.5 mr-1.5" /> MOU

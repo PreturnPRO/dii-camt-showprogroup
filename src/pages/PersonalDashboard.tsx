@@ -123,7 +123,6 @@ const roleDashboardConfig: Record<Exclude<UserRole, 'student'>, {
             { label: 'รายวิชาที่สอน', path: '/courses', icon: BookOpen },
             { label: 'กรอกผลการเรียน', path: '/grades', icon: Award },
             { label: 'นัดหมาย', path: '/appointments', icon: Calendar },
-            { label: 'ภาระงาน', path: '/workload', icon: Clock },
             { label: 'ข้อความ', path: '/messages', icon: MessageSquare },
         ],
         focus: ['ตรวจงานที่รอให้คะแนน', 'ตอบนัดหมายนักศึกษา', 'เช็คตารางสอนวันนี้'],
@@ -131,7 +130,7 @@ const roleDashboardConfig: Record<Exclude<UserRole, 'student'>, {
             { label: 'รายวิชาที่สอน', value: '0', description: 'จากตารางสอนจริง', icon: BookOpen, tone: 'from-blue-500 to-indigo-600' },
             { label: 'นัดหมาย', value: '0', description: 'รายการทั้งหมดในระบบ', icon: Calendar, tone: 'from-emerald-500 to-teal-600' },
             { label: 'นักศึกษา', value: '0', description: 'ข้อมูลจากรายชื่อนักศึกษา', icon: Users, tone: 'from-violet-500 to-purple-600' },
-            { label: 'ชั่วโมงงาน', value: '0', description: 'จาก workload', icon: Clock, tone: 'from-amber-500 to-orange-600' },
+            { label: 'ข้อความ', value: '0', description: 'การสื่อสารกับนักศึกษา/บริษัท', icon: MessageSquare, tone: 'from-amber-500 to-orange-600' },
         ],
     },
     staff: {
@@ -486,24 +485,19 @@ export default function PersonalDashboard() {
         const loadRoleMetrics = async () => {
             try {
                 if (role === 'lecturer') {
-                    const [coursesResult, appointmentsResult, studentsResult, workloadResult] = await Promise.allSettled([
+                    const [coursesResult, appointmentsResult, studentsResult, messagesResult] = await Promise.allSettled([
                         api.courses.lecturerSchedule(),
                         api.appointments.list(),
                         api.students.list(),
-                        api.workload.list(),
+                        api.messages.list(),
                     ]);
-                    const workloadRows = rowsFromResult(workloadResult, 'workload');
-                    const workloadHours = workloadRows.reduce<number>((sum, item) => {
-                        const row = asRecord(item);
-                        return sum + asNumber(row.hours, asNumber(row.teachingHours, asNumber(row.totalHours, 0)));
-                    }, 0);
 
                     if (!mounted) return;
                     setRoleMetrics([
                         { ...config.defaultMetrics[0], value: String(rowsFromResult(coursesResult, 'schedule').length) },
                         { ...config.defaultMetrics[1], value: String(rowsFromResult(appointmentsResult, 'appointments').length) },
                         { ...config.defaultMetrics[2], value: String(rowsFromResult(studentsResult, 'students').length) },
-                        { ...config.defaultMetrics[3], value: String(workloadHours) },
+                        { ...config.defaultMetrics[3], value: String(rowsFromResult(messagesResult, 'messages').length) },
                     ]);
                 } else if (role === 'staff') {
                     const [usersResult, budgetResult, activitiesResult, auditResult] = await Promise.allSettled([

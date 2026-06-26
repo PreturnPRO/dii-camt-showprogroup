@@ -16,6 +16,7 @@ import {
   GraduationCap,
   MessageSquare,
   Network,
+  Printer,
   RefreshCw,
   Settings,
   ShieldCheck,
@@ -598,6 +599,11 @@ export default function StaffDashboard() {
 
   const atRiskStudents = students.filter((student) => ['probation', 'risk'].includes(student.academicStatus));
   const pendingRequests = requests.filter((request) => ['pending', 'under_review'].includes(request.status));
+  const pendingDocumentRequests = requests.filter((request) => {
+    if (!['pending', 'under_review'].includes(request.status)) return false;
+    const text = `${request.type} ${request.title}`.toLowerCase();
+    return text.includes('document') || text.includes('certificate') || text.includes('transcript') || text.includes('letter') || text.includes('เอกสาร') || text.includes('ใบ') || text.includes('หนังสือ');
+  });
   const pendingActivities = activities.filter((activity) => activity.status === 'pending');
   const upcomingActivities = activities.filter((activity) => activity.status === 'upcoming' || activity.startDate >= new Date());
   const pendingAppointments = appointments.filter((appointment) => appointment.status === 'pending');
@@ -638,6 +644,13 @@ export default function StaffDashboard() {
       detail: `${pendingRequests.length} รายการรอดำเนินการ`,
       path: '/requests',
       accent: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
+    },
+    {
+      icon: Printer,
+      label: 'ออกเอกสาร',
+      detail: `${pendingDocumentRequests.length} รายการรอออกเอกสาร`,
+      path: '/documents',
+      accent: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
     },
     {
       icon: Activity,
@@ -692,8 +705,15 @@ export default function StaffDashboard() {
 
   const priorityQueue = [
     {
+      icon: Printer,
+      label: 'คำร้องเอกสาร',
+      value: pendingDocumentRequests.length,
+      detail: 'รอออกเอกสาร (Transcript, ฯลฯ)',
+      path: '/documents',
+    },
+    {
       icon: FileText,
-      label: 'คำร้องนักศึกษา',
+      label: 'คำร้องทั่วไป',
       value: pendingRequests.length,
       detail: 'รอ staff ตรวจสอบ',
       path: '/requests',

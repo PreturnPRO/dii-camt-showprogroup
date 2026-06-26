@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -26,118 +26,17 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-// Mock quest data
-const mockQuests = [
-  {
-    id: 'q1', type: 'solo', status: 'in-progress', title: 'UI/UX Design Basics',
-    titleEn: 'UI/UX Design Basics',
-    description: 'เรียนรู้หลักการออกแบบ UI/UX พื้นฐาน สร้าง Wireframe และ Mockup',
-    descriptionEn: 'Learn basic UI/UX design principles, create Wireframes and Mockups',
-    assignedBy: 'บริษัท TechCorp', assignedByEn: 'TechCorp Inc.',
-    assignerType: 'company', xp: 150, coins: 50,
-    deadline: '2026-02-28', progress: 65,
-    difficulty: 'normal', category: 'design',
-    tasks: [
-      { id: 't1', title: 'ศึกษา Design Principles', titleEn: 'Study Design Principles', done: true },
-      { id: 't2', title: 'สร้าง Wireframe 3 หน้า', titleEn: 'Create 3-page Wireframe', done: true },
-      { id: 't3', title: 'สร้าง Hi-Fi Mockup', titleEn: 'Create Hi-Fi Mockup', done: false },
-      { id: 't4', title: 'ส่ง Presentation', titleEn: 'Submit Presentation', done: false },
-    ]
-  },
-  {
-    id: 'q2', type: 'group', status: 'in-progress', title: 'Database Optimization Challenge',
-    titleEn: 'Database Optimization Challenge',
-    description: 'ทีม 4 คน ร่วมกันปรับปรุงประสิทธิภาพฐานข้อมูล',
-    descriptionEn: 'Team of 4, collaborate to optimize database performance',
-    assignedBy: 'อ.ดร.สมศรี ใจดี', assignedByEn: 'Dr. Somsri Jaidee',
-    assignerType: 'lecturer', xp: 300, coins: 100,
-    deadline: '2026-03-15', progress: 30,
-    difficulty: 'hard', category: 'backend',
-    groupSize: 4, groupMembers: ['สมชาย', 'สมหญิง', 'วิชัย', 'นภา'],
-    tasks: [
-      { id: 't1', title: 'วิเคราะห์ Query ที่ช้า', titleEn: 'Analyze slow queries', done: true },
-      { id: 't2', title: 'ออกแบบ Index Strategy', titleEn: 'Design Index Strategy', done: false },
-      { id: 't3', title: 'Implement & Benchmark', titleEn: 'Implement & Benchmark', done: false },
-      { id: 't4', title: 'เขียนรายงาน', titleEn: 'Write Report', done: false },
-    ]
-  },
-  {
-    id: 'q3', type: 'event', status: 'upcoming', title: 'Hackathon: AI for Education',
-    titleEn: 'Hackathon: AI for Education',
-    description: 'แข่งขัน Hackathon 48 ชั่วโมง สร้าง AI Solution สำหรับการศึกษา',
-    descriptionEn: '48-hour Hackathon competition, build AI Solutions for Education',
-    assignedBy: 'DII CAMT', assignedByEn: 'DII CAMT',
-    assignerType: 'lecturer', xp: 500, coins: 200,
-    deadline: '2026-03-20', progress: 0,
-    difficulty: 'legendary', category: 'ai',
-    tasks: []
-  },
-  {
-    id: 'q4', type: 'meeting', status: 'completed', title: 'Weekly Standup - Sprint Review',
-    titleEn: 'Weekly Standup - Sprint Review',
-    description: 'ประชุมทบทวน Sprint พร้อมนำเสนอความคืบหน้า',
-    descriptionEn: 'Sprint review meeting with progress presentation',
-    assignedBy: 'บริษัท TechCorp', assignedByEn: 'TechCorp Inc.',
-    assignerType: 'company', xp: 50, coins: 20,
-    deadline: '2026-02-07', progress: 100,
-    difficulty: 'easy', category: 'meeting',
-    tasks: [
-      { id: 't1', title: 'เตรียม Slide', titleEn: 'Prepare Slides', done: true },
-      { id: 't2', title: 'นำเสนอ 10 นาที', titleEn: 'Present for 10 minutes', done: true },
-    ]
-  },
-  {
-    id: 'q5', type: 'challenge', status: 'available', title: 'Algorithm Master: Dynamic Programming',
-    titleEn: 'Algorithm Master: Dynamic Programming',
-    description: 'แก้โจทย์ Dynamic Programming 5 ข้อ ภายใน 3 วัน',
-    descriptionEn: 'Solve 5 Dynamic Programming problems within 3 days',
-    assignedBy: 'อ.ดร.วิชัย เก่งกล้า', assignedByEn: 'Dr. Wichai Kengkla',
-    assignerType: 'lecturer', xp: 250, coins: 80,
-    deadline: '2026-02-14', progress: 0,
-    difficulty: 'hard', category: 'algorithm',
-    tasks: [
-      { id: 't1', title: 'Fibonacci Variants', titleEn: 'Fibonacci Variants', done: false },
-      { id: 't2', title: 'Knapsack Problem', titleEn: 'Knapsack Problem', done: false },
-      { id: 't3', title: 'Longest Common Subsequence', titleEn: 'Longest Common Subsequence', done: false },
-      { id: 't4', title: 'Matrix Chain Multiplication', titleEn: 'Matrix Chain Multiplication', done: false },
-      { id: 't5', title: 'Edit Distance', titleEn: 'Edit Distance', done: false },
-    ]
-  },
-  {
-    id: 'q6', type: 'solo', status: 'completed', title: 'Git & Version Control Mastery',
-    titleEn: 'Git & Version Control Mastery',
-    description: 'เรียนรู้การใช้ Git อย่างเชี่ยวชาญ',
-    descriptionEn: 'Master Git version control',
-    assignedBy: 'อ.ดร.สมศรี ใจดี', assignedByEn: 'Dr. Somsri Jaidee',
-    assignerType: 'lecturer', xp: 100, coins: 30,
-    deadline: '2026-01-30', progress: 100,
-    difficulty: 'easy', category: 'devops',
-    tasks: [
-      { id: 't1', title: 'Basic Commands', titleEn: 'Basic Commands', done: true },
-      { id: 't2', title: 'Branching & Merging', titleEn: 'Branching & Merging', done: true },
-      { id: 't3', title: 'Conflict Resolution', titleEn: 'Conflict Resolution', done: true },
-    ]
-  },
-];
-
 // Player stats
 const playerStats = {
-  level: 12,
-  currentXP: 2450,
-  nextLevelXP: 3000,
-  totalXP: 8450,
-  coins: 680,
-  questsCompleted: 24,
-  streak: 7,
-  rank: 'Silver II',
-  badges: [
-    { id: 'b1', name: 'First Quest', nameEn: 'First Quest', icon: '🎯', earned: true },
-    { id: 'b2', name: 'Team Player', nameEn: 'Team Player', icon: '🤝', earned: true },
-    { id: 'b3', name: 'Speed Runner', nameEn: 'Speed Runner', icon: '⚡', earned: true },
-    { id: 'b4', name: 'Perfect Score', nameEn: 'Perfect Score', icon: '💯', earned: true },
-    { id: 'b5', name: 'Night Owl', nameEn: 'Night Owl', icon: '🦉', earned: false },
-    { id: 'b6', name: 'Legendary', nameEn: 'Legendary', icon: '👑', earned: false },
-  ]
+  level: 1,
+  currentXP: 0,
+  nextLevelXP: 1000,
+  totalXP: 0,
+  coins: 0,
+  questsCompleted: 0,
+  streak: 0,
+  rank: 'Unranked',
+  badges: []
 };
 
 type QuestRow = {
@@ -167,22 +66,43 @@ type PlayerStats = typeof playerStats;
 export default function Training() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
-  const [quests, setQuests] = useState<QuestRow[]>(mockQuests);
+  const [quests, setQuests] = useState<QuestRow[]>([]);
   const [stats, setStats] = useState<PlayerStats>(playerStats);
   const [selectedQuest, setSelectedQuest] = useState<QuestRow | null>(null);
   const [activeTab, setActiveTab] = useState('all');
+  const [isLoading, setIsLoading] = useState(true);
   const tr = t.training;
 
   const loadLiveData = React.useCallback(async () => {
-    const [questsResponse, statsResponse] = await Promise.allSettled([
-      api.quests.list(),
-      api.player.stats(),
-    ]);
+    setIsLoading(true);
+    try {
+      const [questsResponse, statsResponse] = await Promise.allSettled([
+        api.quests.list(),
+        api.player.stats(),
+      ]);
 
     if (questsResponse.status === 'fulfilled') {
       const mapped = questsResponse.value.quests.map((item, index) => {
         const quest = asRecord(item);
-        const fallback = mockQuests[index % mockQuests.length];
+        const fallback = {
+          id: `quest-${index}`,
+          type: 'solo',
+          status: 'available',
+          title: 'Untitled quest',
+          titleEn: 'Untitled quest',
+          description: '',
+          descriptionEn: '',
+          assignedBy: '',
+          assignedByEn: '',
+          assignerType: 'lecturer',
+          xp: 0,
+          coins: 0,
+          deadline: new Date().toISOString(),
+          progress: 0,
+          difficulty: 'normal',
+          category: '',
+          tasks: [] as QuestRow['tasks'],
+        };
         const enrollments = asArray(quest.enrollments);
         const enrollment = asRecord(enrollments[0]);
         const completedTasks = asArray<string>(enrollment.completedTasks);
@@ -197,7 +117,7 @@ export default function Training() {
           };
         });
         const status = asString(enrollment.status, asDate(quest.deadline) > new Date() ? 'available' : 'completed').replace('_', '-');
-        const fallbackGroupSize = 'groupSize' in fallback ? fallback.groupSize : 0;
+        const fallbackGroupSize = asNumber((fallback as { groupSize?: number }).groupSize, 0);
         return {
           id: asString(quest.id, fallback.id),
           type: asString(quest.type, fallback.type) as QuestRow['type'],
@@ -220,7 +140,7 @@ export default function Training() {
           groupMembers: 'groupMembers' in fallback ? fallback.groupMembers : undefined,
         } as QuestRow;
       });
-      if (mapped.length) setQuests(mapped);
+      setQuests(mapped);
     }
 
     if (statsResponse.status === 'fulfilled') {
@@ -246,6 +166,9 @@ export default function Training() {
             })
           : current.badges,
       }));
+    }
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -439,9 +362,9 @@ export default function Training() {
           <div className="flex items-center justify-between">
             <TabsList className="bg-slate-100 dark:bg-slate-800">
               <TabsTrigger value="all">{tr.allQuests}</TabsTrigger>
-              <TabsTrigger value="active">🔥 {tr.activeQuests}</TabsTrigger>
-              <TabsTrigger value="available">📋 {tr.availableQuests}</TabsTrigger>
-              <TabsTrigger value="completed">✅ {tr.completedQuests}</TabsTrigger>
+              <TabsTrigger value="active">๐”ฅ {tr.activeQuests}</TabsTrigger>
+              <TabsTrigger value="available">๐“ {tr.availableQuests}</TabsTrigger>
+              <TabsTrigger value="completed">โ… {tr.completedQuests}</TabsTrigger>
             </TabsList>
           </div>
 
@@ -501,7 +424,7 @@ export default function Training() {
                       <div className="flex items-center gap-3 text-xs text-slate-400 mb-3">
                         {quest.assignerType === 'company' ? <Building2 className="w-3.5 h-3.5" /> : <GraduationCap className="w-3.5 h-3.5" />}
                         <span>{language === 'th' ? quest.assignedBy : quest.assignedByEn}</span>
-                        <span>•</span>
+                        <span>โ€ข</span>
                         <Timer className="w-3.5 h-3.5" />
                         <span>{new Date(quest.deadline).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { month: 'short', day: 'numeric' })}</span>
                       </div>
@@ -534,7 +457,14 @@ export default function Training() {
                 );
               })}
 
-              {filteredQuests.length === 0 && (
+              {isLoading && (
+                <div className="col-span-2 text-center py-16 text-slate-400">
+                  <Target className="w-12 h-12 mx-auto mb-3 opacity-30" />
+                  <p>{t.common.loading}</p>
+                </div>
+              )}
+
+              {!isLoading && filteredQuests.length === 0 && (
                 <div className="col-span-2 text-center py-16 text-slate-400">
                   <Target className="w-12 h-12 mx-auto mb-3 opacity-30" />
                   <p>{tr.noQuests}</p>
