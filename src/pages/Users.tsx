@@ -425,13 +425,15 @@ export default function UsersPage() {
             case 'lecturer': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.lecturer}</Badge>;
             case 'staff': return <Badge className="bg-purple-100 text-purple-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.staff}</Badge>;
             case 'company': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.roles.company}</Badge>;
+            case 'admin': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.admin}</Badge>; // D-18
             default: return <Badge>{role}</Badge>;
         }
     };
 
     const filteredUsers = users.filter(u =>
     (u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getRoleText(u.type).toLowerCase().includes(searchQuery.toLowerCase())) // D-20: ค้นด้วย role ได้
     );
 
     return (
@@ -566,9 +568,10 @@ export default function UsersPage() {
                         <TabsTrigger value="lecturer">{t.roles.lecturer}</TabsTrigger>
                         <TabsTrigger value="staff">{t.roles.staff}</TabsTrigger>
                         <TabsTrigger value="company">{t.roles.company}</TabsTrigger>
+                        <TabsTrigger value="admin">{t.roles.admin}</TabsTrigger>
                     </TabsList>
 
-                    {['all', 'student', 'lecturer', 'staff', 'company'].map(tab => (
+                    {['all', 'student', 'lecturer', 'staff', 'company', 'admin'].map(tab => (
                         <TabsContent key={tab} value={tab}>
                             <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50"><CardContent className="pt-6">
                                 <div className="space-y-3">

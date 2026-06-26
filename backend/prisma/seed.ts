@@ -653,6 +653,30 @@ async function main() {
     },
   });
 
+  // D-30: seed grading criteria + grade cutoffs ให้ทุก course
+  // ไม่งั้นหน้า Grades ไม่มีหัวข้อประเมิน = อาจารย์กรอกคะแนนไม่ได้ (กระทบ D-26/D-30)
+  for (const course of [courseA, courseB]) {
+    await prisma.courseGradingCriteria.createMany({
+      data: [
+        { courseId: course.id, name: "Midterm", weightPercentage: 30, maxScore: 100, orderIndex: 0 },
+        { courseId: course.id, name: "Final", weightPercentage: 40, maxScore: 100, orderIndex: 1 },
+        { courseId: course.id, name: "Assignment", weightPercentage: 30, maxScore: 100, orderIndex: 2 },
+      ],
+    });
+    await prisma.courseGradeCutoff.createMany({
+      data: [
+        { courseId: course.id, grade: "A", minScore: 80 },
+        { courseId: course.id, grade: "B+", minScore: 75 },
+        { courseId: course.id, grade: "B", minScore: 70 },
+        { courseId: course.id, grade: "C+", minScore: 65 },
+        { courseId: course.id, grade: "C", minScore: 60 },
+        { courseId: course.id, grade: "D+", minScore: 55 },
+        { courseId: course.id, grade: "D", minScore: 50 },
+        { courseId: course.id, grade: "F", minScore: 0 },
+      ],
+    });
+  }
+
   const enrollmentA1 = await prisma.enrollment.create({
     data: {
       studentId: studentA.id,

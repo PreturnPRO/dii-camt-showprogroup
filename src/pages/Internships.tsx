@@ -68,10 +68,13 @@ export default function Internships() {
   }, []);
 
   const filteredJobs = jobs.filter(job => {
+    const q = searchQuery.toLowerCase();
+    const jobSkills = [...(job.preferredSkills || []), ...(job.requirements || [])]; // D-07: กรองด้วยทักษะ
     const matchesSearch =
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase());
+      job.title.toLowerCase().includes(q) ||
+      job.companyName.toLowerCase().includes(q) ||
+      job.location.toLowerCase().includes(q) ||
+      jobSkills.some((s) => s.toLowerCase().includes(q));
     const matchesType = filterType === 'all' || job.type === filterType;
     return matchesSearch && matchesType;
   });
@@ -149,7 +152,7 @@ export default function Internships() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-6 flex flex-col h-[calc(100vh-6rem)]"
+      className="space-y-6 pb-10"
     >
       <div className="flex-shrink-0">
         {/* Header Section - Matching Dashboard/Courses/Schedule Style */}
@@ -211,7 +214,7 @@ export default function Internships() {
         </div>
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pr-2 custom-scrollbar pb-6 relative z-0">
+      <div className="pb-6 relative z-0">
         {filteredJobs.length === 0 && (
           <div className="rounded-[2rem] border border-dashed border-slate-200 dark:border-slate-700 bg-white/70 dark:bg-slate-900/70 p-8 text-center max-w-xl mx-auto mt-10">
             <Briefcase className="w-10 h-10 mx-auto text-slate-400 mb-3" />
