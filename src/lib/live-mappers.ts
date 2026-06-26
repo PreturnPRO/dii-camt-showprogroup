@@ -309,7 +309,7 @@ const normalizeAssignmentType = (value: unknown) => {
 const normalizeJobType = (value: unknown, fallback: JobPosting["type"] = "internship") => {
   const type = asString(value, fallback).toLowerCase();
   return (
-    ["internship", "full-time", "part-time", "contract"].includes(type)
+    ["internship", "full-time", "part-time", "contract", "skill_requirement"].includes(type)
       ? type
       : fallback
   ) as JobPosting["type"];

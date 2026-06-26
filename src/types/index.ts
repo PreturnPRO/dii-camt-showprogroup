@@ -449,7 +449,7 @@ export interface JobPosting {
 
   // Job details
   title: string;
-  type: 'internship' | 'full-time' | 'part-time' | 'contract';
+  type: 'internship' | 'full-time' | 'part-time' | 'contract' | 'skill_requirement';
   positions: number;
 
   // Description
