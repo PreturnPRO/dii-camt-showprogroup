@@ -472,7 +472,7 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const updateProfile = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
-  const { name, nameThai, avatar, phone, currentPassword, newPassword, roleData } = req.body;
+  const { name, nameThai, avatar, phone, email, currentPassword, newPassword, roleData } = req.body;
 
   const existingUser = await prisma.user.findUnique({
     where: { id: currentUser.id },
@@ -481,6 +481,15 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   if (!existingUser) {
     throw new AppError(404, "User not found");
+  }
+
+  if (email && email !== existingUser.email) {
+    const duplicateEmail = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (duplicateEmail) {
+      throw new AppError(409, "Email is already in use by another account");
+    }
   }
 
   let passwordHash: string | undefined;
@@ -511,6 +520,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
         nameThai,
         avatar,
         phone,
+        email: email || undefined,
         ...(passwordHash ? { passwordHash } : {}),
       },
     });

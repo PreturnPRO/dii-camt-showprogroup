@@ -10,6 +10,26 @@ import { asRecord, asString } from '@/lib/live-data';
 
 const FIRST_ACCESS_KEY = 'showpro_company_first_access';
 
+const validateEmail = (email: string): string | null => {
+  const trimmed = email.trim();
+  if (!trimmed) {
+    return 'กรุณากรอกอีเมลผู้ประสานงาน';
+  }
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  if (!emailRegex.test(trimmed)) {
+    return 'รูปแบบอีเมลผู้ประสานงานไม่ถูกต้อง';
+  }
+  if (trimmed.endsWith('@company.showpro.local')) {
+    return 'ไม่สามารถใช้อีเมลระบบ (@company.showpro.local) ได้ กรุณากรอกอีเมลจริง';
+  }
+  const blockedDomains = ['example.com', 'test.com', 'invalid.com', 'temp.com'];
+  const domain = trimmed.split('@')[1]?.toLowerCase();
+  if (blockedDomains.includes(domain)) {
+    return `ไม่สามารถใช้อีเมลโดเมน @${domain} ได้`;
+  }
+  return null;
+};
+
 const requiredCompanyFields = [
   'companyName',
   'companyNameThai',
@@ -120,6 +140,12 @@ export function CompanyOnboardingDialog() {
       return;
     }
 
+    const emailError = validateEmail(formData.contactPersonEmail);
+    if (emailError) {
+      toast.error(emailError);
+      return;
+    }
+
     if (isFirstAccess) {
       const pwd = formData.newPassword;
       if (pwd.length < 8) {
@@ -150,6 +176,7 @@ export function CompanyOnboardingDialog() {
         name: formData.companyName,
         nameThai: formData.companyNameThai,
         phone: formData.contactPersonPhone || user?.phone,
+        email: formData.contactPersonEmail,
         newPassword: formData.newPassword || undefined,
         roleData: {
           companyName: formData.companyName,
