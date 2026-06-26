@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { GraduationCap, Search, Eye, Mail, Star, Code, Award, Sparkles, Shield, Briefcase, FileText, UserCheck, ExternalLink, LockKeyhole } from 'lucide-react';
+import { GraduationCap, Search, Filter, Eye, Mail, Star, Code, Award, ChevronRight, Sparkles, Shield, Briefcase, FileText, UserCheck, ExternalLink, LockKeyhole, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -247,7 +247,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 dark:group-hover:bg-emerald-950/30 dark:group-hover:text-emerald-400 transition-colors">
                                 <Star className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">Grade Access</span>
@@ -264,7 +264,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 dark:group-hover:bg-purple-950/30 dark:group-hover:text-purple-400 transition-colors">
                                 <Code className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasSkills}</span>
@@ -281,7 +281,7 @@ export default function StudentProfiles() {
                 >
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/30 dark:group-hover:text-orange-400 transition-colors">
                                 <Award className="w-6 h-6" />
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasBadge}</span>
@@ -302,15 +302,17 @@ export default function StudentProfiles() {
                         <SelectTrigger className="w-32"><SelectValue placeholder={t.studentProfiles.yearPlaceholder} /></SelectTrigger>
                         <SelectContent>
                             <SelectItem value="all">{t.studentProfiles.allYears}</SelectItem>
+                            <SelectItem value="1">{t.studentProfiles.yearPrefix} 1</SelectItem>
+                            <SelectItem value="2">{t.studentProfiles.yearPrefix} 2</SelectItem>
                             <SelectItem value="3">{t.studentProfiles.yearPrefix} 3</SelectItem>
                             <SelectItem value="4">{t.studentProfiles.yearPrefix} 4</SelectItem>
                         </SelectContent>
                     </Select>
                     <Select value={skillFilter} onValueChange={setSkillFilter}>
                         <SelectTrigger className="w-40"><SelectValue placeholder={t.studentProfiles.skillsPlaceholder} /></SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="max-h-64 overflow-y-auto">
                             <SelectItem value="all">{t.studentProfiles.allSkills}</SelectItem>
-                            {allSkills.slice(0, 10).map(skill => (
+                            {allSkills.map(skill => (
                                 <SelectItem key={skill} value={skill}>{skill}</SelectItem>
                             ))}
                         </SelectContent>
@@ -369,7 +371,8 @@ export default function StudentProfiles() {
 
                                     <div className="flex gap-2 pt-4 border-t">
                                         <Button size="sm" className="flex-1" onClick={() => setSelectedStudent(student)}><Eye className="w-4 h-4 mr-1" />{t.studentProfiles.viewProfile}</Button>
-                                        <Button size="sm" variant="outline" onClick={() => navigate('/messages')}><Mail className="w-4 h-4" /></Button>
+                                        <Button size="sm" variant="outline" onClick={() => navigate(`/portfolio/${student.id}`)} title="ดู Portfolio เต็ม"><ExternalLink className="w-4 h-4" /></Button>
+                                        <Button size="sm" variant="outline" onClick={() => navigate(`/messages?to=${encodeURIComponent(student.nameThai || student.name)}`)} title="ส่งข้อความ"><Mail className="w-4 h-4" /></Button>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -473,7 +476,10 @@ export default function StudentProfiles() {
                                         </div>
                                     </div>
                                 </div>
-                                <Button className="w-full" onClick={() => navigate('/messages')}><Mail className="w-4 h-4 mr-2" />ติดต่อผู้สมัคร</Button>
+                                <div className="flex gap-2">
+                                    <Button variant="outline" className="flex-1" onClick={() => { setSelectedStudent(null); navigate(`/portfolio/${selectedStudent.id}`); }}><ExternalLink className="w-4 h-4 mr-2" />ดู Portfolio เต็ม</Button>
+                                    <Button className="flex-1" onClick={() => { setSelectedStudent(null); navigate(`/messages?to=${encodeURIComponent(selectedStudent.nameThai || selectedStudent.name)}`); }}><Mail className="w-4 h-4 mr-2" />ส่งข้อความ</Button>
+                                </div>
                             </div>
                         </>
                     )}

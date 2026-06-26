@@ -2,16 +2,18 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Building2, BookOpen, UserCog, Globe, ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader2 } from 'lucide-react';
+import { GraduationCap, Building2, BookOpen, UserCog, Globe, ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { ApiError } from '@/lib/api';
+import { useTheme } from 'next-themes';
 
 export default function RegisterPage() {
   const { t, language, toggleLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { login, register } = useAuth();
   const [step, setStep] = useState(1);
@@ -214,7 +216,14 @@ export default function RegisterPage() {
       {/* Right panel: form */}
       <div className="flex-1 flex items-center justify-center p-8 bg-white dark:bg-slate-950 relative">
         {/* top right controls */}
-        <div className="absolute top-6 right-6">
+        <div className="absolute top-6 right-6 flex items-center gap-2">
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="toggle dark mode"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
           <button
             onClick={toggleLanguage}
             className="h-8 px-3 flex items-center gap-1.5 rounded-md text-sm text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium"

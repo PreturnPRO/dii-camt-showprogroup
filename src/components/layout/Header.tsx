@@ -12,7 +12,10 @@ import {
   User,
   Globe,
   Search,
+  Sun,
+  Moon,
 } from 'lucide-react';
+import { useTheme } from 'next-themes';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -65,6 +68,7 @@ interface HeaderProps {
 export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
   const { user, logout, switchRole } = useAuth();
   const { language, toggleLanguage, t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
   const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
@@ -196,6 +200,15 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
             {language === 'th' ? 'EN' : 'TH'}
           </button>
 
+          {/* Dark mode toggle */}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="toggle dark mode"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+
           {/* Notifications */}
           <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
             <DropdownMenuTrigger asChild>
@@ -297,37 +310,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                   {t.header?.systemSettings || 'Settings'}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
 
-                <DropdownMenuSub>
-                  <DropdownMenuSubTrigger className="rounded-lg cursor-pointer text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
-                    <Users className="h-4 w-4 mr-2 text-slate-400" />
-                    {t.header?.switchRole || 'Switch role'}
-                  </DropdownMenuSubTrigger>
-                  <DropdownMenuPortal>
-                    <DropdownMenuSubContent className="rounded-xl border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-lg p-1">
-                      {(
-                        [
-                          { label: 'Student', value: 'student' },
-                          { label: 'Lecturer', value: 'lecturer' },
-                          { label: 'Staff', value: 'staff' },
-                          { label: 'Company', value: 'company' },
-                          { label: 'Admin', value: 'admin' },
-                        ] as const
-                      ).map(({ label, value }) => (
-                        <DropdownMenuItem
-                          key={value}
-                          onClick={() => switchRole(value)}
-                          className="rounded-lg cursor-pointer text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800"
-                        >
-                          {label}
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuSubContent>
-                  </DropdownMenuPortal>
-                </DropdownMenuSub>
-
-                <DropdownMenuSeparator className="my-1 bg-slate-100 dark:bg-slate-800" />
 
                 <DropdownMenuItem
                   onClick={handleLogout}

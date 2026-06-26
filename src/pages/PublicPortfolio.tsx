@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Briefcase, Code, Award, Trophy, ArrowLeft,
-  Github, Linkedin, Globe, FileText, Layers, Calendar
+  Github, Linkedin, Globe, FileText, Layers, Calendar, Moon, Sun
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { mapStudent } from '@/lib/live-mappers';
 import type { Student } from '@/types';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -26,6 +27,7 @@ const itemVariants = {
 export default function PublicPortfolio() {
   const { id } = useParams<{ id: string }>();
   const { t } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const [student, setStudent] = React.useState<Student | null>(null);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState('');
@@ -88,9 +90,18 @@ export default function PublicPortfolio() {
       <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
       
       <div className="max-w-5xl mx-auto space-y-8 relative z-10">
-        <Button variant="ghost" asChild className="mb-4">
-          <Link to="/"><ArrowLeft className="w-4 h-4 mr-2" /> Back</Link>
-        </Button>
+        <div className="flex items-center justify-between mb-4">
+          <Button variant="ghost" asChild>
+            <Link to="/"><ArrowLeft className="w-4 h-4 mr-2" /> Back</Link>
+          </Button>
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            aria-label="toggle dark mode"
+          >
+            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+          </button>
+        </div>
 
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
           

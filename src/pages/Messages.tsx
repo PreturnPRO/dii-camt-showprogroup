@@ -1,6 +1,6 @@
 import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCheck, ChevronLeft, Info, MessageCircle, MoreHorizontal, Paperclip, Plus, Search, Send } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -71,6 +71,21 @@ export default function Messages() {
     attachmentsUnavailable: language === 'th' ? 'การแนบไฟล์ยังไม่พร้อมใช้งาน' : 'File attachments are not available yet',
     messagesCount: language === 'th' ? 'ข้อความ' : 'messages',
   }), [language]);
+
+  // Pre-fill recipient from URL query param (e.g. from StudentProfiles page)
+  const [searchParams, setSearchParams] = useSearchParams();
+  React.useEffect(() => {
+    const toParam = searchParams.get('to');
+    if (toParam) {
+      setRecipientQuery(toParam);
+      // Clean up the URL param after reading
+      setSearchParams((prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('to');
+        return next;
+      }, { replace: true });
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   React.useEffect(() => {
     let mounted = true;

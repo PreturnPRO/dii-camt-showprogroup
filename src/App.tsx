@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { RoleGuard } from "@/components/layout/RoleGuard";
+
 import { GlobalPreloader } from "@/components/common/GlobalPreloader";
 
 const queryClient = new QueryClient();

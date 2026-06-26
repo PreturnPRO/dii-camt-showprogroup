@@ -151,23 +151,23 @@ export default function PrivacyPolicy() {
             </div>
           </FadeIn>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
       </section>
 
       {/* Quick Summary */}
       <section className="py-16 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6">
           <FadeIn>
-            <div className="max-w-4xl mx-auto bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 lg:p-12 border border-purple-100">
+            <div className="max-w-4xl mx-auto bg-gradient-to-br from-purple-50 to-pink-50 dark:from-slate-900 dark:to-slate-950 rounded-3xl p-8 lg:p-12 border border-purple-100 dark:border-slate-800">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{t.privacyPolicyPage.summaryTitle}</h2>
               <p className="text-slate-600 leading-relaxed mb-6 dark:text-slate-300">
                 {t.privacyPolicyPage.summaryDesc}
               </p>
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
-                  { icon: Lock, label: t.privacyPolicyPage.encryptedAES, color: 'text-purple-600 bg-purple-100' },
-                  { icon: UserCheck, label: 'PDPA Compliant', color: 'text-pink-600 bg-pink-100' },
-                  { icon: Shield, label: 'ISO 27001', color: 'text-indigo-600 bg-indigo-100' },
+                  { icon: Lock, label: t.privacyPolicyPage.encryptedAES, color: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-950/30' },
+                  { icon: UserCheck, label: 'PDPA Compliant', color: 'text-pink-600 bg-pink-100 dark:text-pink-400 dark:bg-pink-950/30' },
+                  { icon: Shield, label: 'ISO 27001', color: 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-950/30' },
                 ].map((badge, i) => (
                   <div key={i} className="flex items-center gap-3 bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${badge.color}`}>

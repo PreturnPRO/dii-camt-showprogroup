@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle, Globe, KeyRound, Loader2, Lock, Mail } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Globe, KeyRound, Loader2, Lock, Mail, Moon, Sun } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,9 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { api } from '@/lib/api';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useTheme } from 'next-themes';
 
 export default function ForgotPasswordPage() {
   const { language, toggleLanguage } = useLanguage();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const initialToken = searchParams.get('token') || '';
@@ -65,6 +67,13 @@ export default function ForgotPasswordPage() {
     <div className="min-h-screen flex items-center justify-center bg-white dark:bg-slate-950 font-sans p-6">
       {/* top right controls */}
       <div className="fixed top-4 right-4 flex items-center gap-2">
+        <button
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+          className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+          aria-label="toggle dark mode"
+        >
+          {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
         <button
           onClick={toggleLanguage}
           className="h-8 px-3 flex items-center gap-1.5 rounded-md text-sm text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium"
