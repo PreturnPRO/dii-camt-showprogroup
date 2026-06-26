@@ -239,7 +239,7 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'confirmed').map((apt) => (
-                                    <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-gradient-to-r from-blue-50 to-white">
+                                    <div key={apt.id} className="flex items-start gap-4 p-4 border dark:border-slate-700 rounded-xl bg-gradient-to-r from-blue-50 to-white dark:from-slate-800 dark:to-slate-800/60">
                                         <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                             <div className="text-xs">{new Date(apt.date).toLocaleDateString('th-TH', { month: 'short' })}</div>

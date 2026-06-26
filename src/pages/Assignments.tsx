@@ -359,7 +359,7 @@ export default function Assignments() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                             whileHover={{ scale: 1.01, x: 4 }}
-                                            className="p-5 border rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-gray-50/50 to-white"
+                                            className="p-5 border dark:border-slate-700 rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-800 dark:to-slate-800/60"
                                             onClick={() => { setSelectedAssignment(assignment); setViewMode('view'); }}
                                         >
                                             <div className="flex items-start justify-between mb-4">
@@ -422,7 +422,7 @@ export default function Assignments() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
-                                            className="p-5 border rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-blue-50/50 to-white"
+                                            className="p-5 border dark:border-slate-700 rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-blue-50/50 to-white dark:from-slate-800 dark:to-slate-800/60"
                                             onClick={() => { setSelectedAssignment(assignment); setViewMode('view'); }}
                                         >
                                             <div className="flex items-start justify-between mb-4">
