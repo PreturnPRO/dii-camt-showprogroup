@@ -68,10 +68,13 @@ export default function Internships() {
   }, []);
 
   const filteredJobs = jobs.filter(job => {
+    const q = searchQuery.toLowerCase();
+    const jobSkills = [...(job.preferredSkills || []), ...(job.requirements || [])]; // D-07: กรองด้วยทักษะ
     const matchesSearch =
-      job.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchQuery.toLowerCase());
+      job.title.toLowerCase().includes(q) ||
+      job.companyName.toLowerCase().includes(q) ||
+      job.location.toLowerCase().includes(q) ||
+      jobSkills.some((s) => s.toLowerCase().includes(q));
     const matchesType = filterType === 'all' || job.type === filterType;
     return matchesSearch && matchesType;
   });

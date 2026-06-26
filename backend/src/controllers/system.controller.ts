@@ -39,7 +39,7 @@ export const getUsersHandler = asyncHandler(async (req, res) => {
         req.query.role ? { role: req.query.role as Role } : {},
         typeof req.query.isActive !== "undefined"
           ? { isActive: req.query.isActive === "true" }
-          : {},
+          : { isActive: true }, // D-19: default ไม่แสดง user ที่ถูก soft delete (isActive=false)
       ],
     },
     include: {
@@ -993,7 +993,9 @@ export const getSystemUsageReportHandler = asyncHandler(async (_req, res) => {
   });
   const totalCourses = await prisma.course.count();
   const totalJobs = await prisma.jobPosting.count();
-  const pendingRequests = await prisma.request.count({ where: { status: "pending" } });
+  const pendingRequests = await prisma.request.count({
+    where: { status: { in: ["pending", "under_review"] } }, // D-12: รวม under_review ด้วย
+  });
   const totalAppointments = await prisma.appointment.count();
   const unreadNotifications = await prisma.notification.count({ where: { isRead: false } });
   const totalAuditLogs = await prisma.auditLog.count();

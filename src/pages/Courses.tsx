@@ -131,6 +131,7 @@ export default function Courses() {
 
   const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
   const [viewingCourse, setViewingCourse] = React.useState<CourseRow | null>(null);
+  const [activeTab, setActiveTab] = React.useState('my-courses'); // D-25: ให้ปุ่มเพิ่มวิชาสลับไปแท็บเลือกวิชา
 
   React.useEffect(() => {
     let mounted = true;
@@ -762,11 +763,7 @@ export default function Courses() {
           <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             <Button
               className="h-12 px-6 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/20 border border-slate-700"
-              onClick={() => {
-                const firstAvailable = courses.find((course) => course.enrolledStudents.length < course.maxStudents);
-                if (firstAvailable) void enrollCourse(firstAvailable);
-              }}
-              disabled={!courses.some((course) => course.enrolledStudents.length < course.maxStudents)}
+              onClick={() => setActiveTab('registration')}
             >
               <Plus className="w-4 h-4 mr-2" />
               {t.coursesPage.addCourse}
@@ -789,7 +786,7 @@ export default function Courses() {
                 </div>
                 <span className="font-medium text-white/90">{t.coursesPage.registeredCourses}</span>
               </div>
-              <div className="text-4xl font-bold">{courses.length}</div>
+              <div className="text-4xl font-bold">{enrolledCourses.length}</div>{/* D-24: นับวิชาที่ลงทะเบียนจริง */}
               <div className="mt-2 text-sm text-blue-100 flex items-center gap-1">
                 <Sparkles className="w-4 h-4" /> {t.coursesPage.regularSemester}
               </div>
@@ -842,7 +839,7 @@ export default function Courses() {
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue="my-courses" className="space-y-8">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm w-full md:w-auto flex overflow-x-auto dark:bg-slate-900/50">
             <TabsTrigger value="my-courses" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
               {t.coursesPage.myCourses}

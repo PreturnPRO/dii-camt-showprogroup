@@ -25,7 +25,7 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
   }
 
   return await prisma.enrollment.findMany({
-    where,
+    where: { ...where, status: { not: "dropped" } }, // ไม่แสดงวิชาที่ถอนแล้ว
     include: {
       student: { include: { user: true } },
       course: {
@@ -62,7 +62,8 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
     },
   });
 
-  if (existing) {
+  // ถ้ายังลงอยู่ (ไม่ได้ถอน) = ลงซ้ำไม่ได้ · ถ้าเคยถอน (dropped) จะ reactivate ตอนท้าย
+  if (existing && existing.status !== "dropped") {
     throw new AppError(409, "Student is already enrolled in this course");
   }
 
@@ -76,7 +77,7 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
   }
 
   const currentEnrollments = await prisma.enrollment.findMany({
-    where: { studentId: student.id },
+    where: { studentId: student.id, status: { not: "dropped" } }, // ไม่นับวิชาที่ถอนเป็นเวลาชน
     include: { course: true }
   });
 
@@ -108,18 +109,29 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
     }
   }
 
-  const enrollment = await prisma.enrollment.create({
-    data: {
-      studentId: student.id,
-      courseId: data.courseId,
-      sectionId: data.sectionId,
-    },
-    include: {
-      student: { include: { user: true } },
-      course: true,
-      section: true,
-    },
-  });
+  // ถ้าเคยถอนวิชานี้ → reactivate row เดิม (กันชน unique studentId+courseId) · ถ้าไม่เคย → สร้างใหม่
+  const enrollment = existing
+    ? await prisma.enrollment.update({
+        where: { id: existing.id },
+        data: { status: "enrolled", sectionId: data.sectionId },
+        include: {
+          student: { include: { user: true } },
+          course: true,
+          section: true,
+        },
+      })
+    : await prisma.enrollment.create({
+        data: {
+          studentId: student.id,
+          courseId: data.courseId,
+          sectionId: data.sectionId,
+        },
+        include: {
+          student: { include: { user: true } },
+          course: true,
+          section: true,
+        },
+      });
 
   await prisma.timelineEvent.create({
     data: {
@@ -142,9 +154,10 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
 export const dropCourseByStudent = async (currentUser: any, courseId: string) => {
   const student = await getStudentProfileByUserId(currentUser.id);
   const existing = await prisma.enrollment.findFirst({
-    where: { 
+    where: {
       courseId,
-      studentId: student.id
+      studentId: student.id,
+      status: { not: "dropped" } // หาเฉพาะวิชาที่ยังลงอยู่
     },
     include: {
       student: { include: { user: true } },
@@ -156,8 +169,10 @@ export const dropCourseByStudent = async (currentUser: any, courseId: string) =>
     throw new AppError(404, "Enrollment not found");
   }
 
-  await prisma.enrollment.delete({
-    where: { id: existing.id }
+  // soft delete: เปลี่ยนสถานะเป็น dropped (กัน FK กับ gradeHistory/scores + เก็บประวัติเกรด)
+  await prisma.enrollment.update({
+    where: { id: existing.id },
+    data: { status: "dropped" }
   });
 
   await prisma.timelineEvent.create({
