@@ -26,7 +26,18 @@ const requireFields = (profile: Record<string, unknown>, fields: string[]) => {
   }
 };
 
-const normalizePhone = (value: unknown) => String(value ?? "").replace(/\D/g, "");
+const normalizePhone = (value: unknown) => {
+  let digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("66")) {
+    digits = "0" + digits.slice(2);
+  }
+  if (digits.length > 0 && !digits.startsWith("0")) {
+    if (digits.length === 9 || digits.length === 8) {
+      digits = "0" + digits;
+    }
+  }
+  return digits;
+};
 
 const passwordMarker = (passwordHash: string) =>
   createHash("sha256").update(passwordHash).digest("hex");

@@ -15,8 +15,11 @@ const requiredCompanyFields = [
   'companyNameThai',
   'industry',
   'size',
+  'website',
+  'address',
   'contactPersonName',
   'contactPersonPhone',
+  'contactPersonEmail',
 ];
 
 export function CompanyOnboardingDialog() {
@@ -30,6 +33,12 @@ export function CompanyOnboardingDialog() {
   const shouldOpen = Boolean(isCompany && (missingRequiredField || isFirstAccess));
   const [open, setOpen] = React.useState(shouldOpen);
   const [isSaving, setIsSaving] = React.useState(false);
+
+  const getInitialEmail = () => {
+    const email = asString(companyProfile.contactPersonEmail, user?.email ?? '');
+    return email.endsWith('@company.showpro.local') ? '' : email;
+  };
+
   const [formData, setFormData] = React.useState({
     companyName: asString(companyProfile.companyName),
     companyNameThai: asString(companyProfile.companyNameThai),
@@ -40,7 +49,7 @@ export function CompanyOnboardingDialog() {
     productsServices: asString(companyProfile.productsServices),
     contactPersonName: asString(companyProfile.contactPersonName),
     contactPersonRole: asString(companyProfile.contactPersonRole, 'HR / Company Coordinator'),
-    contactPersonEmail: asString(companyProfile.contactPersonEmail, user?.email ?? ''),
+    contactPersonEmail: getInitialEmail(),
     contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
     socialMedia: asString(companyProfile.socialMedia),
     newPassword: '',
@@ -48,6 +57,9 @@ export function CompanyOnboardingDialog() {
 
   React.useEffect(() => {
     setOpen(shouldOpen);
+    const email = asString(companyProfile.contactPersonEmail, user?.email ?? '');
+    const cleanEmail = email.endsWith('@company.showpro.local') ? '' : email;
+
     setFormData({
       companyName: asString(companyProfile.companyName),
       companyNameThai: asString(companyProfile.companyNameThai),
@@ -58,7 +70,7 @@ export function CompanyOnboardingDialog() {
       productsServices: asString(companyProfile.productsServices),
       contactPersonName: asString(companyProfile.contactPersonName),
       contactPersonRole: asString(companyProfile.contactPersonRole, 'HR / Company Coordinator'),
-      contactPersonEmail: asString(companyProfile.contactPersonEmail, user?.email ?? ''),
+      contactPersonEmail: cleanEmail,
       contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
       socialMedia: asString(companyProfile.socialMedia),
       newPassword: '',
@@ -80,7 +92,34 @@ export function CompanyOnboardingDialog() {
     setOpen(nextOpen);
   };
 
+  const getInputClassName = (fieldKey: string) => {
+    const isRequired = requiredCompanyFields.includes(fieldKey) || (fieldKey === 'newPassword' && isFirstAccess);
+    const value = fieldKey === 'newPassword' ? formData.newPassword : formData[fieldKey as keyof typeof formData];
+    const isEmpty = !value || !asString(value).trim();
+
+    if (isRequired && isEmpty) {
+      return 'border-rose-500 bg-rose-50/50 dark:border-rose-900/50 dark:bg-rose-950/20 focus-visible:ring-rose-500';
+    }
+    return '';
+  };
+
+  const renderLabel = (label: string, fieldKey: string) => {
+    const isRequired = requiredCompanyFields.includes(fieldKey) || (fieldKey === 'newPassword' && isFirstAccess);
+    return (
+      <Label className="flex items-center gap-1">
+        {label}
+        {isRequired && <span className="text-rose-500 font-bold">*</span>}
+      </Label>
+    );
+  };
+
   const handleSave = async () => {
+    const missingFields = requiredCompanyFields.filter((field) => !formData[field as keyof typeof formData]?.trim());
+    if (missingFields.length > 0) {
+      toast.error('กรุณากรอกข้อมูลในช่องที่จำเป็น (*) ให้ครบถ้วน');
+      return;
+    }
+
     if (isFirstAccess) {
       const pwd = formData.newPassword;
       if (pwd.length < 8) {
@@ -141,8 +180,8 @@ export function CompanyOnboardingDialog() {
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-3xl">
-        <DialogHeader>
+      <DialogContent className="max-w-3xl max-h-[90vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-amber-600" />
             กรอกข้อมูลบริษัทให้ครบ
@@ -152,51 +191,104 @@ export function CompanyOnboardingDialog() {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 py-2 md:grid-cols-2">
-          <div className="space-y-2">
-            <Label>ชื่อบริษัท</Label>
-            <Input value={formData.companyName} onChange={(event) => updateField('companyName', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>ชื่อบริษัทภาษาไทย</Label>
-            <Input value={formData.companyNameThai} onChange={(event) => updateField('companyNameThai', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>อุตสาหกรรม</Label>
-            <Input value={formData.industry} onChange={(event) => updateField('industry', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>ขนาดบริษัท</Label>
-            <Input value={formData.size} onChange={(event) => updateField('size', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>ผู้ประสานงาน</Label>
-            <Input value={formData.contactPersonName} onChange={(event) => updateField('contactPersonName', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>เบอร์ผู้ประสานงาน</Label>
-            <Input value={formData.contactPersonPhone} onChange={(event) => updateField('contactPersonPhone', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>อีเมลผู้ประสานงาน</Label>
-            <Input value={formData.contactPersonEmail} onChange={(event) => updateField('contactPersonEmail', event.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>ตำแหน่งผู้ประสานงาน</Label>
-            <Input value={formData.contactPersonRole} onChange={(event) => updateField('contactPersonRole', event.target.value)} />
-          </div>
-          <div className="space-y-2 md:col-span-2">
-            <Label>รหัสผ่านใหม่</Label>
-            <Input
-              type="password"
-              value={formData.newPassword}
-              onChange={(event) => updateField('newPassword', event.target.value)}
-              placeholder="อย่างน้อย 8 ตัว (พิมพ์ใหญ่, พิมพ์เล็ก, ตัวเลข, อักขระพิเศษ)"
-            />
+        <div className="flex-1 overflow-y-auto pr-1">
+          <div className="grid gap-4 py-2 md:grid-cols-2">
+            <div className="space-y-2">
+              {renderLabel('ชื่อบริษัท', 'companyName')}
+              <Input
+                className={getInputClassName('companyName')}
+                value={formData.companyName}
+                onChange={(event) => updateField('companyName', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('ชื่อบริษัทภาษาไทย', 'companyNameThai')}
+              <Input
+                className={getInputClassName('companyNameThai')}
+                value={formData.companyNameThai}
+                onChange={(event) => updateField('companyNameThai', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('อุตสาหกรรม', 'industry')}
+              <Input
+                className={getInputClassName('industry')}
+                value={formData.industry}
+                onChange={(event) => updateField('industry', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('ขนาดบริษัท', 'size')}
+              <Input
+                className={getInputClassName('size')}
+                value={formData.size}
+                onChange={(event) => updateField('size', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              {renderLabel('Link เว็บไซต์', 'website')}
+              <Input
+                className={getInputClassName('website')}
+                value={formData.website}
+                onChange={(event) => updateField('website', event.target.value)}
+                placeholder="https://example.com"
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              {renderLabel('ที่อยู่ของบริษัท (สามารถแปะเป็น link ได้)', 'address')}
+              <Input
+                className={getInputClassName('address')}
+                value={formData.address}
+                onChange={(event) => updateField('address', event.target.value)}
+                placeholder="กรอกที่อยู่ หรือแปะลิงก์แผนที่ (เช่น Google Maps)"
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('ผู้ประสานงาน', 'contactPersonName')}
+              <Input
+                className={getInputClassName('contactPersonName')}
+                value={formData.contactPersonName}
+                onChange={(event) => updateField('contactPersonName', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('เบอร์ผู้ประสานงาน', 'contactPersonPhone')}
+              <Input
+                className={getInputClassName('contactPersonPhone')}
+                value={formData.contactPersonPhone}
+                onChange={(event) => updateField('contactPersonPhone', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('อีเมลผู้ประสานงาน', 'contactPersonEmail')}
+              <Input
+                className={getInputClassName('contactPersonEmail')}
+                value={formData.contactPersonEmail}
+                onChange={(event) => updateField('contactPersonEmail', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              {renderLabel('ตำแหน่งผู้ประสานงาน', 'contactPersonRole')}
+              <Input
+                className={getInputClassName('contactPersonRole')}
+                value={formData.contactPersonRole}
+                onChange={(event) => updateField('contactPersonRole', event.target.value)}
+              />
+            </div>
+            <div className="space-y-2 md:col-span-2">
+              {renderLabel('รหัสผ่านใหม่', 'newPassword')}
+              <Input
+                className={getInputClassName('newPassword')}
+                type="password"
+                value={formData.newPassword}
+                onChange={(event) => updateField('newPassword', event.target.value)}
+                placeholder="อย่างน้อย 8 ตัว (พิมพ์ใหญ่, พิมพ์เล็ก, ตัวเลข, อักขระพิเศษ)"
+              />
+            </div>
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0 mt-4">
           <Button onClick={handleSave} disabled={isSaving}>
             {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             บันทึกข้อมูล

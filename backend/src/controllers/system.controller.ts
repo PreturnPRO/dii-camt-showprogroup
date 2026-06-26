@@ -10,7 +10,18 @@ import { requireUser } from "../utils/user";
 
 
 const profileId = (prefix: string) => `${prefix}${Date.now().toString().slice(-7)}`;
-const normalizePhone = (value: unknown) => String(value ?? "").replace(/\D/g, "");
+const normalizePhone = (value: unknown) => {
+  let digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("66")) {
+    digits = "0" + digits.slice(2);
+  }
+  if (digits.length > 0 && !digits.startsWith("0")) {
+    if (digits.length === 9 || digits.length === 8) {
+      digits = "0" + digits;
+    }
+  }
+  return digits;
+};
 const safeIdentifier = (value: string, fallback: string) =>
   value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || fallback.toLowerCase();
 
@@ -244,7 +255,7 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
             name: row.companyName,
             nameThai: row.companyNameThai || row.companyName,
             role: Role.COMPANY,
-            phone: row.phone,
+            phone: normalizedPhone,
             isActive: true,
             companyProfile: {
               create: {
@@ -260,7 +271,9 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
                 contactPersonName: row.contactPersonName || undefined,
                 contactPersonRole: row.contactPersonRole || undefined,
                 contactPersonEmail: row.contactPersonEmail || row.email || undefined,
-                contactPersonPhone: row.contactPersonPhone || row.phone || undefined,
+                contactPersonPhone: row.contactPersonPhone
+                  ? normalizePhone(row.contactPersonPhone)
+                  : normalizedPhone || undefined,
                 socialMedia: row.socialMedia || undefined,
                 onboardingStatus: "profile_incomplete",
               },
@@ -345,7 +358,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
             name: row.name,
             nameThai: row.nameThai || row.name,
             role: Role.STUDENT,
-            phone: row.phone || undefined,
+            phone: row.phone ? normalizePhone(row.phone) : undefined,
             isActive: true,
             studentProfile: {
               create: {
