@@ -73,7 +73,9 @@ export default function JobPostings() {
         api.jobs.list()
             .then((response) => {
                 if (!isMounted) return;
-                const mapped = response.jobs.map(mapJob);
+                const mapped = response.jobs
+                  .map(mapJob)
+                  .filter((j) => j.type !== 'skill_requirement');
                 setJobs(mapped);
             })
             .catch(() => undefined)
@@ -86,7 +88,11 @@ export default function JobPostings() {
         };
     }, [mapJob]);
 
-    const companyJobPostings = jobs;
+    const companyProfileId = companyProfile?.id;
+    const companyJobPostings = isCompany 
+        ? jobs.filter(j => j.companyId === companyProfileId) 
+        : jobs;
+        
     const openJobs = companyJobPostings.filter(j => j.status === 'open').length;
     const totalApplicants = companyJobPostings.reduce((sum, j) => sum + j.applicants.length, 0);
 
@@ -386,7 +392,7 @@ export default function JobPostings() {
                             )}
                             {!isLoading && companyJobPostings.length === 0 && (
                                 <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                                    {language === 'th' ? 'ยังไม่มีประกาศงานจาก API' : 'No job postings from API yet.'}
+                                    {language === 'th' ? 'ยังไม่มีประกาศงาน' : 'No job postings yet.'}
                                 </div>
                             )}
                         </div>

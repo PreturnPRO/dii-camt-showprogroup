@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Briefcase, Users, FileText, Building, Send, Sparkles, BrainCircuit, Bookmark, PlusCircle, CheckCircle2, TrendingUp, BellRing, Target, Trophy, Flame } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -109,7 +109,7 @@ export default function CompanyDashboard() {
         followedDate: 'ติดตามเมื่อ',
         currentGpa: 'GPA ปัจจุบัน',
         profileOverview: 'ดูภาพรวมโปรไฟล์',
-        noJobs: 'ยังไม่มีประกาศงานจาก API',
+        noJobs: 'ยังไม่มีประกาศงาน',
         noStudents: 'ยังไม่มีนักศึกษาที่เปิดสิทธิ์ให้ดู',
         noRequirements: 'ยังไม่มี Requirement',
         noMatches: 'ยังไม่มีผลจับคู่จาก AI',
@@ -159,8 +159,11 @@ export default function CompanyDashboard() {
       .then(([profileResponse, jobsResponse, talentsResponse, notificationsResponse, studentProfilesResponse]) => {
         if (!isMounted) return;
 
+        let currentCompanyProfileId = '';
+
         if (profileResponse.status === 'fulfilled') {
           const profile = asRecord(profileResponse.value.user.companyProfile);
+          currentCompanyProfileId = asString(profile.id);
           const profileUser = asRecord(profileResponse.value.user);
           setCompany(mapCompany({
             ...profile,
@@ -176,10 +179,17 @@ export default function CompanyDashboard() {
         }
 
         if (jobsResponse.status === 'fulfilled') {
-          const mappedJobs = jobsResponse.value.jobs.map(mapJob);
-          setCompanyJobPostings(mappedJobs);
+          const mappedJobs = jobsResponse.value.jobs
+            .map(mapJob)
+            .filter((j: any) => j.type !== 'skill_requirement');
+            
+          const myJobs = currentCompanyProfileId 
+            ? mappedJobs.filter((job) => job.companyId === currentCompanyProfileId)
+            : [];
+            
+          setCompanyJobPostings(myJobs);
 
-          const mappedRequirements = mappedJobs.map((job) => {
+          const mappedRequirements = myJobs.map((job) => {
             const skills = [...job.preferredSkills, ...job.requirements].filter(Boolean);
 
             return {

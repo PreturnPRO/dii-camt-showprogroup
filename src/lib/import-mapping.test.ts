@@ -4,9 +4,19 @@ import {
   guessColumnMapping,
   mapRows,
   normalizeColumnName,
+  normalizePhone,
   studentImportFields,
   validateMappedRows,
 } from './import-mapping';
+
+// normalizePhone tests
+assert.equal(normalizePhone('0812345678'), '0812345678');
+assert.equal(normalizePhone('812345678'), '0812345678');
+assert.equal(normalizePhone('+66812345678'), '0812345678');
+assert.equal(normalizePhone('66812345678'), '0812345678');
+assert.equal(normalizePhone('021234567'), '021234567');
+assert.equal(normalizePhone('21234567'), '021234567');
+assert.equal(normalizePhone('+66 81-234-5678'), '0812345678');
 
 assert.equal(normalizeColumnName('Company_ID'), 'company id');
 

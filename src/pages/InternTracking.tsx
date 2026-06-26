@@ -380,7 +380,7 @@ export default function InternTracking() {
         )}
         {!isLoading && interns.length === 0 && (
           <div className="lg:col-span-3 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'ยังไม่มีข้อมูลฝึกงานจาก API' : 'No internship records from API yet.'}
+            {language === 'th' ? 'ยังไม่มีข้อมูลฝึกงาน' : 'No internship records yet.'}
           </div>
         )}
       </div>
