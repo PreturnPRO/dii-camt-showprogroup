@@ -8,7 +8,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -63,12 +62,30 @@ export default function JobPostings() {
   const isCompany = user?.role === 'company';
   const canManage = isAdmin || isCompany;
 
-  const canManageJob = React.useCallback((job: JobPosting) => {
-    if (isAdmin) return true;
-    const companyProfileId = (user?.raw as any)?.companyProfile?.id;
-    if (isCompany && companyProfileId === job.companyId) return true;
-    return false;
-  }, [isAdmin, isCompany, user]);
+<<<<<<< Updated upstream
+    const canManageJob = React.useCallback((job: JobPosting) => {
+        if (isAdmin) return true;
+        const companyProfileId = (user?.raw as any)?.companyProfile?.id;
+        if (isCompany && companyProfileId === job.companyId) return true;
+        return false;
+    }, [isAdmin, isCompany, user]);
+
+    const [jobs, setJobs] = useState<JobPosting[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
+    const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
+    const [formData, setFormData] = useState<{
+        title: string;
+        description: string;
+        type: JobPosting['type'];
+        location: string;
+        salary: string;
+        positions: number;
+        priority: string;
+        deadline: string; // yyyy-mm-dd
+        skills: { name: string; level: string }[];
+    }>({ title: '', description: '', type: 'full-time', location: '', salary: '', positions: 1, priority: 'medium', deadline: '', skills: [{ name: '', level: 'beginner' }] });
 
   const companyProfile = (user?.raw as any)?.companyProfile;
   const internshipSlots = companyProfile?.internshipSlots || 0;
@@ -259,100 +276,105 @@ export default function JobPostings() {
     .reduce((sum, j) => sum + j.positions, 0);
   const totalApplicants = companyJobPostings.reduce((sum, j) => sum + j.applicants.length, 0);
 
-  const filledCountFor = (job: JobPosting) => job.applicants.filter((a) => a.status === 'accepted').length;
+    const handleAdd = () => {
+        setEditingJob(null);
+        setFormData({ title: '', description: '', type: 'full-time', location: 'Chiang Mai', salary: '20,000+', positions: 1, priority: 'medium', deadline: new Date().toISOString().split('T')[0], skills: [{ name: '', level: 'beginner' }] });
+        setIsDialogOpen(true);
+    };
 
-  const openCreateSheet = (prefillFrom?: JobPosting) => {
-    setEditingJob(null);
-    setFormData(
-      prefillFrom
-        ? {
-            title: prefillFrom.title,
-            description: prefillFrom.description,
-            type: prefillFrom.type,
-            location: prefillFrom.location,
-            salary: prefillFrom.salary || '',
-            positions: prefillFrom.positions,
-            status: 'draft',
-            skills: [...new Set([...prefillFrom.preferredSkills, ...prefillFrom.requirements])].filter(Boolean).length
-              ? [...new Set([...prefillFrom.preferredSkills, ...prefillFrom.requirements])].filter(Boolean)
-              : [''],
-          }
-        : emptyForm(),
-    );
-    setSheetTab('details');
-    setSheetOpen(true);
-  };
+    const handleEdit = (job: JobPosting) => {
+        setEditingJob(job);
+        const combinedSkills = Array.from(new Set([...job.preferredSkills, ...job.requirements].filter(Boolean)));
+        setFormData({
+            title: job.title,
+            description: job.description || '',
+            type: job.type,
+            location: job.location,
+            salary: job.salary || '',
+            positions: job.positions,
+            priority: job.status === 'closed' ? 'low' : 'medium',
+            deadline: new Date(job.deadline).toISOString().split('T')[0],
+            skills: combinedSkills.length ? combinedSkills.map(s => ({ name: s, level: 'intermediate' })) : [{ name: '', level: 'beginner' }]
+        });
+        setIsDialogOpen(true);
+    };
 
-  const openEditSheet = (job: JobPosting) => {
-    setEditingJob(job);
-    const combinedSkills = Array.from(new Set([...job.preferredSkills, ...job.requirements].filter(Boolean)));
-    setFormData({
-      title: job.title,
-      description: job.description || '',
-      type: job.type,
-      location: job.location,
-      salary: job.salary || '',
-      positions: job.positions,
-      status: job.status,
-      skills: combinedSkills.length ? combinedSkills : [''],
+    const handleDelete = async (id: string) => {
+        if (confirm(t.jobPostings.deleteConfirm)) {
+            try {
+                await api.jobs.remove(id);
+                setJobs(jobs.filter(j => j.id !== id));
+                toast.success(t.jobPostings.deleteSuccess);
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : t.jobPostings.deleteConfirm);
+            }
+        }
+    };
+
+    const buildJobPayload = () => ({
+        title: formData.title,
+        type: formData.type,
+        positions: formData.positions,
+        description: formData.description || formData.title,
+        responsibilities: [],
+        requirements: Array.from(new Set(formData.skills.map(s => s.name).filter(Boolean))),
+        preferredSkills: [], // Set to empty to prevent duplicating in requirements and preferredSkills
+        salary: formData.salary,
+        benefits: [],
+        location: formData.location,
+        workType: 'hybrid',
+        deadline: new Date(formData.deadline).toISOString(),
+        status: formData.priority === 'low' ? 'closed' : 'open',
     });
-    setSheetTab('details');
-    setSheetOpen(true);
-  };
 
-  const buildPayload = (statusOverride?: JobPosting['status']) => ({
-    title: formData.title,
-    type: formData.type,
-    positions: formData.positions,
-    description: formData.description || formData.title,
-    responsibilities: [],
-    requirements: formData.skills.map((s) => s.trim()).filter(Boolean),
-    preferredSkills: [],
-    salary: formData.salary,
-    benefits: [],
-    location: formData.location,
-    workType: 'hybrid',
-    status: statusOverride ?? formData.status,
-  });
+    const handleSave = async () => {
+        if (editingJob) {
+            try {
+                const response = await api.jobs.update(editingJob.id, buildJobPayload());
+                setJobs(jobs.map(j => j.id === editingJob.id ? mapJob(response.job) : j));
 
-  const handleSave = async (publishNow: boolean) => {
-    const statusToSend: JobPosting['status'] = publishNow ? 'open' : (isCreateMode ? 'draft' : formData.status);
-    try {
-      if (editingJob) {
-        const response = await api.jobs.update(editingJob.id, buildPayload(statusToSend));
-        setJobs((current) => current.map((j) => (j.id === editingJob.id ? mapJob(response.job) : j)));
-        toast.success(publishNow ? copy.publishSuccess : copy.editSuccess);
-      } else {
-        const response = await api.jobs.create(buildPayload(statusToSend));
-        setJobs((current) => [mapJob(response.job), ...current]);
-        toast.success(publishNow ? copy.publishSuccess : copy.createSuccess);
-      }
-      setSheetOpen(false);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.errorGeneric);
-    }
-  };
+                // Notify active applicants about the job update
+                const activeApplicants = editingJob.applicants.filter(
+                    app => !['accepted', 'rejected'].includes(app.status)
+                );
+                
+                if (activeApplicants.length > 0) {
+                    const recipientIds = activeApplicants.map(app => app.studentId);
+                    try {
+                        await api.notifications.broadcast({
+                            title: language === 'th' ? 'มีการอัปเดตข้อมูลการจ้างงาน' : 'Job Posting Updated',
+                            message: language === 'th' 
+                                ? `ข้อมูลตำแหน่งงาน ${editingJob.title} ที่คุณสมัครไว้มีการอัปเดต โปรดตรวจสอบรายละเอียดใหม่`
+                                : `The job posting for ${editingJob.title} that you applied for has been updated. Please review the new details.`,
+                            type: 'application',
+                            priority: 'medium',
+                            recipientIds,
+                            actionUrl: `/internships`,
+                            actionLabel: language === 'th' ? 'ดูรายละเอียด' : 'View Details'
+                        });
+                        toast.success(language === 'th' ? 'แจ้งเตือนผู้สมัครเกี่ยวกับการอัปเดตแล้ว' : 'Notified applicants about the update.');
+                    } catch (err) {
+                        console.error('Failed to notify applicants:', err);
+                    }
+                }
 
-  const handleClose = async (job: JobPosting) => {
-    try {
-      const response = await api.jobs.update(job.id, { status: 'closed' });
-      setJobs((current) => current.map((j) => (j.id === job.id ? mapJob(response.job) : j)));
-      toast.success(copy.closeSuccess);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.errorGeneric);
-    }
-  };
-
-  const handleDelete = async (job: JobPosting) => {
-    if (!confirm(copy.deleteConfirm)) return;
-    try {
-      await api.jobs.remove(job.id);
-      setJobs((current) => current.filter((j) => j.id !== job.id));
-      toast.success(copy.deleteSuccess);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : copy.errorGeneric);
-    }
-  };
+                toast.success(t.jobPostings.editSuccess);
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : t.jobPostings.editJob);
+                return;
+            }
+        } else {
+            try {
+                const response = await api.jobs.create(buildJobPayload());
+                setJobs([mapJob(response.job), ...jobs]);
+                toast.success(t.jobPostings.createSuccess);
+            } catch (error) {
+                toast.error(error instanceof Error ? error.message : t.jobPostings.addNew);
+                return;
+            }
+        }
+        setIsDialogOpen(false);
+    };
 
   const statusBadge = (status: JobPosting['status']) => {
     const map: Record<JobPosting['status'], { label: string; className: string }> = {
@@ -365,283 +387,371 @@ export default function JobPostings() {
     return <Badge className={entry.className}>{entry.label}</Badge>;
   };
 
-  const typeLabel = (type: JobPosting['type']) => {
-    switch (type) {
-      case 'internship': return copy.internship;
-      case 'full-time': return copy.fullTime;
-      case 'part-time': return copy.partTime;
-      case 'contract': return copy.contract;
-      default: return type;
-    }
-  };
+    const getTypeBadge = (type: string) => {
+        switch (type) {
+            case 'internship': return <Badge variant="outline" className="text-purple-700 border-purple-300 dark:text-slate-300">{t.jobPostings.internship}</Badge>;
+            case 'full-time': return <Badge variant="outline" className="text-blue-700 border-blue-300 dark:text-slate-300">{t.jobPostings.fullTimeType}</Badge>;
+            case 'part-time': return <Badge variant="outline" className="text-orange-700 border-orange-300 dark:text-slate-300">{t.jobPostings.partTime}</Badge>;
+            default: return <Badge variant="outline">{type}</Badge>;
+        }
+    };
 
-  return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 pb-10">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
-        <div>
-          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
-            <Briefcase className="inline w-7 h-7 mr-2 mb-1 text-orange-500" />
-            {copy.titleAll}
-          </motion.h1>
-          <motion.p className="mt-2 text-sm text-slate-500 dark:text-slate-400" variants={itemVariants}>
-            {copy.summary(companyJobPostings.length, openCount, internshipSeats, totalApplicants)}
-          </motion.p>
-        </div>
-        {canManage && (
-          <motion.div variants={itemVariants}>
-            <Button onClick={() => openCreateSheet()} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20">
-              <Plus className="w-4 h-4 mr-2" />{copy.addNew}
-            </Button>
-          </motion.div>
-        )}
-      </div>
+    return (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
+            {/* Header Section - Bento Grid Style */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+                    >
+                        <Briefcase className="w-4 h-4 text-orange-500 dark:text-slate-400" />
+                        <span>{companyJobPostings.length} {t.jobPostings.positionsCount} • {openJobs} {t.jobPostings.statusOpen}</span>
+                    </motion.div>
+                    <motion.h1
+                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        {t.jobPostings.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">{t.jobPostings.titleHighlight}</span>
+                    </motion.h1>
+                </div>
 
-      {/* Filters */}
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input className="pl-9" placeholder={copy.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{copy.statusAll}</SelectItem>
-            <SelectItem value="draft">{copy.statusDraft}</SelectItem>
-            <SelectItem value="open">{copy.statusOpen}</SelectItem>
-            <SelectItem value="closed">{copy.statusClosed}</SelectItem>
-            <SelectItem value="filled">{copy.statusFilled}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{copy.typeAll}</SelectItem>
-            <SelectItem value="internship">{copy.internship}</SelectItem>
-            <SelectItem value="full-time">{copy.fullTime}</SelectItem>
-            <SelectItem value="part-time">{copy.partTime}</SelectItem>
-            <SelectItem value="contract">{copy.contract}</SelectItem>
-          </SelectContent>
-        </Select>
-      </motion.div>
-
-      {/* Table */}
-      <motion.div variants={itemVariants}>
-        <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
-          <CardContent className="p-0">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs text-slate-500 dark:text-slate-400">
-                  <th className="px-4 py-3 font-medium">{copy.colTitle}</th>
-                  <th className="px-4 py-3 font-medium">{copy.colStatus}</th>
-                  <th className="px-4 py-3 font-medium">{copy.colType}</th>
-                  <th className="px-4 py-3 font-medium">{copy.colSeats}</th>
-                  <th className="px-4 py-3 font-medium">{copy.colApplicants}</th>
-                  <th className="px-4 py-3 font-medium w-10" />
-                </tr>
-              </thead>
-              <tbody>
-                {filteredJobs.map((job) => (
-                  <tr
-                    key={job.id}
-                    className="border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer"
-                    onClick={() => canManageJob(job) && openEditSheet(job)}
-                  >
-                    <td className="px-4 py-3 font-medium">{job.title}</td>
-                    <td className="px-4 py-3">{statusBadge(job.status)}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{typeLabel(job.type)}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{filledCountFor(job)}/{job.positions}</td>
-                    <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{job.applicants.length}</td>
-                    <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
-                      {canManageJob(job) && (
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm" className="h-8 w-8 p-0"><MoreVertical className="w-4 h-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => openCreateSheet(job)}>
-                              <Copy className="w-3.5 h-3.5 mr-2" />{copy.duplicate}
-                            </DropdownMenuItem>
-                            {job.status !== 'closed' && (
-                              <DropdownMenuItem onClick={() => handleClose(job)}>
-                                <Ban className="w-3.5 h-3.5 mr-2" />{copy.close}
-                              </DropdownMenuItem>
-                            )}
-                            <DropdownMenuItem onClick={() => handleDelete(job)} className="text-red-600 dark:text-red-400">
-                              <Trash2 className="w-3.5 h-3.5 mr-2" />{copy.delete}
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {isLoading && (
-              <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">{copy.loading}</div>
-            )}
-            {!isLoading && filteredJobs.length === 0 && (
-              <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">{copy.noJobs}</div>
-            )}
-          </CardContent>
-        </Card>
-      </motion.div>
-
-      {/* Slide-over */}
-      <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
-          <SheetHeader>
-            <div className="flex items-center gap-2">
-              <SheetTitle>{isCreateMode ? copy.sheetCreateTitle : copy.sheetEditTitle}</SheetTitle>
-              {isCreateMode
-                ? statusBadge('draft')
-                : (
-                  <Select value={formData.status} onValueChange={(v) => setFormData((f) => ({ ...f, status: v as JobPosting['status'] }))}>
-                    <SelectTrigger className="w-32 h-7 text-xs"><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="draft">{copy.statusDraft}</SelectItem>
-                      <SelectItem value="open">{copy.statusOpen}</SelectItem>
-                      <SelectItem value="closed">{copy.statusClosed}</SelectItem>
-                      <SelectItem value="filled">{copy.statusFilled}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                {canManage && (
+                    <motion.div className="flex gap-3" variants={itemVariants}>
+                        <Button onClick={handleAdd} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20">
+                            <Plus className="w-4 h-4 mr-2" />{t.jobPostings.addNew}
+                        </Button>
+                    </motion.div>
                 )}
             </div>
-            <SheetDescription>{isCreateMode ? copy.notPublished : ''}</SheetDescription>
-          </SheetHeader>
 
-          <Tabs value={sheetTab} onValueChange={setSheetTab} className="mt-4">
-            <TabsList>
-              <TabsTrigger value="details">{copy.tabDetails}</TabsTrigger>
-              <TabsTrigger value="skills">{copy.tabSkills}</TabsTrigger>
-              {!isCreateMode && <TabsTrigger value="applicants">{copy.tabApplicants(editingJob?.applicants.length ?? 0)}</TabsTrigger>}
-            </TabsList>
+            {/* Stats Grid - Bento Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/20 backdrop-blur-sm">
+                                <Briefcase className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-white/90">{t.jobPostings.allPositions}</span>
+                        </div>
+                        <div className="text-5xl font-bold tracking-tight">{companyJobPostings.length}</div>
+                        <div className="mt-3 text-sm text-orange-100 flex items-center gap-1">
+                            <Sparkles className="w-4 h-4" />
+                            {t.jobPostings.inSystem}
+                        </div>
+                    </div>
+                </motion.div>
 
-            <TabsContent value="details" className="space-y-4 mt-4">
-              <div className="grid gap-2">
-                <Label>{copy.jobTitle}</Label>
-                <Input value={formData.title} onChange={(e) => setFormData((f) => ({ ...f, title: e.target.value }))} />
-              </div>
-              <div className="grid gap-2">
-                <Label>{copy.description}</Label>
-                <Textarea rows={3} value={formData.description} onChange={(e) => setFormData((f) => ({ ...f, description: e.target.value }))} />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>{copy.type}</Label>
-                  <Select value={formData.type} onValueChange={(v) => setFormData((f) => ({ ...f, type: v as JobPosting['type'] }))}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="full-time">{copy.fullTime}</SelectItem>
-                      <SelectItem value="part-time">{copy.partTime}</SelectItem>
-                      <SelectItem value="internship">{copy.internship}</SelectItem>
-                      <SelectItem value="contract">{copy.contract}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="grid gap-2">
-                  <Label>{copy.positions}</Label>
-                  <Input
-                    type="number"
-                    min={1}
-                    max={isCompany && formData.type === 'internship' ? availableSlots : undefined}
-                    value={formData.positions}
-                    onChange={(e) => setFormData((f) => ({ ...f, positions: parseInt(e.target.value, 10) || 1 }))}
-                    className={isExceedingQuota ? 'border-red-500' : ''}
-                  />
-                  {isCompany && formData.type === 'internship' && (
-                    <p className={`text-xs ${isExceedingQuota ? 'text-red-500 font-medium' : 'text-slate-500'}`}>{copy.quotaLabel(availableSlots)}</p>
-                  )}
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="grid gap-2">
-                  <Label>{copy.location}</Label>
-                  <Input value={formData.location} onChange={(e) => setFormData((f) => ({ ...f, location: e.target.value }))} />
-                </div>
-                <div className="grid gap-2">
-                  <Label>{copy.salary}</Label>
-                  <Input value={formData.salary} onChange={(e) => setFormData((f) => ({ ...f, salary: e.target.value }))} />
-                </div>
-              </div>
-              <p className="text-xs text-slate-400 dark:text-slate-500 italic">{copy.noDeadlineHint}</p>
-            </TabsContent>
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-emerald-50 group-hover:text-emerald-600 transition-colors">
+                                <Users className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-slate-600 dark:text-slate-400">{t.jobPostings.openLabel}</span>
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{openJobs}</div>
+                        <div className="mt-3 text-sm text-slate-400">{t.jobPostings.openDesc}</div>
+                    </div>
+                </motion.div>
 
-            <TabsContent value="skills" className="space-y-3 mt-4">
-              <div className="flex items-center justify-between">
-                <Label>{copy.skillsLabel}</Label>
-                <Button type="button" variant="outline" size="sm" onClick={() => setFormData((f) => ({ ...f, skills: [...f.skills, ''] }))}>
-                  {copy.addSkill}
-                </Button>
-              </div>
-              <div className="space-y-2">
-                {formData.skills.map((skill, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Input
-                      className="flex-1"
-                      placeholder={copy.skillPlaceholder}
-                      value={skill}
-                      onChange={(e) => {
-                        const skills = [...formData.skills];
-                        skills[i] = e.target.value;
-                        setFormData((f) => ({ ...f, skills }));
-                      }}
-                    />
-                    {formData.skills.length > 1 && (
-                      <Button type="button" variant="ghost" size="sm" className="text-red-500" onClick={() => {
-                        setFormData((f) => ({ ...f, skills: f.skills.filter((_, idx) => idx !== i) }));
-                      }}>
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 transition-colors">
+                                <Users className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-slate-600 dark:text-slate-400">{t.jobPostings.totalApplicants}</span>
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{totalApplicants}</div>
+                        <div className="mt-3 text-sm text-slate-400">{t.jobPostings.applicantsDesc}</div>
+                    </div>
+                </motion.div>
+
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-red-50 group-hover:text-red-600 transition-colors">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-slate-600 dark:text-slate-400">{t.jobPostings.closingSoon}</span>
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-red-600 transition-colors">{companyJobPostings.filter(j => new Date(j.deadline) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)).length}</div>
+                        <div className="mt-3 text-sm text-slate-400">{t.jobPostings.within7Days}</div>
+                    </div>
+                </motion.div>
+            </div>
+
+            <motion.div variants={itemVariants}>
+                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
+                    <CardHeader><CardTitle>{t.jobPostings.jobList}</CardTitle></CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                            <AnimatePresence>
+                                {companyJobPostings.map((job, index) => (
+                                    <motion.div
+                                        key={job.id}
+                                        layout
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        className={`relative overflow-hidden p-5 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-900/70 dark:to-slate-950/70 ${job.status === 'closed' ? 'opacity-70 grayscale' : ''}`}
+                                    >
+                                        {job.status === 'closed' && (
+                                            <div className="absolute top-5 -right-8 w-32 text-center transform rotate-45 bg-slate-800 text-white text-[10px] uppercase font-bold py-1 shadow-sm z-10 tracking-widest">
+                                                CLOSED
+                                            </div>
+                                        )}
+                                        <div className="flex items-start justify-between mb-4 relative z-0">
+                                            <div className="flex-1">
+                                                <div className="flex items-center gap-3 mb-2">
+                                                    <h3 className="font-semibold text-lg">{job.title}</h3>
+                                                    {getStatusBadge(job.status)}
+                                                    {getTypeBadge(job.type)}
+                                                </div>
+                                                <p className="text-sm text-gray-600 dark:text-slate-400 mb-2">{job.companyName}</p>
+                                                <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                                                    <span className="flex items-center gap-1"><MapPin className="w-4 h-4" />{job.location}</span>
+                                                    <span className="flex items-center gap-1"><DollarSign className="w-4 h-4" />{job.salary}</span>
+                                                    <span className="flex items-center gap-1"><Users className="w-4 h-4" />{job.positions} {t.jobPostings.positionsUnit}</span>
+                                                </div>
+                                            </div>
+                                            <div className="text-right">
+                                                <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">{t.jobPostings.closeDateLabel}</div>
+                                                <div className="font-semibold">{new Date(job.deadline).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short' })}</div>
+                                            </div>
+                                        </div>
+
+                                        <div className="flex items-center justify-between pt-4 border-t">
+                                            <div className="flex-1 mr-6">
+                                                <div className="flex items-center justify-between text-sm mb-2">
+                                                    <span className="text-gray-600 dark:text-gray-400">{language === 'th' ? 'ตอบรับเข้าทำงานแล้ว' : 'Accepted Candidates'}</span>
+                                                    <span className="font-semibold">{job.applicants.filter(app => app.status === 'accepted').length} / {job.positions} {t.common.person}</span>
+                                                </div>
+                                                <Progress value={(job.applicants.filter(app => app.status === 'accepted').length / Math.max(1, job.positions)) * 100} className="h-2" />
+                                            </div>
+                                            <div className="flex gap-2">
+                                                <Button size="sm" variant="outline" onClick={() => setSelectedJob(job)}><Eye className="w-4 h-4 mr-1" />{language === 'th' ? 'รายละเอียด' : 'Details'}</Button>
+                                                {canManageJob(job) && (
+                                                    <>
+                                                        <Button size="sm" variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
+                                                        {job.status !== 'closed' && (
+                                                            <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
+                                                        )}
+                                                        <Button size="sm" variant="ghost" className="text-red-600 dark:text-slate-300" onClick={() => handleDelete(job.id)}><Trash2 className="w-4 h-4" /></Button>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </motion.div>
+                                ))}
+                            </AnimatePresence>
+                            {isLoading && (
+                                <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    {language === 'th' ? 'กำลังโหลดประกาศงาน...' : 'Loading job postings...'}
+                                </div>
+                            )}
+                            {!isLoading && companyJobPostings.length === 0 && (
+                                <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
+                                    {language === 'th' ? 'ยังไม่มีประกาศงานจาก API' : 'No job postings from API yet.'}
+                                </div>
+                            )}
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
+
+            {/* Job Dialog */}
+            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>{editingJob ? t.jobPostings.editJob : t.jobPostings.addNew}</DialogTitle>
+                        <DialogDescription>{t.jobPostings.fillDetails}</DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
+                        <div className="grid gap-2">
+                            <Label>{language === 'th' ? 'สถานะการประกาศ' : 'Posting Status'}</Label>
+                            <Select value={formData.priority} onValueChange={v => setFormData({ ...formData, priority: v })}>
+                                <SelectTrigger><SelectValue /></SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="medium">{language === 'th' ? 'เปิดรับสมัคร' : 'Open'}</SelectItem>
+                                    <SelectItem value="low">{language === 'th' ? 'ปิดรับสมัคร' : 'Closed'}</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{t.jobPostings.jobTitle}</Label>
+                            <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{language === 'th' ? 'คำอธิบาย' : 'Description'}</Label>
+                            <Textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>{t.jobPostings.type}</Label>
+                                <Select value={formData.type} onValueChange={v => setFormData({ ...formData, type: v as JobPosting['type'] })}>
+                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="full-time">Full-time</SelectItem>
+                                        <SelectItem value="part-time">Part-time</SelectItem>
+                                        <SelectItem value="internship">Internship</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{t.jobPostings.positions} ({t.jobPostings.positionsUnit})</Label>
+                                <Input type="number" min="1" max={isCompany ? availableSlots : undefined} value={formData.positions} onChange={e => setFormData({ ...formData, positions: parseInt(e.target.value) || 1 })} className={isExceedingQuota ? 'border-red-500' : ''} />
+                                {isCompany && (
+                                    <p className={`text-xs ${isExceedingQuota ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
+                                        {language === 'th' ? `โควตาที่รับได้: ${availableSlots} ตำแหน่ง` : `Available quota: ${availableSlots} positions`}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="grid gap-2">
+                                <Label>{t.jobPostings.location}</Label>
+                                <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
+                            </div>
+                            <div className="grid gap-2">
+                                <Label>{t.jobPostings.salary}</Label>
+                                <Input value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
+                            </div>
+                        </div>
+                        <div className="grid gap-2">
+                            <Label>{t.jobPostings.deadline}</Label>
+                            <Input type="date" value={formData.deadline} onChange={e => {
+                                setFormData({ 
+                                    ...formData, 
+                                    deadline: e.target.value
+                                });
+                            }} />
+                        </div>
+                        <div className="grid gap-2">
+                            <div className="flex items-center justify-between mb-2">
+                                <Label>{language === 'th' ? 'ทักษะที่ต้องการ' : 'Required Skills'}</Label>
+                                <Button type="button" variant="outline" size="sm" onClick={() => setFormData(prev => ({ ...prev, skills: [...prev.skills, { name: '', level: 'beginner' }] }))} className="gap-1">
+                                    <Plus className="w-3.5 h-3.5" /> {language === 'th' ? 'เพิ่มทักษะ' : 'Add Skill'}
+                                </Button>
+                            </div>
+                            <div className="space-y-2">
+                                {formData.skills.map((skill, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <Input className="flex-1" placeholder={language === 'th' ? 'ชื่อทักษะ' : 'Skill name'} value={skill.name}
+                                            onChange={e => {
+                                                const skills = [...formData.skills];
+                                                skills[i].name = e.target.value;
+                                                setFormData(prev => ({ ...prev, skills }));
+                                            }} />
+                                        <Select value={skill.level} onValueChange={v => {
+                                            const skills = [...formData.skills];
+                                            skills[i].level = v;
+                                            setFormData(prev => ({ ...prev, skills }));
+                                        }}>
+                                            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="beginner">{language === 'th' ? 'เริ่มต้น' : 'Beginner'}</SelectItem>
+                                                <SelectItem value="intermediate">{language === 'th' ? 'ปานกลาง' : 'Intermediate'}</SelectItem>
+                                                <SelectItem value="advanced">{language === 'th' ? 'สูง' : 'Advanced'}</SelectItem>
+                                                <SelectItem value="expert">{language === 'th' ? 'เชี่ยวชาญ' : 'Expert'}</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        {formData.skills.length > 1 && (
+                                            <Button type="button" variant="ghost" size="sm" className="text-red-500 dark:text-slate-400" onClick={() => {
+                                                setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
+                                            }}>
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t.common.cancel}</Button>
+                        <Button onClick={handleSave} disabled={isExceedingQuota} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <Save className="w-4 h-4 mr-2" />{t.common.save}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={Boolean(selectedJob)} onOpenChange={(open) => !open && setSelectedJob(null)}>
+                <DialogContent className="sm:max-w-[640px]">
+                    {selectedJob && (
+                        <>
+                            <DialogHeader>
+                                <DialogTitle>{selectedJob.title}</DialogTitle>
+                                <DialogDescription>{selectedJob.companyName} / {selectedJob.location} / {selectedJob.workType}</DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4">
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3">
+                                        <div className="text-slate-500 dark:text-slate-400">{t.jobPostings.positions}</div>
+                                        <div className="font-bold">{selectedJob.positions}</div>
+                                    </div>
+                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3">
+                                        <div className="text-slate-500 dark:text-slate-400">{t.jobPostings.applicantsCount}</div>
+                                        <div className="font-bold">{selectedJob.applicants.length}</div>
+                                    </div>
+                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3">
+                                        <div className="text-slate-500 dark:text-slate-400">{t.jobPostings.salary}</div>
+                                        <div className="font-bold">{selectedJob.salary || '-'}</div>
+                                    </div>
+                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3">
+                                        <div className="text-slate-500 dark:text-slate-400">{t.jobPostings.closeDateLabel}</div>
+                                        <div className="font-bold">{new Date(selectedJob.deadline).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US')}</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="font-semibold mb-1">{language === 'th' ? 'รายละเอียดงาน' : 'Description'}</div>
+                                    <p className="text-sm text-slate-600 dark:text-slate-300">{selectedJob.description || '-'}</p>
+                                </div>
+                                <div>
+                                    <div className="font-semibold mb-2">{language === 'th' ? 'ทักษะและเงื่อนไข' : 'Skills & requirements'}</div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {[...selectedJob.preferredSkills, ...selectedJob.requirements].filter(Boolean).map((skill) => (
+                                            <Badge key={skill} variant="secondary">{skill}</Badge>
+                                        ))}
+                                        {[...selectedJob.preferredSkills, ...selectedJob.requirements].filter(Boolean).length === 0 && <span className="text-sm text-slate-500">-</span>}
+                                    </div>
+                                </div>
+                            </div>
+                            <DialogFooter>
+                                {canManageJob(selectedJob) && (
+                                    <>
+                                        <Button variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
+                                        <Button onClick={() => { handleEdit(selectedJob); setSelectedJob(null); }}>{t.jobPostings.editJob}</Button>
+                                    </>
+                                )}
+                            </DialogFooter>
+                        </>
                     )}
-                  </div>
-                ))}
-              </div>
-              {!isCreateMode && (
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => navigate(`/talent-search?jobId=${editingJob?.id}`)}>
-                  {copy.findMatchingStudents}
-                </Button>
-              )}
-            </TabsContent>
-
-            {!isCreateMode && (
-              <TabsContent value="applicants" className="space-y-3 mt-4">
-                {editingJob && editingJob.applicants.length > 0 ? (
-                  <>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{copy.applicantsHint}</p>
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/applicants?jobId=${editingJob.id}`)}>
-                      {copy.viewAllApplicants}
-                    </Button>
-                  </>
-                ) : (
-                  <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                    {copy.noApplicants}
-                  </div>
-                )}
-              </TabsContent>
-            )}
-          </Tabs>
-
-          <SheetFooter className="mt-6 gap-2">
-            <Button variant="outline" onClick={() => setSheetOpen(false)}>{copy.cancel}</Button>
-            {isCreateMode ? (
-              <>
-                <Button variant="secondary" disabled={isExceedingQuota} onClick={() => handleSave(false)}>
-                  <Save className="w-4 h-4 mr-2" />{copy.saveDraft}
-                </Button>
-                <Button disabled={isExceedingQuota} onClick={() => handleSave(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  <Send className="w-4 h-4 mr-2" />{copy.publish}
-                </Button>
-              </>
-            ) : (
-              <Button disabled={isExceedingQuota} onClick={() => handleSave(false)} className="bg-orange-500 hover:bg-orange-600 text-white">
-                <Save className="w-4 h-4 mr-2" />{copy.save}
-              </Button>
-            )}
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
-    </motion.div>
-  );
+                </DialogContent>
+            </Dialog>
+        </motion.div>
+    );
 }

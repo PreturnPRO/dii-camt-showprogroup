@@ -30,7 +30,6 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
-  companyLogin: (phone: string) => Promise<boolean>;
   register: (payload: RegisterPayload) => Promise<boolean>;
   updateProfile: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -108,6 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applySessionUser],
   );
 
+<<<<<<< Updated upstream
   const companyLogin = useCallback(
     async (phone: string): Promise<boolean> => {
       const response = await api.auth.companyLogin(phone);
@@ -128,6 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applySessionUser],
   );
 
+=======
+>>>>>>> Stashed changes
   const register = useCallback(
     async (payload: RegisterPayload): Promise<boolean> => {
       const response = await api.auth.register({
@@ -179,14 +181,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
-      companyLogin,
       register,
       updateProfile,
       logout,
       switchRole,
       refreshSession,
     }),
-    [companyLogin, isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
+    [isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

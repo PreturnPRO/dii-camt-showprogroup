@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Schedule, Course } from '@/types';
 import { Clock, MapPin, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { cn } from '@/lib/utils';
 
 interface TimetableProps {
   courses: Course[];
@@ -49,66 +50,84 @@ export function Timetable({ courses, semester, academicYear }: TimetableProps) {
   const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-xl font-semibold">
-            {language === 'en' ? `Timetable Semester ${semester}/${academicYear}` : `ตารางเรียน เทอม ${semester}/${academicYear}`}
-          </CardTitle>
-          <Badge variant="secondary" className="text-sm">
-            {totalCredits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-slate-800">
-                <th className="border border-gray-200 p-3 text-left font-semibold text-sm w-24 dark:border-slate-700">
-                  {language === 'en' ? 'Time' : 'เวลา'}
-                </th>
-                {DAYS.map(day => (
-                  <th key={day.en} className="border border-gray-200 p-3 text-center font-semibold text-sm dark:border-slate-700">
-                    <div>{language === 'en' ? day.en.charAt(0).toUpperCase() + day.en.slice(1) : day.th}</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 font-normal">{day.short}</div>
+    <div className="w-full space-y-4">
+      <div className="flex items-center justify-between px-1">
+        <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 tracking-tight">
+          {language === 'en' ? `Schedule Semester ${semester}/${academicYear}` : `ตารางเรียน เทอม ${semester}/${academicYear}`}
+        </h3>
+        <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+          {totalCredits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}
+        </span>
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden lg:block overflow-x-auto rounded-xl border border-slate-200/60 dark:border-slate-800 bg-white dark:bg-slate-900/40 shadow-sm">
+        <table className="w-full table-fixed border-collapse text-left">
+          <thead>
+            <tr className="border-b border-slate-200/60 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/70 h-11">
+              <th className="w-[8%] p-2 text-[11px] font-mono text-slate-400 font-medium text-center border-r border-slate-200/50 dark:border-slate-800/80">
+                {language === 'en' ? 'Time' : 'เวลา'}
+              </th>
+              {DAYS.map(day => {
+                const currentDayIndex = new Date().getDay(); // 0 is Sunday, 1 is Monday...
+                const dayIndexMap: Record<string, number> = {
+                  sunday: 0, monday: 1, tuesday: 2, wednesday: 3, thursday: 4, friday: 5, saturday: 6
+                };
+                const isToday = dayIndexMap[day.en] === currentDayIndex;
+
+                return (
+                  <th
+                    key={day.en}
+                    className={cn(
+                      "w-[13.14%] p-2 text-center border-r last:border-r-0 border-slate-200/50 dark:border-slate-800/80 transition-colors",
+                      isToday && "bg-blue-50/40 dark:bg-blue-950/20"
+                    )}
+                  >
+                    <span className={cn(
+                      "text-xs font-semibold block tracking-tight",
+                      isToday ? "text-blue-600 dark:text-blue-400 font-bold" : "text-slate-700 dark:text-slate-200"
+                    )}>
+                      {language === 'en' ? day.en.charAt(0).toUpperCase() + day.en.slice(1) : day.th}
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400 font-normal">{day.short}</span>
                   </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {TIME_SLOTS.map((time, timeIndex) => (
-                <tr key={time}>
-                  <td className="border border-gray-200 p-2 text-sm text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 dark:border-slate-700">
-                    {time}
-                  </td>
-                  {DAYS.map(day => {
-                    const daySchedules = schedulesByDay[day.en];
-                    const classAtThisTime = daySchedules.find(({ schedule }) => {
-                      return schedule.startTime <= time && schedule.endTime > time;
-                    });
+                );
+              })}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100/70 dark:divide-slate-800/40">
+            {TIME_SLOTS.map((time) => (
+              <tr key={time} className="h-11 hover:bg-slate-50/30 dark:hover:bg-slate-800/20 transition-colors">
+                <td className="p-2 text-center text-[11px] font-mono text-slate-400/90 bg-slate-50/30 dark:bg-slate-950/20 border-r border-slate-200/50 dark:border-slate-800/80 select-none">
+                  {time}
+                </td>
+                {DAYS.map(day => {
+                  const daySchedules = schedulesByDay[day.en];
+                  const classAtThisTime = daySchedules.find(({ schedule }) => {
+                    return schedule.startTime <= time && schedule.endTime > time;
+                  });
 
-                    if (classAtThisTime) {
-                      // Only render if this is the first time slot of the class
-                      const { course, schedule } = classAtThisTime;
-                      const isFirstSlot = schedule.startTime === time;
-                      
-                      if (isFirstSlot) {
-                        const { course, schedule } = classAtThisTime;
-                        const startIndex = TIME_SLOTS.indexOf(schedule.startTime);
-                        const endIndex = TIME_SLOTS.findIndex(t => t >= schedule.endTime);
-                        const rowSpan = endIndex - startIndex;
+                  if (classAtThisTime) {
+                    const { course, schedule } = classAtThisTime;
+                    const isFirstSlot = schedule.startTime === time;
+                    
+                    if (isFirstSlot) {
+                      // Calculate exact number of 1-hour slots
+                      const startHour = parseInt(schedule.startTime.split(':')[0], 10);
+                      const endHour = parseInt(schedule.endTime.split(':')[0], 10);
+                      const rowSpan = Math.max(1, endHour - startHour);
 
-                        return (
-                          <td
-                            key={day.en}
-                            rowSpan={rowSpan}
-                            className="border border-gray-200 p-3 bg-blue-50 hover:bg-blue-100 transition-colors dark:bg-slate-800 dark:border-slate-700"
-                          >
-                            <div className="space-y-1">
-                              <div className="font-semibold text-sm text-blue-900 dark:text-slate-200">
+                      return (
+                        <td
+                          key={day.en}
+                          rowSpan={rowSpan}
+                          className="p-2 border-r border-slate-200/50 dark:border-slate-800/60 bg-blue-50/60 dark:bg-blue-950/30 border-l-2 border-l-blue-500 rounded-r-md transition-all duration-150 hover:bg-blue-50/80 dark:hover:bg-blue-950/50 cursor-default align-top"
+                        >
+                          <div className="space-y-1 overflow-hidden">
+                            <div className="flex flex-wrap items-center justify-between gap-1">
+                              <span className="font-mono font-bold text-[11px] text-blue-700 dark:text-blue-300 tracking-tight">
                                 {course.code}
+<<<<<<< Updated upstream
                               </div>
                               <div className="text-xs text-gray-700 dark:text-slate-300 line-clamp-2">
                                 {language === 'en' ? course.name : course.nameThai}
@@ -121,13 +140,28 @@ export function Timetable({ courses, semester, academicYear }: TimetableProps) {
                                 <User className="w-3 h-3" />
                                 <span className="truncate">{course.lecturerName || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}</span>
                               </div>
+=======
+                              </span>
+                              <span className="text-[9.5px] font-mono text-blue-600/75 dark:text-blue-400/70">
+                                {schedule.startTime}–{schedule.endTime}
+                              </span>
+>>>>>>> Stashed changes
                             </div>
-                          </td>
-                        );
-                      }
-                      return null;
+                            <div className="text-[11px] font-medium text-slate-800 dark:text-slate-200 line-clamp-2 leading-tight">
+                              {language === 'en' ? course.name : course.nameThai}
+                            </div>
+                            <div className="flex items-center gap-1 text-[10px] font-mono text-slate-500 dark:text-slate-400 pt-0.5">
+                              <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                              <span className="truncate">{schedule.room}</span>
+                            </div>
+                          </div>
+                        </td>
+                      );
                     }
+                    return null;
+                  }
 
+<<<<<<< Updated upstream
                     return (
                       <td key={day.en} className="border border-gray-200 p-3 bg-white dark:bg-slate-900 dark:border-slate-700">
                         {/* Empty cell */}
@@ -197,10 +231,50 @@ export function Timetable({ courses, semester, academicYear }: TimetableProps) {
                   {course.credits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}
                 </div>
               </div>
+=======
+                  return (
+                    <td key={day.en} className="p-2 border-r last:border-r-0 border-slate-100/60 dark:border-slate-800/30">
+                      {/* Empty cell */}
+                    </td>
+                  );
+                })}
+              </tr>
+>>>>>>> Stashed changes
             ))}
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile List View */}
+      <div className="lg:hidden space-y-3">
+        {DAYS.map(day => {
+          const daySchedules = schedulesByDay[day.en];
+          if (daySchedules.length === 0) return null;
+
+          return (
+            <div key={day.en} className="border border-slate-200/80 dark:border-slate-800/80 rounded-xl p-4 bg-white dark:bg-slate-900/60">
+              <h4 className="font-semibold text-xs text-slate-700 dark:text-slate-300 mb-3">{language === 'en' ? day.en.toUpperCase() : day.th}</h4>
+              <div className="space-y-2">
+                {daySchedules.map(({ course, schedule }, index) => (
+                  <div key={index} className="bg-slate-50 dark:bg-slate-800/50 border border-slate-100 dark:border-slate-700/50 rounded-lg p-3 space-y-1.5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <span className="font-semibold text-xs text-slate-900 dark:text-slate-100">{course.code}</span>
+                        <div className="text-xs text-slate-600 dark:text-slate-300">{language === 'en' ? course.name : course.nameThai}</div>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] font-mono">{course.credits} Cr</Badge>
+                    </div>
+                    <div className="flex items-center gap-2 text-xs font-mono text-slate-500">
+                      <Clock className="w-3.5 h-3.5" />
+                      {schedule.startTime} - {schedule.endTime}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

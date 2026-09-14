@@ -94,21 +94,21 @@ export default function Cooperation() {
                     <Handshake className="w-4 h-4 text-orange-500 dark:text-slate-400" />
                     <span>{t.cooperationPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.cooperationPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">{t.cooperationPage.titleHighlight}</span>
                 </motion.h1>
             </div>
 
             {/* MOU Status Card - Full Width */}
             <motion.div variants={itemVariants} whileHover={{ scale: 1.005 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-white shadow-xl shadow-emerald-200">
-                <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl dark:bg-slate-900/50" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl dark:bg-slate-900/50" />
+                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-white shadow-sm">
+                <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
+                <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
                 <div className="relative z-10">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                         <div>
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><Shield className="w-6 h-6" /></div>
+                                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm"><Shield className="w-6 h-6" /></div>
                                 <div>
                                     <h2 className="text-2xl font-bold">{t.cooperationPage.mouStatus}</h2>
                                     <p className="text-emerald-100 text-sm mt-0.5">{currentMou.title}</p>
@@ -118,7 +118,7 @@ export default function Cooperation() {
                                 {currentMou.details}
                             </p>
                         </div>
-                        <Badge className="bg-white/20 text-white border-white/30 text-base px-4 py-1.5 backdrop-blur-sm self-start dark:bg-slate-900/50">{currentMou.status}</Badge>
+                        <Badge className="bg-white/20 text-white border-white/30 text-base px-4 py-1.5 backdrop-blur-sm self-start">{currentMou.status}</Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                         {[
@@ -126,7 +126,7 @@ export default function Cooperation() {
                             { label: t.cooperationPage.startDate, value: '1 มกราคม 2567' },
                             { label: t.cooperationPage.endDate, value: '31 ธันวาคม 2569', sub: `${t.cooperationPage.timeRemaining} 1 ปี 9 เดือน` },
                         ].map((item, i) => (
-                            <div key={i} className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div key={i} className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm">
                                 <p className="text-sm text-emerald-200">{item.label}</p>
                                 <p className="font-bold text-lg mt-1">
                                     {i === 1 ? currentMou.createdAt.toLocaleDateString('th-TH', { dateStyle: 'medium' }) : i === 2 ? expiryDate.toLocaleDateString('th-TH', { dateStyle: 'medium' }) : item.value}
@@ -136,7 +136,7 @@ export default function Cooperation() {
                         ))}
                     </div>
                     <div className="flex gap-3 mt-6">
-                        <Button disabled={!hasMou || isLoading} onClick={handleDownload} className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm rounded-xl border border-white/20 dark:bg-slate-900/50">
+                        <Button disabled={!hasMou || isLoading} onClick={handleDownload} className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm rounded-xl border border-white/20">
                             <Download className="w-4 h-4 mr-2" /> {t.cooperationPage.downloadMOU}
                         </Button>
                         <Button onClick={() => navigate('/messages')} className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl shadow-lg dark:text-slate-300 dark:bg-slate-900 dark:bg-slate-800">
@@ -149,14 +149,14 @@ export default function Cooperation() {
             {/* Bento Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Activity History - 3 cols */}
-                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <Clock className="w-5 h-5 text-orange-500 dark:text-slate-400" /> {t.cooperationPage.activityHistory}
                     </h3>
                     <div className="space-y-3">
                         {activityRows.map((row, idx) => (
                             <motion.div key={idx} whileHover={{ x: 4 }} className="flex items-start gap-4 p-4 rounded-2xl hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-sm transition-all dark:bg-slate-900 dark:border-slate-700">
-                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white flex-shrink-0 shadow-lg shadow-orange-200">
+                                <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white flex-shrink-0 shadow-lg">
                                     <row.icon className="w-5 h-5" />
                                 </div>
                                 <div>
@@ -175,13 +175,13 @@ export default function Cooperation() {
                 </motion.div>
 
                 {/* Contact Person - 2 cols */}
-                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-blue-500 dark:text-slate-400" /> {t.cooperationPage.coordinator}
                     </h3>
                     <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 mb-5">
                         <div className="flex items-center gap-4 mb-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200">
+                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shadow-sm">
                                 อ
                             </div>
                             <div>
@@ -194,7 +194,7 @@ export default function Cooperation() {
                             <p>✉️ somchai@cmu.ac.th</p>
                         </div>
                     </div>
-                    <Button onClick={() => navigate('/messages')} className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 h-11">
+                    <Button onClick={() => navigate('/messages')} className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 shadow-sm h-11">
                         {t.cooperationPage.sendMessage}
                     </Button>
                 </motion.div>

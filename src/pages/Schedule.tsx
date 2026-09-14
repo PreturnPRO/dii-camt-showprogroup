@@ -1,5 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
@@ -11,10 +12,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Timetable } from '@/components/common/Timetable';
 import { DraggableSchedule } from '@/components/schedule/DraggableSchedule';
+import { MonthCalendar } from '@/components/schedule/MonthCalendar';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapStudent } from '@/lib/live-mappers';
+import { cn } from '@/lib/utils';
 import type { Course, Student } from '@/types';
 
 const containerVariants = {
@@ -30,11 +33,27 @@ const itemVariants = {
 export default function Schedule() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Support ?view=week or ?view=month with 'week' as default
+  const initialView = searchParams.get('view') === 'month' ? 'month' : 'week';
+  const [calendarView, setCalendarView] = React.useState<'week' | 'month'>(initialView);
   const [currentWeek, setCurrentWeek] = React.useState(0);
+  const [currentMonthOffset, setCurrentMonthOffset] = React.useState(0);
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [student, setStudent] = React.useState<Student | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
+
+  // Sync view switcher with URL params
+  const handleViewChange = (newView: 'week' | 'month') => {
+    setCalendarView(newView);
+    setSearchParams((prev) => {
+      const updated = new URLSearchParams(prev);
+      updated.set('view', newView);
+      return updated;
+    }, { replace: true });
+  };
 
   type ScheduleItem = {
     id: string;
@@ -69,7 +88,11 @@ export default function Schedule() {
         day: dayIndexByName[slot.day.toLowerCase()] ?? 0,
         startTime: slot.startTime,
         endTime: slot.endTime,
-        room: slot.room || course.sections?.[0]?.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
+<<<<<<< Updated upstream
+        room: slot.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
+=======
+        room: slot.room
+>>>>>>> Stashed changes
       }))
     ).filter(item => item.day > 0);
   }, [courses]);
@@ -144,16 +167,37 @@ export default function Schedule() {
     setIsEditMode(false);
   };
 
+  // Week calculation
   const currentDate = new Date();
   currentDate.setDate(currentDate.getDate() + (currentWeek * 7));
 
-  // Format week range
+  // Format week range (Monday to Friday or Sunday)
   const startOfWeek = new Date(currentDate);
   const day = startOfWeek.getDay();
   const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
   startOfWeek.setDate(diff);
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 4);
+
+  // Month calculation
+  const currentMonthDate = new Date();
+  currentMonthDate.setMonth(currentMonthDate.getMonth() + currentMonthOffset);
+
+  // Reset to today helper
+  const handleJumpToToday = () => {
+    setCurrentWeek(0);
+    setCurrentMonthOffset(0);
+  };
+
+  // Switch from month view to week view for a specific clicked date
+  const handleSwitchToWeekForDate = (targetDate: Date) => {
+    const today = new Date();
+    const diffTime = targetDate.getTime() - today.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const targetWeekOffset = Math.round(diffDays / 7);
+    setCurrentWeek(targetWeekOffset);
+    handleViewChange('week');
+  };
 
   if (user?.role === 'student') {
     if (!student) {
@@ -205,188 +249,335 @@ export default function Schedule() {
         className="space-y-8 pb-10"
       >
         {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -15 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+              className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1.5"
             >
-              <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
+              <Calendar className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
               <span>{t.schedulePage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-              initial={{ opacity: 0, y: 20 }}
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.05 }}
             >
-              {t.schedulePage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.titleHighlight}</span>
+              {t.schedulePage.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 font-extrabold">{t.schedulePage.titleHighlight}</span>
             </motion.h1>
           </div>
 
-          <motion.div
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-700"
-            whileHover={{ scale: 1.02 }}
-          >
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(currentWeek - 1)} className="rounded-xl hover:bg-slate-100 dark:bg-slate-800">
-              <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Button>
-            <div className="px-4 text-sm font-bold text-slate-700 dark:text-slate-300">
-              {startOfWeek.getDate()} {startOfWeek.toLocaleDateString('th-TH', { month: 'short' })} - {endOfWeek.getDate()} {endOfWeek.toLocaleDateString('th-TH', { month: 'short' })}
+          {/* Navigation Controls: View Switcher + Date Navigator */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* View Switcher: [ Week | Month ] */}
+            <div className="inline-flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 shadow-xs">
+              <button
+                type="button"
+                onClick={() => handleViewChange('week')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer select-none",
+                  calendarView === 'week'
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                )}
+              >
+                {language === 'en' ? 'Week' : 'สัปดาห์'}
+              </button>
+              <button
+                type="button"
+                onClick={() => handleViewChange('month')}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 cursor-pointer select-none",
+                  calendarView === 'month'
+                    ? "bg-white dark:bg-slate-900 text-blue-600 dark:text-blue-400 shadow-xs"
+                    : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
+                )}
+              >
+                {language === 'en' ? 'Month' : 'เดือน'}
+              </button>
             </div>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(currentWeek + 1)} className="rounded-xl hover:bg-slate-100 dark:bg-slate-800">
-              <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Button>
+
+            {/* "วันนี้" / "Today" Quick Button */}
+            {(currentWeek !== 0 || currentMonthOffset !== 0) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleJumpToToday}
+                className="h-8 px-2.5 text-xs font-medium rounded-xl border-slate-200/70 dark:border-slate-800 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                {language === 'en' ? 'Today' : 'วันนี้'}
+              </Button>
+            )}
+
+            {/* Date Navigator (‹ range ›) */}
+            <motion.div
+              className="flex items-center gap-1 bg-white dark:bg-slate-900 rounded-xl p-1 shadow-sm border border-slate-200/70 dark:border-slate-800"
+              whileHover={{ scale: 1.01 }}
+            >
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (calendarView === 'week') {
+                    setCurrentWeek(currentWeek - 1);
+                  } else {
+                    setCurrentMonthOffset(currentMonthOffset - 1);
+                  }
+                }}
+                className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <div className="px-3 text-xs sm:text-sm font-semibold font-mono text-slate-700 dark:text-slate-200 min-w-[130px] text-center">
+                {calendarView === 'week' ? (
+                  `${startOfWeek.getDate()} ${startOfWeek.toLocaleDateString(language === 'en' ? 'en-US' : 'th-TH', { month: 'short' })} - ${endOfWeek.getDate()} ${endOfWeek.toLocaleDateString(language === 'en' ? 'en-US' : 'th-TH', { month: 'short' })}`
+                ) : (
+                  currentMonthDate.toLocaleDateString(language === 'en' ? 'en-US' : 'th-TH', { month: 'long', year: 'numeric' })
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  if (calendarView === 'week') {
+                    setCurrentWeek(currentWeek + 1);
+                  } else {
+                    setCurrentMonthOffset(currentMonthOffset + 1);
+                  }
+                }}
+                className="h-8 w-8 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </Button>
+            </motion.div>
+          </div>
+        </div>
+
+        {/* Summary Cards — Refined SaaS style with subtle accents (not overpowering) */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.schedulePage.totalCourses}</span>
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+                <BookOpen className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">{studentCourses.length}</div>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">{language === 'en' ? 'enrolled courses' : 'วิชาที่ลงทะเบียน'}</span>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.schedulePage.totalCredits}</span>
+              <div className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400">
+                <GraduationCap className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">{totalCredits}</div>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">{language === 'en' ? 'total credits' : 'หน่วยกิตสะสมเทอมนี้'}</span>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.schedulePage.hoursPerWeek}</span>
+              <div className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <Clock className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">{totalHours}</div>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">{language === 'en' ? 'hours per week' : 'ชั่วโมงบรรยาย/ปฏิบัติ'}</span>
+          </motion.div>
+
+          <motion.div
+            variants={itemVariants}
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden"
+          >
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.schedulePage.studyDays}</span>
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                <Calendar className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">{t.schedulePage.monFri}</div>
+            <span className="text-[11px] text-slate-400 mt-0.5 block">{language === 'en' ? 'weekday schedule' : 'จันทร์ ถึง ศุกร์'}</span>
           </motion.div>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.totalCourses}</span>
-            </div>
-            <div className="text-3xl font-bold">{studentCourses.length}</div>
-          </motion.div>
-
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <GraduationCap className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.totalCredits}</span>
-            </div>
-            <div className="text-3xl font-bold">{totalCredits}</div>
-          </motion.div>
-
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <Clock className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.hoursPerWeek}</span>
-            </div>
-            <div className="text-3xl font-bold">{totalHours}</div>
-          </motion.div>
-
-          <motion.div
-            variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-sm text-slate-700 dark:text-slate-200"
-          >
-            <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800">
-                <Calendar className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-              </div>
-              <span className="font-medium text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.studyDays}</span>
-            </div>
-            <div className="text-3xl font-bold">{t.schedulePage.monFri}</div>
-          </motion.div>
-        </div>
-
-        {/* Timetable Card */}
-        <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+        {/* Timetable / Month Calendar Card - Hero Element */}
+        <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-4 sm:p-6 shadow-sm">
           {isLoading ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
               กำลังโหลดตารางเรียนจากระบบ...
             </div>
           ) : studentCourses.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
               ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ
             </div>
           ) : (
-            <Timetable
-              courses={studentCourses}
-              semester={student.semester}
-              academicYear={student.academicYear}
-            />
+            <AnimatePresence mode="wait">
+              {calendarView === 'week' ? (
+                <motion.div
+                  key="week-view"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <Timetable
+                    courses={studentCourses}
+                    semester={student.semester}
+                    academicYear={student.academicYear}
+                  />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="month-view"
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                >
+                  <MonthCalendar
+                    courses={studentCourses}
+                    currentDate={currentMonthDate}
+                    onSwitchToWeek={handleSwitchToWeekForDate}
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
           )}
         </motion.div>
 
-        {/* Today's Classes */}
-        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.schedulePage.todayClasses}
-            </h3>
-            <div className="space-y-3">
+        {/* Today's Classes + Attendance & Warning Card */}
+        <motion.div variants={itemVariants} className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {/* Today's Classes List (Sorted Chronologically) */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" /> {t.schedulePage.todayClasses}
+              </h3>
+              <span className="text-xs text-slate-400 font-mono">
+                {new Date().toLocaleDateString(language === 'en' ? 'en-US' : 'th-TH', { weekday: 'long', day: 'numeric', month: 'short' })}
+              </span>
+            </div>
+
+            <div className="space-y-2.5">
               {!isLoading && studentCourses.length === 0 && (
-                <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
+                <div className="rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
                   ยังไม่มีคาบเรียนวันนี้จากระบบ
                 </div>
               )}
+<<<<<<< Updated upstream
               {studentCourses.slice(0, 3).map((course, index) => {
-                const slot = course.sections?.[0]?.schedule?.[0];
+                const slot = course.schedule?.[0];
                 const location = [slot?.room, slot?.building].filter(Boolean).join(' ');
 
-                return (
-                <motion.div
-                  key={course.id}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
-                >
-                  <div className="flex flex-col items-center justify-center bg-purple-50 text-purple-700 rounded-xl px-4 py-2 min-w-[80px] group-hover:bg-purple-500 group-hover:text-white transition-colors dark:text-slate-300 dark:bg-slate-800">
-                    <div className="text-sm font-bold">{slot?.startTime || '--:--'}</div>
-                    <div className="text-xs opacity-75">{slot?.endTime || '--:--'}</div>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 transition-colors truncate">{course.name}</div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
-                      <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{location || '-'}</span>
-                    </div>
-                  </div>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-600 group-hover:bg-white group-hover:text-purple-600 dark:text-slate-300 dark:bg-slate-800 shrink-0">
-                    {t.schedulePage.inClass}
-                  </Badge>
-                </motion.div>
-                );
-              })}
+                  return (
+                    <motion.div
+                      key={`${course.id}-${index}`}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      className={cn(
+                        "flex items-center gap-3.5 p-3 rounded-xl border bg-white dark:bg-slate-900/80 shadow-sm transition-all duration-150 group cursor-default",
+                        isActiveNow
+                          ? "border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20"
+                          : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                      )}
+                    >
+                      {/* Time Block */}
+                      <div className={cn(
+                        "flex flex-col items-center justify-center rounded-lg px-3 py-1.5 min-w-[76px] font-mono transition-colors",
+                        isActiveNow
+                          ? "bg-blue-600 text-white dark:bg-blue-500 font-bold"
+                          : "bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300"
+                      )}>
+                        <div className="text-xs font-bold leading-tight">{slot?.startTime || '--:--'}</div>
+                        <div className="text-[10px] opacity-70 leading-tight">{slot?.endTime || '--:--'}</div>
+                      </div>
+
+                      {/* Course Information: Code, Name, Room */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[11px] font-mono font-semibold text-blue-600 dark:text-blue-400">
+                            {course.code}
+                          </span>
+                          <h4 className="font-semibold text-sm text-slate-900 dark:text-slate-100 truncate group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                            {course.nameThai || course.name}
+                          </h4>
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1.5 mt-0.5 font-mono">
+                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
+                          <span className="truncate">{location || '-'}</span>
+                        </div>
+                      </div>
+
+                      {/* Status Indicator */}
+                      {isActiveNow ? (
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[11px] font-medium shrink-0 animate-pulse">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                          {t.schedulePage.inClass}
+                        </span>
+                      ) : (
+                        <span className="text-[11px] font-mono text-slate-400 dark:text-slate-400 shrink-0 px-2 py-0.5 rounded bg-slate-100/60 dark:bg-slate-800/50">
+                          {course.credits} {t.schedulePage.totalCredits}
+                        </span>
+                      )}
+                    </motion.div>
+                  );
+                });
+              })()}
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px]" />
-            <div className="relative z-10">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Info className="w-5 h-5 text-purple-400" /> {t.schedulePage.warnings}
-              </h3>
-              <ul className="space-y-4 text-slate-300 text-sm">
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0">1</div>
-                  {t.schedulePage.warningLate}
+          {/* Attendance / Warning Card — Light & Dark SaaS Adaptive Style */}
+          <div className="bg-white dark:bg-slate-900/90 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-5 text-slate-900 dark:text-white relative overflow-hidden flex flex-col justify-between shadow-sm transition-colors">
+            <div>
+              <div className="flex items-center justify-between mb-3.5">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                  <Info className="w-4 h-4 text-purple-600 dark:text-purple-400" /> {t.schedulePage.warnings}
+                </h3>
+                <span className="text-[10px] font-mono text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-900/30 border border-purple-200 dark:border-purple-800/50 px-2 py-0.5 rounded-full font-medium">
+                  Policy
+                </span>
+              </div>
+              <ul className="space-y-2.5 text-slate-600 dark:text-slate-300 text-xs">
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-mono font-bold text-purple-600 dark:text-purple-300 shrink-0 mt-0.5">1</span>
+                  <span className="leading-relaxed">{t.schedulePage.warningLate}</span>
                 </li>
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0">2</div>
-                  {t.schedulePage.warningLeave}
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-mono font-bold text-purple-600 dark:text-purple-300 shrink-0 mt-0.5">2</span>
+                  <span className="leading-relaxed">{t.schedulePage.warningLeave}</span>
                 </li>
-                <li className="flex gap-3">
-                  <div className="w-6 h-6 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold shrink-0">3</div>
-                  {t.schedulePage.warningDress}
+                <li className="flex items-start gap-2.5">
+                  <span className="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-[10px] font-mono font-bold text-purple-600 dark:text-purple-300 shrink-0 mt-0.5">3</span>
+                  <span className="leading-relaxed">{t.schedulePage.warningDress}</span>
                 </li>
               </ul>
-              <Button className="w-full mt-8 bg-purple-600 hover:bg-purple-500 text-white border-0">
-                {t.schedulePage.viewRules}
-              </Button>
             </div>
+            <Button className="w-full mt-5 bg-purple-600 hover:bg-purple-700 text-white font-medium text-xs h-8 rounded-xl transition-all duration-150 shadow-sm">
+              {t.schedulePage.viewRules}
+            </Button>
           </div>
         </motion.div>
       </motion.div>

@@ -132,7 +132,7 @@ export default function WorkloadTracking() {
                     <BarChart3 className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                     <span>{t.workloadTrackingPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.workloadTrackingPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.workloadTrackingPage.titleHighlight}</span>
                 </motion.h1>
                 </div>
@@ -144,19 +144,19 @@ export default function WorkloadTracking() {
             {/* Stats */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { icon: Users, label: t.workloadTrackingPage.totalLecturers, value: isLoading ? '...' : String(lecturerData.length), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
-                    { icon: Clock, label: t.workloadTrackingPage.avgWorkload, value: `${avgWorkload} ${t.workloadTrackingPage.hours}`, gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-                    { icon: AlertTriangle, label: t.workloadTrackingPage.overLimit, value: String(overloaded), gradient: 'from-red-500 to-rose-500', shadow: 'shadow-red-200' },
-                    { icon: TrendingUp, label: t.workloadTrackingPage.normalStatus, value: String(lecturerData.length - overloaded), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
+                    { icon: Users, label: t.workloadTrackingPage.totalLecturers, value: isLoading ? '...' : String(lecturerData.length), gradient: '', shadow: '' },
+                    { icon: Clock, label: t.workloadTrackingPage.avgWorkload, value: `${avgWorkload} ${t.workloadTrackingPage.hours}`, gradient: '', shadow: '' },
+                    { icon: AlertTriangle, label: t.workloadTrackingPage.overLimit, value: String(overloaded), gradient: '', shadow: '' },
+                    { icon: TrendingUp, label: t.workloadTrackingPage.normalStatus, value: String(lecturerData.length - overloaded), gradient: '', shadow: '' },
                 ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
+                        
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
+                                <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
@@ -165,7 +165,7 @@ export default function WorkloadTracking() {
             {/* Bento Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
                 {/* Summary Panel - 2 cols */}
-                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm h-fit space-y-6 dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm h-fit space-y-6">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                         <BookOpen className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.workloadTrackingPage.statusOverview}
                     </h3>
@@ -192,7 +192,7 @@ export default function WorkloadTracking() {
                 </motion.div>
 
                 {/* Lecturer List - 3 cols */}
-                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <div className="mb-5">
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.workloadTrackingPage.individualDetails}</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t.workloadTrackingPage.individualDesc}</p>
@@ -209,7 +209,7 @@ export default function WorkloadTracking() {
                             return (
                                 <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
                                     className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white transition-all dark:hover:bg-slate-800/70">
-                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg ${isOver ? 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-200' : 'bg-gradient-to-br from-purple-400 to-violet-500 shadow-purple-200'}`}>
+                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg ${isOver ? 'bg-gradient-to-br from-red-400 to-rose-500' : 'bg-gradient-to-br from-purple-400 to-violet-500'}`}>
                                         {lecturer.nameThai.charAt(0)}
                                     </div>
                                     <div className="flex-1 min-w-0">

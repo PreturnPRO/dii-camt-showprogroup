@@ -105,28 +105,6 @@ export default function Requests() {
     title: '',
     description: ''
   });
-  const [files, setFiles] = React.useState<File[]>([]);
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFiles = Array.from(e.target.files || []);
-    const validFiles = selectedFiles.filter(file => {
-      const isAllowedType = ['application/pdf', 'image/jpeg', 'image/png'].includes(file.type);
-      const isUnder10MB = file.size <= 10 * 1024 * 1024;
-      if (!isAllowedType) {
-        toast.error(language === 'th' ? `ไฟล์ ${file.name} ไม่รองรับ (เฉพาะ PDF, JPG, PNG)` : `File ${file.name} is not supported (PDF, JPG, PNG only)`);
-      } else if (!isUnder10MB) {
-        toast.error(language === 'th' ? `ไฟล์ ${file.name} มีขนาดเกิน 10MB` : `File ${file.name} exceeds 10MB`);
-      }
-      return isAllowedType && isUnder10MB;
-    });
-    setFiles(prev => [...prev, ...validFiles]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
-  const removeFile = (index: number) => {
-    setFiles(prev => prev.filter((_, i) => i !== index));
-  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -175,7 +153,7 @@ export default function Requests() {
         type: formData.type,
         title: formData.title,
         description: formData.description,
-        documents: files.map(f => f.name),
+        documents: [],
       });
       const request = asRecord(response.request);
       const createdAt = asDate(request.submittedAt, new Date()).toISOString().split('T')[0];
@@ -195,7 +173,6 @@ export default function Requests() {
       setRequests([newRequest, ...requests]);
       setIsDialogOpen(false);
       setFormData({ type: '', title: '', description: '' });
-      setFiles([]);
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
@@ -263,26 +240,28 @@ export default function Requests() {
     icon: React.ElementType;
     label: string;
     value: React.ReactNode;
-    gradient: string;
-    delay?: number;
+    accentColor: string;
+    iconBg: string;
+    subtext?: string;
   };
 
-  const StatCard = ({ icon: Icon, label, value, gradient }: StatCardProps) => (
+  const StatCard = ({ icon: Icon, label, value, accentColor, iconBg, subtext }: StatCardProps) => (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -5, scale: 1.02 }}
-      className={`relative overflow-hidden rounded-3xl p-6 shadow-lg border border-white/20 ${gradient}`}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.15 }}
+      className="relative overflow-hidden rounded-2xl p-4 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between"
     >
-      <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
-      <div className="relative z-10 flex items-center gap-4">
-        <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md border border-white/10 dark:bg-slate-900/50">
-          <Icon className="w-5 h-5 text-white" />
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400 truncate">{label}</span>
+          <div className={`p-2 rounded-xl ${iconBg} ${accentColor} border border-current/15 shrink-0`}>
+            <Icon className="w-4 h-4" />
+          </div>
         </div>
-        <div>
-          <p className="text-white/70 text-xs font-medium">{label}</p>
-          <h3 className="text-2xl font-bold text-white tracking-tight">{value}</h3>
-        </div>
+        <h3 className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">{value}</h3>
       </div>
+      {subtext && <p className="text-[11px] text-slate-400 mt-2 font-mono">{subtext}</p>}
     </motion.div>
   );
 
@@ -291,55 +270,56 @@ export default function Requests() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-8 pb-10"
+      className="space-y-6 pb-8"
     >
-      {/* Header Section - Matching Dashboard/Courses/Schedule Style */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+      {/* Header Section — Aligned with ShowPro Standard */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1.5"
           >
-            <FileBox className="w-4 h-4 text-indigo-500 dark:text-slate-400" />
+            <FileBox className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
             <span>{t.requestsPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
           >
-            {t.requestsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">{t.requestsPage.titleHighlight}</span>
+            {t.requestsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 font-extrabold">{t.requestsPage.titleHighlight}</span>
           </motion.h1>
         </div>
+
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           {canCreateRequest && (
             <DialogTrigger asChild>
-              <Button size="lg" className="rounded-2xl px-8 bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 h-12 font-bold transform active:scale-95 transition-all">
-                <Plus className="w-5 h-5 mr-2" /> {t.requestsPage.newRequest}
+              <Button size="sm" className="rounded-xl px-5 bg-blue-600 hover:bg-blue-700 text-white shadow-xs h-10 text-xs font-semibold transform active:scale-95 transition-all">
+                <Plus className="w-4 h-4 mr-1.5" /> {t.requestsPage.newRequest}
               </Button>
             </DialogTrigger>
           )}
-          <DialogContent className="sm:max-w-[600px] bg-white/90 backdrop-blur-2xl p-0 overflow-hidden gap-0 rounded-[2.5rem] border-white/50 shadow-2xl dark:bg-slate-900/50">
-            <div className="p-8 bg-slate-900 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-              <DialogTitle className="text-2xl font-bold tracking-tight">{t.requestsPage.newRequest}</DialogTitle>
-              <DialogDescription className="mt-1 text-slate-400">{t.requestsPage.formDesc}</DialogDescription>
+          <DialogContent className="sm:max-w-[560px] bg-white dark:bg-[#0c1222] p-0 overflow-hidden gap-0 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xl">
+            <div className="p-6 bg-slate-900 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
+              <DialogTitle className="text-xl font-bold tracking-tight">{t.requestsPage.newRequest}</DialogTitle>
+              <DialogDescription className="mt-1 text-xs text-slate-400">{t.requestsPage.formDesc}</DialogDescription>
             </div>
 
-            <div className="p-8 space-y-6 max-h-[60vh] overflow-y-auto custom-scrollbar">
-              <div className="space-y-2">
-                <Label htmlFor="type" className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.requestType}</Label>
+            <div className="p-6 space-y-4">
+              <div className="space-y-1.5">
+                <Label htmlFor="type" className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{t.requestsPage.requestType}</Label>
                 <Select value={formData.type} onValueChange={(val) => setFormData({ ...formData, type: val })}>
-                  <SelectTrigger className="rounded-2xl h-14 bg-slate-50/50 border-slate-100 dark:border-slate-800 focus:ring-indigo-500 text-base dark:bg-slate-900/50">
+                  <SelectTrigger className="rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 text-xs font-medium">
                     <SelectValue placeholder={t.requestsPage.selectTopic} />
                   </SelectTrigger>
-                  <SelectContent className="rounded-2xl border-slate-100 dark:border-slate-800 shadow-2xl p-2">
+                  <SelectContent className="rounded-xl border-slate-200/80 dark:border-slate-800 shadow-lg p-1">
                     {requestTypes.map(t => (
-                      <SelectItem key={t.id} value={t.name} className="rounded-xl py-3 focus:bg-indigo-50 focus:text-indigo-600 font-medium dark:text-slate-300">
-                        <div className="flex items-center gap-3">
-                          <span className="p-1.5 rounded-lg bg-slate-100 dark:bg-slate-800">{t.icon}</span>
+                      <SelectItem key={t.id} value={t.name} className="rounded-lg py-2 text-xs font-medium">
+                        <div className="flex items-center gap-2">
+                          <span className="p-1 rounded-md bg-slate-100 dark:bg-slate-800">{t.icon}</span>
                           {t.name}
                         </div>
                       </SelectItem>
@@ -348,269 +328,336 @@ export default function Requests() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="title" className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.requestTitle}</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="title" className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{t.requestsPage.requestTitle}</Label>
                 <Input
                   id="title"
                   placeholder={t.requestsPage.titlePlaceholder}
-                  className="rounded-2xl h-14 bg-slate-50/50 border-slate-100 dark:border-slate-800 focus-visible:ring-indigo-500 text-base dark:bg-slate-900/50"
+                  className="rounded-xl h-11 bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 text-xs font-medium"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="desc" className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.requestDetails}</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="desc" className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{t.requestsPage.requestDetails}</Label>
                 <Textarea
                   id="desc"
                   placeholder={t.requestsPage.detailsPlaceholder}
-                  className="rounded-2xl min-h-[140px] bg-slate-50/50 border-slate-100 dark:border-slate-800 focus-visible:ring-indigo-500 resize-none text-base p-4 dark:bg-slate-900/50"
+                  className="rounded-xl min-h-[110px] bg-slate-50 dark:bg-slate-900 border border-slate-200/70 dark:border-slate-800 text-xs resize-none p-3"
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-slate-700 font-bold ml-1 dark:text-slate-300">{t.requestsPage.attachments}</Label>
-                <div 
-                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-[2rem] p-10 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-indigo-200 hover:text-indigo-400 transition-all cursor-pointer group dark:bg-slate-800"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <input 
-                    type="file" 
-                    ref={fileInputRef} 
-                    className="hidden" 
-                    multiple 
-                    accept=".pdf,.jpg,.jpeg,.png"
-                    onChange={handleFileChange}
-                  />
-                  <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:scale-110 group-hover:bg-indigo-50 transition-all">
-                    <Upload className="w-8 h-8 opacity-50 text-slate-400 group-hover:text-indigo-500 dark:text-slate-400" />
-                  </div>
-                  <p className="font-bold">{t.requestsPage.uploadClick}</p>
-                  <p className="text-xs mt-1 opacity-60">{t.requestsPage.fileSupport}</p>
+              <div className="space-y-1.5">
+                <Label className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{t.requestsPage.attachments}</Label>
+                <div className="border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                  <Upload className="w-6 h-6 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                  <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t.requestsPage.uploadClick}</p>
+                  <p className="text-[10px] mt-0.5 opacity-70">{t.requestsPage.fileSupport}</p>
                 </div>
-
-                {files.length > 0 && (
-                  <div className="mt-4 space-y-2">
-                    {files.map((file, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-xl border border-slate-100 dark:border-slate-700">
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <div className="p-2 bg-white dark:bg-slate-700 rounded-lg shrink-0">
-                            <FileText className="w-4 h-4 text-indigo-500" />
-                          </div>
-                          <div className="truncate">
-                            <p className="text-sm font-bold text-slate-700 dark:text-slate-300 truncate">{file.name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                          </div>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="shrink-0 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20"
-                          onClick={() => removeFile(index)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
               </div>
             </div>
 
-            <DialogFooter className="p-8 bg-slate-50/50 border-t border-slate-100 dark:border-slate-800 gap-3 sm:gap-0 dark:bg-slate-900/50">
-              <Button variant="ghost" onClick={() => setIsDialogOpen(false)} className="rounded-2xl h-14 px-8 font-bold text-slate-500 dark:text-slate-400 hover:bg-white dark:bg-slate-900">{t.common.cancel}</Button>
-              <Button onClick={handleSubmit} className="rounded-2xl h-14 px-12 bg-slate-900 text-white hover:bg-slate-800 font-bold shadow-xl shadow-slate-900/20 transform active:scale-95 transition-all">{t.requestsPage.submitNow}</Button>
+            <DialogFooter className="p-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800 gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)} className="rounded-xl h-9 text-xs">{t.common.cancel}</Button>
+              <Button size="sm" onClick={handleSubmit} className="rounded-xl h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">{t.requestsPage.submitNow}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Bento Stats for Requests */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard icon={Inbox} label={t.requestsPage.allRequests} value={requests.length} gradient="bg-gradient-to-br from-indigo-500 to-indigo-700" />
-        <StatCard icon={Hourglass} label={t.requestsPage.processingTab} value={requests.filter(r => r.status === 'pending').length} gradient="bg-gradient-to-br from-amber-400 to-orange-500" />
-        <StatCard icon={CheckCircle} label={t.requestsPage.approvedTab} value={requests.filter(r => r.status === 'approved').length} gradient="bg-gradient-to-br from-emerald-400 to-teal-600" />
-        <StatCard icon={XCircle} label={t.requestsPage.rejectedTab} value={requests.filter(r => r.status === 'rejected').length} gradient="bg-gradient-to-br from-red-500 to-rose-600" />
+      {/* Summary Stat Cards — Compact 4 Columns with Semantic Colors */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        <StatCard
+          icon={Inbox}
+          label={t.requestsPage.allRequests}
+          value={requests.length}
+          accentColor="text-blue-600 dark:text-blue-400"
+          iconBg="bg-blue-500/10"
+          subtext="รายการทั้งหมด"
+        />
+        <StatCard
+          icon={Hourglass}
+          label={t.requestsPage.processingTab}
+          value={requests.filter(r => r.status === 'pending').length}
+          accentColor="text-amber-600 dark:text-amber-400"
+          iconBg="bg-amber-500/10"
+          subtext="รอเจ้าหน้าที่ตรวจสอบ"
+        />
+        <StatCard
+          icon={CheckCircle}
+          label={t.requestsPage.approvedTab}
+          value={requests.filter(r => r.status === 'approved' || r.status === 'completed').length}
+          accentColor="text-emerald-600 dark:text-emerald-400"
+          iconBg="bg-emerald-500/10"
+          subtext="เสร็จสมบูรณ์"
+        />
+        <StatCard
+          icon={XCircle}
+          label={t.requestsPage.rejectedTab}
+          value={requests.filter(r => r.status === 'rejected').length}
+          accentColor="text-rose-600 dark:text-rose-400"
+          iconBg="bg-rose-500/10"
+          subtext="ไม่ผ่านการอนุมัติ"
+        />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 pt-4">
-        <div className="lg:col-span-2 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h3 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t.requestsPage.trackStatus}</h3>
-            <Button variant="ghost" className="text-slate-500 hover:text-indigo-600 font-bold dark:text-slate-300" onClick={() => setRequests((current) => [...current].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))}>
-              {t.requestsPage.viewHistory} <ArrowRight className="w-4 h-4 ml-2" />
+      {/* Main Grid: Request Tracking (68%) & Quick Actions / Support (32%) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Left Column: Request Tracking Area (8 of 12 cols => ~67%) */}
+        <div className="lg:col-span-8 space-y-4">
+          <div className="flex items-center justify-between px-1">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t.requestsPage.trackStatus}</h2>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-slate-500 hover:text-blue-600 text-xs font-semibold h-8"
+              onClick={() => setRequests((current) => [...current].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))}
+            >
+              {t.requestsPage.viewHistory} <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Button>
           </div>
 
-          <div className="space-y-5">
+          <div className="space-y-3.5">
             {requests.length === 0 && (
-              <div className="rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 p-10 text-center">
-                <Inbox className="w-10 h-10 mx-auto text-slate-400 mb-3" />
-                <h3 className="font-bold text-slate-800 dark:text-slate-100">ยังไม่มีคำร้อง</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงฐานข้อมูลจริง</p>
+              <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
+                <Inbox className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">ยังไม่มีคำร้อง</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงระบบ</p>
               </div>
             )}
-            {requests.map((req, idx) => (
-              <motion.div
-                key={req.id}
-                variants={itemVariants}
-                className="group bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-8 border border-white/60 dark:border-slate-800/60 shadow-sm hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden relative dark:bg-slate-900/50"
-              >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                <div className="flex flex-col md:flex-row gap-8 relative z-10">
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center gap-3 mb-4">
-                      <Badge variant="secondary" className="rounded-xl bg-indigo-50 text-indigo-600 font-bold border-0 px-3 py-1 text-[10px] uppercase tracking-wide dark:text-slate-300">
+            {requests.map((req) => {
+              const steps = [
+                { id: 1, label: t.requestsPage.step1 },
+                { id: 2, label: t.requestsPage.step2 },
+                { id: 3, label: t.requestsPage.step3 },
+                { id: 4, label: t.requestsPage.step4 }
+              ];
+
+              return (
+                <motion.div
+                  key={req.id}
+                  variants={itemVariants}
+                  whileHover={{ y: -1 }}
+                  transition={{ duration: 0.15 }}
+                  className="bg-white dark:bg-[#0c1222] rounded-2xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all duration-200"
+                >
+                  {/* Card Header: Type Badge + Status + Date */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-semibold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2.5 py-0.5 rounded-md border border-blue-200/50 dark:border-blue-800/50">
                         {req.type}
-                      </Badge>
-                      <Badge variant="outline" className={`rounded-xl font-black flex items-center border-0 px-4 py-1 text-xs ${getStatusColor(req.status)}`}>
+                      </span>
+                      <Badge variant="outline" className={`font-semibold flex items-center border text-[11px] px-2.5 py-0.5 rounded-md ${getStatusColor(req.status)}`}>
                         {getStatusIcon(req.status)} {getStatusText(req.status)}
                       </Badge>
-                      <span className="text-xs font-bold text-slate-400 ml-auto flex items-center gap-1.5 bg-slate-50 dark:bg-slate-950 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">
-                        <Calendar className="w-3.5 h-3.5" /> {new Date(req.createdAt).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </span>
                     </div>
 
-                    <h4 className="text-2xl font-bold text-slate-900 dark:text-white mb-3 group-hover:text-indigo-600 transition-colors tracking-tight">{req.title}</h4>
-                    <p className="text-slate-500 leading-relaxed mb-8 text-base font-medium dark:text-slate-400">{req.description}</p>
+                    <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                      <Calendar className="w-3.5 h-3.5" />
+                      {new Date(req.createdAt).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </span>
+                  </div>
 
-                    {/* Premium Step Visualizer */}
-                    <div className="bg-slate-50/80 p-6 rounded-[2rem] border border-slate-100 dark:border-slate-800 mb-6 dark:bg-slate-900/50">
-                      <div className="flex justify-between text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 px-2">
-                        <span className={req.step >= 1 ? 'text-indigo-600' : ''}>{t.requestsPage.step1}</span>
-                        <span className={req.step >= 2 ? 'text-indigo-600' : ''}>{t.requestsPage.step2}</span>
-                        <span className={req.step >= 3 ? 'text-indigo-600' : ''}>{t.requestsPage.step3}</span>
-                        <span className={req.step >= 4 ? 'text-indigo-600' : ''}>{t.requestsPage.step4}</span>
-                      </div>
-                      <div className="relative h-2.5 bg-slate-200/50 rounded-full overflow-hidden shadow-inner">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: `${(req.step / req.totalSteps) * 100}%` }}
-                          transition={{ duration: 1.5, ease: "easeOut" }}
-                          className={`absolute top-0 left-0 h-full rounded-full transition-all duration-1000 shadow-[0_0_10px_rgba(79,70,229,0.3)] ${req.status === 'rejected' ? 'bg-gradient-to-r from-red-400 to-rose-500' :
-                            req.status === 'approved' ? 'bg-gradient-to-r from-emerald-400 to-teal-500' : 'bg-gradient-to-r from-indigo-500 to-purple-600'
-                            }`}
-                        />
-                      </div>
-                    </div>
+                  {/* Title & Description */}
+                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 mb-1.5 tracking-tight">
+                    {req.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-4 line-clamp-2">
+                    {req.description}
+                  </p>
 
-                    {req.documents.length > 0 && (
-                      <div className="flex flex-wrap gap-2">
-                        {req.documents.map((doc, i) => (
-                          <div key={i} className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 text-xs font-bold text-slate-600 dark:text-slate-400 cursor-pointer hover:bg-slate-50 shadow-sm transition-all hover:scale-105">
-                            <FileText className="w-3.5 h-3.5 text-indigo-500 dark:text-slate-400" /> {doc}
+                  {/* Modern Stepper / Timeline Visualizer */}
+                  <div className="bg-slate-50/70 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/70 mb-4">
+                    <div className="grid grid-cols-4 gap-2 text-center relative">
+                      {steps.map((st, idx) => {
+                        const isCompleted = req.status === 'approved' || req.status === 'completed' || req.step > st.id;
+                        const isCurrent = req.step === st.id && req.status === 'pending';
+                        const isRejected = req.status === 'rejected' && req.step === st.id;
+
+                        return (
+                          <div key={st.id} className="flex flex-col items-center relative">
+                            {/* Stepper Dot */}
+                            <div className={`w-6 h-6 rounded-full flex items-center justify-center font-mono text-[10px] font-bold mb-1.5 transition-colors ${
+                              isCompleted
+                                ? 'bg-emerald-500 text-white'
+                                : isCurrent
+                                ? 'bg-blue-600 text-white ring-2 ring-blue-500/20'
+                                : isRejected
+                                ? 'bg-rose-500 text-white'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-400'
+                            }`}>
+                              {isCompleted ? '✓' : st.id}
+                            </div>
+                            <span className={`text-[10px] font-medium leading-tight line-clamp-1 ${
+                              isCompleted
+                                ? 'text-emerald-600 dark:text-emerald-400 font-semibold'
+                                : isCurrent
+                                ? 'text-blue-600 dark:text-blue-400 font-semibold'
+                                : isRejected
+                                ? 'text-rose-600 dark:text-rose-400 font-semibold'
+                                : 'text-slate-400'
+                            }`}>
+                              {st.label}
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    )}
+                        );
+                      })}
+                    </div>
                   </div>
 
-                  <div className="flex md:flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-slate-100 dark:border-slate-800 pt-6 md:pt-0 md:pl-8 md:w-40 shrink-0">
-                    <Button variant="outline" className="flex-1 rounded-2xl h-12 text-sm font-bold border-slate-200 dark:border-slate-700 hover:text-indigo-600 hover:border-indigo-200 hover:bg-slate-50 transition-all shadow-sm dark:text-slate-300 dark:bg-slate-800" onClick={() => openRequestDetails(req)}>
-                      {t.common.details}
-                    </Button>
-                    {canReviewRequest && req.status === 'pending' && (
-                      <Button className="flex-1 rounded-2xl h-12 text-sm font-bold bg-emerald-600 hover:bg-emerald-700" onClick={() => handleUpdateRequestStatus(req, 'approved')}>
-                        {t.requestsPage.approved}
+                  {/* Footer Action Bar */}
+                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                    <div className="flex items-center gap-2">
+                      {req.documents.length > 0 && (
+                        <div className="flex items-center gap-1.5 text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                          <FileText className="w-3.5 h-3.5 text-blue-500" />
+                          <span>{req.documents.length} เอกสารแนบ</span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {canReviewRequest && req.status === 'pending' && (
+                        <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg" onClick={() => handleUpdateRequestStatus(req, 'approved')}>
+                          {t.requestsPage.approved}
+                        </Button>
+                      )}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-lg h-8 text-xs border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium"
+                        onClick={() => openRequestDetails(req)}
+                      >
+                        {t.common.details} <ChevronRight className="w-3.5 h-3.5 ml-1" />
                       </Button>
-                    )}
-                    {canReviewRequest && (req.status === 'approved' || req.status === 'pending') && (
-                      <Button variant="outline" className="flex-1 rounded-2xl h-12 text-sm font-bold border-blue-200 text-blue-600 hover:bg-blue-50 dark:bg-slate-800" onClick={() => handleUpdateRequestStatus(req, 'completed')}>
-                        {language === 'th' ? 'ปิดงาน' : 'Complete'}
-                      </Button>
-                    )}
-                    {req.status === 'pending' && (
-                      <Button variant="ghost" className="flex-1 rounded-2xl h-12 text-sm font-bold text-slate-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-400 dark:bg-slate-800" onClick={() => handleCancelRequest(req)}>
-                        {t.common.cancel}
-                      </Button>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              );
+            })}
           </div>
         </div>
 
-        <div className="space-y-8">
-          {/* Quick Access Grid - Bento Style */}
-          <div className="grid grid-cols-2 gap-4">
-            {requestTypes.slice(0, 4).map((type, idx) => (
-              <motion.div
-                key={type.id}
-                variants={itemVariants}
-                whileHover={{ y: -5, scale: 1.05 }}
-                onClick={() => {
-                  if (canCreateRequest) {
-                    setFormData((current) => ({ ...current, type: type.name }));
-                    setIsDialogOpen(true);
-                  } else {
-                    toast.info(type.name);
-                  }
-                }}
-                className="bg-white/60 backdrop-blur-xl p-5 rounded-3xl shadow-sm border border-white/60 dark:border-slate-800/60 flex flex-col items-center text-center gap-3 hover:shadow-xl transition-all cursor-pointer group dark:bg-slate-900/50"
-              >
-                <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-300 ${type.color} bg-opacity-40 group-hover:scale-110 shadow-sm group-hover:shadow-md`}>
-                  {type.icon}
-                </div>
-                <span className="font-bold text-slate-700 dark:text-slate-300 text-xs tracking-tight">{type.name}</span>
-              </motion.div>
-            ))}
+        {/* Right Column: Quick Actions + Support Center + FAQ (4 of 12 cols => ~33%) */}
+        <div className="lg:col-span-4 space-y-4">
+          {/* Quick Actions (บริการที่ใช้บ่อย) */}
+          <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">บริการที่ใช้บ่อย</h3>
+            <div className="grid grid-cols-2 gap-2.5">
+              {requestTypes.slice(0, 4).map((type) => (
+                <motion.div
+                  key={type.id}
+                  whileHover={{ y: -2 }}
+                  transition={{ duration: 0.12 }}
+                  onClick={() => {
+                    if (canCreateRequest) {
+                      setFormData((current) => ({ ...current, type: type.name }));
+                      setIsDialogOpen(true);
+                    } else {
+                      toast.info(type.name);
+                    }
+                  }}
+                  className="bg-slate-50/70 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800/70 flex flex-col items-center text-center gap-2 hover:border-blue-300 dark:hover:border-blue-800/60 transition-all cursor-pointer group"
+                >
+                  <div className={`w-9 h-9 rounded-xl flex items-center justify-center ${type.color} bg-opacity-30 group-hover:scale-105 transition-transform`}>
+                    {type.icon}
+                  </div>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-xs tracking-tight line-clamp-1">{type.name}</span>
+                </motion.div>
+              ))}
+            </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-indigo-950 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-48 h-48 bg-indigo-500/10 rounded-full blur-[80px]" />
-            <div className="absolute bottom-10 left-0 w-32 h-32 bg-purple-500/10 rounded-full blur-[60px]" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md border border-white/10 flex items-center justify-center dark:bg-slate-900/50">
-                  <Info className="w-6 h-6 text-indigo-300" />
-                </div>
-                <h3 className="font-bold text-xl tracking-tight">{t.requestsPage.helpCenter}</h3>
+          {/* Support Center (ศูนย์บริการช่วยเหลือ) */}
+          <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <div className="flex items-center gap-2.5 mb-2 px-1">
+              <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
+                <Info className="w-4 h-4" />
               </div>
-              <p className="text-slate-400 text-sm mb-8 leading-relaxed font-medium">{t.requestsPage.helpDesc}</p>
+              <div>
+                <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100">{t.requestsPage.helpCenter}</h3>
+                <p className="text-[11px] text-slate-400">ติดต่อเจ้าหน้าที่หากพบปัญหา</p>
+              </div>
+            </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50" onClick={() => window.location.href = 'tel:053942123'}>
-                  <div className="w-12 h-12 rounded-2xl bg-white/10 text-indigo-300 flex items-center justify-center font-black shadow-lg group-hover:scale-110 transition-transform dark:bg-slate-900/50">
+            <div className="space-y-2 mt-3">
+              <div
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                onClick={() => window.location.href = 'tel:053942123'}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-mono font-bold text-[10.5px]">
                     CS
                   </div>
                   <div>
-                    <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">Contact Support</div>
-                    <div className="font-bold text-base">053-942123</div>
+                    <div className="text-[10px] text-slate-400 font-mono">CONTACT SUPPORT</div>
+                    <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">053-942123</div>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 p-4 rounded-3xl bg-white/5 backdrop-blur-sm border border-white/5 hover:bg-white/10 transition-colors cursor-pointer group dark:bg-slate-900/50" onClick={() => toast.info('LINE Official: @diicamt')}>
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-black shadow-lg group-hover:scale-110 transition-transform">
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+              </div>
+
+              <div
+                className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
+                onClick={() => toast.info('LINE Official: @diicamt')}
+              >
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-[10.5px]">
                     Li
                   </div>
                   <div>
-                    <div className="text-slate-400 text-[10px] font-black uppercase tracking-widest mb-0.5">LINE Official</div>
-                    <div className="font-bold text-base">@diicamt</div>
+                    <div className="text-[10px] text-slate-400 font-mono">LINE OFFICIAL</div>
+                    <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">@diicamt</div>
                   </div>
                 </div>
+                <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
               </div>
-
-              <Button className="w-full mt-8 rounded-2xl h-14 bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 font-bold transform active:scale-95 transition-all" onClick={() => navigate('/messages')}>{t.requestsPage.chatStaff}</Button>
             </div>
+
+            <Button
+              size="sm"
+              className="w-full mt-3 rounded-xl h-9 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 text-xs font-semibold transition-all"
+              onClick={() => navigate('/messages')}
+            >
+              {t.requestsPage.chatStaff}
+            </Button>
           </div>
 
-          <div className="bg-white/40 backdrop-blur-xl rounded-[2.5rem] border border-white/60 dark:border-slate-800/60 shadow-sm p-8 dark:bg-slate-900/50">
-            <h3 className="font-black text-slate-900 dark:text-white mb-6 text-sm uppercase tracking-[0.15em] flex items-center gap-2">
-              <div className="w-1 h-4 bg-indigo-500 rounded-full" />
+          {/* Interactive FAQ (คำถามที่พบบ่อย) */}
+          <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
+            <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
               {t.requestsPage.faq}
             </h3>
-            <div className="space-y-2">
-              {(language === 'en' ? ['How many days does a certificate request take?', 'Steps for leave of absence', 'How to reset password?', 'Download form G.01'] : ['การขอใบรับรองใช้เวลากี่วัน?', 'ขั้นตอนการลาพักการศึกษา', 'ลืมรหัสผ่านทำอย่างไร?', 'ดาวน์โหลดแบบฟอร์ม ก.01']).map((q, i) => (
-                <div key={i} className="flex items-center justify-between p-4 hover:bg-white dark:hover:bg-slate-800 rounded-2xl cursor-pointer group transition-all shadow-none hover:shadow-md border border-transparent hover:border-slate-100 dark:bg-slate-900 dark:border-slate-700" onClick={() => toast.info(q)}>
-                  <span className="text-sm text-slate-600 dark:text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white font-medium">{q}</span>
-                  <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-all group-hover:translate-x-1 dark:text-slate-400" />
+            <div className="space-y-1">
+              {(language === 'en'
+                ? ['How many days does a certificate request take?', 'Steps for leave of absence', 'How to reset password?', 'Download form G.01']
+                : ['การขอใบรับรองใช้เวลากี่วัน?', 'ขั้นตอนการลาพักการศึกษา', 'ลืมรหัสผ่านทำอย่างไร?', 'ดาวน์โหลดแบบฟอร์ม คำร้อง ก.01']
+              ).map((q, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-all"
+                  onClick={() => toast.info(q)}
+                >
+                  <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-medium">
+                    {q}
+                  </span>
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
                 </div>
               ))}
             </div>
-            <Button variant="ghost" className="w-full mt-4 text-xs font-bold text-slate-400 rounded-xl" onClick={() => toast.info(language === 'th' ? 'FAQ ทั้งหมดจะเปิดในศูนย์ช่วยเหลือเมื่อเชื่อมต่อ knowledge base แล้ว' : 'Full FAQ will open after the knowledge base is connected.')}>{t.requestsPage.viewAllFAQ}</Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full mt-2 text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-7"
+              onClick={() => toast.info(language === 'th' ? 'FAQ ทั้งหมดจะเปิดในศูนย์ช่วยเหลือ' : 'Full FAQ will open in Help Center.')}
+            >
+              {t.requestsPage.viewAllFAQ}
+            </Button>
           </div>
         </div>
       </div>

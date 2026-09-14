@@ -248,7 +248,7 @@ export default function SkillsRequirement() {
           <span>{tr.subtitle}</span>
         </motion.div>
         <div className="flex items-end justify-between">
-          <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             {tr.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">{tr.titleHighlight}</span>
           </motion.h1>
           <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
@@ -260,19 +260,19 @@ export default function SkillsRequirement() {
       {/* Stats */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { icon: Target, label: tr.totalRequirements, value: requirements.length.toString(), gradient: 'from-indigo-500 to-purple-500', shadow: 'shadow-indigo-200' },
-          { icon: Briefcase, label: tr.activePositions, value: requirements.reduce((s, r) => s + r.positions, 0).toString(), gradient: 'from-blue-500 to-cyan-500', shadow: 'shadow-blue-200' },
-          { icon: Users, label: tr.matchedStudents, value: requirements.reduce((s, r) => s + r.matchedStudents, 0).toString(), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
-          { icon: Star, label: tr.avgMatch, value: `${requirements.length ? Math.round(requirements.reduce((s, r) => s + r.avgMatch, 0) / requirements.length) : 0}%`, gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
+          { icon: Target, label: tr.totalRequirements, value: requirements.length.toString(), gradient: '', shadow: '' },
+          { icon: Briefcase, label: tr.activePositions, value: requirements.reduce((s, r) => s + r.positions, 0).toString(), gradient: '', shadow: '' },
+          { icon: Users, label: tr.matchedStudents, value: requirements.reduce((s, r) => s + r.matchedStudents, 0).toString(), gradient: '', shadow: '' },
+          { icon: Star, label: tr.avgMatch, value: `${requirements.length ? Math.round(requirements.reduce((s, r) => s + r.avgMatch, 0) / requirements.length) : 0}%`, gradient: '', shadow: '' },
         ].map((stat, i) => (
-          <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+          <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
+            
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
-                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
+                <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
               </div>
-              <div className="text-3xl font-bold">{stat.value}</div>
+              <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
             </div>
           </motion.div>
         ))}
@@ -284,7 +284,7 @@ export default function SkillsRequirement() {
           const priority = getPriorityConfig(req.priority);
           return (
             <motion.div key={req.id} variants={itemVariants} whileHover={{ y: -4 }}
-              className="bg-white border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-100/50 hover:shadow-xl transition-all dark:bg-slate-900/50">
+              className="bg-white border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-100/50 hover:shadow-xl transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200">
@@ -318,7 +318,7 @@ export default function SkillsRequirement() {
               </div>
 
               {/* Match stats */}
-              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/30 dark:border-indigo-900/30 mb-4">
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 mb-4">
                 <div className="flex-1">
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{tr.matchScore}</div>
                   <Progress value={req.avgMatch} className="h-2" />
@@ -361,12 +361,16 @@ export default function SkillsRequirement() {
         })}
         {isLoading && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'กำลังโหลด Requirements...' : 'Loading requirements...'}
+            {language === 'th' ? 'เธเธณเธฅเธฑเธเนเธซเธฅเธ” Requirements...' : 'Loading requirements...'}
           </div>
         )}
         {!isLoading && requirements.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'ยังไม่มี Requirement' : 'No requirements yet.'}
+<<<<<<< Updated upstream
+            {language === 'th' ? 'ยังไม่มี Requirement จาก API' : 'No requirements from API yet.'}
+=======
+            {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธต Requirement เธเธฒเธ API' : 'No requirements from API yet.'}
+>>>>>>> Stashed changes
           </div>
         )}
       </div>
@@ -376,7 +380,7 @@ export default function SkillsRequirement() {
         <DialogContent className="sm:max-w-[550px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'แก้ไข Requirement' : 'Edit Requirement') : tr.createNew}
+              <Target className="w-5 h-5 text-indigo-500 dark:text-slate-400" /> {editingReq ? (language === 'th' ? 'เนเธเนเนเธ Requirement' : 'Edit Requirement') : tr.createNew}
             </DialogTitle>
             <DialogDescription>{tr.description}</DialogDescription>
           </DialogHeader>
@@ -481,7 +485,7 @@ export default function SkillsRequirement() {
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{language === 'th' ? match.name : match.nameEn}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} • {t.studentsPage?.year || 'Year'} {match.year}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} โ€ข {t.studentsPage?.year || 'Year'} {match.year}</div>
                   <div className="flex gap-1 mt-1">
                     {match.skills.map((s, si) => (
                       <Badge key={si} variant="outline" className="text-[10px] px-1.5 py-0">{s}</Badge>
@@ -496,7 +500,7 @@ export default function SkillsRequirement() {
             ))}
             {matches.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {language === 'th' ? 'ยังไม่มีผลจับคู่' : 'No match results yet.'}
+                {language === 'th' ? 'ยังไม่มีผลจับคู่จาก API' : 'No match results from API yet.'}
               </div>
             )}
           </div>

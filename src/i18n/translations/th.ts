@@ -60,13 +60,12 @@ export const th = {
     activities: 'กิจกรรม & สะสมแต้ม',
     portfolio: 'Portfolio & CV',
     internships: 'ฝึกงาน',
-    applicationHistory: 'ประวัติการสมัครงาน',
     requests: 'คำร้อง/ฟอร์ม',
     messages: 'ข้อความ',
     settings: 'ตั้งค่า',
     // Lecturer
     teachingSchedule: 'ตารางสอน',
-    adviseeStudents: 'นักศึกษาในที่ปรึกษา',
+    adviseeStudents: 'อาจารย์ที่ปรึกษา',
     courseManagement: 'จัดการรายวิชา',
     attendanceBehavior: 'การเข้าเรียน/พฤติกรรม',
     grading: 'ตัดเกรด',
@@ -1569,5 +1568,7 @@ export const th = {
     wednesday: 'พุธ',
     thursday: 'พฤหัสบดี',
     friday: 'ศุกร์',
+    saturday: 'เสาร์',
+    sunday: 'อาทิตย์',
   },
 };

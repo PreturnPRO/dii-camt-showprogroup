@@ -338,20 +338,16 @@ export default function ActivitiesManagement() {
     const cancelledCount = activities.filter((a) => a.status === 'cancelled').length;
 
     const renderStatusBadge = (status: string) => (
-        <Badge
-            variant="outline"
-            className={`rounded-xl text-xs px-2.5 py-1 ${
-                status === 'completed'
-                    ? 'border-purple-200 text-purple-700 bg-purple-50 dark:bg-purple-950/40 dark:text-purple-300'
-                    : status === 'cancelled'
-                    ? 'border-red-200 text-red-600 bg-red-50 dark:bg-red-950/40 dark:text-red-300'
-                    : status === 'active' || status === 'ongoing'
-                    ? 'border-blue-200 text-blue-600 bg-blue-50 dark:bg-blue-950/40 dark:text-blue-300'
-                    : status === 'pending' || status === 'draft'
-                    ? 'border-amber-200 text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300'
-                    : 'border-emerald-200 text-emerald-600 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300'
-            }`}
-        >
+        <Badge variant="outline" className={`rounded-xl text-xs ${status === 'completed'
+            ? 'border-slate-200 text-slate-500 bg-slate-50'
+            : status === 'cancelled'
+                ? 'border-red-200 text-red-600 bg-red-50'
+                : 'border-emerald-200 text-emerald-600 bg-emerald-50'
+<<<<<<< Updated upstream
+            } dark:bg-slate-900/50 dark:text-slate-300`}>
+=======
+            } dark:text-slate-300`}>
+>>>>>>> Stashed changes
             {statusLabel(status)}
         </Badge>
     );
@@ -365,117 +361,61 @@ export default function ActivitiesManagement() {
                         <Activity className="w-4 h-4 text-purple-500" />
                         <span>{t.activitiesManagementPage.subtitle}</span>
                     </motion.div>
+<<<<<<< Updated upstream
                     <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                        {t.activitiesManagementPage.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.activitiesManagementPage.titleHighlight}</span>
+                        {t.activitiesManagementPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.activitiesManagementPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
                         {t.activitiesManagementPage.desc}
                     </motion.p>
                 </div>
-
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex flex-wrap items-center gap-3">
-                    <div className="relative w-full sm:w-64">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                        <Input
-                            placeholder={t.activitiesManagementPage.searchPlaceholder}
-                            className="pl-10 rounded-2xl bg-white/80 border-slate-200 dark:border-slate-800 dark:bg-slate-900/50"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                    <Button
-                        onClick={handleOpenCreate}
-                        className="rounded-2xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg shadow-purple-500/20"
-                    >
-                        <Plus className="w-4 h-4 mr-2" />
-                        {t.activitiesManagementPage.createBtn}
-                    </Button>
+                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative w-full md:w-72">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                    <Input placeholder={t.activitiesManagementPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700 dark:bg-slate-900/50" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                 </motion.div>
             </div>
 
             {/* Stat Cards */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {[
-                    { key: 'all', icon: Activity, label: t.activitiesManagementPage.allTab, value: String(activities.length), gradient: 'from-slate-700 to-slate-900', shadow: 'shadow-slate-200' },
-                    { key: 'pending', icon: Clock, label: t.activitiesManagementPage.pendingTab, value: String(pendingCount), gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
-                    { key: 'approved', icon: CheckCircle, label: t.activitiesManagementPage.approvedTab, value: String(approvedCount), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
-                    { key: 'active', icon: Calendar, label: t.activitiesManagementPage.inProgressTab, value: String(activeCount), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
-                    { key: 'completed', icon: Star, label: t.activitiesManagementPage.completedTab, value: String(completedCount), gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-                ].map((stat) => (
-                    <motion.div
-                        key={stat.key}
-                        whileHover={{ scale: 1.02 }}
-                        onClick={() => setSelectedTab(stat.key)}
-                        className={`cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow} ${
-                            selectedTab === stat.key ? 'ring-4 ring-purple-400 ring-offset-2 dark:ring-offset-slate-950' : ''
-                        }`}
-                    >
+                    { icon: Clock, label: t.activitiesManagementPage.pendingTab, value: String(activities.filter((activity) => activity.status === 'pending' || activity.status === 'draft').length), gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
+                    { icon: CheckCircle, label: t.activitiesManagementPage.approvedTab, value: String(activities.filter((activity) => activity.status === 'upcoming' || activity.status === 'active').length), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
+                    { icon: Calendar, label: t.activitiesManagementPage.inProgressTab, value: String(activities.filter((activity) => activity.status === 'active' || activity.status === 'ongoing').length), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
+                    { icon: Star, label: t.activitiesManagementPage.completedTab, value: String(activities.filter((activity) => activity.status === 'completed').length), gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
+                ].map((stat, i) => (
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
                         <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                    <stat.icon className="w-4 h-4" />
-                                </div>
+                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
             </motion.div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-                {[
-                    { id: 'all', label: `${t.activitiesManagementPage.allTab} (${activities.length})` },
-                    { id: 'pending', label: `${t.activitiesManagementPage.pendingTab} (${pendingCount})` },
-                    { id: 'approved', label: `${t.activitiesManagementPage.approvedTab} (${approvedCount})` },
-                    { id: 'active', label: `${t.activitiesManagementPage.inProgressTab} (${activeCount})` },
-                    { id: 'completed', label: `${t.activitiesManagementPage.completedTab} (${completedCount})` },
-                    { id: 'cancelled', label: `${t.activitiesManagementPage.cancelledTab} (${cancelledCount})` },
-                ].map((tab) => (
-                    <Button
-                        key={tab.id}
-                        variant={selectedTab === tab.id ? 'default' : 'outline'}
-                        onClick={() => setSelectedTab(tab.id)}
-                        className={`rounded-2xl px-5 text-sm transition-all ${
-                            selectedTab === tab.id
-                                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
-                                : 'bg-white/70 dark:bg-slate-900/50 dark:border-slate-800'
-                        }`}
-                    >
-                        {tab.label}
-                    </Button>
-                ))}
-            </div>
-
-            {/* Activities Main List */}
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50 space-y-4">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <Activity className="w-5 h-5 text-purple-600" />
-                        รายการกิจกรรม ({filteredActivities.length})
-                    </h3>
-                </div>
-
-                {isLoading ? (
-                    <div className="p-12 text-center text-slate-400">กำลังโหลดข้อมูลกิจกรรม...</div>
-                ) : filteredActivities.length === 0 ? (
-                    <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50/70 p-12 text-center text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                        ไม่พบข้อมูลกิจกรรมตามเงื่อนไขที่เลือก
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                    <div className="mb-5">
+                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                            <Clock className="w-5 h-5 text-amber-500" /> {t.activitiesManagementPage.newActivityRequests}
+                        </h3>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">{t.activitiesManagementPage.pendingDesc}</p>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 gap-4">
-                        {filteredActivities.map((act) => (
-                            <motion.div
-                                key={act.id}
-                                whileHover={{ y: -2 }}
-                                className="p-6 rounded-3xl border border-slate-100 dark:border-slate-800/80 bg-white/90 hover:shadow-lg transition-all dark:bg-slate-900/80"
-                            >
-                                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                    <div className="space-y-3">
+                        {pendingActivities.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                ไม่มีกิจกรรมรออนุมัติ
+                            </div>
+                        )}
+                        {pendingActivities.map((act) => (
+                            <motion.div key={act.id} whileHover={{ x: 4 }} className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/80 hover:shadow-md transition-all dark:bg-slate-900/50">
+                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0 mt-1">
-                                            <Activity className="w-7 h-7" />
+                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-200">
+                                            <Activity className="w-6 h-6" />
                                         </div>
                                         <div className="space-y-1.5">
                                             <div className="flex flex-wrap items-center gap-2">
@@ -498,17 +438,9 @@ export default function ActivitiesManagement() {
                                             </div>
                                         </div>
                                     </div>
-
-                                    {/* Action Buttons */}
-                                    <div className="flex flex-wrap items-center gap-2 border-t lg:border-t-0 pt-4 lg:pt-0 border-slate-100 dark:border-slate-800 justify-end">
-                                        <Button
-                                            size="sm"
-                                            variant="outline"
-                                            className="rounded-xl text-slate-700 dark:text-slate-300"
-                                            onClick={() => setViewingActivity(act)}
-                                        >
-                                            <Eye className="w-4 h-4 mr-1.5" />
-                                            {t.activitiesManagementPage.viewDetailsBtn}
+                                    <div className="flex flex-wrap gap-2">
+                                        <Button className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200" onClick={() => handleActivityStatus(act.id, 'upcoming')}>
+                                            <CheckCircle className="w-4 h-4 mr-2" /> {t.activitiesManagementPage.approveBtn}
                                         </Button>
 
                                         <Button
@@ -596,201 +528,14 @@ export default function ActivitiesManagement() {
                 )}
             </motion.div>
 
-            {/* Create / Edit Activity Modal */}
-            <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-                <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-                    <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                            <Activity className="w-6 h-6 text-purple-600" />
-                            {editingId ? t.activitiesManagementPage.editModalTitle : t.activitiesManagementPage.createModalTitle}
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-500">
-                            กรอกรายละเอียดกิจกรรมที่ต้องการ{editingId ? 'แก้ไข' : 'สร้างใหม่'}ในระบบ
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <form onSubmit={handleSaveForm} className="space-y-4 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="titleThai">{t.activitiesManagementPage.titleThaiLabel} *</Label>
-                                <Input
-                                    id="titleThai"
-                                    required
-                                    placeholder="เช่น เวิร์กชอปการพัฒนา AI สำหรับอนาคต"
-                                    value={formData.titleThai}
-                                    onChange={(e) => setFormData({ ...formData, titleThai: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="title">{t.activitiesManagementPage.titleEngLabel} *</Label>
-                                <Input
-                                    id="title"
-                                    required
-                                    placeholder="e.g. AI Development Workshop"
-                                    value={formData.title}
-                                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <Label htmlFor="description">{t.activitiesManagementPage.descriptionLabel} *</Label>
-                            <Textarea
-                                id="description"
-                                required
-                                rows={3}
-                                placeholder="รายละเอียดวัตถุประสงค์ และกิจกรรม..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                className="rounded-xl"
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="type">{t.activitiesManagementPage.typeLabel}</Label>
-                                <Select
-                                    value={formData.type}
-                                    onValueChange={(val) => setFormData({ ...formData, type: val })}
-                                >
-                                    <SelectTrigger id="type" className="rounded-xl">
-                                        <SelectValue placeholder="เลือกประเภท" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="workshop">Workshop / การอบรม</SelectItem>
-                                        <SelectItem value="seminar">Seminar / สัมมนา</SelectItem>
-                                        <SelectItem value="competition">Competition / การแข่งขันทักษะ</SelectItem>
-                                        <SelectItem value="volunteering">Volunteering / จิตอาสา</SelectItem>
-                                        <SelectItem value="academic">Academic / วิชาการ</SelectItem>
-                                        <SelectItem value="general">General / กิจกรรมทั่วไป</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="organizer">{t.activitiesManagementPage.organizerLabel}</Label>
-                                <Input
-                                    id="organizer"
-                                    required
-                                    value={formData.organizer}
-                                    onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="location">{t.activitiesManagementPage.locationLabel}</Label>
-                                <Input
-                                    id="location"
-                                    required
-                                    value={formData.location}
-                                    onChange={(e) => setFormData({ ...formData, location: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="startDate">{t.activitiesManagementPage.startDateLabel}</Label>
-                                <Input
-                                    id="startDate"
-                                    type="datetime-local"
-                                    required
-                                    value={formData.startDate}
-                                    onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="endDate">{t.activitiesManagementPage.endDateLabel}</Label>
-                                <Input
-                                    id="endDate"
-                                    type="datetime-local"
-                                    required
-                                    value={formData.endDate}
-                                    onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="activityHours">{t.activitiesManagementPage.hoursLabel}</Label>
-                                <Input
-                                    id="activityHours"
-                                    type="number"
-                                    min={0}
-                                    value={formData.activityHours}
-                                    onChange={(e) => setFormData({ ...formData, activityHours: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="gamificationPoints">{t.activitiesManagementPage.pointsLabel}</Label>
-                                <Input
-                                    id="gamificationPoints"
-                                    type="number"
-                                    min={0}
-                                    value={formData.gamificationPoints}
-                                    onChange={(e) => setFormData({ ...formData, gamificationPoints: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="maxParticipants">{t.activitiesManagementPage.maxParticipantsLabel}</Label>
-                                <Input
-                                    id="maxParticipants"
-                                    type="number"
-                                    min={1}
-                                    value={formData.maxParticipants}
-                                    onChange={(e) => setFormData({ ...formData, maxParticipants: Number(e.target.value) })}
-                                    className="rounded-xl"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="status">{t.activitiesManagementPage.statusLabel}</Label>
-                                <Select
-                                    value={formData.status}
-                                    onValueChange={(val) => setFormData({ ...formData, status: val })}
-                                >
-                                    <SelectTrigger id="status" className="rounded-xl">
-                                        <SelectValue placeholder="เลือกสถานะ" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="pending">รออนุมัติ (Pending)</SelectItem>
-                                        <SelectItem value="upcoming">อนุมัติแล้ว (Upcoming)</SelectItem>
-                                        <SelectItem value="active">กำลังดำเนินการ (Active)</SelectItem>
-                                        <SelectItem value="completed">เสร็จสิ้น (Completed)</SelectItem>
-                                        <SelectItem value="cancelled">ยกเลิก (Cancelled)</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="registrationStatus">{t.activitiesManagementPage.regStatusLabel}</Label>
-                                <Select
-                                    value={formData.registrationStatus}
-                                    onValueChange={(val) => setFormData({ ...formData, registrationStatus: val })}
-                                >
-                                    <SelectTrigger id="registrationStatus" className="rounded-xl">
-                                        <SelectValue placeholder="สถานะรับสมัคร" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="open">เปิดรับสมัคร (Open)</SelectItem>
-                                        <SelectItem value="closed">ปิดรับสมัคร (Closed)</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
+                        <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-slate-400" /> {t.activitiesManagementPage.approvedActivities}
+                    </h3>
+                    <div className="space-y-3">
+                        {approvedActivities.length === 0 && (
+                            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                ไม่มีกิจกรรมที่อนุมัติแล้ว
                             </div>
                         </div>
 

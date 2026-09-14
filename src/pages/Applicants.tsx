@@ -300,51 +300,73 @@ export default function Applicants() {
     return STAGE_ORDER[idx + 1];
   };
 
-  return (
-    <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 pb-10">
-      <div>
-        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
-          <Users className="inline w-7 h-7 mr-2 mb-1 text-blue-500" />
-          {copy.title}
-        </motion.h1>
-        <motion.p className="mt-2 text-sm text-slate-500 dark:text-slate-400" variants={itemVariants}>
-          {copy.summary(scoped.length, pendingCount, shortlistedCount, acceptedCount)}
-        </motion.p>
-      </div>
+    return (
+        <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
+            {/* Header Section - Bento Grid Style */}
+            <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+                <div>
+                    <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+                    >
+                        <Users className="w-4 h-4 text-blue-500 dark:text-slate-400" />
+                        <span>{visibleApplicants.length} {t.common.person} • {pendingCount} {t.applicants.pending}</span>
+                    </motion.div>
+                    <motion.h1
+<<<<<<< Updated upstream
+                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+=======
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+>>>>>>> Stashed changes
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.1 }}
+                    >
+                        {t.applicants.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-500 to-indigo-500">{t.applicants.titleHighlight}</span>
+                    </motion.h1>
+                </div>
+            </div>
 
-      {jobIdFilter && (
-        <motion.div variants={itemVariants}>
-          <Badge variant="outline" className="pl-3 pr-1 py-1.5 text-sm gap-2 inline-flex items-center">
-            {copy.filteredBy(jobTitleForFilter || jobIdFilter)}
-            <button onClick={clearJobFilter} className="rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 p-0.5">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </Badge>
-        </motion.div>
-      )}
+            {/* Stats Grid - Bento Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden"
+                >
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                                <Users className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-white/90">{t.applicants.totalLabel}</span>
+                        </div>
+                        <div className="text-5xl font-bold tracking-tight">{visibleApplicants.length}</div>
+                        <div className="mt-3 text-sm text-blue-100 flex items-center gap-1">
+                            <Sparkles className="w-4 h-4" />
+                            {t.applicants.inSystem}
+                        </div>
+                    </div>
+                </motion.div>
 
-      <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-3">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-          <Input className="pl-9" placeholder={copy.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-        </div>
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-full sm:w-40"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">{copy.statusAll}</SelectItem>
-            {(['pending', 'reviewed', 'shortlisted', 'interviewed', 'accepted', 'rejected'] as Application['status'][]).map((s) => (
-              <SelectItem key={s} value={s}>{statusLabel(s)}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={sortBy} onValueChange={(v) => setSortBy(v as 'newest' | 'gpa')}>
-          <SelectTrigger className="w-full sm:w-44"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="newest">{copy.sortNewest}</SelectItem>
-            <SelectItem value="gpa">{copy.sortGpa}</SelectItem>
-          </SelectContent>
-        </Select>
-      </motion.div>
+                <motion.div
+                    variants={itemVariants}
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+                >
+                    <div className="relative z-10">
+                        <div className="flex items-center gap-3 mb-4">
+                            <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 transition-colors">
+                                <Clock className="w-6 h-6" />
+                            </div>
+                            <span className="font-medium text-slate-600 dark:text-slate-300">{t.applicants.pending}</span>
+                        </div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{pendingCount}</div>
+                        <div className="mt-3 text-sm text-slate-400">{t.applicants.pendingDesc}</div>
+                    </div>
+                </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div variants={itemVariants}>
@@ -410,25 +432,49 @@ export default function Applicants() {
                     </div>
                   </div>
 
-                  <div>
-                    <h4 className="text-xs font-semibold uppercase text-slate-400 mb-2">{copy.skillsLabel}</h4>
-                    {selected.student?.skills.length ? (
-                      <div className="flex flex-wrap gap-1.5">
-                        {selected.student.skills.map((skill) => (
-                          <Badge key={skill} variant="secondary">{skill}</Badge>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-sm text-slate-400">{copy.noSkills}</p>
-                    )}
-                  </div>
+                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
+                    <CardContent className="pt-6">
+                        <div className="space-y-3">
+                            <AnimatePresence>
+                                {filteredApplicants.map((applicant, index) => (
+                                    <motion.div
+                                        layout
+                                        key={applicant.id}
+                                        initial={{ opacity: 0, x: -20 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0 }}
+                                        transition={{ delay: index * 0.03 }}
+                                        className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-all bg-white dark:bg-slate-900"
+                                    >
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg">
+                                                {applicant.student?.nameThai.charAt(0) || 'N'}
+                                            </div>
+                                            <div>
+                                                <div className="font-semibold">{applicant.student?.nameThai || 'Unknown'}</div>
+                                                <div className="text-sm text-gray-600 dark:text-slate-300">{applicant.jobTitle}</div>
+                                                <div className="text-xs text-gray-400 mt-1">
+                                                    {t.applicants.appliedOn} {new Date(applicant.appliedAt).toLocaleDateString('th-TH')}
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <div className="text-right hidden sm:block">
+                                                <div className="text-sm font-semibold">GPA {applicant.student?.gpa.toFixed(2)}</div>
+                                                <div className="text-xs text-gray-500 dark:text-slate-400">{t.studentProfiles.yearPrefix} {applicant.student?.year}</div>
+                                            </div>
+                                            {getStatusBadge(applicant.status)}
 
-                  <div>
-                    <h4 className="text-xs font-semibold uppercase text-slate-400 mb-2">{copy.coverLetterLabel}</h4>
-                    <p className="text-sm text-slate-600 dark:text-slate-300 whitespace-pre-wrap">
-                      {selected.coverLetter || copy.noCoverLetter}
-                    </p>
-                  </div>
+                                            <div className="flex gap-1">
+                                                <Button size="sm" variant="ghost" onClick={() => setSelectedApplicant(applicant)}><Eye className="w-4 h-4" /></Button>
+                                                <Button
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    onClick={() => applicant.resumeUrl ? window.open(applicant.resumeUrl, '_blank', 'noopener,noreferrer') : toast.info(language === 'th' ? 'ยังไม่มีไฟล์ Resume' : 'No resume file')}
+                                                >
+                                                    <FileText className="w-4 h-4" />
+                                                </Button>
+                                            </div>
 
                   {canManage && (
                     <div>

@@ -1,11 +1,11 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Users, Search, Filter, GraduationCap, AlertTriangle, 
-  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen, Upload
+  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -17,8 +17,6 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { api } from '@/lib/api';
 import { mapStudent } from '@/lib/live-mappers';
 import { asRecord, asString } from '@/lib/live-data';
-import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
-import { buildSafeIdentifier, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { Student } from '@/types';
 import { toast } from 'sonner';
 
@@ -44,35 +42,28 @@ export default function Students() {
   const [students, setStudents] = React.useState<StudentRow[]>([]);
   const [selectedStudent, setSelectedStudent] = React.useState<StudentRow | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-  const [isStudentImportOpen, setIsStudentImportOpen] = React.useState(false);
-
-  const mapStudentResponse = React.useCallback((item: unknown, index: number): StudentRow => {
-    const source = asRecord(item);
-    const user = asRecord(source.user);
-    return {
-      ...mapStudent(item, index),
-      userId: asString(source.userId, asString(user.id)),
-    };
-  }, []);
-
-  const loadStudents = React.useCallback(async () => {
-    setIsLoading(true);
-    try {
-      const response = await api.students.list();
-      setStudents(response.students.map(mapStudentResponse));
-    } finally {
-      setIsLoading(false);
-    }
-  }, [mapStudentResponse]);
 
   React.useEffect(() => {
     let mounted = true;
+
+    // Students only view their advisor/teacher info and do not have permission for the full students list
+    if (user?.role === 'student') {
+      setIsLoading(false);
+      return;
+    }
 
     api.students
       .list()
       .then((response) => {
         if (!mounted) return;
-        setStudents(response.students.map(mapStudentResponse));
+        setStudents(response.students.map((item, index) => {
+          const source = asRecord(item);
+          const user = asRecord(source.user);
+          return {
+            ...mapStudent(item, index),
+            userId: asString(source.userId, asString(user.id)),
+          };
+        }));
       })
       .catch((error) => {
         console.warn('Unable to load students from API', error);
@@ -85,58 +76,7 @@ export default function Students() {
     return () => {
       mounted = false;
     };
-  }, [mapStudentResponse]);
-
-  const buildStudentImportPayload = (row: MappedImportRow) => {
-    const values = row.values;
-    const studentId = values.studentId;
-    const name = values.name;
-    const nameThai = values.nameThai || name;
-    const email =
-      values.email ||
-      `${buildSafeIdentifier(studentId, `student${row.rowNumber}`)}@student.showpro.local`;
-
-    return {
-      name,
-      nameThai,
-      email,
-      phone: values.phone || undefined,
-      password: values.password || undefined,
-      role: 'STUDENT',
-      isActive: true,
-      profile: {
-        studentId,
-        major: values.major || 'Digital Industry Integration',
-        program: values.program || 'bachelor',
-        year: Number(values.year || 1),
-        semester: Number(values.semester || 1),
-        academicYear: values.academicYear,
-        academicStatus: values.academicStatus || 'normal',
-      },
-    };
-  };
-
-  const handleStudentImport = async (rows: MappedImportRow[]) => {
-    const response = await api.users.importStudents(
-      rows.map((row) => ({
-        rowNumber: row.rowNumber,
-        ...asRecord(buildStudentImportPayload(row).profile),
-        name: buildStudentImportPayload(row).name,
-        nameThai: buildStudentImportPayload(row).nameThai,
-        email: buildStudentImportPayload(row).email,
-        phone: buildStudentImportPayload(row).phone,
-        password: buildStudentImportPayload(row).password,
-      })),
-    );
-
-    await loadStudents();
-    toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
-    if (response.failedCount > 0) {
-      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
-    }
-
-    return { successCount: response.createdCount, failureCount: response.failedCount };
-  };
+  }, []);
 
   const filteredStudents = students.filter(student => {
     const matchesSearch = 
@@ -169,13 +109,152 @@ export default function Students() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'normal': return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{t.studentsPage.normal}</Badge>;
-      case 'probation': return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">{t.studentsPage.probation}</Badge>;
-      case 'risk': return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">{t.studentsPage.risk}</Badge>;
-      case 'dropped': return <Badge className="bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400">{t.studentsPage.dismissed}</Badge>;
+      case 'normal': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.normal}</Badge>;
+      case 'probation': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.studentsPage.probation}</Badge>;
+      case 'risk': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.risk}</Badge>;
+      case 'dropped': return <Badge className="bg-gray-100 text-gray-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.dismissed}</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
+
+  // If current user is a student, render the Advisor / Teacher view matching wireframe
+  if (user?.role === 'student') {
+    const primaryAdvisor = {
+      nameThai: 'ผศ.ดร. นรินทร์ พิชยกุล',
+      nameEng: 'Asst. Prof. Dr. Narin Pichayakorn',
+      title: 'อาจารย์ประจำสาขาวิชาสื่อดิจิทัล',
+      department: 'วิทยาลัยศิลปะ สื่อ และเทคโนโลยี (CAMT)',
+      email: 'narin.p@cmu.ac.th',
+      phone: '053-941990 ต่อ 108',
+      office: 'ห้อง CAMT 408 ชั้น 4',
+      officeHours: 'จันทร์, พุธ 13:00 - 16:00 น.',
+      bio: 'เชี่ยวชาญด้านการพัฒนาซอฟต์แวร์ประยุกต์, สถาปัตยกรรมระบบเว็บ, และ Human-Computer Interaction (HCI)',
+      courses: ['DII301 ShowPro Studio I', 'DII402 Software Architecture', 'CAMT205 User Experience Design'],
+      research: ['Full-stack Web Engineering', 'Educational Gamification', 'Digital Product Management'],
+    };
+
+    const coAdvisor = {
+      nameThai: 'ดร. วิลเลียม สมิธ',
+      nameEng: 'Dr. William Smith',
+      title: 'อาจารย์พิเศษ / Co-Advisor',
+      department: 'วิทยาลัยศิลปะ สื่อ และเทคโนโลยี (CAMT)',
+      email: 'william.smith@cmu.ac.th',
+      phone: '053-941990 ต่อ 112',
+      office: 'ห้อง CAMT 412 ชั้น 4',
+      officeHours: 'อังคาร, พฤหัสบดี 10:00 - 12:00 น.',
+      bio: 'เชี่ยวชาญด้าน Data Science, AI Applications in Education, และ Cloud Infrastructure',
+      courses: ['DII304 Cloud Computing', 'DII410 AI for Digital Industry'],
+      research: ['Machine Learning in Education', 'Scalable Cloud Systems'],
+    };
+
+    const advisors = [
+      { id: 'primary', roleLabel: 'อาจารย์ที่ปรึกษาหลัก', data: primaryAdvisor },
+      { id: 'co', roleLabel: 'อาจารย์ที่ปรึกษาร่วม', data: coAdvisor },
+    ];
+
+    return (
+      <motion.div
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="space-y-6 pb-10"
+      >
+        <div>
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-1 text-sm">
+            <Users className="w-4 h-4 text-blue-500" />
+            <span>ข้อมูลอาจารย์ที่ปรึกษาประจําปีการศึกษา 2567</span>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+            อาจารย์<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">ที่ปรึกษา</span>
+          </h1>
+        </div>
+
+        {/* 2 Column Advisor Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {advisors.map(({ id, roleLabel, data }) => (
+            <motion.div
+              key={id}
+              variants={itemVariants}
+              className="bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm space-y-5"
+            >
+              {/* Header Badge */}
+              <div className="flex items-center justify-between border-b border-gray-100 dark:border-slate-800 pb-3">
+                <h3 className="font-bold text-lg text-slate-900 dark:text-white flex items-center gap-2">
+                  <GraduationCap className="w-5 h-5 text-blue-600" />
+                  {roleLabel}
+                </h3>
+                <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  {data.department.split(' ')[0]}
+                </Badge>
+              </div>
+
+              {/* Top Row: PFP (Left) + Contact Info (Right) */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* PFP Box */}
+                <div className="sm:col-span-1 bg-gray-50 dark:bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-gray-100 dark:border-slate-700">
+                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-md mb-3">
+                    <div className="w-full h-full rounded-[14px] bg-slate-800 flex items-center justify-center overflow-hidden">
+                      <Users className="w-10 h-10 text-slate-300" />
+                    </div>
+                  </div>
+                  <h4 className="font-bold text-sm text-slate-900 dark:text-white leading-snug">{data.nameThai}</h4>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400 mt-1">{data.title}</span>
+                </div>
+
+                {/* Contact Info Box */}
+                <div className="sm:col-span-2 bg-gray-50 dark:bg-slate-800 rounded-xl p-4 border border-gray-100 dark:border-slate-700 space-y-2 text-xs">
+                  <h5 className="font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">ข้อมูลการติดต่อ</h5>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <span className="truncate">{data.email}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <BookOpen className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
+                    <span>{data.office}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <TrendingUp className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+                    <span>เวลาเข้าพบ: {data.officeHours}</span>
+                  </div>
+                  <div className="pt-2">
+                    <Button
+                      size="sm"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs h-8"
+                      onClick={() => {
+                        navigate('/messages', {
+                          state: { recipient: { id: data.email, email: data.email, name: data.nameEng, nameThai: data.nameThai, role: 'lecturer' } }
+                        });
+                        toast.info(`เปิดแชทกับ ${data.nameThai}`);
+                      }}
+                    >
+                      <Mail className="w-3.5 h-3.5 mr-1.5" />
+                      ส่งข้อความปรึกษา
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Row: Additional Details */}
+              <div className="bg-gray-50 dark:bg-slate-800 rounded-xl p-4 border border-gray-100 dark:border-slate-700 space-y-3 text-xs">
+                <h5 className="font-bold text-slate-700 dark:text-slate-300">รายละเอียดเพิ่มเติม</h5>
+                <p className="text-slate-600 dark:text-slate-400 leading-relaxed">{data.bio}</p>
+                <div>
+                  <span className="font-semibold text-slate-700 dark:text-slate-300 block mb-1">รายวิชาที่รับผิดชอบ:</span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {data.courses.map((course) => (
+                      <Badge key={course} variant="outline" className="bg-white dark:bg-slate-900 text-[10px] border-gray-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
+                        {course}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div
@@ -229,91 +308,74 @@ export default function Students() {
               <Users className="w-4 h-4 text-blue-500 dark:text-slate-400" />
               <span>{`${t.studentsPage.totalStudents} ${students.length} • ${t.studentsPage.atRisk} ${atRiskCount}`}</span>
           </motion.div>
-          <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.studentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.studentsPage.titleHighlight}</span>
           </motion.h1>
       </div>
-      {(user?.role === 'staff' || user?.role === 'admin') && (
-        <motion.div variants={itemVariants} className="flex justify-end">
-          <Button variant="outline" onClick={() => setIsStudentImportOpen(true)} className="rounded-xl">
-            <Upload className="mr-2 h-4 w-4" />
-            Import รายชื่อนักศึกษา
-          </Button>
-        </motion.div>
-      )}
-
-      <ImportMappingDialog
-        open={isStudentImportOpen}
-        onOpenChange={setIsStudentImportOpen}
-        title="Import รายชื่อนักศึกษา"
-        description="อัปโหลด Excel/CSV ของรุ่นนั้น ๆ แล้วกำหนดคอลัมน์ก่อนสร้างบัญชีนักศึกษา"
-        fields={studentImportFields}
-        onImport={handleStudentImport}
-      />
 
       {/* Stats Cards */}
       <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-6 text-white shadow-xl shadow-blue-200"
+          className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+          
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <Users className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90">{t.studentsPage.totalStudents}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentsPage.totalStudents}</span>
             </div>
-            <div className="text-4xl font-bold">{students.length}</div>
+            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{students.length}</div>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 text-white shadow-xl shadow-emerald-200"
+          className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+          
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <TrendingUp className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90">{t.studentsPage.avgGPA}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentsPage.avgGPA}</span>
             </div>
-            <div className="text-4xl font-bold">{avgGPA}</div>
+            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{avgGPA}</div>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 p-6 text-white shadow-xl shadow-orange-200"
+          className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+          
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <AlertTriangle className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90">{t.studentsPage.atRisk}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentsPage.atRisk}</span>
             </div>
-            <div className="text-4xl font-bold">{atRiskCount}</div>
+            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{atRiskCount}</div>
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 p-6 text-white shadow-xl shadow-purple-200"
+          className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+          
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <Award className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90">{t.studentsPage.normalStatus}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentsPage.normalStatus}</span>
             </div>
-            <div className="text-4xl font-bold">{students.filter(s => s.academicStatus === 'normal').length}</div>
+            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{students.filter(s => s.academicStatus === 'normal').length}</div>
           </div>
         </motion.div>
       </motion.div>
@@ -356,7 +418,7 @@ export default function Students() {
 
       {/* Student List */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
+        <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GraduationCap className="w-5 h-5" />
@@ -383,7 +445,7 @@ export default function Students() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group dark:border-slate-700"
                   onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
@@ -403,7 +465,7 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPA {student.gpa.toFixed(2)}</div>
+                      <div className="text-sm font-semibold">GPA {student.gpa.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}

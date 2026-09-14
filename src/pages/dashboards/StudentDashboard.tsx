@@ -5,7 +5,7 @@ import {
   BookOpen, Calendar, Trophy, TrendingUp, Clock, Award,
   AlertCircle, CheckCircle2, GraduationCap, Target, Activity as ActivityIcon,
   Sparkles, Flame, Star, Zap, ChevronRight, Bell, ArrowUpRight,
-  MoreHorizontal, User, Briefcase
+  MoreHorizontal, User, Briefcase, UserCheck
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -24,6 +24,7 @@ import { TechnicalSkillsRubricCard } from '@/components/dashboard/TechnicalSkill
 import { SoftSkillsRubricCard } from '@/components/dashboard/SoftSkillsRubricCard';
 import { SkillsRadarCard } from '@/components/dashboard/SkillsRadarCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
+import { CourseStatusRingCard } from '@/components/dashboard/CourseStatusRingCard';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
@@ -59,6 +60,10 @@ const emptyStudent: Student = {
   earnedCredits: 0,
   requiredCredits: 0,
   academicStatus: 'normal',
+  advisorName: 'ผศ.ดร. นรินทร์ พิชยกุล',
+  advisorNameThai: 'ผศ.ดร. นรินทร์ พิชยกุล',
+  coAdvisorName: 'ดร. วิลเลียม สมิธ',
+  coAdvisorNameThai: 'ดร. วิลเลียม สมิธ',
   skills: [],
   activities: [],
   totalActivityHours: 0,
@@ -444,11 +449,11 @@ export default function StudentDashboard() {
     });
 
   const creditProgress = (student.earnedCredits / student.totalCredits) * 100;
-  
+
   const today = new Date();
   const nextMonth = new Date();
   nextMonth.setMonth(today.getMonth() + 1);
-  
+
   const upcomingActivities = activities.filter(a => {
     if (a.status !== 'upcoming') return false;
     const actDate = new Date(a.startDate);
@@ -462,94 +467,135 @@ export default function StudentDashboard() {
 
   const yearLabel = ['', 'ปี 1', 'ปี 2', 'ปี 3', 'ปี 4'][student.year] || `ปี ${student.year}`;
 
+  const mainAdvisorName = language === 'th'
+    ? (student.advisorNameThai || (student.advisorName === 'Dr. Narin Techakul' ? 'ผศ.ดร. นรินทร์ พิชยกุล' : (student.advisorName || 'ผศ.ดร. นรินทร์ พิชยกุล')))
+    : (student.advisorName || 'Asst. Prof. Dr. Narin Pichayakorn');
+
+  const coAdvisorName = language === 'th'
+    ? (student.coAdvisorNameThai || student.coAdvisorName || 'ดร. วิลเลียม สมิธ')
+    : (student.coAdvisorName || 'Dr. William Smith');
+
   return (
     <motion.div
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-8 pb-10"
+      className="space-y-5 pb-8"
     >
-      {/* Profile Header with Year */}
+      {/* Student Summary Header — Linear/Stripe Enterprise SaaS Identity Header */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-2xl"
+        className="bg-white dark:bg-[#0c1222] rounded-2xl p-4 sm:px-6 sm:py-4 border border-slate-200/80 dark:border-slate-800 shadow-sm transition-all duration-200"
       >
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
-
-        <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
-          {/* Avatar */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            className="relative"
-          >
-            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-xl shadow-blue-500/30">
-              <div className="w-full h-full rounded-[22px] bg-slate-800 flex items-center justify-center overflow-hidden">
-                {student.avatar ? (
-                  <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
-                ) : (
-                  <User className="w-16 h-16 text-slate-400" />
-                )}
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-6">
+          {/* Left + Center: Identity Section */}
+          <div className="flex items-center gap-4 sm:gap-5 flex-1 min-w-0">
+            {/* Student Avatar (68px) with Status Ring */}
+            <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.15 }} className="relative shrink-0">
+              <div className="w-[66px] h-[66px] sm:w-[70px] sm:h-[70px] rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-500/20 dark:from-blue-500/30 dark:to-indigo-500/30 p-0.5 shadow-sm">
+                <div className="w-full h-full rounded-[14px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center overflow-hidden">
+                  {student.avatar ? (
+                    <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-8 h-8 text-slate-400" />
+                  )}
+                </div>
               </div>
-            </div>
-            <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-              {yearLabel}
-            </div>
-          </motion.div>
-
-          {/* Info */}
-          <div className="flex-1 text-center lg:text-left">
-            <div className="flex items-center justify-center lg:justify-start gap-2 text-slate-400 text-sm mb-2">
-              <Sparkles className="w-4 h-4 text-yellow-500" />
-              <span>{greeting}</span>
-            </div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-2">{student.nameThai}</h1>
-            <p className="text-slate-400 mb-4">{student.name}</p>
-
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-slate-300">
-              <div className="flex items-center gap-2">
-                <GraduationCap className="w-4 h-4 text-blue-400" />
-                <span>{student.major}</span>
+              <div className="absolute -bottom-1 -right-1 bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-blue-300 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md border border-slate-700 shadow-xs leading-none">
+                {yearLabel}
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="w-4 h-4 text-emerald-400" />
-                <span>{t.studentDashboard.semester} {student.semester}/{student.academicYear}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Award className="w-4 h-4 text-yellow-400" />
-                <span>{student.gamificationPoints} XP</span>
-              </div>
-            </div>
+            </motion.div>
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-4">
-              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
-                {t.studentDashboard.studentId} {student.studentId}
-              </Badge>
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
-                GPAX: {student.gpax.toFixed(2)}
-              </Badge>
-              {student.academicStatus === 'normal' && (
-                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
-                  {t.studentDashboard.statusNormal}
-                </Badge>
-              )}
+            {/* Content: 3 Clean Horizontal Tiers */}
+            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+              {/* Row 1: Student Thai Name (Primary Hero) + English Name */}
+              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+                  {student.nameThai}
+                </h1>
+                <span className="text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-400 font-mono tracking-wide">
+                  {student.name}
+                </span>
+              </div>
+
+              {/* Row 2: Metadata Badges on ONE Single Horizontal Row */}
+              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-[11px] font-medium border border-slate-200/60 dark:border-slate-700/60">
+                  {student.studentId}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-mono text-[11px] font-semibold border border-blue-200/50 dark:border-blue-800/40">
+                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-400">GPAX</span>
+                  {student.gpax.toFixed(2)}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
+                <span className="text-slate-600 dark:text-slate-300 text-[11.5px] font-medium truncate max-w-[220px] sm:max-w-none">
+                  {student.major}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
+                <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">
+                  {t.studentDashboard.semester} {student.semester}/{student.academicYear}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-mono text-[11px] font-bold border border-indigo-200/50 dark:border-indigo-800/40">
+                  <span>{student.gamificationPoints}</span>
+                  <span className="text-[9.5px] font-normal text-indigo-400">XP</span>
+                </span>
+              </div>
+
+              {/* Row 3: Advisors (Compact modern chips) */}
+              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+                <div
+                  onClick={() => navigate('/students')}
+                  className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
+                  title={language === 'th' ? 'คลิกเพื่อดูข้อมูลอาจารย์ที่ปรึกษา' : 'Click to view advisor details'}
+                >
+                  <GraduationCap className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+                  <span className="text-slate-400 dark:text-slate-400 text-[11px]">
+                    {language === 'th' ? 'อาจารย์ที่ปรึกษาหลัก:' : 'Main Advisor:'}
+                  </span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                    {mainAdvisorName}
+                  </span>
+                </div>
+
+                <div
+                  onClick={() => navigate('/students')}
+                  className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-50 hover:bg-indigo-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
+                  title={language === 'th' ? 'คลิกเพื่อดูข้อมูลอาจารย์ที่ปรึกษา' : 'Click to view advisor details'}
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                  <span className="text-slate-400 dark:text-slate-400 text-[11px]">
+                    {language === 'th' ? 'อาจารย์ที่ปรึกษาร่วม:' : 'Co-Advisor:'}
+                  </span>
+                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                    {coAdvisorName}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
+<<<<<<< Updated upstream
           {/* Quick Actions */}
           <div className="flex flex-col gap-3">
-            <CareerGoalCard />
+=======
+          {/* Right: Actions (Desktop Vertical Stack / Mobile Horizontal) */}
+          <div className="flex sm:flex-row lg:flex-col items-stretch gap-2 shrink-0 w-full sm:w-auto lg:w-36 self-stretch lg:self-center justify-center">
+>>>>>>> Stashed changes
             <Button
               onClick={() => navigate('/portfolio')}
-              className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white border border-white/20 rounded-xl"
+              size="sm"
+              className="bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white shadow-sm shadow-blue-600/20 rounded-xl text-xs h-8 px-4 font-semibold transition-all duration-150 flex-1 sm:flex-initial justify-center"
             >
-              <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
+              <Trophy className="w-3.5 h-3.5 mr-1.5 text-blue-100" />
               {t.studentDashboard.viewPortfolio}
             </Button>
             <Button
               onClick={() => navigate('/settings')}
-              variant="ghost"
-              className="text-slate-300 hover:text-white hover:bg-white dark:bg-slate-900/10 rounded-xl"
+              variant="outline"
+              size="sm"
+              className="rounded-xl text-xs h-8 px-4 border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all duration-150 flex-1 sm:flex-initial justify-center"
             >
               {t.studentDashboard.editProfile}
             </Button>
@@ -557,25 +603,32 @@ export default function StudentDashboard() {
         </div>
       </motion.div>
 
-      {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-8" onValueChange={setActiveTab}>
-        <div className="flex justify-center md:justify-start">
-          <TabsList className="bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm flex-wrap">
+      {/* Clean Linear-style Segmented Navigation Tabs */}
+      <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
+        <div className="border-b border-slate-200/50 dark:border-slate-800/60 pb-0">
+          <TabsList className="bg-transparent border-none p-0 h-auto rounded-none flex flex-wrap gap-6 sm:gap-7">
             {[
-              { id: 'overview', icon: Target, label: t.studentDashboard.overview },
-              { id: 'schedule', icon: Calendar, label: t.studentDashboard.schedule },
-              { id: 'grades', icon: TrendingUp, label: t.studentDashboard.grades },
-              { id: 'skills', icon: Zap, label: t.studentDashboard.skills },
+              { id: 'overview', icon: Target, label: t.studentDashboard.overview || 'Overall' },
+              { id: 'schedule', icon: Calendar, label: t.studentDashboard.schedule || 'Degree' },
+              { id: 'grades', icon: TrendingUp, label: t.studentDashboard.grades || 'Upcoming' },
+              { id: 'skills', icon: Zap, label: t.studentDashboard.skills || 'Skills' },
               { id: 'timeline', icon: ActivityIcon, label: 'Timeline' },
-              { id: 'careers', icon: Briefcase, label: 'Company Targets' },
+              { id: 'careers', icon: Briefcase, label: 'Company' },
             ].map((tab) => (
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="rounded-xl px-4 lg:px-6 py-2.5 data-[state=active]:bg-white dark:bg-slate-900 data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-400"
+                className="bg-transparent border-none p-0 pb-2.5 rounded-none data-[state=active]:bg-transparent data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:font-semibold font-normal text-xs text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 relative transition-colors duration-150 cursor-pointer"
               >
-                <tab.icon className="w-4 h-4 mr-2" />
-                {tab.label}
+                <tab.icon className="w-3.5 h-3.5 mr-1.5 inline-block -mt-0.5 opacity-80" />
+                <span>{tab.label}</span>
+                {activeTab === tab.id && (
+                  <motion.div
+                    layoutId="activeStudentTab"
+                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 dark:bg-blue-400 rounded-full"
+                    transition={{ type: "spring", stiffness: 400, damping: 32 }}
+                  />
+                )}
               </TabsTrigger>
             ))}
           </TabsList>
@@ -585,25 +638,27 @@ export default function StudentDashboard() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <TabsContent value="overview" className="mt-0" key="overview" forceMount>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left Column - 2/3 */}
-                <div className="lg:col-span-2 space-y-8">
-                  {/* Class Schedule */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* Left Column — 2/3 */}
+                <div className="lg:col-span-2 space-y-5">
+                  {/* Weekly Schedule */}
                   <motion.div variants={itemVariants}>
-                    <div className="flex items-center justify-between mb-4">
-                      <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-purple-500 dark:text-slate-400" />
-                        {t.studentDashboard.weeklySchedule}
-                      </h2>
-                      <Button
-                        variant="ghost"
-                        onClick={() => navigate('/schedule')}
-                        className="text-slate-500 dark:text-slate-400 hover:text-purple-600"
-                      >
-                        {t.studentDashboard.fullscreen} <ChevronRight className="w-4 h-4 ml-1" />
-                      </Button>
-                    </div>
-                    <div className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+                    <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 dark:border-slate-800">
+                      {/* Integrated Header at the top of the card */}
+                      <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">
+                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                          <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                          {t.studentDashboard.weeklySchedule}
+                        </h2>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => navigate('/schedule')}
+                          className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs h-7 px-2.5 font-medium transition-colors cursor-pointer"
+                        >
+                          {t.studentDashboard.fullscreen} <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                        </Button>
+                      </div>
                       <Timetable
                         courses={studentCourses}
                         semester={student.semester}
@@ -613,42 +668,44 @@ export default function StudentDashboard() {
                   </motion.div>
 
                   {/* Current Courses */}
-                  <motion.div variants={itemVariants} className="space-y-4">
+                  <motion.div variants={itemVariants} className="space-y-2.5">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.studentDashboard.coursesThisSem}
+                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                        <BookOpen className="w-4 h-4 text-purple-500 dark:text-purple-400" />
+                        {t.studentDashboard.coursesThisSem}
                       </h3>
-                      <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-purple-600" onClick={() => navigate('/courses')}>{t.studentDashboard.viewAll}</Button>
+                      <Button variant="ghost" size="sm" className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 text-xs h-7 px-2.5 font-medium transition-colors" onClick={() => navigate('/courses')}>{t.studentDashboard.viewAll}</Button>
                     </div>
 
-                    <div className="grid gap-4">
+                    <div className="grid gap-2.5">
                       {currentCourses.slice(0, 3).map((course, index) => (
                         <motion.div
                           key={course.id}
-                          initial={{ opacity: 0, x: -20 }}
+                          initial={{ opacity: 0, x: -6 }}
                           animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.1 }}
-                          className="group relative bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-5 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                          transition={{ delay: index * 0.05 }}
+                          className="group bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 p-3.5 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow transition-all duration-200 cursor-pointer"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
-                          <div className="relative flex items-center justify-between">
-                            <div className="flex items-center gap-5">
-                              <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 shadow-md flex items-center justify-center text-lg font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-3.5">
+                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/90 flex items-center justify-center text-xs font-mono font-bold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 group-hover:scale-105 transition-transform duration-150">
                                 {course.code?.substring(0, 3)}
                               </div>
                               <div>
-                                <h4 className="text-lg font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 transition-colors">{course.nameThai}</h4>
-                                <div className="flex items-center gap-3 text-sm text-slate-500 dark:text-slate-400 mt-1">
-                                  <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md border border-slate-200 dark:border-slate-800">{course.code}</span>
-                                  <span>•</span>
+                                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                  {course.nameThai}
+                                </h4>
+                                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                                  <span className="font-mono font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-[11px] border border-slate-200/50 dark:border-slate-700/50">{course.code}</span>
+                                  <span className="text-slate-300 dark:text-slate-700">•</span>
                                   <span>{course.credits} {t.studentDashboard.credits}</span>
-                                  <span>•</span>
-                                  <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3" /> {course.lecturerName}</span>
+                                  <span className="text-slate-300 dark:text-slate-700">•</span>
+                                  <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3 text-slate-400" /> {course.lecturerName}</span>
                                 </div>
                               </div>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center group-hover:bg-purple-100 group-hover:text-purple-600 transition-colors dark:text-slate-300">
-                              <ChevronRight className="w-5 h-5" />
+                            <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-900/30 transition-colors">
+                              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
                             </div>
                           </div>
                         </motion.div>
@@ -657,8 +714,8 @@ export default function StudentDashboard() {
                   </motion.div>
                 </div>
 
-                {/* Right Column - 1/3 */}
-                <div className="space-y-8">
+                {/* Right Column — 1/3 */}
+                <div className="space-y-5">
                   {/* Degree Progress */}
                   <motion.div variants={itemVariants}>
                     <DegreeProgressCard
@@ -669,59 +726,87 @@ export default function StudentDashboard() {
                     />
                   </motion.div>
 
+                  {/* Course Status Ring */}
+                  <motion.div variants={itemVariants}>
+                    {(() => {
+                      const completedCourses = liveCurriculumCourses.filter(c => c.status === 'completed');
+                      const inProgressCourses = liveCurriculumCourses.filter(c => c.status === 'inProgress');
+                      const remainingCourses = liveCurriculumCourses.filter(c => c.status === 'remaining');
+                      // "Must register" = remaining courses that have no unmet prerequisites
+                      const completedCodes = new Set(completedCourses.map(c => c.code));
+                      const mustRegister = remainingCourses.filter(c =>
+                        c.prerequisites.length === 0 || c.prerequisites.every(p => completedCodes.has(p))
+                      );
+                      const notRegistered = remainingCourses.filter(c =>
+                        c.prerequisites.length > 0 && !c.prerequisites.every(p => completedCodes.has(p))
+                      );
+                      return (
+                        <CourseStatusRingCard
+                          completedCount={completedCourses.length}
+                          inProgressCount={inProgressCourses.length}
+                          registeredCount={mustRegister.length}
+                          remainingCount={notRegistered.length}
+                          completedCredits={completedCourses.reduce((s, c) => s + c.credits, 0)}
+                          inProgressCredits={inProgressCourses.reduce((s, c) => s + c.credits, 0)}
+                          registeredCredits={mustRegister.reduce((s, c) => s + c.credits, 0)}
+                          remainingCredits={notRegistered.reduce((s, c) => s + c.credits, 0)}
+                        />
+                      );
+                    })()}
+                  </motion.div>
+
                   {/* Upcoming Events */}
-                  <motion.div variants={itemVariants} className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
-                    <div className="flex items-center justify-between mb-5">
-                      <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <Calendar className="w-5 h-5 text-orange-500 dark:text-slate-400" /> {t.studentDashboard.upcomingActivities}
+                  <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
+                        <Calendar className="w-4 h-4 text-orange-500" />
+                        {t.studentDashboard.upcomingActivities}
                       </h3>
-                      <Badge variant="secondary" className="bg-orange-100 text-orange-700 hover:bg-orange-100 shadow-sm border-orange-200 dark:text-slate-300">ใน 1 เดือน</Badge>
+                      <Badge variant="secondary" className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-none text-[10px] font-semibold dark:bg-orange-900/20 dark:text-orange-400">ใน 1 เดือน</Badge>
                     </div>
 
-                                          <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-[0_4px_20px_-4px_rgba(0,0,0,0.05)] p-0 sm:p-2 flex justify-center mb-6 overflow-hidden">
-                         <CalendarUI 
-                            mode="single"
-                            selected={new Date()}
-                            className="bg-transparent border-0 scale-90 sm:scale-100 origin-top text-slate-800 dark:text-slate-100"
-                         />
-                      </div>
-  
-                      <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 pb-4 -mx-2 px-2 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700">
-                        {upcomingActivities.map((activity, i) => (
-                          <div key={i} className="min-w-[240px] snap-center flex-shrink-0 bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-100 dark:border-slate-800 shadow-[0_2px_10px_-2px_rgba(0,0,0,0.05)] hover:shadow-md transition-shadow cursor-pointer flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center gap-2 mb-2">
-                                <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-500/10 flex items-center justify-center text-orange-500 dark:text-slate-400">
-                                  <Calendar className="w-4 h-4" />
-                                </div>
-                                <div className="text-xs font-bold text-orange-500 dark:text-slate-400">{new Date(activity.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</div>
-                              </div>
-                              <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm mb-1 leading-tight line-clamp-2">{activity.titleThai}</h4>
+                    <div className="bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-0 sm:p-1 flex justify-center mb-4 overflow-hidden">
+                      <CalendarUI
+                        mode="single"
+                        selected={new Date()}
+                        className="bg-transparent border-0 scale-[0.85] sm:scale-95 origin-top text-slate-800 dark:text-slate-100"
+                      />
+                    </div>
+
+                    <div className="space-y-2.5">
+                      {upcomingActivities.map((activity, i) => (
+                        <div key={i} className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border border-gray-100 dark:border-slate-700 hover:border-orange-200 dark:hover:border-orange-800 transition-colors cursor-pointer">
+                          <div className="flex items-start gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500 shrink-0">
+                              <Calendar className="w-3.5 h-3.5" />
                             </div>
-                            <div className="flex flex-wrap gap-2 mt-3">
-                              <Badge variant="secondary" className="text-[10px] bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-300">+{activity.gamificationPoints} XP</Badge>
-                              <Badge variant="outline" className="text-[10px] border-slate-200 dark:border-slate-700">{activity.activityHours} ชม.</Badge>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-xs leading-tight line-clamp-2">{activity.titleThai}</h4>
+                              <div className="flex items-center gap-2 mt-1.5">
+                                <span className="text-[10px] font-medium text-orange-500">{new Date(activity.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</span>
+                                <Badge variant="secondary" className="text-[9px] bg-white dark:bg-slate-900 text-slate-500 h-4 px-1.5">+{activity.gamificationPoints} XP</Badge>
+                              </div>
                             </div>
                           </div>
-                        ))}
-                        {upcomingActivities.length === 0 && (
-                          <div className="text-center w-full py-4 text-sm text-slate-500 dark:text-slate-400">ไม่มีกิจกรรมเร็วๆนี้</div>
-                        )}
-                      </div>
-                      <Button variant="outline" className="w-full mt-2 rounded-xl border-dashed border-slate-300 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-orange-600 hover:border-orange-300" onClick={() => navigate("/activities")}>
-                        {t.studentDashboard.viewCalendar}
-                      </Button>
-                    </motion.div>
+                        </div>
+                      ))}
+                      {upcomingActivities.length === 0 && (
+                        <div className="text-center py-4 text-xs text-slate-400">ไม่มีกิจกรรมเร็วๆนี้</div>
+                      )}
+                    </div>
+                    <Button variant="outline" size="sm" className="w-full mt-3 rounded-xl border-dashed border-gray-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-orange-600 hover:border-orange-300 text-xs h-8" onClick={() => navigate("/activities")}>
+                      {t.studentDashboard.viewCalendar}
+                    </Button>
+                  </motion.div>
                 </div>
               </div>
             </TabsContent>
           )}
 
-          {/* Schedule Tab */}
+          {/* Schedule / Degree Tab */}
           {activeTab === 'schedule' && (
             <TabsContent value="schedule" className="mt-0" key="schedule" forceMount>
               <div className="space-y-6">
-                {/* Credit matrix table */}
                 <motion.div variants={itemVariants}>
                   <CreditMatrixCard
                     courses={liveCurriculumCourses}
@@ -729,9 +814,7 @@ export default function StudentDashboard() {
                     gpax={student.gpax}
                   />
                 </motion.div>
-
-                {/* Weekly timetable */}
-                <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+                <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800">
                   <Timetable
                     courses={studentCourses}
                     semester={student.semester}
@@ -745,8 +828,7 @@ export default function StudentDashboard() {
           {/* Grades Tab */}
           {activeTab === 'grades' && (
             <TabsContent value="grades" className="mt-0" key="grades" forceMount>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                {/* GPA History */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <motion.div variants={itemVariants}>
                   <GPAHistoryCard
                     semesterHistory={semesterHistory}
@@ -754,8 +836,6 @@ export default function StudentDashboard() {
                     gpax={student.gpax}
                   />
                 </motion.div>
-
-                {/* Course Grades */}
                 <motion.div variants={itemVariants}>
                   <CourseGradesCard
                     grades={courseGrades}
@@ -769,8 +849,7 @@ export default function StudentDashboard() {
           {/* Skills Tab */}
           {activeTab === 'skills' && (
             <TabsContent value="skills" className="mt-0" key="skills" forceMount>
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Technical Skills - Rubric Based */}
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 <motion.div variants={itemVariants}>
                   <TechnicalSkillsRubricCard
                     functionality={technicalSkillScores.functionality}
@@ -783,8 +862,6 @@ export default function StudentDashboard() {
                     commentTags={technicalSkillScores.commentTags}
                   />
                 </motion.div>
-
-                {/* Soft Skills - AAC&U Value Rubrics Based */}
                 <motion.div variants={itemVariants}>
                   <SoftSkillsRubricCard
                     communication={softSkillScores.communication}
@@ -796,8 +873,6 @@ export default function StudentDashboard() {
                     feedbackHistory={softSkillScores.feedbackHistory}
                   />
                 </motion.div>
-
-                {/* Skills Radar Chart */}
                 <motion.div variants={itemVariants}>
                   <SkillsRadarCard
                     technicalSkills={{
@@ -818,24 +893,22 @@ export default function StudentDashboard() {
           {/* Timeline Tab */}
           {activeTab === 'timeline' && (
             <TabsContent value="timeline" className="mt-0" key="timeline" forceMount>
-              <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+              <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800">
                 <StudentTimeline events={timeline} showFilters />
               </motion.div>
             </TabsContent>
           )}
 
-          {/* Careers Tab */}
+          {/* Careers / Company Tab */}
           {activeTab === 'careers' && (
             <TabsContent value="careers" className="mt-0" key="careers" forceMount>
-              <div className="grid gap-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Company Targets & Requirements</h2>
-                    <p className="text-slate-500 dark:text-slate-400">See what skills you need to develop to meet recruiter expectations.</p>
-                  </div>
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Company Targets & Requirements</h2>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">See what skills you need to develop to meet recruiter expectations.</p>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {companyTargets.map((company, idx) => {
                     const isGpaMet = student.gpa >= company.requirements.gpa;
                     const isTechMet = (
@@ -851,89 +924,75 @@ export default function StudentDashboard() {
 
                     return (
                       <motion.div
-                          key={company.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: idx * 0.1 }}
-                          className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 rounded-3xl p-8 shadow-xl shadow-slate-200/20 dark:shadow-black/40 flex flex-col justify-between overflow-hidden"
-                        >
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
-                          <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-6">
-                              <div className="flex gap-4 items-center">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
-                                  <Briefcase className="w-6 h-6" />
-                                </div>
-                                <div>
-                                  <h3 className="text-xl font-bold text-slate-800 dark:text-white mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{company.name}</h3>
-                                  <div className="inline-flex px-2.5 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-semibold tracking-wide uppercase">
-                                    {company.role}
-                                  </div>
-                                </div>
+                        key={company.id}
+                        initial={{ opacity: 0, y: 15 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.08 }}
+                        className="group bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex items-start justify-between mb-5">
+                            <div className="flex gap-3 items-center">
+                              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-md">
+                                <Briefcase className="w-5 h-5" />
                               </div>
-                              {isAllMet ? (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20">
-                                  <CheckCircle2 className="w-4 h-4" />
-                                  <span>Ready</span>
-                                </div>
-                              ) : (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 text-xs font-semibold">
-                                  <AlertCircle className="w-4 h-4" />
-                                  <span>Skill Gap</span>
-                                </div>
-                              )}
+                              <div>
+                                <h3 className="text-base font-bold text-slate-800 dark:text-white group-hover:text-indigo-600 transition-colors">{company.name}</h3>
+                                <span className="inline-flex px-2 py-0.5 rounded-full bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 text-[10px] font-semibold uppercase tracking-wide">{company.role}</span>
+                              </div>
                             </div>
-                            <div className="space-y-4 text-sm mt-6">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-slate-600 dark:text-slate-400">GPA Minimum</span>
+                            {isAllMet ? (
+                              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 text-xs font-semibold">
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Ready</span>
+                              </div>
+                            ) : (
+                              <div className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gray-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs font-semibold">
+                                <AlertCircle className="w-3.5 h-3.5" />
+                                <span>Gap</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="space-y-3 text-sm">
+                            <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl">
+                              <div className="flex justify-between items-center">
+                                <span className="text-slate-500">GPA Min</span>
                                 <span className={`font-semibold ${isGpaMet ? 'text-emerald-600' : 'text-rose-500'}`}>
                                   {student.gpa.toFixed(2)} / {company.requirements.gpa.toFixed(2)}
                                 </span>
                               </div>
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
-                              <span className="text-slate-600 dark:text-slate-400 block mb-1">Technical Skills Required</span>
-                              <div className="flex justify-between items-center">
-                                <span>Functionality</span>
-                                <span className={technicalSkillScores.functionality >= company.requirements.technicalSkills.functionality ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.functionality.toFixed(1)} / {company.requirements.technicalSkills.functionality.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Readability</span>
-                                <span className={technicalSkillScores.readability >= company.requirements.technicalSkills.readability ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.readability.toFixed(1)} / {company.requirements.technicalSkills.readability.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Best Practices</span>
-                                <span className={technicalSkillScores.bestPractice >= company.requirements.technicalSkills.bestPractice ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.bestPractice.toFixed(1)} / {company.requirements.technicalSkills.bestPractice.toFixed(1)}
-                                </span>
-                              </div>
+                            <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl space-y-1.5">
+                              <span className="text-slate-500 text-xs">Technical Skills</span>
+                              {[
+                                { label: 'Functionality', score: technicalSkillScores.functionality, req: company.requirements.technicalSkills.functionality },
+                                { label: 'Readability', score: technicalSkillScores.readability, req: company.requirements.technicalSkills.readability },
+                                { label: 'Best Practices', score: technicalSkillScores.bestPractice, req: company.requirements.technicalSkills.bestPractice },
+                              ].map(({ label, score, req }) => (
+                                <div key={label} className="flex justify-between items-center">
+                                  <span className="text-slate-600 dark:text-slate-400">{label}</span>
+                                  <span className={score >= req ? 'text-emerald-600' : 'text-rose-500'}>{score.toFixed(1)} / {req.toFixed(1)}</span>
+                                </div>
+                              ))}
                             </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
-                              <span className="text-slate-600 dark:text-slate-400 block mb-1">Soft Skills Required</span>
-                              <div className="flex justify-between items-center">
-                                <span>Communication</span>
-                                <span className={softSkillScores.communication >= company.requirements.softSkills.communication ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {softSkillScores.communication.toFixed(1)} / {company.requirements.softSkills.communication.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Openness to Feedback</span>
-                                <span className={softSkillScores.openness >= company.requirements.softSkills.openness ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {softSkillScores.openness.toFixed(1)} / {company.requirements.softSkills.openness.toFixed(1)}
-                                </span>
-                              </div>
+                            <div className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl space-y-1.5">
+                              <span className="text-slate-500 text-xs">Soft Skills</span>
+                              {[
+                                { label: 'Communication', score: softSkillScores.communication, req: company.requirements.softSkills.communication },
+                                { label: 'Openness', score: softSkillScores.openness, req: company.requirements.softSkills.openness },
+                              ].map(({ label, score, req }) => (
+                                <div key={label} className="flex justify-between items-center">
+                                  <span className="text-slate-600 dark:text-slate-400">{label}</span>
+                                  <span className={score >= req ? 'text-emerald-600' : 'text-rose-500'}>{score.toFixed(1)} / {req.toFixed(1)}</span>
+                                </div>
+                              ))}
                             </div>
                           </div>
                         </div>
 
-                        <div className="mt-6">
+                        <div className="mt-5">
                           <Button
-                            className="w-full bg-purple-600 hover:bg-purple-700 text-white rounded-xl"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm h-9"
                             disabled={Boolean(company.applicationStatus)}
                             onClick={async () => {
                               if (company.applicationStatus) {
@@ -965,7 +1024,7 @@ export default function StudentDashboard() {
                               });
                             }}
                           >
-                            <Trophy className="w-4 h-4 mr-2" />
+                            <Trophy className="w-3.5 h-3.5 mr-1.5" />
                             {company.applicationStatus ? `Status: ${company.applicationStatus}` : "I'm Interested"}
                           </Button>
                         </div>
@@ -973,9 +1032,9 @@ export default function StudentDashboard() {
                     );
                   })}
                   {companyTargets.length === 0 && (
-                    <Card className="md:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 rounded-3xl">
+                    <Card className="md:col-span-2 bg-white dark:bg-slate-900 border border-gray-100 dark:border-slate-800 rounded-2xl">
                       <CardContent className="p-8 text-center">
-                        <Briefcase className="w-10 h-10 mx-auto text-slate-400 mb-3" />
+                        <Briefcase className="w-10 h-10 mx-auto text-slate-300 mb-3" />
                         <h3 className="font-bold text-slate-800 dark:text-slate-100">ยังไม่มี Company Targets</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">เมื่อบริษัทเปิดตำแหน่งงาน ระบบจะคำนวณ match และ skill gap จากข้อมูลจริงให้ทันที</p>
                         <Button className="mt-5 rounded-xl" onClick={() => navigate('/internships')}>

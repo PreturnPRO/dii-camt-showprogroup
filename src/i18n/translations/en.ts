@@ -60,13 +60,12 @@ export const en = {
     activities: 'Activities & Points',
     portfolio: 'Portfolio & CV',
     internships: 'Internships',
-    applicationHistory: 'Application History',
     requests: 'Requests / Forms',
     messages: 'Messages',
     settings: 'Settings',
     // Lecturer
     teachingSchedule: 'Teaching Schedule',
-    adviseeStudents: 'Advisee Students',
+    adviseeStudents: 'Advisor',
     courseManagement: 'Course Management',
     attendanceBehavior: 'Attendance / Behavior',
     grading: 'Grading',
@@ -1569,5 +1568,7 @@ export const en = {
     wednesday: 'Wednesday',
     thursday: 'Thursday',
     friday: 'Friday',
+    saturday: 'Saturday',
+    sunday: 'Sunday',
   },
 };

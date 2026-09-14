@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Calendar, Users, CheckCircle, Clock, MapPin,
   Star, Award, Sparkles, Zap, Target, ArrowRight, Hourglass,
-  ArrowUpRight, Flame
+  ArrowUpRight, Flame, Lock
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -206,6 +206,7 @@ export default function Activities() {
   const [activities, setActivities] = React.useState<ActivityRow[]>([]);
   const [student, setStudent] = React.useState<Student>(emptyStudent);
   const [selectedActivity, setSelectedActivity] = React.useState<ActivityRow | null>(null);
+  const [selectedBadge, setSelectedBadge] = React.useState<number>(1);
   const [leaderboard, setLeaderboard] = React.useState<LeaderboardRow[]>([]);
 
   const upcomingActivities = activities.filter(a => a.status === 'upcoming');
@@ -286,35 +287,30 @@ export default function Activities() {
     label: string;
     value: React.ReactNode;
     subtext?: React.ReactNode;
-    gradient: string;
+    accentColor: string;
+    iconBg: string;
     delay?: number;
     onClick?: () => void;
   };
 
-  const StatCard = ({ icon: Icon, label, value, subtext, gradient, onClick }: StatCardProps) => (
+  const StatCard = ({ icon: Icon, label, value, subtext, accentColor, iconBg, onClick }: StatCardProps) => (
     <motion.div
       variants={itemVariants}
-      whileHover={{ y: -5, scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.15 }}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-3xl p-6 cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/20 ${gradient}`}
+      className="relative overflow-hidden rounded-2xl p-4 sm:p-5 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between"
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors dark:bg-slate-900/50" />
-      <div className="relative z-10">
-        <div className="flex justify-between items-start mb-4">
-          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10 dark:bg-slate-900/50">
-            <Icon className="w-6 h-6 text-white" />
-          </div>
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity dark:bg-slate-900/50">
-            <ArrowUpRight className="w-4 h-4 text-white" />
+      <div>
+        <div className="flex items-center justify-between mb-2.5">
+          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{label}</span>
+          <div className={`p-2 rounded-xl ${iconBg} ${accentColor} border border-current/15`}>
+            <Icon className="w-4 h-4" />
           </div>
         </div>
-        <div>
-          <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
-          <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
-          {subtext && <div className="mt-2">{subtext}</div>}
-        </div>
+        <h3 className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">{value}</h3>
       </div>
+      {subtext && <div className="mt-2.5">{subtext}</div>}
     </motion.div>
   );
 
@@ -325,94 +321,125 @@ export default function Activities() {
       animate="visible"
       className="space-y-8 pb-10"
     >
-      {/* Header Section - Matching Dashboard/Courses/Schedule Style */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+      {/* Header Section — Matching Refined SaaS Style */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
           <motion.div
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -15 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+            className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1.5"
           >
-            <Trophy className="w-4 h-4 text-amber-500" />
+            <Trophy className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
             <span>{t.activitiesPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-            initial={{ opacity: 0, y: 20 }}
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
+            transition={{ delay: 0.05 }}
           >
-            {t.activitiesPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-600">{t.activitiesPage.titleHighlight}</span>
+            {t.activitiesPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-500 to-orange-500 font-extrabold">{t.activitiesPage.titleHighlight}</span>
           </motion.h1>
         </div>
       </div>
 
-      {/* Bento Grid Stats - Matching Dashboard Theme */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Top Summary Cards — Height reduced by ~25%, restrained dark navy surfaces */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+        {/* Points Card (Orange semantic) */}
         <StatCard
           icon={Trophy}
           label={t.activitiesPage.totalPoints}
-          value={studentPoints}
-          gradient="bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
+          value={`${studentPoints} XP`}
+          accentColor="text-amber-600 dark:text-amber-400"
+          iconBg="bg-amber-500/10"
           subtext={
-            <div className="flex items-center gap-1.5 text-xs text-orange-100 bg-orange-500/30 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-              <Flame className="w-3 h-3 fill-orange-100" />
+            <div className="flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
               <span>Level 12 Explorer</span>
             </div>
           }
         />
+
+        {/* Activity Hours (Orange/Green semantic) */}
         <StatCard
           icon={Clock}
           label={t.activitiesPage.activityHours}
           value={`${studentHours} ${t.activitiesPage.hours}`}
-          gradient="bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600"
+          accentColor="text-orange-600 dark:text-orange-400"
+          iconBg="bg-orange-500/10"
           subtext={
-            <div className="h-1.5 w-full bg-black/20 rounded-full mt-2 overflow-hidden">
-              <div
-                className="h-full bg-white dark:bg-slate-900 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                style={{ width: `${Math.min((studentHours / 100) * 100, 100)}%` }}
-              />
+            <div>
+              <div className="flex justify-between text-[10.5px] font-mono text-slate-400 mb-1">
+                <span>ความคืบหน้า</span>
+                <span>{Math.min((studentHours / 100) * 100, 100).toFixed(0)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-orange-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min((studentHours / 100) * 100, 100)}%` }}
+                />
+              </div>
             </div>
           }
         />
+
+        {/* Badges Earned (Purple semantic) */}
         <StatCard
           icon={Star}
           label={t.activitiesPage.badgesEarned}
           value={badgesEarned}
-          gradient="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600"
-          subtext={<span className="text-blue-100 text-xs">{t.activitiesPage.unlockNext}</span>}
+          accentColor="text-purple-600 dark:text-purple-400"
+          iconBg="bg-purple-500/10"
+          subtext={<span className="text-purple-600 dark:text-purple-400/90 text-[11px] font-medium">{t.activitiesPage.unlockNext}</span>}
         />
+
+        {/* Semester Goal (Green semantic) */}
         <StatCard
           icon={Target}
           label={t.activitiesPage.semesterGoal}
           value={`${Math.min(enrolledCount, 5)}/5`}
-          gradient="bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500"
-          subtext={<span className="text-purple-100 text-xs text-right block">{Math.min(enrolledCount * 20, 100)}% {t.activitiesPage.achieved}</span>}
+          accentColor="text-emerald-600 dark:text-emerald-400"
+          iconBg="bg-emerald-500/10"
+          subtext={
+            <div>
+              <div className="flex justify-between text-[10.5px] font-mono text-slate-400 mb-1">
+                <span>สำเร็จแล้ว</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">{Math.min(enrolledCount * 20, 100)}%</span>
+              </div>
+              <div className="h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-emerald-500 rounded-full transition-all duration-500"
+                  style={{ width: `${Math.min(enrolledCount * 20, 100)}%` }}
+                />
+              </div>
+            </div>
+          }
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Left Column: Activity Feed */}
-        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-6">
-          <Tabs defaultValue="upcoming" onValueChange={setActiveTab} className="w-full space-y-6">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t.activitiesPage.activityList}</h2>
-              <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm dark:bg-slate-900/50">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
+        {/* Left Column: Activity Feed (2/3) */}
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-5">
+          <Tabs defaultValue="upcoming" onValueChange={setActiveTab} className="w-full space-y-5">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <h2 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">{t.activitiesPage.activityList}</h2>
+              {/* Compact Segmented Control (Not full width) */}
+              <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
                 <TabsTrigger
                   value="upcoming"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-lg px-3.5 py-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
                 >
                   {t.activitiesPage.upcomingTab}
                 </TabsTrigger>
                 <TabsTrigger
                   value="calendar"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-lg px-3.5 py-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
                 >
                   {isTH ? 'ปฏิทินกิจกรรม' : 'Calendar'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="history"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-lg px-3.5 py-1.5 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
                 >
                   {t.activitiesPage.historyTab}
                 </TabsTrigger>
@@ -425,49 +452,69 @@ export default function Activities() {
                   {upcomingActivities.map((activity, index) => (
                     <motion.div
                       key={activity.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: 20 }}
-                      transition={{ delay: index * 0.1 }}
+                      initial={{ opacity: 0, y: 15 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -15 }}
+                      transition={{ delay: index * 0.08 }}
                       onClick={() => setSelectedActivity(activity)}
-                      className="group bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[2rem] p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden dark:bg-slate-900/50"
+                      className="group bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200 cursor-pointer overflow-hidden"
                     >
-                      <div className="flex flex-col md:flex-row gap-6">
-                        <div className="relative shrink-0 w-full md:w-52 h-36 md:h-auto rounded-2xl overflow-hidden shadow-md">
+                      <div className="flex flex-col md:flex-row gap-4 sm:gap-5">
+                        {/* Image: approximately 200-220px wide on desktop */}
+                        <div className="relative shrink-0 w-full md:w-[210px] h-40 md:h-auto rounded-xl overflow-hidden bg-slate-900 shadow-inner">
                           <img
                             src="https://images.unsplash.com/photo-1523580494863-6f3031224c94?auto=format&fit=crop&q=80&w=400&h=300"
-                            alt="Activity cover"
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            alt={activity.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                           />
-                          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-600 shadow-sm border border-white/50 dark:text-slate-300 dark:bg-slate-900/50">
-                            {activity.gamificationPoints} XP
+                          <div className="absolute top-2.5 right-2.5 bg-slate-900/90 backdrop-blur-md px-2 py-0.5 rounded-lg text-xs font-mono font-bold text-amber-400 shadow-sm border border-slate-700/60 flex items-center gap-1">
+                            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                            <span>{activity.gamificationPoints} XP</span>
                           </div>
                         </div>
-                        <div className="flex-1 flex flex-col justify-between py-1">
+
+                        {/* Content Area */}
+                        <div className="flex-1 flex flex-col justify-between py-0.5">
                           <div>
-                            <div className="flex gap-2 mb-3">
-                              <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-0 rounded-lg px-2.5 dark:text-slate-300">{activity.type}</Badge>
-                              {index === 0 && <Badge className="bg-orange-500 hover:bg-orange-600 border-0 rounded-lg px-2.5 shadow-lg shadow-orange-500/20">{t.activitiesPage.hotRecommended}</Badge>}
+                            {/* Tags */}
+                            <div className="flex flex-wrap items-center gap-1.5 mb-2">
+                              <Badge variant="secondary" className="bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50 text-[10.5px] font-medium rounded-md px-2 py-0.5">
+                                {activity.type}
+                              </Badge>
+                              {index === 0 && (
+                                <Badge className="bg-orange-500 hover:bg-orange-600 text-white border-0 text-[10.5px] font-semibold rounded-md px-2 py-0.5 shadow-xs">
+                                  {t.activitiesPage.hotRecommended}
+                                </Badge>
+                              )}
                             </div>
-                            <h3 className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors mb-2 tracking-tight">{activity.title}</h3>
-                            <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 font-medium">
-                              <div className="flex items-center gap-1.5">
-                                <Calendar className="w-4 h-4 text-slate-400" />
-                                {new Date(activity.startDate).toLocaleDateString('th-TH', { day: 'numeric', month: 'long', year: 'numeric' })}
+
+                            {/* Title */}
+                            <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors mb-2 tracking-tight line-clamp-1">
+                              {isTH ? activity.titleThai || activity.title : activity.title}
+                            </h3>
+
+                            {/* Metadata Strip */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 py-2 px-3 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 text-xs text-slate-600 dark:text-slate-300 font-mono mb-4">
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{new Date(activity.startDate).toLocaleDateString(isTH ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short' })}</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <MapPin className="w-4 h-4 text-slate-400" />
-                                {activity.location}
+                              <div className="flex items-center gap-1.5 truncate">
+                                <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{activity.location}</span>
                               </div>
-                              <div className="flex items-center gap-1.5">
-                                <Users className="w-4 h-4 text-slate-400" />
-                                {activity.enrolledStudents.length}/{activity.maxParticipants || '-'} {t.activitiesPage.people}
+                              <div className="flex items-center gap-1.5 truncate">
+                                <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{activity.enrolledStudents.length}/{activity.maxParticipants || '-'} {t.activitiesPage.people}</span>
                               </div>
                             </div>
                           </div>
-                          <div className="mt-6 flex gap-3">
+
+                          {/* Action Buttons */}
+                          <div className="flex items-center gap-2.5 pt-1">
                             <Button
-                              className="rounded-xl h-11 bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/20 px-8 font-bold border border-slate-700"
+                              size="sm"
+                              className="rounded-xl h-9 bg-blue-600 hover:bg-blue-700 text-white shadow-xs text-xs font-semibold px-4 transition-all"
                               disabled={activity.enrolledStudents.includes(student.id)}
                               onClick={(event) => {
                                 event.stopPropagation();
@@ -477,8 +524,9 @@ export default function Activities() {
                               {activity.enrolledStudents.includes(student.id) ? 'ลงทะเบียนแล้ว' : t.activitiesPage.joinActivity}
                             </Button>
                             <Button
-                              variant="ghost"
-                              className="rounded-xl h-11 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 font-medium px-6 dark:bg-slate-800"
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl h-9 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-medium px-3.5 transition-colors"
                               onClick={(event) => {
                                 event.stopPropagation();
                                 setSelectedActivity(activity);
@@ -551,79 +599,154 @@ export default function Activities() {
           </Tabs>
         </motion.div>
 
-        {/* Right Column: Gamification & Leaderboard */}
-        <motion.div variants={itemVariants} className="space-y-6">
-          <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/60 dark:border-slate-800/60 shadow-sm p-6 dark:bg-slate-900/50">
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-amber-500" />
+        {/* Right Column: Gamification & Leaderboard (1/3) */}
+        <motion.div variants={itemVariants} className="space-y-5">
+          {/* Leaderboard Card — Subtle secondary styling */}
+          <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                <Trophy className="w-4 h-4 text-amber-500" />
                 {t.activitiesPage.leaderboard}
               </h3>
-              <Badge variant="outline" className="rounded-full border-slate-200 dark:border-slate-700 text-slate-400 text-[10px] uppercase tracking-wider">{t.activitiesPage.thisSemester}</Badge>
+              <Badge variant="outline" className="rounded-md border-slate-200 dark:border-slate-700 text-slate-400 text-[9.5px] uppercase tracking-wider font-mono">
+                {t.activitiesPage.thisSemester}
+              </Badge>
             </div>
-            <div className="space-y-4">
+            <div className="space-y-2.5">
               {leaderboard.map((user, idx) => (
-                <div key={idx} className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${user.rank === 1 ? 'bg-amber-400/10 border border-amber-200/50 shadow-inner' : 'hover:bg-white/50'} dark:bg-slate-900/50`}>
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${user.rank === 1 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-white/50' :
-                    user.rank === 2 ? 'bg-slate-300 text-slate-600' :
-                      user.rank === 3 ? 'bg-orange-200 text-orange-700' :
-                        'bg-slate-100 text-slate-400'
-                    } dark:text-slate-400`}>
+                <div
+                  key={idx}
+                  className={`flex items-center gap-3 p-2.5 rounded-xl transition-all duration-150 ${
+                    user.rank === 1
+                      ? 'bg-amber-500/10 border border-amber-500/20'
+                      : 'hover:bg-slate-50 dark:hover:bg-slate-800/40'
+                  }`}
+                >
+                  <div className={`w-6 h-6 rounded-full flex items-center justify-center font-bold font-mono text-xs ${
+                    user.rank === 1
+                      ? 'bg-amber-500 text-white shadow-xs'
+                      : user.rank === 2
+                      ? 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
+                      : user.rank === 3
+                      ? 'bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
+                      : 'text-slate-400 font-normal'
+                  }`}>
                     {user.rank}
                   </div>
-                  <Avatar className="w-11 h-11 border-2 border-white shadow-md">
+                  <Avatar className="w-8 h-8 border border-slate-200/60 dark:border-slate-700/60 shadow-xs">
                     <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} />
-                    <AvatarFallback>{user.name[0]}</AvatarFallback>
+                    <AvatarFallback className="text-xs">{user.name[0]}</AvatarFallback>
                   </Avatar>
-                  <div className="flex-1">
-                    <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                      {user.name} <span className="text-lg">{user.badge}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-xs text-slate-800 dark:text-slate-200 truncate flex items-center gap-1">
+                      <span>{user.name}</span>
+                      <span className="text-sm">{user.badge}</span>
                     </div>
-                    <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">{user.points} XP</div>
+                    <div className="text-[10.5px] font-mono text-slate-400">{user.points} XP</div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-8 rounded-xl border-dashed border-slate-300 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-300 h-11 font-medium">{t.activitiesPage.viewAllRanks}</Button>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full mt-4 rounded-xl border-slate-200/80 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 h-8 text-xs font-medium"
+            >
+              {t.activitiesPage.viewAllRanks}
+            </Button>
           </div>
 
-          <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] shadow-2xl p-7 text-white">
-            <div className="absolute top-0 right-0 w-40 h-40 bg-purple-500/20 rounded-full blur-[60px]" />
-            <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-500/10 rounded-full blur-[50px]" />
-
+          {/* Badges Collection Card — Distinct Unlocked vs Locked System */}
+          <div className="relative overflow-hidden bg-white dark:bg-[#0c1222] rounded-2xl shadow-xs border border-slate-200/80 dark:border-slate-800 p-5 text-slate-900 dark:text-white">
             <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-bold flex items-center gap-2">
-                  <Sparkles className="w-5 h-5 text-purple-300" />
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-base font-bold flex items-center gap-2 text-slate-900 dark:text-white tracking-tight">
+                  <Sparkles className="w-4 h-4 text-purple-500" />
                   {t.activitiesPage.badgesCollection}
                 </h3>
-                <div className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">{badgesEarned} Unlocked</div>
-              </div>
-
-              <div className="grid grid-cols-4 gap-3">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/15 transition-all cursor-pointer group shadow-sm dark:bg-slate-900/50">
-                    {i <= 3 ? (
-                      <div className="text-2xl group-hover:scale-125 group-hover:rotate-12 transition-all duration-500">
-                        {i === 1 ? '🚀' : i === 2 ? '🎯' : '💎'}
-                      </div>
-                    ) : (
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors dark:bg-slate-900/50" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <div className="flex justify-between items-end mb-2">
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t.activitiesPage.nextBadge}</p>
-                    <p className="text-sm font-bold text-purple-200">Activity Master</p>
-                  </div>
-                  <div className="text-xs font-bold text-white">60%</div>
+                <div className="text-[10px] text-purple-600 dark:text-purple-400 font-bold tracking-wider uppercase font-mono px-2 py-0.5 rounded bg-purple-50 dark:bg-purple-950/50 border border-purple-200/50 dark:border-purple-800/50">
+                  {badgesEarned} ปลดล็อกแล้ว
                 </div>
-                <Progress value={60} className="h-2 bg-white/10 dark:bg-slate-900/50" indicatorClassName="bg-gradient-to-r from-purple-400 to-indigo-400" />
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 text-center font-medium">{t.activitiesPage.joinToUnlock}</p>
+              </div>
+
+              {/* 4-Column Compact Badge Grid */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { id: 1, icon: '🚀', name: 'Early Bird', unlocked: true },
+                  { id: 2, icon: '🎯', name: 'Goal Getter', unlocked: true },
+                  { id: 3, icon: '💎', name: 'Pro Contributor', unlocked: true },
+                  { id: 4, icon: '🏆', name: 'Activity Master', unlocked: false, progress: '6/10' },
+                  { id: 5, icon: '⚡', name: 'Speed Star', unlocked: false },
+                  { id: 6, icon: '🌟', name: 'Innovator', unlocked: false },
+                  { id: 7, icon: '🛡️', name: 'Team Player', unlocked: false },
+                  { id: 8, icon: '👑', name: 'Campus Legend', unlocked: false },
+                ].map((b) => {
+                  const isSelected = selectedBadge === b.id;
+
+                  return (
+                    <div
+                      key={b.id}
+                      onClick={() => setSelectedBadge(b.id)}
+                      className={`relative aspect-square rounded-xl flex flex-col items-center justify-center transition-all duration-150 cursor-pointer select-none ${
+                        b.unlocked
+                          ? isSelected
+                            ? 'bg-purple-50 dark:bg-purple-950/60 border-2 border-purple-500 dark:border-purple-400 shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/60 hover:border-purple-300 dark:hover:border-purple-700'
+                          : isSelected
+                          ? 'bg-slate-100/70 dark:bg-slate-900 border-2 border-slate-400 dark:border-slate-500'
+                          : 'bg-slate-50/50 dark:bg-slate-900/40 border border-dashed border-slate-200 dark:border-slate-800/80 opacity-60 hover:opacity-85'
+                      }`}
+                    >
+                      {b.unlocked ? (
+                        <div className="text-xl transition-transform duration-200 hover:scale-110">
+                          {b.icon}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center gap-0.5">
+                          <Lock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+                          <span className="text-[9px] font-mono text-slate-400 dark:text-slate-500">{b.icon}</span>
+                        </div>
+                      )}
+
+                      {/* Selected Small Accent Indicator */}
+                      {isSelected && (
+                        <div className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-purple-500 dark:bg-purple-400 ring-2 ring-white dark:ring-slate-900" />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Badge Progress Section */}
+              <div className="mt-4 pt-3.5 border-t border-slate-100 dark:border-slate-800/80">
+                <div className="flex justify-between items-baseline mb-1.5">
+                  <div>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider font-mono mb-0.5">
+                      {t.activitiesPage.nextBadge}
+                    </p>
+                    <p className="text-xs font-bold text-slate-800 dark:text-purple-200">
+                      Activity Master
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-xs font-bold font-mono text-purple-600 dark:text-purple-400">
+                      6 / 10 ครั้ง
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono ml-1.5">
+                      (60%)
+                    </span>
+                  </div>
+                </div>
+
+                <Progress
+                  value={60}
+                  className="h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full"
+                  indicatorClassName="bg-purple-600 dark:bg-purple-500 rounded-full"
+                />
+
+                <p className="text-[10.5px] text-slate-500 dark:text-slate-400 mt-2 text-center">
+                  เข้าร่วมกิจกรรมให้ครบ 10 ครั้งเพื่อปลดล็อก
+                </p>
               </div>
             </div>
           </div>

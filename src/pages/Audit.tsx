@@ -133,7 +133,7 @@ export default function Audit() {
                         <span>{t.audit.subtitle}</span>
                     </motion.div>
                     <motion.h1
-                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -154,15 +154,15 @@ export default function Audit() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden"
+                    className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
                                 <Activity className="w-6 h-6" />
                             </div>
-                            <span className="font-medium text-white/90">{t.audit.totalLabel}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.audit.totalLabel}</span>
                         </div>
                         <div className="text-5xl font-bold tracking-tight">{auditLogs.length}</div>
                         <div className="mt-3 text-sm text-indigo-100 flex items-center gap-1">
@@ -243,7 +243,7 @@ export default function Audit() {
                     </Select>
                 </div>
 
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
+                <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
                     <CardContent className="pt-6">
                         <div className="space-y-3">
                             {filteredLogs.map((log, index) => (

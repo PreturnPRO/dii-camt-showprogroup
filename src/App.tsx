@@ -9,8 +9,6 @@ import { SocketProvider } from "@/contexts/SocketContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { RoleGuard } from "@/components/layout/RoleGuard";
-
 import { GlobalPreloader } from "@/components/common/GlobalPreloader";
 
 const queryClient = new QueryClient();
@@ -23,11 +21,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Courses = lazy(() => import("./pages/Courses"));
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Grades = lazy(() => import("./pages/Grades"));
-const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Internships = lazy(() => import("./pages/Internships"));
-const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const Requests = lazy(() => import("./pages/Requests"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -59,8 +55,6 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
 const Automation = lazy(() => import("./pages/Automation"));
-const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
-const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -77,7 +71,7 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <BrowserRouter>
+            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
               <GlobalPreloader />
               <Suspense fallback={<RouteFallback />}>
               <Routes>
@@ -88,14 +82,17 @@ const App = () => (
                 <Route path="/reset-password" element={<ForgotPasswordPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/portfolio/:id" element={<PublicPortfolio />} />
                 <Route element={<DashboardLayout />}>
-                  {/* Shared (ทุก role ที่ login แล้ว) */}
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/personal-dashboard" element={<PersonalDashboard />} />
+                  <Route path="/courses" element={<Courses />} />
+                  <Route path="/schedule" element={<Schedule />} />
+                  <Route path="/grades" element={<Grades />} />
+                  <Route path="/activities" element={<Activities />} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/settings" element={<Settings />} />
 
+<<<<<<< Updated upstream
                   {/* Academic (D-04: map ตาม Sidebar) */}
                   <Route path="/courses" element={<RoleGuard allowedRoles={['student', 'lecturer', 'staff', 'admin']}><Courses /></RoleGuard>} />
                   <Route path="/courses/:courseId/grading" element={<RoleGuard allowedRoles={['lecturer', 'staff', 'admin']}><CourseGradingSettings /></RoleGuard>} />
@@ -116,21 +113,36 @@ const App = () => (
                   <Route path="/appointments" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Appointments /></RoleGuard>} />
                   <Route path="/attendance" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Attendance /></RoleGuard>} />
                   <Route path="/workload" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Workload /></RoleGuard>} />
+=======
+                  {/* Student Routes */}
+                  <Route path="/portfolio" element={<Portfolio />} />
+                  <Route path="/internships" element={<Internships />} />
+                  <Route path="/requests" element={<Requests />} />
+                  <Route path="/training" element={<Training />} />
 
-                  {/* Staff / Admin Routes */}
-                  <Route path="/users" element={<RoleGuard allowedRoles={['staff', 'admin']}><UsersPage /></RoleGuard>} />
-                  <Route path="/reports" element={<RoleGuard allowedRoles={['staff', 'admin']}><Reports /></RoleGuard>} />
-                  <Route path="/notifications" element={<RoleGuard allowedRoles={['staff', 'admin']}><Notifications /></RoleGuard>} />
-                  <Route path="/automation" element={<RoleGuard allowedRoles={['staff', 'admin']}><Automation /></RoleGuard>} />
-                  <Route path="/audit" element={<RoleGuard allowedRoles={['staff', 'admin']}><Audit /></RoleGuard>} />
-                  <Route path="/budget" element={<RoleGuard allowedRoles={['staff', 'admin']}><Budget /></RoleGuard>} />
-                  <Route path="/network" element={<RoleGuard allowedRoles={['staff', 'admin']}><Network /></RoleGuard>} />
-                  <Route path="/documents" element={<RoleGuard allowedRoles={['staff', 'admin']}><Documents /></RoleGuard>} />
-                  <Route path="/personnel" element={<RoleGuard allowedRoles={['staff', 'admin']}><Personnel /></RoleGuard>} />
-                  <Route path="/workload-tracking" element={<RoleGuard allowedRoles={['staff', 'admin']}><WorkloadTracking /></RoleGuard>} />
-                  <Route path="/schedule-management" element={<RoleGuard allowedRoles={['staff', 'admin']}><ScheduleManagement /></RoleGuard>} />
-                  <Route path="/activities-management" element={<RoleGuard allowedRoles={['staff', 'admin']}><ActivitiesManagement /></RoleGuard>} />
+                  {/* Lecturer Routes */}
+                  <Route path="/students" element={<Students />} />
+                  <Route path="/assignments" element={<Assignments />} />
+                  <Route path="/appointments" element={<Appointments />} />
+                  <Route path="/attendance" element={<Attendance />} />
+                  <Route path="/workload" element={<Workload />} />
+>>>>>>> Stashed changes
 
+                  {/* Staff Routes */}
+                  <Route path="/users" element={<UsersPage />} />
+                  <Route path="/reports" element={<Reports />} />
+                  <Route path="/notifications" element={<Notifications />} />
+                  <Route path="/automation" element={<Automation />} />
+                  <Route path="/audit" element={<Audit />} />
+                  <Route path="/budget" element={<Budget />} />
+                  <Route path="/network" element={<Network />} />
+                  <Route path="/documents" element={<Documents />} />
+                  <Route path="/personnel" element={<Personnel />} />
+                  <Route path="/workload-tracking" element={<WorkloadTracking />} />
+                  <Route path="/schedule-management" element={<ScheduleManagement />} />
+                  <Route path="/activities-management" element={<ActivitiesManagement />} />
+
+<<<<<<< Updated upstream
                   {/* Company / Admin Routes */}
                   <Route path="/job-postings" element={<RoleGuard allowedRoles={['company', 'admin']}><JobPostings /></RoleGuard>} />
                   <Route path="/skills-requirement" element={<RoleGuard allowedRoles={['company', 'admin']}><SkillsRequirement /></RoleGuard>} />
@@ -138,7 +150,18 @@ const App = () => (
                   <Route path="/student-profiles" element={<RoleGuard allowedRoles={['company', 'admin']}><StudentProfiles /></RoleGuard>} />
                   <Route path="/intern-tracking" element={<RoleGuard allowedRoles={['company', 'admin']}><InternTracking /></RoleGuard>} />
                   <Route path="/cooperation" element={<RoleGuard allowedRoles={['company', 'staff', 'admin']}><Cooperation /></RoleGuard>} />
-                  <Route path="/talent-search" element={<RoleGuard allowedRoles={['company', 'admin']}><TalentSearch /></RoleGuard>} />
+                  <Route path="/talent-search" element={<RoleGuard allowedRoles={['company', 'admin']}><StudentProfiles /></RoleGuard>} />
+=======
+                  {/* Company Routes */}
+                  <Route path="/job-postings" element={<JobPostings />} />
+                  <Route path="/skills-requirement" element={<SkillsRequirement />} />
+                  <Route path="/applicants" element={<Applicants />} />
+                  <Route path="/student-profiles" element={<StudentProfiles />} />
+                  <Route path="/subscription" element={<Subscription />} />
+                  <Route path="/intern-tracking" element={<InternTracking />} />
+                  <Route path="/cooperation" element={<Cooperation />} />
+                  <Route path="/talent-search" element={<StudentProfiles />} />
+>>>>>>> Stashed changes
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

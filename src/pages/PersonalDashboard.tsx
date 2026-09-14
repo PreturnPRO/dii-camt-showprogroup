@@ -119,7 +119,7 @@ const roleDashboardConfig: Record<Exclude<UserRole, 'student'>, {
         badge: 'อาจารย์',
         gradient: 'from-indigo-700 via-blue-700 to-cyan-700',
         actions: [
-            { label: 'นักศึกษาในที่ปรึกษา', path: '/students', icon: Users },
+            { label: 'อาจารย์ที่ปรึกษา', path: '/students', icon: Users },
             { label: 'รายวิชาที่สอน', path: '/courses', icon: BookOpen },
             { label: 'กรอกผลการเรียน', path: '/grades', icon: Award },
             { label: 'นัดหมาย', path: '/appointments', icon: Calendar },
@@ -342,7 +342,7 @@ function RolePersonalDashboard({
 
 export default function PersonalDashboard() {
     const navigate = useNavigate();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { user } = useAuth();
     const [student, setStudent] = React.useState<Student | null>(null);
     const [courses, setCourses] = React.useState<Course[]>([]);
@@ -615,113 +615,115 @@ export default function PersonalDashboard() {
             animate="visible"
             className="space-y-8 pb-10"
         >
-            {/* Profile Header */}
+            {/* Profile Header — ShowPro Dark Navy Base with Subtle Radial Glow */}
             <motion.div
                 variants={itemVariants}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-2xl"
+                className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0c1222] p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-xs text-slate-900 dark:text-white"
             >
-                <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
+                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
-                <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
+                <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-6">
                     {/* Avatar */}
-                    <motion.div
-                        whileHover={{ scale: 1.05 }}
-                        className="relative"
-                    >
-                        <div className="w-32 h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-xl shadow-blue-500/30">
-                            <div className="w-full h-full rounded-[22px] bg-slate-800 flex items-center justify-center overflow-hidden">
-                                {student.avatar ? (
-                                    <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
-                                ) : (
-                                    <User className="w-16 h-16 text-slate-400" />
-                                )}
-                            </div>
+                    <div className="relative shrink-0">
+                        <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-2xl p-1 border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-md flex items-center justify-center overflow-hidden">
+                            {student.avatar ? (
+                                <img src={student.avatar} alt={student.name} className="w-full h-full rounded-xl object-cover" />
+                            ) : (
+                                <User className="w-12 h-12 text-slate-400" />
+                            )}
                         </div>
-                        <div className="absolute -bottom-2 -right-2 bg-emerald-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        <div className="absolute -bottom-2 -right-2 bg-emerald-600 text-white text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full shadow-sm">
                             {yearLabel}
                         </div>
-                    </motion.div>
+                    </div>
 
                     {/* Info */}
-                    <div className="flex-1 text-center lg:text-left">
-                        <div className="flex items-center justify-center lg:justify-start gap-2 text-slate-400 text-sm mb-2">
-                            <Sparkles className="w-4 h-4 text-yellow-500" />
+                    <div className="flex-1 text-center lg:text-left min-w-0">
+                        <div className="flex items-center justify-center lg:justify-start gap-1.5 text-slate-400 text-xs font-medium mb-1">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                             <span>{greeting}</span>
                         </div>
-                        <h1 className="text-3xl lg:text-4xl font-bold mb-2">{student.nameThai}</h1>
-                        <p className="text-slate-400 mb-4">{student.name}</p>
+                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-1">{student.nameThai}</h1>
+                        <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono mb-3">{student.name}</p>
 
-                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-slate-300">
-                            <div className="flex items-center gap-2">
-                                <GraduationCap className="w-4 h-4 text-blue-400" />
-                                <span>{student.major}</span>
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs text-slate-600 dark:text-slate-300">
+                            <div className="flex items-center gap-1.5">
+                                <GraduationCap className="w-4 h-4 text-blue-500" />
+                                <span className="font-medium">{student.major}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Calendar className="w-4 h-4 text-emerald-400" />
+                            <div className="flex items-center gap-1.5 font-mono">
+                                <Calendar className="w-4 h-4 text-emerald-500" />
                                 <span>{t.personalDashboard.semester} {student.semester}/{student.academicYear}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <Award className="w-4 h-4 text-yellow-400" />
+                            <div className="flex items-center gap-1.5 font-mono font-bold text-amber-600 dark:text-amber-400">
+                                <Award className="w-4 h-4" />
                                 <span>{student.gamificationPoints} XP</span>
                             </div>
                         </div>
 
-                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-4">
-                            <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-3.5">
+                            <Badge variant="outline" className="font-mono text-xs font-semibold bg-blue-50/70 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border-blue-200/60 dark:border-blue-800/60 px-2.5 py-0.5 rounded-md">
                                 {t.personalDashboard.studentId} {student.studentId}
                             </Badge>
-                            <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+                            <Badge variant="outline" className="font-mono text-xs font-bold bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-md">
                                 GPAX: {student.gpax.toFixed(2)}
                             </Badge>
                             {student.academicStatus === 'normal' && (
-                                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                                <Badge variant="outline" className="text-xs font-medium bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-md">
                                     {t.personalDashboard.statusNormal}
                                 </Badge>
                             )}
+                            <Badge variant="outline" className="text-[11px] font-medium bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/70 dark:border-slate-800 px-2 py-0.5 rounded-md">
+                                {language === 'th' ? 'ที่ปรึกษา: ' : 'Advisor: '} {student.advisorNameThai || student.advisorName || 'ผศ.ดร. นรินทร์ พิชยกุล'}
+                            </Badge>
                         </div>
                     </div>
 
                     {/* Quick Actions */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-row lg:flex-col gap-2 shrink-0">
                         <Button
+                            size="sm"
                             onClick={() => navigate('/portfolio')}
-                            className="bg-white/10 hover:bg-white/20 text-white border border-white/20 rounded-xl dark:bg-slate-900/50"
+                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-xl h-9 px-4 shadow-xs"
                         >
-                            <User className="w-4 h-4 mr-2" />
+                            <User className="w-3.5 h-3.5 mr-1.5" />
                             {t.common.details} Portfolio
                         </Button>
                         <Button
+                            size="sm"
                             onClick={() => navigate('/settings')}
-                            variant="ghost"
-                            className="text-slate-300 hover:text-white hover:bg-white/10 rounded-xl dark:bg-slate-900/50"
+                            variant="outline"
+                            className="border-slate-200/80 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs font-medium rounded-xl h-9 px-4"
                         >
+                            <Settings className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
                             {t.personalDashboard.editProfile}
                         </Button>
                     </div>
                 </div>
             </motion.div>
 
-            {/* Main Content Grid */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Content Grid (67% Left, 33% Right) */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 items-start">
                 {/* Left Column - 2/3 */}
-                <div className="lg:col-span-2 space-y-8">
+                <div className="lg:col-span-2 space-y-6">
                     {/* Class Schedule */}
                     <motion.div variants={itemVariants}>
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                                <Calendar className="w-5 h-5 text-purple-500 dark:text-slate-400" />
+                        <div className="flex items-center justify-between mb-3 px-1">
+                            <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
+                                <Calendar className="w-4 h-4 text-blue-500" />
                                 {t.personalDashboard.schedule}
                             </h2>
                             <Button
                                 variant="ghost"
+                                size="sm"
                                 onClick={() => navigate('/schedule')}
-                                className="text-slate-500 hover:text-purple-600 dark:text-slate-300"
+                                className="text-xs font-semibold text-slate-500 hover:text-blue-600 h-8 dark:text-slate-400"
                             >
-                                {t.personalDashboard.fullscreen} <ChevronRight className="w-4 h-4 ml-1" />
+                                {t.personalDashboard.fullscreen} <ChevronRight className="w-3.5 h-3.5 ml-1" />
                             </Button>
                         </div>
-                        <div className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                        <div className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
                             <Timetable
                                 courses={studentCourses}
                                 semester={student.semester}

@@ -105,17 +105,19 @@ export function TechnicalSkillsCard({ skills, activities = [] }: TechnicalSkills
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50"
+            className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs"
         >
-            <div className="flex items-center gap-3 mb-6">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 text-white shadow-lg shadow-orange-500/20">
-                    <Code2 className="w-5 h-5" />
-                </div>
-                <div>
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">Technical Skills</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400">ทักษะตามสายงาน</p>
+            <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                        <Code2 className="w-4 h-4" />
+                    </div>
+                    <div>
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">ทักษะทางเทคนิค</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Technical Competencies</p>
+                    </div>
                 </div>
             </div>
 

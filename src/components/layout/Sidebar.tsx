@@ -1,6 +1,10 @@
-import { useEffect, useState } from 'react';
+<<<<<<< Updated upstream
 import { Link, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+=======
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+>>>>>>> Stashed changes
 import {
   LayoutDashboard,
   BookOpen,
@@ -18,16 +22,16 @@ import {
   UserCog,
   Shield,
   Bell,
+  Folder,
   X,
   DollarSign,
   Search,
   Clock,
   Building,
+  Command,
   Swords,
   Target,
   Bot,
-  ChevronLeft,
-  ChevronRight,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,6 +39,24 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { UserRole } from '@/types';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuPortal,
+} from '@/components/ui/dropdown-menu';
 
 interface NavItem {
   icon: React.ElementType;
@@ -46,6 +68,8 @@ interface NavItem {
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
 const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => {
@@ -57,16 +81,15 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
     case 'student':
       return [
         ...commonItems,
-        { icon: BookOpen, label: nav.courses, href: '/courses' },
-        { icon: Calendar, label: nav.schedule, href: '/schedule' },
+        { icon: Calendar, label: nav.schedule || 'Schedule', href: '/schedule' },
+        { icon: BookOpen, label: nav.courses || 'Courses', href: '/courses' },
         { icon: GraduationCap, label: nav.grades, href: '/grades' },
         { icon: Trophy, label: nav.activities, href: '/activities' },
         { icon: FileText, label: nav.portfolio, href: '/portfolio' },
         { icon: Briefcase, label: nav.internships, href: '/internships' },
-        { icon: Clock, label: nav.applicationHistory || 'ประวัติการสมัคร', href: '/application-history' },
         { icon: ClipboardList, label: nav.requests, href: '/requests' },
         { icon: MessageSquare, label: nav.messages, href: '/messages' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Users, label: nav.adviseeStudents || 'Teacher', href: '/students' },
       ];
     case 'lecturer':
       return [
@@ -78,7 +101,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: GraduationCap, label: nav.grading, href: '/grades' },
         { icon: FileText, label: nav.appointments, href: '/appointments' },
         { icon: MessageSquare, label: nav.messages, href: '/messages' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
       ];
     case 'staff':
       return [
@@ -98,7 +120,6 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: BarChart3, label: nav.reportsStats, href: '/reports' },
         { icon: Shield, label: nav.audit, href: '/audit' },
         { icon: Bell, label: nav.announcementManagement, href: '/notifications' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
       ];
     case 'company':
       return [
@@ -108,7 +129,8 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Search, label: nav.searchStudents, href: '/talent-search' },
         { icon: Users, label: nav.applicants, href: '/applicants' },
         { icon: UserCog, label: nav.internTracking, href: '/intern-tracking' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Building2, label: nav.cooperationMOU, href: '/cooperation' },
+        { icon: DollarSign, label: nav.subscriptionPackage, href: '/subscription' },
       ];
     case 'admin':
       return [
@@ -129,13 +151,13 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Bell, label: nav.announcementsNotifications, href: '/notifications' },
         { icon: BarChart3, label: nav.reportsStats, href: '/reports' },
         { icon: Shield, label: nav.auditLogs, href: '/audit' },
-        { icon: Settings, label: nav.systemSettingsAdmin, href: '/settings' },
       ];
     default:
       return commonItems;
   }
 };
 
+<<<<<<< Updated upstream
 const getRoleAccent = (role: UserRole) => {
   switch (role) {
     case 'student':  return { dot: 'bg-blue-500',   active: 'bg-blue-600 text-white',   init: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
@@ -150,52 +172,39 @@ const getRoleAccent = (role: UserRole) => {
 const COLLAPSE_STORAGE_KEY = 'showpro:sidebar-collapsed';
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
+=======
+export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
+>>>>>>> Stashed changes
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout, switchRole } = useAuth();
   const { t } = useLanguage();
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSE_STORAGE_KEY, String(collapsed));
-    } catch {
-      // localStorage unavailable — collapse preference just won't persist.
-    }
-  }, [collapsed]);
 
   if (!user) return null;
 
   const navItems = getNavItems(user.role, t.nav as unknown as Record<string, string>);
-  const accent = getRoleAccent(user.role);
-  const initials = user.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '??';
+
+  const sidebarWidth = isCollapsed ? 'w-[72px]' : 'w-60';
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Mobile Only Overlay Backdrop */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm md:hidden"
             onClick={onClose}
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar - Deep High-Contrast Midnight Navy */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 h-[100dvh] shrink-0 self-start flex flex-col",
-          collapsed ? "md:w-[72px]" : "md:w-64",
-          "w-64",
+          "fixed inset-y-0 left-0 z-50 h-[100dvh] w-64 shrink-0 self-start flex flex-col",
           "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800",
           "transition-[transform,width] duration-300 md:sticky md:inset-auto md:top-0 md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
@@ -222,10 +231,36 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
           </Link>
           <Button variant="ghost" size="icon" className="md:hidden w-8 h-8 text-slate-400 hover:text-slate-900 dark:hover:text-white" onClick={onClose}>
+=======
+          "fixed inset-y-0 left-0 z-50 h-[100dvh] shrink-0 bg-[#090d16] text-slate-100 shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-visible border-r border-slate-800/80",
+          sidebarWidth,
+          // Mobile: slide in/out
+          "md:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        )}
+      >
+        {/* Collapse Toggle Badge */}
+        <button
+          onClick={onToggleCollapse}
+          title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className="hidden md:flex absolute top-1/2 -right-3 -translate-y-1/2 z-50 w-6 h-6 rounded-full bg-[#0d1527] hover:bg-blue-600 text-slate-400 hover:text-white border border-slate-700/80 shadow-lg items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110"
+        >
+          {isCollapsed ? (
+            <ChevronRight className="w-3.5 h-3.5" />
+          ) : (
+            <ChevronLeft className="w-3.5 h-3.5" />
+          )}
+        </button>
+
+        {/* Mobile close button */}
+        <div className="md:hidden flex items-center justify-end p-2 border-b border-slate-800/80">
+          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-8 w-8" onClick={onClose}>
+>>>>>>> Stashed changes
             <X className="h-4 w-4" />
           </Button>
         </div>
 
+<<<<<<< Updated upstream
         {/* Navigation */}
         <ScrollArea className="flex-1 min-h-0 py-3 px-3">
           <nav className="space-y-0.5">
@@ -256,13 +291,128 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                     )}>
                       {item.badge}
                     </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </ScrollArea>
+=======
+        {/* Navigation - Smooth Scrollable Menu */}
+        <div className="flex-1 min-h-0 py-3.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+          <TooltipProvider delayDuration={100}>
+            <nav className="px-2.5 space-y-1.5">
+              {navItems.map((item) => {
+                const isActive = location.pathname === item.href;
+                const linkContent = (
+                  <Link
+                    key={item.href + item.label}
+                    to={item.href}
+                    onClick={onClose}
+                    className={cn(
+                      "relative flex items-center h-10 px-3 rounded-xl transition-all duration-150 group overflow-hidden cursor-pointer",
+                      isActive
+                        ? "bg-blue-600/15 text-white font-semibold border border-blue-500/30 shadow-sm"
+                        : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/50"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeNavIndicator"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.8)]"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                    <div className="w-6 h-6 flex items-center justify-center shrink-0">
+                      <item.icon className={cn(
+                        "w-[19px] h-[19px] shrink-0 transition-colors duration-150",
+                        isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-200"
+                      )} />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="ml-3 text-xs font-medium tracking-tight truncate transition-opacity duration-150">
+                        {item.label}
+                      </span>
+                    )}
+                    {!isCollapsed && item.badge && (
+                      <span className={cn(
+                        "ml-auto px-1.5 py-0.5 text-[10px] font-semibold rounded-md shrink-0",
+                        isActive
+                          ? "bg-blue-500/30 text-blue-300"
+                          : "bg-slate-800 text-slate-400"
+                      )}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
 
+                if (isCollapsed) {
+                  return (
+                    <Tooltip key={item.href + item.label}>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        sideOffset={10}
+                        className="bg-[#0f172a] text-slate-100 border border-slate-700 text-xs px-2.5 py-1 font-medium shadow-xl rounded-lg z-50"
+                      >
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return linkContent;
+              })}
+            </nav>
+          </TooltipProvider>
+        </div>
+
+        {/* User Profile - Bottom of Sidebar */}
+        {user && (
+          <div className="shrink-0 border-t border-slate-800/80 p-3 bg-[#070a12]/50">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "w-full flex items-center gap-3 rounded-xl p-2 hover:bg-slate-800/60 transition-colors duration-150 cursor-pointer",
+                    isCollapsed && "justify-center"
+                  )}
+                >
+                  <Avatar className="h-9 w-9 shrink-0 border-2 border-slate-700/80 shadow-md">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-xs font-bold">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!isCollapsed && (
+                    <>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="text-sm font-semibold text-slate-100 truncate">{user.name}</div>
+                        <div className="text-[11px] text-slate-400 font-mono truncate">{user.email}</div>
+                      </div>
+                      <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
+                    </>
+>>>>>>> Stashed changes
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side={isCollapsed ? 'right' : 'top'}
+                align={isCollapsed ? 'end' : 'start'}
+                className="w-64 p-1.5 rounded-2xl shadow-2xl border border-slate-800 bg-[#0d1322] text-slate-100 mb-2"
+              >
+                {/* User Info Card */}
+                <div className="p-3 mb-1 bg-[#070b14] rounded-xl border border-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10 border border-slate-700">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-sm">{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-bold text-slate-100 block truncate">{user.name}</span>
+                      <span className="text-xs text-slate-400 font-mono block truncate">{user.email}</span>
+                    </div>
+                  </div>
+                </div>
+
+<<<<<<< Updated upstream
         {/* User Profile */}
         <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 p-3">
           <div className={cn("flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer", collapsed && "md:justify-center")}>
@@ -276,8 +426,65 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="text-xs text-slate-400 dark:text-slate-500 capitalize">{user.role}</div>
               </div>
             </div>
+=======
+                <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 text-slate-200 focus:bg-slate-800 focus:text-white" onClick={() => navigate('/personal-dashboard')}>
+                  <User className="h-4 w-4 mr-2.5 text-slate-400" />
+                  <span className="font-medium text-sm">{t.header?.profile || 'My Profile'}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 text-slate-200 focus:bg-slate-800 focus:text-white" onClick={() => navigate('/settings')}>
+                  <Settings className="h-4 w-4 mr-2.5 text-slate-400" />
+                  <span className="font-medium text-sm">{t.header?.systemSettings || 'Settings'}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1 bg-slate-800" />
+
+                {demoAccountsEnabled && (
+                  <>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="rounded-xl cursor-pointer py-2.5 px-3 text-slate-200 focus:bg-slate-700 focus:text-slate-50">
+                        <Users className="h-4 w-4 mr-2.5 text-slate-400" />
+                        <span className="font-medium text-sm">{t.header?.switchRole || 'Switch Account'}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="p-1.5 rounded-xl shadow-lg border border-slate-700/50 bg-slate-800">
+                          {(
+                            [
+                              { label: 'Student Portal', value: 'student' },
+                              { label: 'Lecturer Portal', value: 'lecturer' },
+                              { label: 'Staff Portal', value: 'staff' },
+                              { label: 'Company Portal', value: 'company' },
+                              { label: 'Admin Root', value: 'admin' },
+                            ] as const
+                          ).map(({ label, value }) => (
+                            <DropdownMenuItem
+                              key={value}
+                              onClick={() => switchRole(value)}
+                              className="rounded-lg cursor-pointer py-2 px-3 font-medium text-sm text-slate-400 focus:bg-blue-900/20 focus:text-blue-400"
+                            >
+                              {label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator className="my-1 bg-slate-700/50" />
+                  </>
+                )}
+
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="rounded-xl cursor-pointer py-2.5 px-3 text-red-400 focus:text-red-300 focus:bg-slate-700"
+                >
+                  <LogOut className="h-4 w-4 mr-2.5" />
+                  <span className="font-medium text-sm">{t.header?.logout || 'Log Out'}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+>>>>>>> Stashed changes
           </div>
-        </div>
+        )}
+
       </aside>
     </>
   );

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -220,7 +220,7 @@ export default function Notifications() {
                                         handleOpenNotification(notification);
                                     }
                                 }}
-                                className={`flex items-start gap-4 p-4 border rounded-xl transition-all hover:shadow-md cursor-pointer ${!notification.isRead ? 'bg-blue-50/70 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800/60' : 'bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800'
+                                className={`flex items-start gap-4 p-4 border rounded-xl transition-all hover:shadow-md cursor-pointer ${!notification.isRead ? 'bg-blue-50/70 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800/60' : 'bg-white border-slate-200 dark:border-slate-800'
                                     }`}
                             >
                                 <div className="mt-1">{getTypeIcon(notification.type)}</div>
@@ -272,7 +272,7 @@ export default function Notifications() {
                         <Bell className="w-4 h-4 text-blue-500 dark:text-slate-400" />
                         <span>{t.notificationsPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.notificationsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.notificationsPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -281,7 +281,7 @@ export default function Notifications() {
                 </div>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex gap-2">
                     {canManage && (
-                        <Button onClick={() => setIsDialogOpen(true)} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200">
+                        <Button onClick={() => setIsDialogOpen(true)} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg">
                             <Plus className="w-4 h-4 mr-2" />{t.notificationsPage.createAnnouncement}
                         </Button>
                     )}
@@ -291,19 +291,19 @@ export default function Notifications() {
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { label: t.notificationsPage.allTab, value: notifications.length, gradient: 'from-blue-500 to-indigo-500', icon: Bell },
-                    { label: t.notificationsPage.unreadTab, value: unreadCount, gradient: 'from-orange-500 to-amber-500', icon: Mail },
-                    { label: t.notificationsPage.urgentTab, value: notifications.filter(n => n.priority === 'urgent' || n.priority === 'high').length, gradient: 'from-red-500 to-rose-500', icon: AlertTriangle },
-                    { label: t.notificationsPage.readTab, value: notifications.filter(n => n.isRead).length, gradient: 'from-emerald-500 to-teal-500', icon: CheckCircle },
+                    { label: t.notificationsPage.allTab, value: notifications.length, gradient: '', icon: Bell },
+                    { label: t.notificationsPage.unreadTab, value: unreadCount, gradient: '', icon: Mail },
+                    { label: t.notificationsPage.urgentTab, value: notifications.filter(n => n.priority === 'urgent' || n.priority === 'high').length, gradient: '', icon: AlertTriangle },
+                    { label: t.notificationsPage.readTab, value: notifications.filter(n => n.isRead).length, gradient: '', icon: CheckCircle },
                 ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5`}>
+                        
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-3">
-                                <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900/50"><stat.icon className="w-5 h-5" /></div>
-                                <span className="font-medium text-white/90">{stat.label}</span>
+                                <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-5 h-5" /></div>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
                             </div>
-                            <div className="text-4xl font-bold">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
@@ -311,7 +311,7 @@ export default function Notifications() {
 
             <motion.div variants={itemVariants}>
                 <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-white/80 backdrop-blur-sm border shadow-sm dark:bg-slate-900/50">
+                    <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
                         <TabsTrigger value="all">{t.notificationsPage.allTab}</TabsTrigger>
                         <TabsTrigger value="unread">{t.notificationsPage.unreadTab}</TabsTrigger>
                         <TabsTrigger value="urgent">{t.notificationsPage.urgentTab}</TabsTrigger>

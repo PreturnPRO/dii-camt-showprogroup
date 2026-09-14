@@ -9,63 +9,63 @@
     /* DII CAMT Design System */
     --font-thai: 'IBM Plex Sans Thai', sans-serif;
 
-    /* Default (Navy) Variables */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-    --card: 0 0% 100%;
+    /* Blue Slate Base Variables */
+    --background: 210 40% 98%; /* #F8FAFC Slate-50 */
+    --foreground: 222 47% 11%; /* #0F172A Slate-900 */
+    --card: 0 0% 100%; /* #FFFFFF */
     --card-foreground: 222 47% 11%;
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
-    --primary: 222 47% 20%;
+    --primary: 221 83% 53%; /* #3B82F6 Blue-500 */
     --primary-foreground: 210 40% 98%;
-    --secondary: 210 20% 94%;
-    --secondary-foreground: 222 47% 20%;
-    --muted: 210 20% 96%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 38 92% 50%;
-    --accent-foreground: 222 47% 11%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222 47% 11%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%; /* #64748B Slate-500 */
+    --accent: 221 83% 53%;
+    --accent-foreground: 210 40% 98%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
     --success: 142 71% 45%;
     --success-foreground: 210 40% 98%;
     --warning: 38 92% 50%;
     --warning-foreground: 222 47% 11%;
-    --info: 199 89% 48%;
+    --info: 221 83% 53%;
     --info-foreground: 210 40% 98%;
-    --border: 214 32% 91%;
+    --border: 214 32% 91%; /* Slate-200 */
     --input: 214 32% 91%;
-    --ring: 222 47% 20%;
+    --ring: 221 83% 53%;
     --radius: 0.75rem;
 
     /* Shadows & Effects */
-    --shadow-sm: 0 1px 2px 0 hsl(222 47% 11% / 0.05);
-    --shadow-md: 0 4px 6px -1px hsl(222 47% 11% / 0.1), 0 2px 4px -2px hsl(222 47% 11% / 0.1);
-    --shadow-lg: 0 10px 15px -3px hsl(222 47% 11% / 0.1), 0 4px 6px -4px hsl(222 47% 11% / 0.1);
-    --shadow-xl: 0 20px 25px -5px hsl(222 47% 11% / 0.1), 0 8px 10px -6px hsl(222 47% 11% / 0.1);
-    --shadow-card: 0 4px 20px -2px hsl(222 47% 11% / 0.08);
-    --shadow-card-hover: 0 8px 30px -4px hsl(222 47% 11% / 0.12);
+    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.08);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.1);
+    --shadow-xl: 0 20px 25px -5px rgba(15, 23, 42, 0.1);
+    --shadow-card: 0 4px 20px -2px rgba(15, 23, 42, 0.08);
+    --shadow-card-hover: 0 8px 30px -4px rgba(15, 23, 42, 0.12);
   }
 
   .dark {
-    --background: 222 47% 8%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
+    --background: 222 47% 11%; /* #0F172A Slate-900 */
+    --foreground: 210 40% 98%; /* #F8FAFC Slate-50 */
+    --card: 217 33% 17%; /* #1E293B Slate-800 */
     --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
+    --popover: 217 33% 17%;
     --popover-foreground: 210 40% 98%;
-    --primary: 38 92% 50%;
+    --primary: 217 91% 60%; /* #60A5FA Blue-400 */
     --primary-foreground: 222 47% 11%;
-    --secondary: 222 47% 18%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 222 47% 18%;
-    --muted-foreground: 215 20% 65%;
-    --accent: 38 92% 50%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%; /* #94A3B8 Slate-400 */
+    --accent: 217 91% 60%;
     --accent-foreground: 222 47% 11%;
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-    --border: 222 47% 18%;
-    --input: 222 47% 18%;
-    --ring: 38 92% 50%;
+    --border: 217 33% 25%; /* Slate-700 */
+    --input: 217 33% 25%;
+    --ring: 217 91% 60%;
   }
 
   /* --- Color Themes --- */
@@ -163,6 +163,7 @@
 
   html {
     font-family: var(--font-thai);
+    font-size: 16.5px;
     min-height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
@@ -172,6 +173,7 @@
   body {
     @apply bg-background text-foreground antialiased selection:bg-primary/20 selection:text-primary transition-colors duration-300;
     font-family: var(--font-thai);
+    font-size: 1.05rem;
     min-width: 320px;
     min-height: 100dvh;
     overflow-x: hidden;

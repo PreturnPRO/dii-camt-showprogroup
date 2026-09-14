@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
@@ -16,7 +16,6 @@ import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { asNumber, asRecord, asString, getRoleProfile } from '@/lib/user-profile';
 import { api } from '@/lib/api';
 
@@ -44,7 +43,7 @@ export default function Settings() {
   const [nameEn, setNameEn] = React.useState(user?.name || '');
   const [email, setEmail] = React.useState(user?.email || '');
   const [phone, setPhone] = React.useState(user?.phone || '');
-  const [semester, setSemester] = React.useState('1');
+
   // Password form state
   const [currentPwd, setCurrentPwd] = React.useState('');
   const [newPwd, setNewPwd] = React.useState('');
@@ -89,10 +88,6 @@ export default function Settings() {
     setNameEn(user?.name || '');
     setEmail(user?.email || '');
     setPhone(user?.phone || '');
-    if (user?.role === 'student') {
-      const profile = getRoleProfile(user);
-      setSemester(String(profile?.semester ?? '1'));
-    }
   }, [user]);
 
   const buildRoleData = () => {
@@ -104,7 +99,7 @@ export default function Settings() {
           major: asString(profile.major, 'Digital Industry Integration'),
           program: asString(profile.program, 'bachelor'),
           year: asNumber(profile.year, 1),
-          semester: asNumber(semester, 1),
+          semester: asNumber(profile.semester, 1),
           academicYear: asString(profile.academicYear, '2569'),
           cvUrl: asString(profile.cvUrl) || undefined,
         };
@@ -253,7 +248,7 @@ export default function Settings() {
           <SettingsIcon className="w-4 h-4 text-indigo-500 dark:text-slate-400" />
           <span>{t.settingsPage.systemSettings}</span>
         </motion.div>
-        <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           {t.settingsPage.settingsTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-violet-600">{t.settingsPage.system}</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -264,78 +259,78 @@ export default function Settings() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Sidebar - Bento Style */}
         <motion.div variants={itemVariants} className="lg:col-span-4 flex flex-col gap-6">
-          <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-sm border border-white/60 dark:border-slate-800/60 relative overflow-hidden group dark:bg-slate-900/50">
+          <div className="bg-white/60 backdrop-blur-xl rounded-[2.5rem] p-6 shadow-sm border border-white/60 dark:border-slate-800/60 relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl group-hover:bg-indigo-500/10 transition-colors" />
 
-            <div className="flex items-center gap-4 p-5 mb-8 bg-slate-900 text-white rounded-[2rem] shadow-xl relative z-10">
-              <div className="relative">
-                <Avatar className="w-16 h-16 border-2 border-white/20 shadow-md rounded-2xl">
+            <div className="flex items-center gap-4 p-4 sm:p-5 mb-6 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-white rounded-2xl sm:rounded-[2rem] shadow-sm relative z-10 border border-slate-200/80 dark:border-slate-800 transition-colors">
+              <div className="relative shrink-0">
+                <Avatar className="w-14 h-14 sm:w-16 sm:h-16 border-2 border-white dark:border-slate-800 shadow-md rounded-2xl bg-white dark:bg-slate-800">
                   <AvatarImage src={avatarSrc} />
-                  <AvatarFallback className="bg-white/10 text-white font-bold rounded-2xl dark:bg-slate-900/50">{user?.nameThai?.[0] || 'U'}</AvatarFallback>
+                  <AvatarFallback className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-white font-bold rounded-2xl">{user?.nameThai?.[0] || 'U'}</AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-lg border-2 border-slate-900 flex items-center justify-center">
+                <div className="absolute -bottom-1 -right-1 bg-emerald-500 w-5 h-5 rounded-lg border-2 border-white dark:border-slate-900 flex items-center justify-center shadow-sm">
                   <ShieldCheck className="w-3 h-3 text-white" />
                 </div>
               </div>
               <div className="flex-1 min-w-0">
-                <div className="font-bold text-lg truncate tracking-tight">{user?.nameThai}</div>
-                <div className="text-xs text-slate-400 truncate font-medium">{user?.email}</div>
+                <div className="font-bold text-base sm:text-lg truncate tracking-tight text-slate-900 dark:text-white">{user?.nameThai}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 truncate font-mono mt-0.5">{user?.email}</div>
               </div>
             </div>
 
-            <nav className="space-y-2 relative z-10 px-2">
+            <nav className="space-y-1.5 relative z-10 px-1 sm:px-2">
               {[
-                { id: 'profile', label: t.settingsPage.profileInfo, icon: User, color: 'text-blue-500', bg: 'bg-blue-50' },
-                { id: 'notifications', label: t.settingsPage.notificationsTitle, icon: Bell, color: 'text-amber-500', bg: 'bg-amber-50' },
-                { id: 'security', label: t.settingsPage.security, icon: Shield, color: 'text-indigo-500', bg: 'bg-indigo-50' },
-                { id: 'preferences', label: t.settingsPage.display, icon: Palette, color: 'text-purple-500', bg: 'bg-purple-50' },
+                { id: 'profile', label: t.settingsPage.profileInfo, icon: User },
+                { id: 'notifications', label: t.settingsPage.notificationsTitle, icon: Bell },
+                { id: 'security', label: t.settingsPage.security, icon: Shield },
+                { id: 'preferences', label: t.settingsPage.display, icon: Palette },
               ].map((item) => (
                 <button
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
-                  className={`w-full flex items-center gap-4 px-5 py-4 rounded-2xl text-sm font-bold transition-all duration-300 ${activeTab === item.id
-                    ? 'bg-white text-indigo-600 shadow-lg border border-indigo-50 translate-x-1'
-                    : 'text-slate-500 hover:bg-white/50 hover:translate-x-1'
-                    } dark:text-slate-400 dark:bg-slate-900/50`}
+                  className={`w-full flex items-center gap-3.5 px-4 py-3 sm:py-3.5 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer ${activeTab === item.id
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 font-bold'
+                    : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                    }`}
                 >
-                  <div className={`p-2.5 rounded-xl transition-colors ${activeTab === item.id ? 'bg-indigo-600 text-white shadow-indigo-500/20' : `bg-slate-100/50 text-slate-400`}`}>
-                    <item.icon className="w-5 h-5" />
+                  <div className={`p-2 rounded-lg transition-colors shrink-0 ${activeTab === item.id ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'}`}>
+                    <item.icon className="w-4 h-4" />
                   </div>
-                  {item.label}
-                  {activeTab === item.id && <ChevronRight className="w-4 h-4 ml-auto opacity-100" />}
+                  <span className="truncate">{item.label}</span>
+                  {activeTab === item.id && <ChevronRight className="w-4 h-4 ml-auto shrink-0 opacity-90" />}
                 </button>
               ))}
             </nav>
 
-            <div className="mt-10 pt-6 border-t border-slate-100 dark:border-slate-800 px-4">
+            <div className="mt-8 pt-5 border-t border-slate-200/70 dark:border-slate-800 px-2">
               <Button
                 variant="ghost"
-                className="w-full justify-start text-red-500 font-bold hover:text-red-600 hover:bg-red-50 rounded-2xl h-14 dark:text-slate-300 dark:bg-slate-800"
+                className="w-full justify-start text-red-600 dark:text-red-400 font-semibold hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-xl h-11 text-xs"
                 onClick={logout}
               >
-                <div className="p-2.5 rounded-xl bg-red-50 text-red-500 mr-4 shadow-sm dark:text-slate-400 dark:bg-slate-800">
-                  <LogOut className="w-5 h-5" />
+                <div className="p-1.5 rounded-lg bg-red-100/70 dark:bg-red-900/30 text-red-600 dark:text-red-400 mr-3 shrink-0">
+                  <LogOut className="w-4 h-4" />
                 </div>
                 {t.settingsPage.logout}
               </Button>
             </div>
           </div>
 
-          {/* Quick Info Bento Box */}
-          <div className="bg-gradient-to-br from-indigo-900 to-slate-900 rounded-[2.5rem] p-8 text-white shadow-2xl relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/20 rounded-full blur-[60px]" />
+          {/* Quick Info Bento Box — Light and Dark Mode Adaptive */}
+          <div className="bg-white dark:bg-gradient-to-br dark:from-indigo-900 dark:to-slate-900 border border-slate-200/70 dark:border-slate-800 rounded-3xl sm:rounded-[2.5rem] p-6 sm:p-7 text-slate-900 dark:text-white shadow-sm relative overflow-hidden transition-colors">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-[60px]" />
             <div className="relative z-10">
-              <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                <Sparkles className="w-5 h-5 text-indigo-300" />
+              <h3 className="text-base font-bold mb-3.5 flex items-center gap-2 text-slate-900 dark:text-white tracking-tight">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-300" />
                 {t.settingsPage.accountStatus}
               </h3>
-              <div className="space-y-4">
-                <div className="p-4 rounded-2xl bg-white/5 border border-white/5 backdrop-blur-md dark:bg-slate-900/50">
+              <div className="space-y-3">
+                <div className="p-3.5 rounded-2xl bg-slate-50 dark:bg-white/5 border border-slate-200/60 dark:border-white/10 transition-colors">
                   <div className="flex justify-between items-center mb-1">
-                    <span className="text-[10px] font-black tracking-widest text-slate-400 uppercase">Verification</span>
-                    <Badge className="bg-emerald-500 text-[10px] h-5">Verified</Badge>
+                    <span className="text-[10px] font-bold tracking-widest text-slate-400 uppercase font-mono">Verification</span>
+                    <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] h-5 px-2 font-mono">Verified</Badge>
                   </div>
-                  <div className="text-sm font-bold">{t.settingsPage.verifiedNormal}</div>
+                  <div className="text-xs sm:text-sm font-semibold text-slate-800 dark:text-slate-100">{t.settingsPage.verifiedNormal}</div>
                 </div>
               </div>
             </div>
@@ -344,7 +339,7 @@ export default function Settings() {
 
         {/* Content Area - Bento Style */}
         <motion.div variants={itemVariants} className="lg:col-span-8">
-          <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] shadow-sm border border-white flex flex-col min-h-[600px] overflow-hidden dark:bg-slate-900/50">
+          <div className="bg-white/70 backdrop-blur-xl rounded-[3rem] shadow-sm border border-white flex flex-col min-h-[600px] overflow-hidden">
             <AnimatePresence mode="wait">
               {activeTab === 'profile' && (
                 <motion.div
@@ -359,12 +354,12 @@ export default function Settings() {
                       <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{t.settingsPage.personalInfo}</h2>
                       <p className="text-slate-500 font-medium dark:text-slate-400">{t.settingsPage.personalInfoDesc}</p>
                     </div>
-                    <Button onClick={handleSaveProfile} disabled={isSaving} className="rounded-2xl h-12 px-8 bg-slate-900 text-white hover:bg-slate-800 shadow-xl shadow-slate-900/20 font-bold transform active:scale-95 transition-all disabled:opacity-70">
+                    <Button onClick={handleSaveProfile} disabled={isSaving} className="rounded-2xl h-12 px-8 bg-slate-900 text-white hover:bg-slate-800 shadow-sm shadow-slate-900/20 font-bold transform active:scale-95 transition-all disabled:opacity-70">
                       <Save className="w-4 h-4 mr-2" /> {isSaving ? 'Saving...' : t.settingsPage.saveData}
                     </Button>
                   </div>
 
-                  <div className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group dark:bg-slate-900/50">
+                  <div className="p-8 bg-slate-50/50 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row items-center gap-8 relative overflow-hidden group">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-[80px] pointer-events-none" />
                     <div className="relative group/avatar cursor-pointer">
                       <Avatar className="w-32 h-32 border-4 border-white shadow-2xl rounded-[2rem]">
@@ -422,22 +417,6 @@ export default function Settings() {
                       <Label className="ml-1 text-slate-700 dark:text-slate-300 font-bold">{t.settingsPage.phoneNumber}</Label>
                       <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+66 XX XXX XXXX" className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500" />
                     </div>
-                    {user?.role === 'student' && (
-                      <div className="space-y-2">
-                        <Label className="ml-1 text-slate-700 dark:text-slate-300 font-bold">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-                        <Select value={semester} onValueChange={setSemester}>
-                          <SelectTrigger className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500">
-                            <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="0">Pre-school</SelectItem>
-                            <SelectItem value="1">{language === 'th' ? 'เทอม 1' : 'Term 1'}</SelectItem>
-                            <SelectItem value="2">{language === 'th' ? 'เทอม 2' : 'Term 2'}</SelectItem>
-                            <SelectItem value="3">Summer</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    )}
                   </div>
                 </motion.div>
               )}
@@ -511,29 +490,53 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-8">
-                    <div className="p-10 rounded-[2.5rem] bg-slate-900 text-white shadow-2xl relative overflow-hidden group">
-                      <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 transition-all duration-1000 group-hover:bg-indigo-500/30" />
-                      <h3 className="font-black text-2xl mb-8 flex items-center gap-3 relative z-10 tracking-tight">
-                        <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 dark:bg-slate-900/50"><Lock className="w-7 h-7 text-indigo-300" /></div>
+                    <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-sm border border-slate-200/70 dark:border-slate-800 relative overflow-hidden transition-colors">
+                      <div className="absolute top-0 right-0 w-80 h-80 bg-indigo-500/10 rounded-full blur-[100px] pointer-events-none" />
+                      <h3 className="font-bold text-lg sm:text-xl mb-6 flex items-center gap-3 relative z-10 tracking-tight text-slate-900 dark:text-white">
+                        <div className="p-2.5 rounded-xl bg-indigo-50 dark:bg-white/10 text-indigo-600 dark:text-indigo-300 border border-indigo-100 dark:border-white/10 shadow-sm">
+                          <Lock className="w-5 h-5" />
+                        </div>
                         {t.settingsPage.changePassword}
                       </h3>
-                      <div className="grid gap-6 relative z-10">
-                        <div className="space-y-3">
-                          <Label className="text-slate-300 font-bold ml-1">{t.settingsPage.currentPassword}</Label>
-                          <Input type="password" value={currentPwd} onChange={e => setCurrentPwd(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 text-white placeholder:text-white/20 h-14 rounded-2xl focus:bg-white/10 transition-all px-6 text-lg dark:bg-slate-900/50" />
+                      <div className="grid gap-5 relative z-10">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 ml-0.5">{t.settingsPage.currentPassword}</Label>
+                          <Input
+                            type="password"
+                            value={currentPwd}
+                            onChange={e => setCurrentPwd(e.target.value)}
+                            placeholder="••••••••"
+                            className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 h-12 rounded-xl focus:bg-white dark:focus:bg-slate-900 transition-all px-4 text-base font-mono"
+                          />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-3">
-                            <Label className="text-slate-300 font-bold ml-1">{t.settingsPage.newPassword}</Label>
-                            <Input type="password" value={newPwd} onChange={e => setNewPwd(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 text-white placeholder:text-white/20 h-14 rounded-2xl focus:bg-white/10 transition-all px-6 text-lg dark:bg-slate-900/50" />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 ml-0.5">{t.settingsPage.newPassword}</Label>
+                            <Input
+                              type="password"
+                              value={newPwd}
+                              onChange={e => setNewPwd(e.target.value)}
+                              placeholder="••••••••"
+                              className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 h-12 rounded-xl focus:bg-white dark:focus:bg-slate-900 transition-all px-4 text-base font-mono"
+                            />
                           </div>
-                          <div className="space-y-3">
-                            <Label className="text-slate-300 font-bold ml-1">{t.settingsPage.confirmNewPassword}</Label>
-                            <Input type="password" value={confirmPwd} onChange={e => setConfirmPwd(e.target.value)} placeholder="••••••••" className="bg-white/5 border-white/10 text-white placeholder:text-white/20 h-14 rounded-2xl focus:bg-white/10 transition-all px-6 text-lg dark:bg-slate-900/50" />
+                          <div className="space-y-2">
+                            <Label className="text-xs font-semibold text-slate-700 dark:text-slate-300 ml-0.5">{t.settingsPage.confirmNewPassword}</Label>
+                            <Input
+                              type="password"
+                              value={confirmPwd}
+                              onChange={e => setConfirmPwd(e.target.value)}
+                              placeholder="••••••••"
+                              className="bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-600 h-12 rounded-xl focus:bg-white dark:focus:bg-slate-900 transition-all px-4 text-base font-mono"
+                            />
                           </div>
                         </div>
                       </div>
-                      <Button onClick={handleChangePasswordLive} disabled={isChangingPassword} className="mt-10 w-full bg-white dark:bg-slate-900 text-slate-900 dark:text-white hover:bg-slate-100 rounded-[1.5rem] h-14 font-black text-base shadow-xl transform active:scale-[0.98] transition-all relative z-10 disabled:opacity-70">
+                      <Button
+                        onClick={handleChangePasswordLive}
+                        disabled={isChangingPassword}
+                        className="mt-8 w-full bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-slate-100 rounded-xl h-12 font-semibold text-sm shadow-sm transform active:scale-[0.99] transition-all relative z-10 disabled:opacity-70"
+                      >
                         {isChangingPassword ? 'Updating...' : t.settingsPage.updatePassword}
                       </Button>
                     </div>
@@ -593,28 +596,155 @@ export default function Settings() {
                   </div>
 
                   <div className="space-y-12">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      <div className="cursor-pointer group" onClick={() => setTheme('light')}>
-                        <div className={`aspect-[16/10] rounded-[2rem] bg-slate-50 dark:bg-slate-950 border-4 ${theme === 'light' || theme === undefined ? 'border-indigo-600' : 'border-transparent group-hover:border-slate-300'} mb-4 relative overflow-hidden shadow-2xl ${theme === 'light' || theme === undefined ? 'scale-[1.05]' : ''}`}>
-                          <div className="absolute inset-4 bg-white dark:bg-slate-900 rounded-[1.25rem] border border-slate-100 dark:border-slate-800 shadow-inner" />
-                          <div className="absolute top-10 left-10 w-2/3 h-4 bg-slate-50 dark:bg-slate-950 rounded-full" />
-                          <div className="absolute top-18 left-10 w-1/3 h-24 bg-slate-50 dark:bg-slate-950 rounded-2xl" />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+                      {/* Light Mode Card */}
+                      <div
+                        className="cursor-pointer group flex flex-col items-center"
+                        onClick={() => setTheme('light')}
+                      >
+                        <div
+                          className={`w-full aspect-[16/10] rounded-2xl p-2.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between border-2 ${
+                            theme === 'light'
+                              ? 'border-blue-600 ring-4 ring-blue-500/15 shadow-md scale-[1.02]'
+                              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
+                          } bg-slate-100`}
+                        >
+                          {/* Miniature Browser Mockup */}
+                          <div className="w-full h-full rounded-xl bg-white border border-slate-200/80 shadow-sm p-2 flex flex-col gap-1.5 overflow-hidden">
+                            {/* Window Header */}
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-100">
+                              <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                              <div className="ml-auto w-10 h-1 rounded bg-slate-200" />
+                            </div>
+                            {/* Mockup Body */}
+                            <div className="flex gap-1.5 flex-1">
+                              {/* Sidebar */}
+                              <div className="w-1/4 rounded bg-slate-50 border border-slate-100 p-1 flex flex-col gap-1">
+                                <div className="w-full h-1.5 rounded bg-blue-500/40" />
+                                <div className="w-3/4 h-1 rounded bg-slate-200" />
+                                <div className="w-4/5 h-1 rounded bg-slate-200" />
+                              </div>
+                              {/* Content */}
+                              <div className="flex-1 flex flex-col gap-1.5">
+                                <div className="w-1/2 h-2 rounded bg-slate-800" />
+                                <div className="grid grid-cols-2 gap-1 flex-1">
+                                  <div className="rounded bg-slate-50 border border-slate-100" />
+                                  <div className="rounded bg-slate-50 border border-slate-100" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-center font-black text-slate-900 dark:text-white text-sm tracking-tight">{t.settingsPage.lightTheme}</p>
+                        <div className="mt-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{t.settingsPage.lightTheme}</span>
+                            {theme === 'light' && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium">สว่าง สะอาดตา</span>
+                        </div>
                       </div>
-                      <div className="cursor-pointer group" onClick={() => setTheme('dark')}>
-                        <div className={`aspect-[16/10] rounded-[2rem] bg-slate-900 border-4 ${theme === 'dark' ? 'border-indigo-600' : 'border-transparent group-hover:border-slate-300'} mb-4 relative overflow-hidden shadow-sm ${theme === 'dark' ? '' : 'opacity-60 group-hover:opacity-100 transition-all'}`}>
-                          <div className="absolute inset-4 bg-slate-800 rounded-[1.25rem] border border-slate-700" />
-                          <div className="absolute top-10 left-10 w-2/3 h-4 bg-slate-700 rounded-full" />
-                          <div className="absolute top-18 left-10 w-1/3 h-24 bg-slate-700 rounded-2xl" />
+
+                      {/* Dark Mode Card */}
+                      <div
+                        className="cursor-pointer group flex flex-col items-center"
+                        onClick={() => setTheme('dark')}
+                      >
+                        <div
+                          className={`w-full aspect-[16/10] rounded-2xl p-2.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between border-2 ${
+                            theme === 'dark'
+                              ? 'border-blue-600 ring-4 ring-blue-500/15 shadow-md scale-[1.02]'
+                              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
+                          } bg-slate-100`}
+                        >
+                          {/* Miniature Browser Mockup */}
+                          <div className="w-full h-full rounded-xl bg-slate-950 border border-slate-800 shadow-sm p-2 flex flex-col gap-1.5 overflow-hidden">
+                            {/* Window Header */}
+                            <div className="flex items-center gap-1 pb-1 border-b border-slate-800/80">
+                              <div className="w-1.5 h-1.5 rounded-full bg-rose-500/80" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-amber-500/80" />
+                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/80" />
+                              <div className="ml-auto w-10 h-1 rounded bg-slate-800" />
+                            </div>
+                            {/* Mockup Body */}
+                            <div className="flex gap-1.5 flex-1">
+                              {/* Sidebar */}
+                              <div className="w-1/4 rounded bg-slate-900 border border-slate-800/60 p-1 flex flex-col gap-1">
+                                <div className="w-full h-1.5 rounded bg-blue-500/60" />
+                                <div className="w-3/4 h-1 rounded bg-slate-800" />
+                                <div className="w-4/5 h-1 rounded bg-slate-800" />
+                              </div>
+                              {/* Content */}
+                              <div className="flex-1 flex flex-col gap-1.5">
+                                <div className="w-1/2 h-2 rounded bg-slate-200" />
+                                <div className="grid grid-cols-2 gap-1 flex-1">
+                                  <div className="rounded bg-slate-900 border border-slate-800/60" />
+                                  <div className="rounded bg-slate-900 border border-slate-800/60" />
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-center font-bold text-slate-500 dark:text-slate-400 text-sm tracking-tight">{t.settingsPage.darkTheme}</p>
+                        <div className="mt-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{t.settingsPage.darkTheme}</span>
+                            {theme === 'dark' && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium">คมเข้ม สบายตา</span>
+                        </div>
                       </div>
-                      <div className="cursor-pointer group" onClick={() => setTheme('system')}>
-                        <div className={`aspect-[16/10] rounded-[2rem] bg-gradient-to-br from-indigo-100 to-indigo-900 border-4 ${theme === 'system' ? 'border-indigo-600' : 'border-transparent group-hover:border-slate-300'} mb-4 relative overflow-hidden shadow-sm flex items-center justify-center ${theme === 'system' ? '' : 'opacity-60 group-hover:opacity-100 transition-all'}`}>
-                          <Smartphone className="w-12 h-12 text-white/50" />
+
+                      {/* System (Auto) Card */}
+                      <div
+                        className="cursor-pointer group flex flex-col items-center"
+                        onClick={() => setTheme('system')}
+                      >
+                        <div
+                          className={`w-full aspect-[16/10] rounded-2xl p-2.5 transition-all duration-200 relative overflow-hidden flex flex-col justify-between border-2 ${
+                            theme === 'system'
+                              ? 'border-blue-600 ring-4 ring-blue-500/15 shadow-md scale-[1.02]'
+                              : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm'
+                          } bg-slate-100`}
+                        >
+                          {/* Split Light/Dark Mockup */}
+                          <div className="w-full h-full rounded-xl border border-slate-200/80 dark:border-slate-800 shadow-sm flex overflow-hidden">
+                            {/* Left Half (Light) */}
+                            <div className="w-1/2 h-full bg-white p-2 flex flex-col justify-between border-r border-slate-200">
+                              <div className="flex items-center gap-1">
+                                <div className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                                <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="w-full h-1.5 rounded bg-blue-500/40" />
+                                <div className="w-3/4 h-1 rounded bg-slate-200" />
+                              </div>
+                            </div>
+                            {/* Right Half (Dark) */}
+                            <div className="w-1/2 h-full bg-slate-950 p-2 flex flex-col justify-between">
+                              <div className="flex justify-end">
+                                <Smartphone className="w-3.5 h-3.5 text-slate-500" />
+                              </div>
+                              <div className="space-y-1">
+                                <div className="w-full h-1.5 rounded bg-blue-500/60" />
+                                <div className="w-3/4 h-1 rounded bg-slate-800" />
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-center font-bold text-slate-500 dark:text-slate-400 text-sm tracking-tight">{t.settingsPage.autoTheme}</p>
+                        <div className="mt-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span className="font-bold text-sm text-slate-900 dark:text-slate-100">{t.settingsPage.autoTheme}</span>
+                            {theme === 'system' && (
+                              <span className="w-1.5 h-1.5 rounded-full bg-blue-600 animate-pulse" />
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400 font-medium">เปลี่ยนตามอุปกรณ์</span>
+                        </div>
                       </div>
                     </div>
 
@@ -636,7 +766,7 @@ export default function Settings() {
                           </div>
                           <div className={`w-6 h-6 rounded-full border-4 border-white shadow-md ${language === 'th' ? 'bg-indigo-600' : 'border-slate-200'}`} />
                         </div>
-                        <div onClick={() => setLanguage('en')} className={`p-6 rounded-[2rem] border-2 bg-white/50 hover:bg-white flex items-center justify-between cursor-pointer transition-all ${language === 'en' ? 'border-indigo-600 border-4' : 'border-slate-100 hover:border-slate-200'} dark:bg-slate-900/50`}>
+                        <div onClick={() => setLanguage('en')} className={`p-6 rounded-[2rem] border-2 bg-white/50 hover:bg-white flex items-center justify-between cursor-pointer transition-all ${language === 'en' ? 'border-indigo-600 border-4' : 'border-slate-100 hover:border-slate-200'}`}>
                           <div className="flex items-center gap-6">
                             <span className={`text-4xl filter drop-shadow-sm ${language === 'en' ? '' : 'opacity-60'}`}>EN</span>
                             <div className="flex flex-col">

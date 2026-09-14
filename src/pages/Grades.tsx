@@ -30,7 +30,11 @@ type EnrollmentRow = {
   courseId: string;
   courseCode: string;
   courseName: string;
-  scores?: { criteriaId: string; score: number }[];
+  midterm?: number;
+  final?: number;
+  assignments?: number;
+  participation?: number;
+  project?: number;
   total?: number;
   letterGrade?: string;
   remarks?: string;
@@ -195,10 +199,11 @@ export default function Grades() {
                 courseId: asString(enrollment.courseId),
                 courseCode: asString(course.code),
                 courseName: asString(course.nameThai, asString(course.name)),
-                scores: asArray(enrollment.scores).map((s: any) => ({
-                  criteriaId: asString(s.criteriaId),
-                  score: asNumber(s.score, 0),
-                })),
+                midterm: enrollment.midterm === null ? undefined : asNumber(enrollment.midterm, 0),
+                final: enrollment.final === null ? undefined : asNumber(enrollment.final, 0),
+                assignments: enrollment.assignments === null ? undefined : asNumber(enrollment.assignments, 0),
+                participation: enrollment.participation === null ? undefined : asNumber(enrollment.participation, 0),
+                project: enrollment.project === null ? undefined : asNumber(enrollment.project, 0),
                 total,
                 letterGrade: asString(enrollment.letterGrade),
                 remarks: asString(enrollment.remarks),
@@ -235,50 +240,11 @@ export default function Grades() {
     }
   };
 
-  const updateEnrollmentScore = (enrollmentId: string, criteriaId: string, newScoreStr: string) => {
-    setEnrollments((current) => current.map((item) => {
-      if (item.id !== enrollmentId) return item;
-      
-      const parsedScore = newScoreStr === '' ? 0 : Number(newScoreStr);
-      const scores = item.scores ? [...item.scores] : [];
-      const scoreIndex = scores.findIndex(s => s.criteriaId === criteriaId);
-      
-      if (scoreIndex >= 0) {
-        scores[scoreIndex] = { ...scores[scoreIndex], score: parsedScore };
-      } else {
-        scores.push({ criteriaId, score: parsedScore });
-      }
-      // Auto-calculate total and grade
-      const course = courses.find(c => c.id === item.courseId);
-      let newTotal = item.total;
-      let newGrade = item.letterGrade;
-
-      if (course && course.gradingCriteria) {
-        let calcTotal = 0;
-        for (const s of scores) {
-          const c = course.gradingCriteria.find(x => x.id === s.criteriaId);
-          if (c) {
-            calcTotal += (s.score / c.maxScore) * c.weightPercentage;
-          }
-        }
-        newTotal = Math.round(calcTotal * 100) / 100;
-
-        if (course.gradeCutoffs && course.gradeCutoffs.length > 0) {
-          const cutoffs = [...course.gradeCutoffs].sort((a, b) => b.minScore - a.minScore);
-          const cutoff = cutoffs.find(c => newTotal! >= c.minScore);
-          newGrade = cutoff ? cutoff.grade : "F";
-        }
-      }
-      
-      return { ...item, scores, total: newTotal, letterGrade: newGrade };
-    }));
-  };
-
   const updateEnrollmentDraft = (id: string, field: keyof EnrollmentRow, value: string) => {
     setEnrollments((current) => current.map((item) => {
       if (item.id !== id) return item;
-      if (field === 'scores' && Array.isArray(value)) {
-        return { ...item, scores: value };
+      if (['midterm', 'final', 'assignments', 'participation', 'project', 'total'].includes(field)) {
+        return { ...item, [field]: value === '' ? undefined : Number(value) };
       }
       return { ...item, [field]: value };
     }));
@@ -293,7 +259,11 @@ export default function Grades() {
           enrollmentId: item.id,
           studentId: item.studentId,
           courseId: item.courseId,
-          scores: item.scores,
+          midterm: item.midterm,
+          final: item.final,
+          assignments: item.assignments,
+          participation: item.participation,
+          project: item.project,
           total: item.total,
           letterGrade: item.letterGrade || undefined,
           remarks: item.remarks || undefined,
@@ -311,43 +281,23 @@ export default function Grades() {
         if (!updated) return item;
         return {
           ...item,
-          scores: asArray(updated.scores).map((s: any) => ({
-            criteriaId: asString(s.criteriaId),
-            score: asNumber(s.score, 0),
-          })),
+          midterm: updated.midterm === null ? undefined : asNumber(updated.midterm, item.midterm),
+          final: updated.final === null ? undefined : asNumber(updated.final, item.final),
+          assignments: updated.assignments === null ? undefined : asNumber(updated.assignments, item.assignments),
+          participation: updated.participation === null ? undefined : asNumber(updated.participation, item.participation),
+          project: updated.project === null ? undefined : asNumber(updated.project, item.project),
           total: updated.total === null ? undefined : asNumber(updated.total, item.total),
           letterGrade: asString(updated.letterGrade, item.letterGrade),
           remarks: asString(updated.remarks, item.remarks),
         };
       }));
 
-      toast.success(language === 'th' ? `บันทึกคะแนนเรียบร้อย (${response.updatedCount} รายการ)` : `Grades saved successfully (${response.updatedCount} records)`);
+      toast.success(language === 'th' ? 'บันทึกคะแนนแล้ว' : 'Grades saved');
     } catch (error) {
       console.warn('Unable to save grades', error);
-      toast.error(language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้' : 'Unable to save grades');
+      toast.error(language === 'th' ? 'บันทึกคะแนนไม่สำเร็จ' : 'Unable to save grades');
     } finally {
       setIsSaving(false);
-    }
-  };
-
-  const handleExportCsv = async () => {
-    if (selectedCourseId === 'all') {
-      toast.error(language === 'th' ? 'กรุณาเลือกวิชาก่อน Export' : 'Please select a course to export');
-      return;
-    }
-    try {
-      const blob = await api.grades.exportCsv(selectedCourseId);
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `grades_${selectedCourseId}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error(error);
-      toast.error(language === 'th' ? 'ส่งออก CSV ล้มเหลว' : 'Failed to export CSV');
     }
   };
 
@@ -397,170 +347,223 @@ export default function Grades() {
         animate="visible"
         className="space-y-8 pb-10"
       >
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+        {/* Header Section — Tightened spacing and secondary CTA hierarchy */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
           <div>
             <motion.div
-              initial={{ opacity: 0, x: -20 }}
+              initial={{ opacity: 0, x: -15 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
+              className="flex items-center gap-2 text-slate-500 dark:text-slate-400 text-xs font-medium mb-1.5"
             >
-              <GraduationCap className="w-4 h-4 text-emerald-500 dark:text-slate-400" />
+              <GraduationCap className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
               <span>{t.grades.subtitle}</span>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-              initial={{ opacity: 0, y: 20 }}
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+              initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              transition={{ delay: 0.05 }}
             >
-              {t.grades.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">{t.grades.titleHighlight}</span>
+              {t.grades.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400 font-extrabold">{t.grades.titleHighlight}</span>
             </motion.h1>
           </div>
 
-          <motion.div className="flex gap-3" variants={itemVariants}>
-            <Button variant="outline" className="rounded-xl border-slate-200 dark:border-slate-700 hover:bg-white hover:text-emerald-600 dark:text-slate-300 dark:bg-slate-900">
-              <Share2 className="w-4 h-4 mr-2" />
+          <motion.div className="flex items-center gap-2.5 w-full sm:w-auto" variants={itemVariants}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 text-xs h-9 px-3.5 font-medium transition-colors flex-1 sm:flex-initial"
+            >
+              <Share2 className="w-3.5 h-3.5 mr-1.5 text-slate-400" />
               {t.grades.shareGrades}
             </Button>
-            <Button className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20" onClick={handleDownloadTranscript}>
-              <Download className="w-4 h-4 mr-2" />
+            <Button
+              size="sm"
+              className="rounded-xl bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 hover:bg-slate-800 dark:hover:bg-white text-xs h-9 px-4 font-semibold shadow-xs transition-all flex-1 sm:flex-initial"
+              onClick={handleDownloadTranscript}
+            >
+              <Download className="w-3.5 h-3.5 mr-1.5" />
               {t.grades.transcriptPDF}
             </Button>
           </motion.div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Stats Grid — Restrained Dark Navy Surfaces with Consistent Metric Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5 sm:gap-4">
+          {/* GPAX (Hero Primary Metric - subtle dark green accent) */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden flex flex-col justify-between"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                  <Star className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.grades.gpaxCumulative}</span>
+                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                  <Star className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-white/90">{t.grades.gpaxCumulative}</span>
               </div>
-              <div className="text-5xl font-bold tracking-tight">{student.gpax.toFixed(2)}</div>
-              <div className="mt-3 text-sm text-emerald-100 flex items-center gap-1">
-                {student.gpax >= 3.5 ? <Sparkles className="w-4 h-4" /> : null}
-                {student.gpax >= 3.5 ? t.grades.excellent : t.grades.normalRange}
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">
+                {student.gpax.toFixed(2)}
               </div>
+            </div>
+            <div className="mt-3 text-[11px] text-emerald-600 dark:text-emerald-400/90 font-medium flex items-center gap-1">
+              {student.gpax >= 3.5 ? <Sparkles className="w-3.5 h-3.5 shrink-0" /> : null}
+              <span>{student.gpax >= 3.5 ? t.grades.excellent : t.grades.normalRange}</span>
             </div>
           </motion.div>
 
+          {/* Current Semester GPA */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden flex flex-col justify-between"
           >
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 transition-colors">
-                  <Award className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.grades.gpaSemester}</span>
+                <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                  <Award className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.gpaSemester}</span>
               </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{gpa.toFixed(2)}</div>
-              <div className="mt-3 text-sm text-slate-400">
-                {t.grades.target}: <span className="text-slate-600 font-semibold dark:text-slate-300">3.80</span>
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">
+                {gpa.toFixed(2)}
               </div>
+            </div>
+            <div className="mt-3 text-[11px] text-slate-400 font-mono">
+              {t.grades.target}: <span className="text-slate-600 dark:text-slate-300 font-semibold">3.80</span>
             </div>
           </motion.div>
 
+          {/* Cumulative Credits */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden flex flex-col justify-between"
           >
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-purple-50 group-hover:text-purple-600 dark:group-hover:bg-purple-950/30 dark:group-hover:text-purple-400 transition-colors">
-                  <BookOpen className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.grades.creditsCumulative}</span>
+                <div className="p-2 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                  <BookOpen className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.creditsCumulative}</span>
               </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">{student.earnedCredits}</div>
-              <div className="mt-3 flex items-center justify-between text-sm text-slate-400">
+              <div className="text-3xl sm:text-4xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">
+                {student.earnedCredits}
+              </div>
+            </div>
+            <div>
+              <div className="mt-3 flex items-center justify-between text-[11px] text-slate-400 font-mono">
                 <span>{t.grades.from} {student.totalCredits}</span>
                 <span>{(student.earnedCredits / Math.max(student.totalCredits, 1) * 100).toFixed(0)}%</span>
               </div>
-              <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+              <div className="mt-1.5 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(student.earnedCredits / Math.max(student.totalCredits, 1)) * 100}%` }}
+                  transition={{ duration: 0.8 }}
                   className="h-full bg-purple-500 rounded-full"
                 />
               </div>
             </div>
           </motion.div>
 
+          {/* Academic Status */}
           <motion.div
             variants={itemVariants}
-            whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50 relative overflow-hidden group"
+            whileHover={{ y: -2 }}
+            transition={{ duration: 0.15 }}
+            className="p-4 sm:p-5 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-xs relative overflow-hidden flex flex-col justify-between"
           >
-            <div className="relative z-10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 group-hover:bg-orange-50 group-hover:text-orange-600 dark:group-hover:bg-orange-950/30 dark:group-hover:text-orange-400 transition-colors">
-                  <Target className="w-6 h-6" />
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.grades.statusLabel}</span>
+                <div className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200/60 dark:border-slate-700/60">
+                  <Target className="w-4 h-4" />
                 </div>
-                <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.statusLabel}</span>
               </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{t.grades.normal}</div>
-              <div className="mt-3 text-sm text-green-600 font-medium bg-green-50 dark:bg-green-950/30 dark:text-green-400 w-fit px-2 py-1 rounded-lg">
-                {t.grades.noRisk}
+              <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                {t.grades.normal}
               </div>
+            </div>
+            <div className="mt-3 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              {t.grades.noRisk}
             </div>
           </motion.div>
         </div>
 
-        {/* Content Tabs */}
-        <Tabs defaultValue="current" className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm w-full md:w-auto flex overflow-x-auto dark:bg-slate-900/50">
-            <TabsTrigger value="current" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
-              <BookOpen className="w-4 h-4 mr-2" />
-              {t.grades.currentSemester}
-            </TabsTrigger>
-            <TabsTrigger value="all" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
-              <BarChart3 className="w-4 h-4 mr-2" />
-              {t.grades.allSemesters}
-            </TabsTrigger>
-            <TabsTrigger value="analysis" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
-              <PieChart className="w-4 h-4 mr-2" />
-              {t.grades.analysis}
-            </TabsTrigger>
-            <TabsTrigger value="transcript" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
-              <FileText className="w-4 h-4 mr-2" />
-              Transcript
-            </TabsTrigger>
-          </TabsList>
+        {/* Content Tabs — Compact Segmented Navigation (Not full width) */}
+        <Tabs defaultValue="current" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
+              <TabsTrigger
+                value="current"
+                className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-emerald-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+              >
+                <BookOpen className="w-3.5 h-3.5 mr-1.5 inline-block" />
+                {t.grades.currentSemester}
+              </TabsTrigger>
+              <TabsTrigger
+                value="all"
+                className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-emerald-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+              >
+                <BarChart3 className="w-3.5 h-3.5 mr-1.5 inline-block" />
+                {t.grades.allSemesters}
+              </TabsTrigger>
+              <TabsTrigger
+                value="analysis"
+                className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-emerald-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+              >
+                <PieChart className="w-3.5 h-3.5 mr-1.5 inline-block" />
+                {t.grades.analysis}
+              </TabsTrigger>
+              <TabsTrigger
+                value="transcript"
+                className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-emerald-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"
+              >
+                <FileText className="w-3.5 h-3.5 mr-1.5 inline-block" />
+                Transcript
+              </TabsTrigger>
+            </TabsList>
+          </div>
 
           <TabsContent value="current" className="space-y-6">
-            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {currentTermGrades.map((grade, index) => {
+            {/* 2-Column Course Cards — Full Content Width */}
+            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-5 w-full">
+              {currentTermGrades.map((grade) => {
                 const course = courses.find(c => c.id === grade.courseId);
                 if (!course) return null;
 
-                const getGradeColor = (g?: string) => {
-                  // No letter grade yet (course still in progress / not graded) — neutral color.
-                  if (!g) return 'bg-slate-300 text-slate-700 shadow-slate-200 dark:bg-slate-700 dark:text-slate-200';
+<<<<<<< Updated upstream
+                const getGradeColor = (g: string) => {
                   if (g === 'A') return 'bg-emerald-500 text-white shadow-emerald-200';
                   if (g.startsWith('B')) return 'bg-blue-500 text-white shadow-blue-200';
                   if (g.startsWith('C')) return 'bg-orange-500 text-white shadow-orange-200';
                   return 'bg-red-500 text-white shadow-red-200';
+=======
+                const getGradeBadge = (g: string) => {
+                  if (g === 'A') return 'bg-emerald-600 text-white';
+                  if (g.startsWith('B')) return 'bg-blue-600 text-white';
+                  if (g.startsWith('C')) return 'bg-amber-600 text-white';
+                  return 'bg-red-600 text-white';
+>>>>>>> Stashed changes
                 };
 
                 return (
                   <motion.div
                     key={grade.courseId}
-                    whileHover={{ y: -4 }}
-                    className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm hover:shadow-xl transition-all dark:bg-slate-900/50"
+                    whileHover={{ y: -2 }}
+                    transition={{ duration: 0.15 }}
+                    className="flex flex-col justify-between bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200"
                   >
+<<<<<<< Updated upstream
                     <div className="flex justify-between items-start mb-6">
                       <div className="flex gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
@@ -583,18 +586,73 @@ export default function Grades() {
                           <div key={c.id} className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800 flex-1 min-w-[80px]">
                             <div className="text-xs text-slate-400 mb-1 truncate" title={c.name}>{c.name}</div>
                             <div className="font-bold text-slate-700 dark:text-slate-300">{scoreObj?.score ?? '-'}</div>
+=======
+                    <div>
+                      {/* Top Row: Contextual Credit Badge + Course Code + Grade Outcome */}
+                      <div className="flex items-center justify-between gap-3 mb-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          {/* Contextual Credit Badge (Replaced unexplained number) */}
+                          <div className="w-11 h-11 rounded-xl bg-slate-100 dark:bg-slate-800/80 border border-slate-200/60 dark:border-slate-700/60 flex flex-col items-center justify-center shrink-0">
+                            <span className="font-mono font-bold text-xs text-slate-800 dark:text-slate-200 leading-none">
+                              {course.credits}
+                            </span>
+                            <span className="text-[9px] text-slate-400 dark:text-slate-400 mt-0.5 leading-none">
+                              หน่วยกิต
+                            </span>
+>>>>>>> Stashed changes
                           </div>
-                        );
-                      })}
-                      <div className="text-center p-2 rounded-xl bg-emerald-50 border border-emerald-100 dark:bg-slate-800 flex-1 min-w-[80px]">
-                        <div className="text-xs text-emerald-600 mb-1 dark:text-slate-300">Total</div>
-                        <div className="font-bold text-emerald-700 dark:text-slate-300">{grade.total}</div>
+
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/50 px-2 py-0.5 rounded-md border border-blue-200/50 dark:border-blue-800/50">
+                                {course.code}
+                              </span>
+                            </div>
+                            <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 truncate mt-1">
+                              {course.name}
+                            </h3>
+                          </div>
+                        </div>
+
+                        {/* Solid Rounded Square Grade Outcome Badge */}
+                        <div className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 shadow-xs select-none ${getGradeBadge(grade.letterGrade)}`}>
+                          {grade.letterGrade}
+                        </div>
+                      </div>
+
+                      {/* Score Breakdown Strip with prominent Total */}
+                      <div className="grid grid-cols-4 gap-2 my-3 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 text-center font-mono">
+                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Mid</div>
+                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.midterm || '-'}</div>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Final</div>
+                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.final || '-'}</div>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Assign</div>
+                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.assignments || '-'}</div>
+                        </div>
+                        <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60">
+                          <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-sans font-bold mb-0.5">Total</div>
+                          <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total}</div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="flex items-center justify-between text-sm">
-                      <Badge variant="outline" className="text-slate-500 border-slate-200 dark:border-slate-700 font-normal dark:text-slate-300">{course.credits} {t.grades.credits}</Badge>
-                      {grade.remarks && <span className="text-orange-500 text-xs flex items-center gap-1 dark:text-slate-400"><AlertCircle className="w-3 h-3" /> {grade.remarks}</span>}
+                    {/* Compact Footer: Credits and Academic Remarks */}
+                    <div className="pt-2.5 mt-1 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
+                      <span className="text-slate-400 dark:text-slate-400 font-mono text-[11px]">
+                        {course.credits} {t.grades.credits} ({course.nameThai || course.code})
+                      </span>
+                      {grade.remarks ? (
+                        <span className="text-emerald-600 dark:text-emerald-400 text-[11px] font-medium flex items-center gap-1">
+                          <Sparkles className="w-3 h-3" /> {grade.remarks}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 dark:text-slate-400 text-[11px]">ผ่านเกณฑ์มาตรฐาน</span>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -774,87 +832,61 @@ export default function Grades() {
               onChange={(event) => setSelectedCourseId(event.target.value)}
               className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
             >
-              {courses.length === 0 && <option value="all">{language === 'th' ? 'กำลังโหลดวิชา...' : 'Loading courses...'}</option>}
-              {courses.length > 0 && <option value="all">{language === 'th' ? 'เลือกวิชาเพื่อกรอกคะแนน...' : 'Select a course to enter grades...'}</option>}
+              <option value="all">{language === 'th' ? 'ทุกวิชา' : 'All courses'}</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
               ))}
             </select>
-            <Button variant="outline" onClick={handleExportCsv} disabled={selectedCourseId === 'all'} className="h-11 rounded-2xl">
-              <Download className="w-4 h-4 mr-2" />
-              {language === 'th' ? 'ส่งออก CSV' : 'Export CSV'}
-            </Button>
             <Button onClick={saveLecturerGrades} disabled={isSaving || filteredEnrollments.length === 0} className="h-11 rounded-2xl">
               {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึกคะแนน' : 'Save grades')}
             </Button>
           </div>
         </div>
 
-        {!isLoading && (selectedCourseId === 'all' || filteredEnrollments.length === 0) ? (
+        {!isLoading && filteredEnrollments.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-10 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-            {selectedCourseId === 'all' 
-              ? (language === 'th' ? 'กรุณาเลือกวิชาที่ต้องการกรอกคะแนน' : 'Please select a course to enter grades.')
-              : (language === 'th' ? 'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่เลือก' : 'No enrollments found for the selected course.')}
+            {language === 'th' ? 'ยังไม่มีนักศึกษาลงทะเบียนในรายวิชาที่เลือก' : 'No enrollments found for the selected course.'}
           </div>
         ) : (
           <div className="overflow-x-auto">
-                <div className="min-w-[980px] space-y-2">
-                  <div 
-                    className="grid gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400"
-                    style={{ gridTemplateColumns: `1.3fr 1fr repeat(${(courses.find(c => c.id === selectedCourseId)?.gradingCriteria?.length || 0) + 1}, 88px) 100px 1.2fr` }}
-                  >
-                    <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
-                    <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
-                    {courses.find(c => c.id === selectedCourseId)?.gradingCriteria?.map(c => (
-                      <span key={c.id} className="truncate" title={c.name}>{c.name}</span>
-                    ))}
-                    <span>Total</span>
-                    <span>Grade</span>
-                    <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>
+            <div className="min-w-[980px] space-y-2">
+              <div className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+                <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
+                <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
+                <span>Mid</span>
+                <span>Final</span>
+                <span>Assign</span>
+                <span>Part.</span>
+                <span>Project</span>
+                <span>Total</span>
+                <span>Grade</span>
+                <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>
+              </div>
+              {filteredEnrollments.map((row) => (
+                <div key={row.id} className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{row.studentName}</div>
+                    <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.studentCode}</div>
                   </div>
-                  {filteredEnrollments.map((row) => {
-                    const courseCriteria = courses.find(c => c.id === row.courseId)?.gradingCriteria || [];
-                    return (
-                      <div 
-                        key={row.id} 
-                        className="grid items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
-                        style={{ gridTemplateColumns: `1.3fr 1fr repeat(${courseCriteria.length + 1}, 88px) 100px 1.2fr` }}
-                      >
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{row.studentName}</div>
-                          <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.studentCode}</div>
-                        </div>
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-bold text-emerald-700 dark:text-emerald-300">{row.courseCode}</div>
-                          <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
-                        </div>
-                        
-                        {courseCriteria.map(criteria => {
-                          const scoreObj = row.scores?.find(s => s.criteriaId === criteria.id);
-                          return (
-                            <Input
-                              key={criteria.id}
-                              type="number"
-                              min="0"
-                              max={criteria.maxScore}
-                              value={scoreObj?.score ?? ''}
-                              onChange={(event) => updateEnrollmentScore(row.id, criteria.id, event.target.value)}
-                              className="h-10 rounded-xl border-slate-200 text-center bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
-                            />
-                          );
-                        })}
-                        
-                        <Input
-                          type="number"
-                          readOnly
-                          value={row.total ?? ''}
-                          className="h-10 rounded-xl border-slate-200 text-center bg-slate-100 text-emerald-700 font-bold dark:border-slate-700 dark:bg-slate-800"
-                        />
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold text-emerald-700 dark:text-emerald-300">{row.courseCode}</div>
+                    <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
+                  </div>
+                  {(['midterm', 'final', 'assignments', 'participation', 'project', 'total'] as const).map((field) => (
+                    <Input
+                      key={field}
+                      type="number"
+                      min="0"
+                      value={row[field] ?? ''}
+                      onChange={(event) => updateEnrollmentDraft(row.id, field, event.target.value)}
+                      className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center dark:border-slate-700 dark:bg-slate-900"
+                    />
+                  ))}
                   <Input
                     value={row.letterGrade ?? ''}
-                    readOnly
+                    onChange={(event) => updateEnrollmentDraft(row.id, 'letterGrade', event.target.value.toUpperCase())}
                     placeholder="A"
-                    className="h-10 rounded-xl border-slate-200 bg-slate-100 text-center font-bold dark:border-slate-700 dark:bg-slate-800 text-emerald-700"
+                    className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center font-bold dark:border-slate-700 dark:bg-slate-900"
                   />
                   <Input
                     value={row.remarks ?? ''}
@@ -863,8 +895,7 @@ export default function Grades() {
                     className="h-10 rounded-xl border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900"
                   />
                 </div>
-              );
-            })}
+              ))}
             </div>
           </div>
         )}

@@ -39,6 +39,10 @@ export interface Student extends BaseUser {
   // Advisor
   advisorId?: string;
   advisorName?: string;
+  advisorNameThai?: string;
+  coAdvisorId?: string;
+  coAdvisorName?: string;
+  coAdvisorNameThai?: string;
 
   // Skills & Portfolio
   skills: Skill[];
@@ -169,7 +173,6 @@ export interface Course {
   name: string;
   nameThai: string;
   credits: number;
-  status?: 'draft' | 'pending' | 'active' | 'archived';
 
   // Academic period
   semester: number; // 1, 2, 3 (summer)
@@ -189,7 +192,6 @@ export interface Course {
 
   // Schedule
   schedule: Schedule[];
-  room?: string;
 
   // Enrollment
   enrolledStudents: string[]; // Student IDs
@@ -202,8 +204,7 @@ export interface Course {
 
   // Grading
   grades: Grade[];
-  gradingCriteria?: CourseGradingCriteria[];
-  gradeCutoffs?: CourseGradeCutoff[];
+  gradingCriteria?: GradingCriteria;
 }
 
 export interface Section {
@@ -257,36 +258,24 @@ export interface Submission {
   status: 'submitted' | 'graded' | 'late' | 'missing';
 }
 
-export interface CourseGradingCriteria {
-  id: string;
-  courseId: string;
-  name: string;
-  weightPercentage: number;
-  maxScore: number;
-  orderIndex: number;
-}
-
-export interface CourseGradeCutoff {
-  id: string;
-  courseId: string;
-  grade: string;
-  minScore: number;
-}
-
-export interface EnrollmentScore {
-  id: string;
-  enrollmentId: string;
-  criteriaId: string;
-  score: number;
+export interface GradingCriteria {
+  midterm: number; // percentage
+  final: number;
+  assignments: number;
+  participation: number;
+  project?: number;
 }
 
 export interface Grade {
   studentId: string;
   courseId: string;
-
-  scores?: EnrollmentScore[];
+  midterm?: number;
+  final?: number;
+  assignments?: number;
+  participation?: number;
+  project?: number;
   total?: number;
-  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W' | string;
+  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W';
   gradedBy: string;
   gradedAt?: Date;
   remarks?: string;

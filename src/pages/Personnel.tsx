@@ -244,7 +244,7 @@ export default function Personnel() {
                         <Users className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                         <span>{t.personnelPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.personnelPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.personnelPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -252,7 +252,7 @@ export default function Personnel() {
                     </motion.p>
                 </div>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Button onClick={openCreateDialog} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 h-11">
+                    <Button onClick={openCreateDialog} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg h-11">
                         <UserPlus className="w-4 h-4 mr-2" /> {t.personnelPage.addNew}
                     </Button>
                 </motion.div>
@@ -260,28 +260,28 @@ export default function Personnel() {
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-                    { icon: GraduationCap, label: t.personnelPage.lecturers, value: String(lecturerCount), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
-                    { icon: Briefcase, label: t.personnelPage.staffLabel, value: String(staffCount), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
-                    { icon: Users, label: t.personnelPage.allTab, value: String(allPersonnel.length), gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-                    { icon: Mail, label: t.personnelPage.online, value: String(allPersonnel.filter((person) => person.isActive).length), gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
+                    { icon: GraduationCap, label: t.personnelPage.lecturers, value: String(lecturerCount), gradient: '', shadow: '' },
+                    { icon: Briefcase, label: t.personnelPage.staffLabel, value: String(staffCount), gradient: '', shadow: '' },
+                    { icon: Users, label: t.personnelPage.allTab, value: String(allPersonnel.length), gradient: '', shadow: '' },
+                    { icon: Mail, label: t.personnelPage.online, value: String(allPersonnel.filter((person) => person.isActive).length), gradient: '', shadow: '' },
                 ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
+                        
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
+                                <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
             </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3 dark:bg-slate-900/50">
+            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t.personnelPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700 dark:bg-slate-900/50" />
+                    <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t.personnelPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700" />
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" className="rounded-xl" onClick={exportPersonnel}>{t.personnelPage.exportExcel}</Button>
@@ -299,9 +299,9 @@ export default function Personnel() {
                 )}
                 {filteredPersonnel.map((person) => (
                     <motion.div key={person.id} variants={itemVariants} whileHover={{ y: -4 }}
-                        className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm hover:shadow-lg transition-all group dark:bg-slate-900/50">
+                        className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all group">
                         <div className="flex gap-4 mb-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-purple-200">
+                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-xl font-bold text-white shadow-lg">
                                 {(person.nameThai || person.email).charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">
@@ -329,7 +329,7 @@ export default function Personnel() {
                             <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => window.location.href = `mailto:${person.email}`}>
                                 <FileText className="w-3.5 h-3.5 mr-1.5" /> {t.personnelPage.history}
                             </Button>
-                            <Button size="sm" className="flex-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-xs shadow-lg shadow-purple-200" onClick={() => openEditDialog(person)}>
+                            <Button size="sm" className="flex-1 rounded-xl bg-purple-600 hover:bg-purple-700 text-xs shadow-lg" onClick={() => openEditDialog(person)}>
                                 <Edit className="w-3.5 h-3.5 mr-1.5" /> {t.personnelPage.manage}
                             </Button>
                             <Button size="sm" variant="ghost" className="rounded-xl text-red-500" onClick={() => deactivatePersonnel(person)}>

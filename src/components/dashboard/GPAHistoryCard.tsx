@@ -29,54 +29,48 @@ export function GPAHistoryCard({ semesterHistory, currentGPA, gpax }: GPAHistory
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50"
+            className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs"
         >
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20">
-                        <BarChart3 className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                        <BarChart3 className="w-4 h-4" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">ประวัติผลการเรียน</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">GPA ทุกภาคเรียน</p>
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">ประวัติผลการเรียน</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">GPA ทุกภาคเรียน</p>
                     </div>
                 </div>
             </div>
 
-            {/* GPAX Highlight */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    className="p-4 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg"
-                >
+            {/* GPAX Highlight Cards */}
+            <div className="grid grid-cols-2 gap-3.5 mb-5">
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-emerald-100">GPAX สะสม</span>
-                        <Star className="w-4 h-4 text-yellow-300" />
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">GPAX สะสม</span>
+                        <Star className="w-3.5 h-3.5 text-amber-500" />
                     </div>
-                    <div className="text-3xl font-bold">{gpax.toFixed(2)}</div>
-                </motion.div>
+                    <div className="text-2xl sm:text-3xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight">{gpax.toFixed(2)}</div>
+                </div>
 
-                <motion.div
-                    whileHover={{ scale: 1.02 }}
-                    className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm"
-                >
+                <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/70 border border-slate-200/70 dark:border-slate-800 flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium text-slate-500 dark:text-slate-400">GPA ล่าสุด</span>
+                        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">GPA ล่าสุด</span>
                         {isPositiveTrend ? (
-                            <TrendingUp className="w-4 h-4 text-emerald-500 dark:text-slate-400" />
+                            <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
                         ) : (
-                            <TrendingDown className="w-4 h-4 text-red-500 dark:text-slate-400" />
+                            <TrendingDown className="w-3.5 h-3.5 text-rose-500" />
                         )}
                     </div>
-                    <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-slate-900 dark:text-slate-200">{currentGPA.toFixed(2)}</span>
-                        <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'}`}>
+                    <div className="flex items-baseline gap-2">
+                        <span className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">{currentGPA.toFixed(2)}</span>
+                        <span className={`text-xs font-mono font-semibold ${isPositiveTrend ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {isPositiveTrend ? '+' : ''}{trend.toFixed(2)}
                         </span>
                     </div>
-                </motion.div>
+                </div>
             </div>
 
             {/* Chart */}

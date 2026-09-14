@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles, Upload } from 'lucide-react';
+import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,8 +14,6 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asRecord, asString, roleToClient } from '@/lib/live-data';
-import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
-import { buildSafeIdentifier, companyImportFields, type MappedImportRow } from '@/lib/import-mapping';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -204,16 +202,10 @@ export default function UsersPage() {
     const [users, setUsers] = useState<UserRow[]>([]);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [isCompanyImportOpen, setIsCompanyImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
     const [formData, setFormData] = useState<UserFormData>(emptyForm);
 
     const totalUsers = users.length;
-
-    const loadUsers = React.useCallback(async () => {
-        const response = await api.users.list();
-        setUsers(response.users.map(mapBackendUser));
-    }, [mapBackendUser]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -230,62 +222,6 @@ export default function UsersPage() {
         };
     }, [mapBackendUser]);
 
-    const buildCompanyImportPayload = (row: MappedImportRow) => {
-        const values = row.values;
-        const companyId = values.companyId;
-        const companyName = values.companyName;
-        const phone = values.phone;
-        const email =
-            values.email ||
-            `${buildSafeIdentifier(phone || companyId, `company${row.rowNumber}`)}@company.showpro.local`;
-
-        return {
-            name: companyName,
-            nameThai: values.companyNameThai || companyName,
-            email,
-            phone,
-            password: values.password || undefined,
-            role: 'COMPANY',
-            isActive: true,
-            profile: {
-                companyId,
-                companyName,
-                companyNameThai: values.companyNameThai || companyName,
-                industry: values.industry,
-                size: values.size || 'small',
-                website: values.website || undefined,
-                address: values.address || undefined,
-                productsServices: values.productsServices || undefined,
-                contactPersonName: values.contactPersonName || undefined,
-                contactPersonRole: values.contactPersonRole || undefined,
-                contactPersonEmail: values.contactPersonEmail || values.email || undefined,
-                contactPersonPhone: values.contactPersonPhone || phone || undefined,
-                socialMedia: values.socialMedia || undefined,
-                onboardingStatus: 'profile_incomplete',
-            },
-        };
-    };
-
-    const handleCompanyImport = async (rows: MappedImportRow[]) => {
-        const response = await api.users.importCompanies(
-            rows.map((row) => ({
-                rowNumber: row.rowNumber,
-                ...asRecord(buildCompanyImportPayload(row).profile),
-                email: buildCompanyImportPayload(row).email,
-                phone: buildCompanyImportPayload(row).phone,
-                password: buildCompanyImportPayload(row).password,
-            })),
-        );
-
-        await loadUsers();
-        toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
-        if (response.failedCount > 0) {
-            toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
-        }
-
-        return { successCount: response.createdCount, failureCount: response.failedCount };
-    };
-
     const handleAdd = () => {
         setEditingUser(null);
         setFormData(emptyForm);
@@ -299,7 +235,7 @@ export default function UsersPage() {
             nameThai: user.nameThai || user.name,
             email: user.email || '',
             phone: user.phone || '',
-            role: user.type === 'admin' ? 'student' : user.type,
+            role: user.type === 'admin' ? 'staff' : user.type,
             status: user.isActive === false ? 'inactive' : 'active',
             identifier: user.identifier || '',
             department: user.department || 'Digital Industry Integration',
@@ -387,15 +323,12 @@ export default function UsersPage() {
     const handleSave = async () => {
         if (editingUser) {
             try {
-                const selectedRole = formData.role;
-                const isRoleChanging = selectedRole !== editingUser.type && !(editingUser.type === 'admin' && selectedRole === 'student');
                 const response = await api.users.update(editingUser.id, {
                     name: formData.name,
                     nameThai: formData.nameThai || formData.name,
                     phone: formData.phone,
                     isActive: formData.status === 'active',
-                    ...(isRoleChanging ? { role: selectedRole.toUpperCase() } : {}),
-                    roleData: buildProfile(selectedRole),
+                    roleData: buildProfile(editingUser.type === 'admin' ? 'staff' : editingUser.type),
                 });
                 setUsers(users.map(u => u.id === editingUser.id ? mapBackendUser(response.user) : u));
                 toast.success(t.users.editSuccess);
@@ -430,15 +363,13 @@ export default function UsersPage() {
             case 'lecturer': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.lecturer}</Badge>;
             case 'staff': return <Badge className="bg-purple-100 text-purple-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.staff}</Badge>;
             case 'company': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.roles.company}</Badge>;
-            case 'admin': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.admin}</Badge>; // D-18
             default: return <Badge>{role}</Badge>;
         }
     };
 
     const filteredUsers = users.filter(u =>
     (u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        getRoleText(u.type).toLowerCase().includes(searchQuery.toLowerCase())) // D-20: ค้นด้วย role ได้
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
@@ -455,7 +386,7 @@ export default function UsersPage() {
                         <span>{t.users.totalUsers} {totalUsers} {t.common.person}</span>
                     </motion.div>
                     <motion.h1
-                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -465,38 +396,26 @@ export default function UsersPage() {
                 </div>
 
                 <motion.div className="flex gap-3" variants={itemVariants}>
-                    <Button variant="outline" onClick={() => setIsCompanyImportOpen(true)} className="rounded-xl">
-                        <Upload className="w-4 h-4 mr-2" />Import บริษัท
-                    </Button>
                     <Button onClick={handleAdd} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20">
                         <Plus className="w-4 h-4 mr-2" />{t.users.addNew}
                     </Button>
                 </motion.div>
             </div>
 
-            <ImportMappingDialog
-                open={isCompanyImportOpen}
-                onOpenChange={setIsCompanyImportOpen}
-                title="Import ข้อมูลบริษัท"
-                description="อัปโหลด Excel/CSV แล้วกำหนดว่าคอลัมน์ใดตรงกับข้อมูลบริษัทก่อนสร้างบัญชี"
-                fields={companyImportFields}
-                onImport={handleCompanyImport}
-            />
-
             {/* Stats Grid - Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-xl shadow-purple-500/20 relative overflow-hidden"
+                    className="p-6 rounded-3xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-sm relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
                                 <GraduationCap className="w-6 h-6" />
                             </div>
-                            <span className="font-medium text-white/90">{t.users.studentsLabel}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.users.studentsLabel}</span>
                         </div>
                         <div className="text-5xl font-bold tracking-tight">{users.filter(u => u.type === 'student').length}</div>
                         <div className="mt-3 text-sm text-purple-100 flex items-center gap-1">
@@ -567,18 +486,17 @@ export default function UsersPage() {
                 </div>
 
                 <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-white/80 backdrop-blur-sm border shadow-sm dark:bg-slate-900/50">
+                    <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
                         <TabsTrigger value="all">{t.users.allTab}</TabsTrigger>
                         <TabsTrigger value="student">{t.roles.student}</TabsTrigger>
                         <TabsTrigger value="lecturer">{t.roles.lecturer}</TabsTrigger>
                         <TabsTrigger value="staff">{t.roles.staff}</TabsTrigger>
                         <TabsTrigger value="company">{t.roles.company}</TabsTrigger>
-                        <TabsTrigger value="admin">{t.roles.admin}</TabsTrigger>
                     </TabsList>
 
-                    {['all', 'student', 'lecturer', 'staff', 'company', 'admin'].map(tab => (
+                    {['all', 'student', 'lecturer', 'staff', 'company'].map(tab => (
                         <TabsContent key={tab} value={tab}>
-                            <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50"><CardContent className="pt-6">
+                            <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm"><CardContent className="pt-6">
                                 <div className="space-y-3">
                                     <AnimatePresence>
                                         {filteredUsers.filter(u => tab === 'all' || u.type === tab).map((user) => (
@@ -678,6 +596,7 @@ export default function UsersPage() {
                             <Select
                                 value={formData.role}
                                 onValueChange={(val) => setFormData({ ...formData, role: val as Exclude<UserType, 'admin'> })}
+                                disabled={!!editingUser} // Prevent role change on edit for simplicity
                             >
                                 <SelectTrigger>
                                     <SelectValue />

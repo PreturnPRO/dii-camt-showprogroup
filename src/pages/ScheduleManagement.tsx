@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Calendar, Search, MapPin, Plus, Clock, Edit3, Save, AlertCircle, CheckCircle, XCircle, Bell } from 'lucide-react';
@@ -297,12 +297,12 @@ export default function ScheduleManagement() {
                         <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                         <span>{t.scheduleManagementPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.scheduleManagementPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.scheduleManagementPage.titleHighlight}</span>
                     </motion.h1>
                 </div>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                    <Button onClick={() => setIsRoomDialogOpen(true)} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 h-11">
+                    <Button onClick={() => setIsRoomDialogOpen(true)} className="rounded-xl bg-purple-600 hover:bg-purple-700 shadow-lg h-11">
                         <Plus className="w-4 h-4 mr-2" /> {t.scheduleManagementPage.bookRoom}
                     </Button>
                 </motion.div>
@@ -336,7 +336,7 @@ export default function ScheduleManagement() {
                                         <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50 border-red-200 rounded-xl dark:text-slate-400 dark:bg-slate-800" onClick={() => handleReject(req.id)}>
                                             <XCircle className="w-4 h-4 mr-1" /> {t.scheduleManagementPage.reject}
                                         </Button>
-                                        <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200" onClick={() => handleApprove(req)}>
+                                        <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-sm" onClick={() => handleApprove(req)}>
                                             <CheckCircle className="w-4 h-4 mr-1" /> {t.scheduleManagementPage.approve}
                                         </Button>
                                     </div>
@@ -351,7 +351,7 @@ export default function ScheduleManagement() {
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {rooms.map((room, idx) => (
                     <motion.div key={idx} whileHover={{ scale: 1.02 }}
-                        className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all dark:bg-slate-900/50">
+                        className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-2xl p-5 shadow-sm hover:shadow-md transition-all">
                         <div className="flex justify-between items-start mb-3">
                             <h4 className="font-bold text-slate-800 dark:text-slate-200 text-sm">{room.name}</h4>
                             <div className={`w-3 h-3 rounded-full ${room.status === 'available' ? 'bg-emerald-500' : room.status === 'occupied' ? 'bg-red-500' : 'bg-amber-500'}`} />
@@ -375,14 +375,14 @@ export default function ScheduleManagement() {
             </motion.div>
 
             {/* Schedule */}
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm min-h-[600px] dark:bg-slate-900/50">
+            <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm min-h-[600px]">
                 <div className="flex items-center justify-between mb-5">
                     <div>
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.scheduleManagementPage.combinedSchedule}</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t.scheduleManagementPage.combinedDesc}</p>
                     </div>
                     <div className="flex items-center gap-4">
-                        <div className="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900/50">
+                        <div className="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700">
                             <Switch id="edit-mode" checked={isEditMode} onCheckedChange={setIsEditMode} />
                             <Label htmlFor="edit-mode" className="cursor-pointer flex items-center gap-2 text-sm">
                                 <Edit3 className="w-4 h-4" /> {t.scheduleManagementPage.editMode}

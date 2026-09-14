@@ -49,24 +49,26 @@ export function CourseGradesCard({ grades, currentSemester }: CourseGradesProps)
 
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50"
+            className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs"
         >
-            <div className="flex items-center justify-between mb-6">
-                <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 text-white shadow-lg shadow-indigo-500/20">
-                        <BookOpen className="w-5 h-5" />
+            <div className="flex items-center justify-between mb-5">
+                <div className="flex items-center gap-2.5">
+                    <div className="p-2 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                        <BookOpen className="w-4 h-4" />
                     </div>
                     <div>
-                        <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">เกรดรายวิชา</h3>
-                        <p className="text-sm text-slate-500 dark:text-slate-400">Course Grades</p>
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 tracking-tight">ผลการเรียนรายวิชา</h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">เกรดและคะแนนสะสม</p>
                     </div>
                 </div>
-                <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">
-                    <Award className="w-3 h-3 mr-1" />
-                    {totalAGrades} เกรด A
-                </Badge>
+                <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="font-mono text-xs font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-md">
+                        <Award className="w-3.5 h-3.5 mr-1" />
+                        {totalAGrades} วิชาเกรด A
+                    </Badge>
+                </div>
             </div>
 
             {/* Current Semester */}
