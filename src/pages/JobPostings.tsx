@@ -35,65 +35,6 @@ export default function JobPostings() {
     const isCompany = user?.role === 'company';
     const canManage = isAdmin || isCompany;
 
-<<<<<<< Updated upstream
-    const canManageJob = React.useCallback((job: JobPosting) => {
-        if (isAdmin) return true;
-        const companyProfileId = (user?.raw as any)?.companyProfile?.id;
-        if (isCompany && companyProfileId === job.companyId) return true;
-        return false;
-    }, [isAdmin, isCompany, user]);
-
-    const [jobs, setJobs] = useState<JobPosting[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [editingJob, setEditingJob] = useState<JobPosting | null>(null);
-    const [selectedJob, setSelectedJob] = useState<JobPosting | null>(null);
-    const [formData, setFormData] = useState<{
-        title: string;
-        description: string;
-        type: JobPosting['type'];
-        location: string;
-        salary: string;
-        positions: number;
-        priority: string;
-        deadline: string; // yyyy-mm-dd
-        skills: { name: string; level: string }[];
-    }>({ title: '', description: '', type: 'full-time', location: '', salary: '', positions: 1, priority: 'medium', deadline: '', skills: [{ name: '', level: 'beginner' }] });
-
-    const companyProfile = (user?.raw as any)?.companyProfile;
-    const internshipSlots = companyProfile?.internshipSlots || 0;
-    const currentInterns = companyProfile?.currentInterns || 0;
-    const availableSlots = Math.max(0, internshipSlots - currentInterns);
-    const isExceedingQuota = isCompany && formData.positions > availableSlots;
-
-    const mapJob = React.useCallback((item: unknown, index = 0): JobPosting => mapLiveJob(item, index), []);
-
-    React.useEffect(() => {
-        let isMounted = true;
-        api.jobs.list()
-            .then((response) => {
-                if (!isMounted) return;
-                const mapped = response.jobs.map(mapJob);
-                setJobs(mapped);
-            })
-            .catch(() => undefined)
-            .finally(() => {
-                if (isMounted) setIsLoading(false);
-            });
-
-        return () => {
-            isMounted = false;
-        };
-    }, [mapJob]);
-
-    const companyJobPostings = jobs;
-    const openJobs = companyJobPostings.filter(j => j.status === 'open').length;
-    const totalApplicants = companyJobPostings.reduce((sum, j) => sum + j.applicants.length, 0);
-
-    const handleAdd = () => {
-        setEditingJob(null);
-        setFormData({ title: '', description: '', type: 'full-time', location: 'Chiang Mai', salary: '20,000+', positions: 1, priority: 'medium', deadline: new Date().toISOString().split('T')[0], skills: [{ name: '', level: 'beginner' }] });
-=======
     const [jobs, setJobs] = useState<JobPosting[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -135,32 +76,18 @@ export default function JobPostings() {
     const handleAdd = () => {
         setEditingJob(null);
         setFormData({ title: '', type: 'full-time', location: 'Chiang Mai', salary: '20,000+', positions: 1, deadline: new Date().toISOString().split('T')[0] });
->>>>>>> Stashed changes
         setIsDialogOpen(true);
     };
 
     const handleEdit = (job: JobPosting) => {
         setEditingJob(job);
-<<<<<<< Updated upstream
-        const combinedSkills = Array.from(new Set([...job.preferredSkills, ...job.requirements].filter(Boolean)));
         setFormData({
             title: job.title,
-            description: job.description || '',
-=======
-        setFormData({
-            title: job.title,
->>>>>>> Stashed changes
             type: job.type,
             location: job.location,
             salary: job.salary || '',
             positions: job.positions,
-<<<<<<< Updated upstream
-            priority: job.status === 'closed' ? 'low' : 'medium',
-            deadline: new Date(job.deadline).toISOString().split('T')[0],
-            skills: combinedSkills.length ? combinedSkills.map(s => ({ name: s, level: 'intermediate' })) : [{ name: '', level: 'beginner' }]
-=======
             deadline: new Date(job.deadline).toISOString().split('T')[0]
->>>>>>> Stashed changes
         });
         setIsDialogOpen(true);
     };
@@ -181,27 +108,16 @@ export default function JobPostings() {
         title: formData.title,
         type: formData.type,
         positions: formData.positions,
-<<<<<<< Updated upstream
-        description: formData.description || formData.title,
-        responsibilities: [],
-        requirements: Array.from(new Set(formData.skills.map(s => s.name).filter(Boolean))),
-        preferredSkills: [], // Set to empty to prevent duplicating in requirements and preferredSkills
-=======
         description: formData.title,
         responsibilities: [],
         requirements: [],
         preferredSkills: [],
->>>>>>> Stashed changes
         salary: formData.salary,
         benefits: [],
         location: formData.location,
         workType: 'hybrid',
         deadline: new Date(formData.deadline).toISOString(),
-<<<<<<< Updated upstream
-        status: formData.priority === 'low' ? 'closed' : 'open',
-=======
         status: 'open',
->>>>>>> Stashed changes
     });
 
     const handleSave = async () => {
@@ -209,33 +125,6 @@ export default function JobPostings() {
             try {
                 const response = await api.jobs.update(editingJob.id, buildJobPayload());
                 setJobs(jobs.map(j => j.id === editingJob.id ? mapJob(response.job) : j));
-<<<<<<< Updated upstream
-
-                // Notify active applicants about the job update
-                const activeApplicants = editingJob.applicants.filter(
-                    app => !['accepted', 'rejected'].includes(app.status)
-                );
-                
-                if (activeApplicants.length > 0) {
-                    const recipientIds = activeApplicants.map(app => app.studentId);
-                    try {
-                        await api.notifications.broadcast({
-                            title: language === 'th' ? 'มีการอัปเดตข้อมูลการจ้างงาน' : 'Job Posting Updated',
-                            message: language === 'th' 
-                                ? `ข้อมูลตำแหน่งงาน ${editingJob.title} ที่คุณสมัครไว้มีการอัปเดต โปรดตรวจสอบรายละเอียดใหม่`
-                                : `The job posting for ${editingJob.title} that you applied for has been updated. Please review the new details.`,
-                            type: 'application',
-                            priority: 'medium',
-                            recipientIds,
-                            actionUrl: `/internships`,
-                            actionLabel: language === 'th' ? 'ดูรายละเอียด' : 'View Details'
-                        });
-                        toast.success(language === 'th' ? 'แจ้งเตือนผู้สมัครเกี่ยวกับการอัปเดตแล้ว' : 'Notified applicants about the update.');
-                    } catch (err) {
-                        console.error('Failed to notify applicants:', err);
-                    }
-                }
-
                 toast.success(t.jobPostings.editSuccess);
             } catch (error) {
                 toast.error(error instanceof Error ? error.message : t.jobPostings.editJob);
@@ -263,35 +152,6 @@ export default function JobPostings() {
         }
     };
 
-=======
-                toast.success(t.jobPostings.editSuccess);
-            } catch (error) {
-                toast.error(error instanceof Error ? error.message : t.jobPostings.editJob);
-                return;
-            }
-        } else {
-            try {
-                const response = await api.jobs.create(buildJobPayload());
-                setJobs([mapJob(response.job), ...jobs]);
-                toast.success(t.jobPostings.createSuccess);
-            } catch (error) {
-                toast.error(error instanceof Error ? error.message : t.jobPostings.addNew);
-                return;
-            }
-        }
-        setIsDialogOpen(false);
-    };
-
-    const getStatusBadge = (status: string) => {
-        switch (status) {
-            case 'open': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.jobPostings.statusOpen}</Badge>;
-            case 'closed': return <Badge className="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">{t.jobPostings.statusClosed}</Badge>;
-            case 'filled': return <Badge className="bg-blue-100 text-blue-700 dark:text-slate-300 dark:bg-slate-800">{t.jobPostings.statusFilled}</Badge>;
-            default: return <Badge>{status}</Badge>;
-        }
-    };
-
->>>>>>> Stashed changes
     const getTypeBadge = (type: string) => {
         switch (type) {
             case 'internship': return <Badge variant="outline" className="text-purple-700 border-purple-300 dark:text-slate-300">{t.jobPostings.internship}</Badge>;
@@ -315,11 +175,7 @@ export default function JobPostings() {
                         <span>{companyJobPostings.length} {t.jobPostings.positionsCount} • {openJobs} {t.jobPostings.statusOpen}</span>
                     </motion.div>
                     <motion.h1
-<<<<<<< Updated upstream
-                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-=======
                         className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
->>>>>>> Stashed changes
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -342,11 +198,7 @@ export default function JobPostings() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-<<<<<<< Updated upstream
-                    className="p-6 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden"
-=======
                     className="p-6 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-sm relative overflow-hidden"
->>>>>>> Stashed changes
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
@@ -354,11 +206,7 @@ export default function JobPostings() {
                             <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/20 backdrop-blur-sm">
                                 <Briefcase className="w-6 h-6" />
                             </div>
-<<<<<<< Updated upstream
-                            <span className="font-medium text-white/90">{t.jobPostings.allPositions}</span>
-=======
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.jobPostings.allPositions}</span>
->>>>>>> Stashed changes
                         </div>
                         <div className="text-5xl font-bold tracking-tight">{companyJobPostings.length}</div>
                         <div className="mt-3 text-sm text-orange-100 flex items-center gap-1">
@@ -421,11 +269,7 @@ export default function JobPostings() {
             </div>
 
             <motion.div variants={itemVariants}>
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                     <CardHeader><CardTitle>{t.jobPostings.jobList}</CardTitle></CardHeader>
                     <CardContent>
                         <div className="space-y-4">
@@ -437,21 +281,10 @@ export default function JobPostings() {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0 }}
-<<<<<<< Updated upstream
-                                        className={`relative overflow-hidden p-5 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-900/70 dark:to-slate-950/70 ${job.status === 'closed' ? 'opacity-70 grayscale' : ''}`}
-                                    >
-                                        {job.status === 'closed' && (
-                                            <div className="absolute top-5 -right-8 w-32 text-center transform rotate-45 bg-slate-800 text-white text-[10px] uppercase font-bold py-1 shadow-sm z-10 tracking-widest">
-                                                CLOSED
-                                            </div>
-                                        )}
-                                        <div className="flex items-start justify-between mb-4 relative z-0">
-=======
                                         transition={{ delay: index * 0.05 }}
                                         className="p-5 border border-slate-200 dark:border-slate-800 rounded-xl hover:shadow-md transition-all bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-900/70 dark:to-slate-950/70"
                                     >
                                         <div className="flex items-start justify-between mb-4">
->>>>>>> Stashed changes
                                             <div className="flex-1">
                                                 <div className="flex items-center gap-3 mb-2">
                                                     <h3 className="font-semibold text-lg">{job.title}</h3>
@@ -474,21 +307,6 @@ export default function JobPostings() {
                                         <div className="flex items-center justify-between pt-4 border-t">
                                             <div className="flex-1 mr-6">
                                                 <div className="flex items-center justify-between text-sm mb-2">
-<<<<<<< Updated upstream
-                                                    <span className="text-gray-600 dark:text-gray-400">{language === 'th' ? 'ตอบรับเข้าทำงานแล้ว' : 'Accepted Candidates'}</span>
-                                                    <span className="font-semibold">{job.applicants.filter(app => app.status === 'accepted').length} / {job.positions} {t.common.person}</span>
-                                                </div>
-                                                <Progress value={(job.applicants.filter(app => app.status === 'accepted').length / Math.max(1, job.positions)) * 100} className="h-2" />
-                                            </div>
-                                            <div className="flex gap-2">
-                                                <Button size="sm" variant="outline" onClick={() => setSelectedJob(job)}><Eye className="w-4 h-4 mr-1" />{language === 'th' ? 'รายละเอียด' : 'Details'}</Button>
-                                                {canManageJob(job) && (
-                                                    <>
-                                                        <Button size="sm" variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
-                                                        {job.status !== 'closed' && (
-                                                            <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
-                                                        )}
-=======
                                                     <span className="text-gray-600 dark:text-gray-400">{t.jobPostings.applicantsCount}</span>
                                                     <span className="font-semibold">{job.applicants.length} {t.common.person}</span>
                                                 </div>
@@ -500,7 +318,6 @@ export default function JobPostings() {
                                                 {canManage && (
                                                     <>
                                                         <Button size="sm" variant="ghost" onClick={() => handleEdit(job)}><Edit className="w-4 h-4" /></Button>
->>>>>>> Stashed changes
                                                         <Button size="sm" variant="ghost" className="text-red-600 dark:text-slate-300" onClick={() => handleDelete(job.id)}><Trash2 className="w-4 h-4" /></Button>
                                                     </>
                                                 )}
@@ -526,41 +343,16 @@ export default function JobPostings() {
 
             {/* Job Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-<<<<<<< Updated upstream
-                <DialogContent className="sm:max-w-[600px]">
-=======
                 <DialogContent className="sm:max-w-[500px]">
->>>>>>> Stashed changes
                     <DialogHeader>
                         <DialogTitle>{editingJob ? t.jobPostings.editJob : t.jobPostings.addNew}</DialogTitle>
                         <DialogDescription>{t.jobPostings.fillDetails}</DialogDescription>
                     </DialogHeader>
-<<<<<<< Updated upstream
-                    <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto px-2">
-                        <div className="grid gap-2">
-                            <Label>{language === 'th' ? 'สถานะการประกาศ' : 'Posting Status'}</Label>
-                            <Select value={formData.priority} onValueChange={v => setFormData({ ...formData, priority: v })}>
-                                <SelectTrigger><SelectValue /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="medium">{language === 'th' ? 'เปิดรับสมัคร' : 'Open'}</SelectItem>
-                                    <SelectItem value="low">{language === 'th' ? 'ปิดรับสมัคร' : 'Closed'}</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-=======
                     <div className="grid gap-4 py-4">
->>>>>>> Stashed changes
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.jobTitle}</Label>
                             <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
                         </div>
-<<<<<<< Updated upstream
-                        <div className="grid gap-2">
-                            <Label>{language === 'th' ? 'คำอธิบาย' : 'Description'}</Label>
-                            <Textarea rows={3} value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-                        </div>
-=======
->>>>>>> Stashed changes
                         <div className="grid grid-cols-2 gap-4">
                             <div className="grid gap-2">
                                 <Label>{t.jobPostings.type}</Label>
@@ -575,74 +367,6 @@ export default function JobPostings() {
                             </div>
                             <div className="grid gap-2">
                                 <Label>{t.jobPostings.positions} ({t.jobPostings.positionsUnit})</Label>
-<<<<<<< Updated upstream
-                                <Input type="number" min="1" max={isCompany ? availableSlots : undefined} value={formData.positions} onChange={e => setFormData({ ...formData, positions: parseInt(e.target.value) || 1 })} className={isExceedingQuota ? 'border-red-500' : ''} />
-                                {isCompany && (
-                                    <p className={`text-xs ${isExceedingQuota ? 'text-red-500 font-medium' : 'text-slate-500'}`}>
-                                        {language === 'th' ? `โควตาที่รับได้: ${availableSlots} ตำแหน่ง` : `Available quota: ${availableSlots} positions`}
-                                    </p>
-                                )}
-                            </div>
-                        </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <Label>{t.jobPostings.location}</Label>
-                                <Input value={formData.location} onChange={e => setFormData({ ...formData, location: e.target.value })} />
-                            </div>
-                            <div className="grid gap-2">
-                                <Label>{t.jobPostings.salary}</Label>
-                                <Input value={formData.salary} onChange={e => setFormData({ ...formData, salary: e.target.value })} />
-                            </div>
-                        </div>
-                        <div className="grid gap-2">
-                            <Label>{t.jobPostings.deadline}</Label>
-                            <Input type="date" value={formData.deadline} onChange={e => {
-                                setFormData({ 
-                                    ...formData, 
-                                    deadline: e.target.value
-                                });
-                            }} />
-                        </div>
-                        <div className="grid gap-2">
-                            <div className="flex items-center justify-between mb-2">
-                                <Label>{language === 'th' ? 'ทักษะที่ต้องการ' : 'Required Skills'}</Label>
-                                <Button type="button" variant="outline" size="sm" onClick={() => setFormData(prev => ({ ...prev, skills: [...prev.skills, { name: '', level: 'beginner' }] }))} className="gap-1">
-                                    <Plus className="w-3.5 h-3.5" /> {language === 'th' ? 'เพิ่มทักษะ' : 'Add Skill'}
-                                </Button>
-                            </div>
-                            <div className="space-y-2">
-                                {formData.skills.map((skill, i) => (
-                                    <div key={i} className="flex items-center gap-2">
-                                        <Input className="flex-1" placeholder={language === 'th' ? 'ชื่อทักษะ' : 'Skill name'} value={skill.name}
-                                            onChange={e => {
-                                                const skills = [...formData.skills];
-                                                skills[i].name = e.target.value;
-                                                setFormData(prev => ({ ...prev, skills }));
-                                            }} />
-                                        <Select value={skill.level} onValueChange={v => {
-                                            const skills = [...formData.skills];
-                                            skills[i].level = v;
-                                            setFormData(prev => ({ ...prev, skills }));
-                                        }}>
-                                            <SelectTrigger className="w-[140px]"><SelectValue /></SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="beginner">{language === 'th' ? 'เริ่มต้น' : 'Beginner'}</SelectItem>
-                                                <SelectItem value="intermediate">{language === 'th' ? 'ปานกลาง' : 'Intermediate'}</SelectItem>
-                                                <SelectItem value="advanced">{language === 'th' ? 'สูง' : 'Advanced'}</SelectItem>
-                                                <SelectItem value="expert">{language === 'th' ? 'เชี่ยวชาญ' : 'Expert'}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                        {formData.skills.length > 1 && (
-                                            <Button type="button" variant="ghost" size="sm" className="text-red-500 dark:text-slate-400" onClick={() => {
-                                                setFormData(prev => ({ ...prev, skills: prev.skills.filter((_, idx) => idx !== i) }));
-                                            }}>
-                                                <Trash2 className="w-4 h-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-=======
                                 <Input type="number" value={formData.positions} onChange={e => setFormData({ ...formData, positions: parseInt(e.target.value) })} />
                             </div>
                         </div>
@@ -657,16 +381,11 @@ export default function JobPostings() {
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.deadline}</Label>
                             <Input type="date" value={formData.deadline} onChange={e => setFormData({ ...formData, deadline: e.target.value })} />
->>>>>>> Stashed changes
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>{t.common.cancel}</Button>
-<<<<<<< Updated upstream
-                        <Button onClick={handleSave} disabled={isExceedingQuota} className="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed">
-=======
                         <Button onClick={handleSave} className="bg-orange-500 hover:bg-orange-600">
->>>>>>> Stashed changes
                             <Save className="w-4 h-4 mr-2" />{t.common.save}
                         </Button>
                     </DialogFooter>
@@ -715,17 +434,8 @@ export default function JobPostings() {
                                 </div>
                             </div>
                             <DialogFooter>
-<<<<<<< Updated upstream
-                                {canManageJob(selectedJob) && (
-                                    <>
-                                        <Button variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
-                                        <Button onClick={() => { handleEdit(selectedJob); setSelectedJob(null); }}>{t.jobPostings.editJob}</Button>
-                                    </>
-                                )}
-=======
                                 <Button variant="outline" onClick={() => navigate('/applicants')}>{t.jobPostings.viewApplicants}</Button>
                                 {canManage && <Button onClick={() => { handleEdit(selectedJob); setSelectedJob(null); }}>{t.jobPostings.editJob}</Button>}
->>>>>>> Stashed changes
                             </DialogFooter>
                         </>
                     )}

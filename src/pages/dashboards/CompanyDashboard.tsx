@@ -83,40 +83,6 @@ export default function CompanyDashboard() {
     : (company?.companyName || company?.companyNameThai || user?.name || '');
   const copy = language === 'th'
     ? {
-<<<<<<< Updated upstream
-        submitRequirement: 'ส่ง Requirement',
-        submitRequirementTitle: 'ส่งคำขอ Requirement ใหม่',
-        submitRequirementDesc: 'ระบุตำแหน่งงาน ทักษะ และรายละเอียดต่างๆ เพื่อให้ AI สามารถจับคู่คุณกับนักเรียนได้',
-        role: 'ตำแหน่งงาน',
-        skills: 'ทักษะสำคัญ',
-        details: 'รายละเอียด',
-        submitToAi: 'ส่งไปยัง AI Matching',
-        liveAlerts: 'การแจ้งเตือนการจ้างงานแบบเรียลไทม์',
-        new: 'ใหม่',
-        viewDetails: 'ดูรายละเอียด',
-        requirements: 'Requirements & AI Matches',
-        followed: 'ติดตาม Talent',
-        activeRequirements: 'Requirement ที่เปิดอยู่',
-        total: 'ทั้งหมด',
-        postedCriteria: 'เงื่อนไขที่ประกาศไว้สำหรับจับคู่นักศึกษา',
-        matches: 'Matches',
-        aiTalentMatching: 'AI Talent Matching',
-        bestMatches: 'นักศึกษาที่เหมาะกับ Requirement ของคุณที่สุด',
-        exclusiveAccess: 'สิทธิ์เข้าถึงพิเศษ',
-        fastTrackOffer: 'ส่งข้อเสนอแบบ Fast-track',
-        follow: 'ติดตาม',
-        viewProfile: 'ดูโปรไฟล์',
-        trackedProgress: 'ติดตามความคืบหน้าของนักศึกษาที่สนใจ',
-        followedDate: 'ติดตามเมื่อ',
-        currentGpa: 'GPA ปัจจุบัน',
-        profileOverview: 'ดูภาพรวมโปรไฟล์',
-        noJobs: 'ยังไม่มีประกาศงานจาก API',
-        noStudents: 'ยังไม่มีนักศึกษาที่เปิดสิทธิ์ให้ดู',
-        noRequirements: 'ยังไม่มี Requirement',
-        noMatches: 'ยังไม่มีผลจับคู่จาก AI',
-        noFollowed: 'ยังไม่มี Talent ที่ติดตาม',
-        noAlerts: 'ยังไม่มีแจ้งเตือนการสรรหา',
-=======
         submitRequirement: 'เธชเนเธ Requirement เนเธซเธกเน',
         submitRequirementTitle: 'เธชเนเธ Requirement เนเธซเธกเน',
         submitRequirementDesc: 'เธฃเธฐเธเธธเธเธ—เธเธฒเธ— เธ—เธฑเธเธฉเธฐ เนเธฅเธฐเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”เธเธฒเธเน€เธเธทเนเธญเนเธซเนเธฃเธฐเธเธเธเนเธงเธขเธเธฑเธเธเธนเนเธเธฑเธเธเธฑเธเธจเธถเธเธฉเธฒ',
@@ -149,7 +115,6 @@ export default function CompanyDashboard() {
         noMatches: 'เธขเธฑเธเนเธกเนเธกเธตเธเธฅเธเธฑเธเธเธนเนเธเธฒเธ AI',
         noFollowed: 'เธขเธฑเธเนเธกเนเธกเธต Talent เธ—เธตเนเธ•เธดเธ”เธ•เธฒเธก',
         noAlerts: 'เธขเธฑเธเนเธกเนเธกเธตเนเธเนเธเน€เธ•เธทเธญเธเธเธฒเธฃเธชเธฃเธฃเธซเธฒ',
->>>>>>> Stashed changes
       }
     : {
         submitRequirement: 'Submit Requirement',
@@ -298,11 +263,7 @@ export default function CompanyDashboard() {
   const handleSubmitRequirement = async () => {
     const skills = requirementForm.skills.split(',').map(skill => skill.trim()).filter(Boolean);
     if (!requirementForm.title.trim() || !requirementForm.description.trim()) {
-<<<<<<< Updated upstream
-      toast.error(language === 'th' ? 'กรุณากรอกตำแหน่งและรายละเอียด' : 'Please enter a role and details.');
-=======
       toast.error(language === 'th' ? 'เธเธฃเธธเธ“เธฒเธเธฃเธญเธเธ•เธณเนเธซเธเนเธเนเธฅเธฐเธฃเธฒเธขเธฅเธฐเน€เธญเธตเธขเธ”' : 'Please enter a role and details.');
->>>>>>> Stashed changes
       return;
     }
 
@@ -337,15 +298,9 @@ export default function CompanyDashboard() {
       }, ...current]);
       setRequirementForm({ title: '', skills: '', description: '' });
       setIsRequirementOpen(false);
-<<<<<<< Updated upstream
-      toast.success(language === 'th' ? 'ส่ง Requirement แล้ว' : 'Requirement submitted.');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ส่ง Requirement ไม่สำเร็จ' : 'Unable to submit requirement.'));
-=======
       toast.success(language === 'th' ? 'เธชเนเธ Requirement เนเธฅเนเธง' : 'Requirement submitted.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'เธชเนเธ Requirement เนเธกเนเธชเธณเน€เธฃเนเธ' : 'Unable to submit requirement.'));
->>>>>>> Stashed changes
     } finally {
       setIsSubmittingRequirement(false);
     }
@@ -443,11 +398,7 @@ export default function CompanyDashboard() {
           variants={itemVariants}
           whileHover={{ y: -5 }}
           onClick={() => navigate('/job-postings')}
-<<<<<<< Updated upstream
-          className="p-6 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden cursor-pointer"
-=======
           className="p-6 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden cursor-pointer"
->>>>>>> Stashed changes
         >
           <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10">
@@ -455,11 +406,7 @@ export default function CompanyDashboard() {
               <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/20 backdrop-blur-sm">
                 <Briefcase className="w-6 h-6" />
               </div>
-<<<<<<< Updated upstream
-              <span className="font-medium text-white/90">{t.companyDashboard.jobPositions}</span>
-=======
               <span className="text-xs text-slate-500 dark:text-slate-400">{t.companyDashboard.jobPositions}</span>
->>>>>>> Stashed changes
             </div>
             <div className="text-5xl font-bold tracking-tight">{companyJobPostings.length}</div>
             <div className="mt-3 text-sm text-orange-100 flex items-center gap-1">
@@ -583,11 +530,7 @@ export default function CompanyDashboard() {
                     <div className="flex items-start justify-between mb-3">
                       <div>
                         <h3 className="font-semibold text-lg">{job.title}</h3>
-<<<<<<< Updated upstream
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{job.type === 'internship' ? t.companyDashboard.internship : t.companyDashboard.fullTime} • {job.location}</p>
-=======
                         <p className="text-sm text-gray-600 dark:text-gray-400">{job.type === 'internship' ? t.companyDashboard.internship : t.companyDashboard.fullTime} โ€ข {job.location}</p>
->>>>>>> Stashed changes
                       </div>
                       <Badge variant={job.status === 'open' ? 'default' : 'secondary'}>{job.status === 'open' ? t.companyDashboard.open : t.companyDashboard.closed}</Badge>
                     </div>
@@ -623,11 +566,7 @@ export default function CompanyDashboard() {
                       </div>
                       <div>
                         <div className="font-semibold">{student.nameThai}</div>
-<<<<<<< Updated upstream
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{t.companyDashboard.year} {student.year} • GPA {student.gpa.toFixed(2)}</div>
-=======
                         <div className="text-sm text-gray-600 dark:text-gray-400">{t.companyDashboard.year} {student.year} โ€ข GPA {student.gpa.toFixed(2)}</div>
->>>>>>> Stashed changes
                       </div>
                     </div>
                     <Button size="sm" variant="outline" onClick={() => navigate('/student-profiles')}>{t.companyDashboard.viewProfile}</Button>
@@ -702,11 +641,7 @@ export default function CompanyDashboard() {
                             <h4 className="font-semibold text-lg text-slate-800 dark:text-white">{student.nameThai}</h4>
                             {student.exclusiveAccess && <Badge variant="outline" className="bg-amber-100/50 text-amber-700 border-amber-300 dark:bg-amber-900/30 dark:text-amber-400 dark:border-amber-700 text-[10px] shadow-sm py-0"><Flame className="w-3 h-3 mr-1 text-orange-500" /> {copy.exclusiveAccess}</Badge>}
                           </div>
-<<<<<<< Updated upstream
-                          <p className="text-sm border-b pb-2 mb-2 text-slate-500 dark:text-slate-400">{t.companyDashboard.year} {student.year} • GPA {student.gpa.toFixed(2)} • {student.major}</p>
-=======
                           <p className="text-sm border-b pb-2 mb-2 text-slate-500 dark:text-slate-400">{t.companyDashboard.year} {student.year} โ€ข GPA {student.gpa.toFixed(2)} โ€ข {student.major}</p>
->>>>>>> Stashed changes
                           <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-green-600 dark:text-green-500 mt-2 font-medium">
                             <CheckCircle2 className="w-4 h-4" />
                             <span>{copy.skills}: {student.matchedSkills.length ? student.matchedSkills.join(', ') : '-'}</span>
@@ -722,11 +657,7 @@ export default function CompanyDashboard() {
                                size="sm"
                                onClick={() => {
                                  setFollowedStudents(current => current.some(item => item.id === student.id) ? current : [{ ...student, followDate: new Date().toISOString().slice(0, 10), thresholdMet: student.gpa >= 3.5 }, ...current]);
-<<<<<<< Updated upstream
-                                 toast.success(language === 'th' ? 'เพิ่มในรายการติดตามแล้ว' : 'Talent followed.');
-=======
                                  toast.success(language === 'th' ? 'เน€เธเธดเนเธกเนเธเธฃเธฒเธขเธเธฒเธฃเธ•เธดเธ”เธ•เธฒเธกเนเธฅเนเธง' : 'Talent followed.');
->>>>>>> Stashed changes
                                }}
                                className="bg-slate-900 dark:bg-slate-800 group hover:bg-slate-800 dark:hover:bg-slate-700"
                              >

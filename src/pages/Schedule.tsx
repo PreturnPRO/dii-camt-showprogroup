@@ -88,11 +88,7 @@ export default function Schedule() {
         day: dayIndexByName[slot.day.toLowerCase()] ?? 0,
         startTime: slot.startTime,
         endTime: slot.endTime,
-<<<<<<< Updated upstream
-        room: slot.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
-=======
         room: slot.room
->>>>>>> Stashed changes
       }))
     ).filter(item => item.day > 0);
   }, [courses]);
@@ -486,17 +482,11 @@ export default function Schedule() {
                   ยังไม่มีคาบเรียนวันนี้จากระบบ
                 </div>
               )}
-<<<<<<< Updated upstream
-              {studentCourses.slice(0, 3).map((course, index) => {
-                const slot = course.schedule?.[0];
-                const location = [slot?.room, slot?.building].filter(Boolean).join(' ');
-=======
               {(() => {
                 const currentDayMap: Record<number, string> = {
                   1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday', 0: 'sunday'
                 };
                 const todayName = currentDayMap[new Date().getDay()];
->>>>>>> Stashed changes
 
                 // Flatten all slots and sort chronologically
                 type FlatSlot = {

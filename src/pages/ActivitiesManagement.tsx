@@ -140,11 +140,7 @@ export default function ActivitiesManagement() {
                         <Activity className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                         <span>{t.activitiesManagementPage.subtitle}</span>
                     </motion.div>
-<<<<<<< Updated upstream
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-=======
                     <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
->>>>>>> Stashed changes
                         {t.activitiesManagementPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.activitiesManagementPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -153,28 +149,12 @@ export default function ActivitiesManagement() {
                 </div>
                 <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="relative w-full md:w-72">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-<<<<<<< Updated upstream
-                    <Input placeholder={t.activitiesManagementPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700 dark:bg-slate-900/50" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
-=======
                     <Input placeholder={t.activitiesManagementPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
->>>>>>> Stashed changes
                 </motion.div>
             </div>
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
-<<<<<<< Updated upstream
-                    { icon: Clock, label: t.activitiesManagementPage.pendingTab, value: String(activities.filter((activity) => activity.status === 'pending' || activity.status === 'draft').length), gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
-                    { icon: CheckCircle, label: t.activitiesManagementPage.approvedTab, value: String(activities.filter((activity) => activity.status === 'upcoming' || activity.status === 'active').length), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
-                    { icon: Calendar, label: t.activitiesManagementPage.inProgressTab, value: String(activities.filter((activity) => activity.status === 'active' || activity.status === 'ongoing').length), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
-                    { icon: Star, label: t.activitiesManagementPage.completedTab, value: String(activities.filter((activity) => activity.status === 'completed').length), gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-                ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
-=======
                     { icon: Clock, label: t.activitiesManagementPage.pendingTab, value: String(activities.filter((activity) => activity.status === 'pending' || activity.status === 'draft').length), gradient: '', shadow: '' },
                     { icon: CheckCircle, label: t.activitiesManagementPage.approvedTab, value: String(activities.filter((activity) => activity.status === 'upcoming' || activity.status === 'active').length), gradient: '', shadow: '' },
                     { icon: Calendar, label: t.activitiesManagementPage.inProgressTab, value: String(activities.filter((activity) => activity.status === 'active' || activity.status === 'ongoing').length), gradient: '', shadow: '' },
@@ -185,7 +165,6 @@ export default function ActivitiesManagement() {
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
->>>>>>> Stashed changes
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
                             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
@@ -195,11 +174,7 @@ export default function ActivitiesManagement() {
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-<<<<<<< Updated upstream
-                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
-=======
                 <motion.div variants={itemVariants} className="lg:col-span-3 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
->>>>>>> Stashed changes
                     <div className="mb-5">
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                             <Clock className="w-5 h-5 text-amber-500" /> {t.activitiesManagementPage.newActivityRequests}
@@ -213,17 +188,10 @@ export default function ActivitiesManagement() {
                             </div>
                         )}
                         {pendingActivities.map((act) => (
-<<<<<<< Updated upstream
-                            <motion.div key={act.id} whileHover={{ x: 4 }} className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/80 hover:shadow-md transition-all dark:bg-slate-900/50">
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                                    <div className="flex items-start gap-4">
-                                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-200">
-=======
                             <motion.div key={act.id} whileHover={{ x: 4 }} className="p-5 rounded-2xl border border-slate-100 dark:border-slate-800 bg-white/80 hover:shadow-md transition-all">
                                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                                     <div className="flex items-start gap-4">
                                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white shadow-lg">
->>>>>>> Stashed changes
                                             <Activity className="w-6 h-6" />
                                         </div>
                                         <div>
@@ -235,11 +203,7 @@ export default function ActivitiesManagement() {
                                         </div>
                                     </div>
                                     <div className="flex flex-wrap gap-2">
-<<<<<<< Updated upstream
-                                        <Button className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200" onClick={() => handleActivityStatus(act.id, 'upcoming')}>
-=======
                                         <Button className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-sm" onClick={() => handleActivityStatus(act.id, 'upcoming')}>
->>>>>>> Stashed changes
                                             <CheckCircle className="w-4 h-4 mr-2" /> {t.activitiesManagementPage.approveBtn}
                                         </Button>
                                         <Button variant="outline" className="text-red-500 border-red-200 hover:bg-red-50 rounded-xl dark:text-slate-400 dark:bg-slate-800" onClick={() => handleActivityStatus(act.id, 'cancelled')}>
@@ -255,11 +219,7 @@ export default function ActivitiesManagement() {
                     </div>
                 </motion.div>
 
-<<<<<<< Updated upstream
-                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
-=======
                 <motion.div variants={itemVariants} className="lg:col-span-2 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
->>>>>>> Stashed changes
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-slate-400" /> {t.activitiesManagementPage.approvedActivities}
                     </h3>

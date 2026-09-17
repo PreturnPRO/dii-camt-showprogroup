@@ -161,11 +161,7 @@ export default function Applicants() {
                         <span>{visibleApplicants.length} {t.common.person} • {pendingCount} {t.applicants.pending}</span>
                     </motion.div>
                     <motion.h1
-<<<<<<< Updated upstream
-                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
-=======
                         className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
->>>>>>> Stashed changes
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -180,17 +176,6 @@ export default function Applicants() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-<<<<<<< Updated upstream
-                    className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-xl shadow-blue-500/20 relative overflow-hidden"
-                >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                <Users className="w-6 h-6" />
-                            </div>
-                            <span className="font-medium text-white/90">{t.applicants.totalLabel}</span>
-=======
                     className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm relative overflow-hidden"
                 >
                     <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
@@ -200,7 +185,6 @@ export default function Applicants() {
                                 <Users className="w-6 h-6" />
                             </div>
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.applicants.totalLabel}</span>
->>>>>>> Stashed changes
                         </div>
                         <div className="text-5xl font-bold tracking-tight">{visibleApplicants.length}</div>
                         <div className="mt-3 text-sm text-blue-100 flex items-center gap-1">
@@ -280,11 +264,7 @@ export default function Applicants() {
                     </Select>
                 </div>
 
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                     <CardContent className="pt-6">
                         <div className="space-y-3">
                             <AnimatePresence>

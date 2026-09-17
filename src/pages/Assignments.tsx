@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-﻿import React from 'react';
-=======
 import React from 'react';
->>>>>>> Stashed changes
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -155,26 +151,15 @@ export default function Assignments() {
                     <div className="relative z-10 flex items-start justify-between">
                         <div>
                             <h1 className="text-2xl font-bold mb-1">{selectedAssignment.title}</h1>
-<<<<<<< Updated upstream
-                            <p className="text-white/80">{selectedAssignment.courseCode} • {selectedAssignment.courseName}</p>
-                            <div className="flex gap-3 mt-3">
-                                <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{selectedAssignment.type === 'group' ? t.assignmentsPage.group : t.assignmentsPage.individual}</Badge>
-                                <Badge className="bg-white/20 text-white border-white/20 dark:bg-slate-900/50">{t.assignmentsPage.deadline} {selectedAssignment.dueDate.toLocaleDateString('th-TH')}</Badge>
-=======
                             <p className="text-slate-500 dark:text-slate-400">{selectedAssignment.courseCode} โ€ข {selectedAssignment.courseName}</p>
                             <div className="flex gap-3 mt-3">
                                 <Badge className="bg-white/20 text-white border-white/20">{selectedAssignment.type === 'group' ? t.assignmentsPage.group : t.assignmentsPage.individual}</Badge>
                                 <Badge className="bg-white/20 text-white border-white/20">{t.assignmentsPage.deadline} {selectedAssignment.dueDate.toLocaleDateString('th-TH')}</Badge>
->>>>>>> Stashed changes
                             </div>
                         </div>
                         <div className="text-right">
                             <div className="text-sm text-white/70">{t.assignmentsPage.submitted}</div>
-<<<<<<< Updated upstream
-                            <div className="text-3xl font-bold">{selectedAssignment.submissionCount}/{selectedAssignment.totalStudents}</div>
-=======
                             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{selectedAssignment.submissionCount}/{selectedAssignment.totalStudents}</div>
->>>>>>> Stashed changes
                         </div>
                     </div>
                 </motion.div>
@@ -185,11 +170,7 @@ export default function Assignments() {
                 </motion.div>
 
                 <motion.div variants={itemVariants}>
-<<<<<<< Updated upstream
-                    <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                     <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                                 <FileText className="w-5 h-5 text-blue-500 dark:text-slate-400" />
@@ -199,11 +180,7 @@ export default function Assignments() {
                         </CardHeader>
                         <CardContent className="space-y-3">
                             {submissions.length === 0 ? (
-<<<<<<< Updated upstream
-                                <div className="text-center py-8 text-gray-400">ยังไม่มีนักศึกษาส่งงาน</div>
-=======
                                 <div className="text-center py-8 text-gray-400">เธขเธฑเธเนเธกเนเธกเธตเธเธฑเธเธจเธถเธเธฉเธฒเธชเนเธเธเธฒเธ</div>
->>>>>>> Stashed changes
                             ) : submissions.map((sub) => (
                                 <div key={sub.id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors dark:bg-slate-800">
                                     <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center font-bold text-blue-600 text-sm dark:text-slate-300 dark:bg-slate-800">
@@ -211,11 +188,7 @@ export default function Assignments() {
                                     </div>
                                     <div className="flex-1">
                                         <div className="font-medium text-sm">{sub.name}</div>
-<<<<<<< Updated upstream
-                                        <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} • ส่งเมื่อ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
-=======
                                         <div className="text-xs text-gray-500 dark:text-slate-400">{sub.studentId} โ€ข เธชเนเธเน€เธกเธทเนเธญ {sub.submittedAt.toLocaleDateString('th-TH')}</div>
->>>>>>> Stashed changes
                                     </div>
                                     <div className="flex items-center gap-3">
                                         {viewMode === 'grade' ? (
@@ -234,34 +207,20 @@ export default function Assignments() {
                                             sub.score !== null ? (
                                                 <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{sub.score}/{selectedAssignment.maxScore}</Badge>
                                             ) : (
-<<<<<<< Updated upstream
-                                                <Badge variant="outline" className="text-gray-500 dark:text-slate-400">รอตรวจ</Badge>
-                                            )
-                                        )}
-                                        <Button size="sm" variant="ghost" className="text-xs text-blue-500 hover:bg-blue-50 dark:text-slate-400 dark:bg-slate-800">
-                                            <Upload className="w-3.5 h-3.5 mr-1" /> ดูไฟล์
-=======
                                                 <Badge variant="outline" className="text-gray-500 dark:text-slate-400">เธฃเธญเธ•เธฃเธงเธ</Badge>
                                             )
                                         )}
                                         <Button size="sm" variant="ghost" className="text-xs text-blue-500 hover:bg-blue-50 dark:text-slate-400 dark:bg-slate-800">
                                             <Upload className="w-3.5 h-3.5 mr-1" /> เธ”เธนเนเธเธฅเน
->>>>>>> Stashed changes
                                         </Button>
                                     </div>
                                 </div>
                             ))}
                             {viewMode === 'grade' && submissions.length > 0 && (
                                 <div className="pt-4 flex justify-end">
-<<<<<<< Updated upstream
-                                    <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-lg shadow-blue-200"
-                                        onClick={() => { setSelectedAssignment(null); }}>
-                                        <CheckCircle className="w-4 h-4 mr-2" /> บันทึกคะแนน
-=======
                                     <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-sm"
                                         onClick={() => { setSelectedAssignment(null); }}>
                                         <CheckCircle className="w-4 h-4 mr-2" /> เธเธฑเธเธ—เธถเธเธเธฐเนเธเธ
->>>>>>> Stashed changes
                                     </Button>
                                 </div>
                             )}
@@ -284,15 +243,6 @@ export default function Assignments() {
                 <div>
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
                         <ClipboardList className="w-4 h-4 text-blue-500 dark:text-slate-400" />
-<<<<<<< Updated upstream
-                        <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} • ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
-                    </motion.div>
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                        {t.assignmentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.assignmentsPage.titleHighlight}</span>
-                    </motion.h1>
-                </div>
-                <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg">
-=======
                         <span>{`${assignments.length} ${t.assignmentsPage.titleHighlight} โ€ข ${activeAssignments} ${t.assignmentsPage.subtitle}`}</span>
                     </motion.div>
                     <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
@@ -300,7 +250,6 @@ export default function Assignments() {
                     </motion.h1>
                 </div>
                 <Button className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white h-9 px-4 text-xs font-semibold rounded-xl">
->>>>>>> Stashed changes
                     <Plus className="w-4 h-4 mr-2" />
                     {t.assignmentsPage.createNew}
                 </Button>
@@ -310,19 +259,6 @@ export default function Assignments() {
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-<<<<<<< Updated upstream
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-6 text-white shadow-xl shadow-blue-200"
-                >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                <Clock className="w-5 h-5" />
-                            </div>
-                            <span className="font-medium text-white/90">{t.assignmentsPage.inProgressTab}</span>
-                        </div>
-                        <div className="text-4xl font-bold">{activeAssignments}</div>
-=======
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
                     
@@ -334,25 +270,11 @@ export default function Assignments() {
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.assignmentsPage.inProgressTab}</span>
                         </div>
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{activeAssignments}</div>
->>>>>>> Stashed changes
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-<<<<<<< Updated upstream
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 text-white shadow-xl shadow-emerald-200"
-                >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                <CheckCircle className="w-5 h-5" />
-                            </div>
-                            <span className="font-medium text-white/90">{t.assignmentsPage.completedTab}</span>
-                        </div>
-                        <div className="text-4xl font-bold">{completedAssignments}</div>
-=======
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
                     
@@ -364,25 +286,11 @@ export default function Assignments() {
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.assignmentsPage.completedTab}</span>
                         </div>
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{completedAssignments}</div>
->>>>>>> Stashed changes
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-<<<<<<< Updated upstream
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 p-6 text-white shadow-xl shadow-orange-200"
-                >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                <FileText className="w-5 h-5" />
-                            </div>
-                            <span className="font-medium text-white/90">{t.assignmentsPage.draftTab}</span>
-                        </div>
-                        <div className="text-4xl font-bold">{draftAssignments}</div>
-=======
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
                     
@@ -394,25 +302,11 @@ export default function Assignments() {
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.assignmentsPage.draftTab}</span>
                         </div>
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{draftAssignments}</div>
->>>>>>> Stashed changes
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-<<<<<<< Updated upstream
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 p-6 text-white shadow-xl shadow-purple-200"
-                >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                    <div className="relative z-10">
-                        <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                                <ClipboardList className="w-5 h-5" />
-                            </div>
-                            <span className="font-medium text-white/90">{t.assignmentsPage.allTab}</span>
-                        </div>
-                        <div className="text-4xl font-bold">{assignments.length}</div>
-=======
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
                     
@@ -424,7 +318,6 @@ export default function Assignments() {
                             <span className="text-xs text-slate-500 dark:text-slate-400">{t.assignmentsPage.allTab}</span>
                         </div>
                         <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{assignments.length}</div>
->>>>>>> Stashed changes
                     </div>
                 </motion.div>
             </motion.div>
@@ -432,11 +325,7 @@ export default function Assignments() {
             {/* Tabs */}
             <motion.div variants={itemVariants}>
                 <Tabs defaultValue="all" className="space-y-4">
-<<<<<<< Updated upstream
-                    <TabsList className="bg-white/80 backdrop-blur-sm border shadow-sm dark:bg-slate-900/50">
-=======
                     <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
->>>>>>> Stashed changes
                         <TabsTrigger value="all">{t.assignmentsPage.allTab}</TabsTrigger>
                         <TabsTrigger value="active">{t.assignmentsPage.inProgressTab}</TabsTrigger>
                         <TabsTrigger value="completed">{t.assignmentsPage.completedTab}</TabsTrigger>
@@ -456,21 +345,13 @@ export default function Assignments() {
                             </div>
                         </div>
 
-<<<<<<< Updated upstream
-                        <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                         <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
                                     {isLoading ? (
                                         <div className="text-center py-8 text-gray-400">{t.common.loading}</div>
                                     ) : filterAssignments(assignments).length === 0 ? (
-<<<<<<< Updated upstream
-                                        <div className="text-center py-8 text-gray-400">ไม่พบงานที่ค้นหา</div>
-=======
                                         <div className="text-center py-8 text-gray-400">เนเธกเนเธเธเธเธฒเธเธ—เธตเนเธเนเธเธซเธฒ</div>
->>>>>>> Stashed changes
                                     ) : filterAssignments(assignments).map((assignment, index) => (
                                         <motion.div
                                             key={assignment.id}
@@ -478,11 +359,7 @@ export default function Assignments() {
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
                                             whileHover={{ scale: 1.01, x: 4 }}
-<<<<<<< Updated upstream
-                                            className="p-5 border dark:border-slate-700 rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-gray-50/50 to-white dark:from-slate-800 dark:to-slate-800/60"
-=======
                                             className="p-5 border rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-gray-50/50 to-white"
->>>>>>> Stashed changes
                                             onClick={() => { setSelectedAssignment(assignment); setViewMode('view'); }}
                                         >
                                             <div className="flex items-start justify-between mb-4">
@@ -498,11 +375,7 @@ export default function Assignments() {
                                                         </Badge>
                                                     </div>
                                                     <p className="text-sm text-gray-600 dark:text-slate-300">
-<<<<<<< Updated upstream
-                                                        {assignment.courseCode} • {assignment.courseName}
-=======
                                                         {assignment.courseCode} โ€ข {assignment.courseName}
->>>>>>> Stashed changes
                                                     </p>
                                                 </div>
                                                 <div className="text-right">
@@ -540,11 +413,7 @@ export default function Assignments() {
                     </TabsContent>
 
                     <TabsContent value="active">
-<<<<<<< Updated upstream
-                        <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                         <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
                                     {filterAssignments(assignments, 'active').map((assignment, index) => (
@@ -553,21 +422,13 @@ export default function Assignments() {
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             transition={{ delay: index * 0.05 }}
-<<<<<<< Updated upstream
-                                            className="p-5 border dark:border-slate-700 rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-blue-50/50 to-white dark:from-slate-800 dark:to-slate-800/60"
-=======
                                             className="p-5 border rounded-xl hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group bg-gradient-to-r from-blue-50/50 to-white"
->>>>>>> Stashed changes
                                             onClick={() => { setSelectedAssignment(assignment); setViewMode('view'); }}
                                         >
                                             <div className="flex items-start justify-between mb-4">
                                                 <div>
                                                     <h3 className="font-semibold text-lg">{assignment.title}</h3>
-<<<<<<< Updated upstream
-                                                    <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} • {assignment.courseName}</p>
-=======
                                                     <p className="text-sm text-gray-600 dark:text-slate-300">{assignment.courseCode} โ€ข {assignment.courseName}</p>
->>>>>>> Stashed changes
                                                 </div>
                                                 {getStatusBadge(assignment.status)}
                                             </div>
@@ -586,11 +447,7 @@ export default function Assignments() {
                     </TabsContent>
 
                     <TabsContent value="completed">
-<<<<<<< Updated upstream
-                        <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                         <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
                                     {filterAssignments(assignments, 'completed').map((assignment) => (
@@ -614,19 +471,11 @@ export default function Assignments() {
                     </TabsContent>
 
                     <TabsContent value="draft">
-<<<<<<< Updated upstream
-                        <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-                            <CardContent className="pt-6">
-                                <div className="space-y-4">
-                                    {filterAssignments(assignments, 'draft').map((assignment) => (
-                                        <div key={assignment.id} className="p-5 border rounded-xl bg-gray-50/50 dark:bg-slate-900/50">
-=======
                         <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
                             <CardContent className="pt-6">
                                 <div className="space-y-4">
                                     {filterAssignments(assignments, 'draft').map((assignment) => (
                                         <div key={assignment.id} className="p-5 border rounded-xl bg-gray-50/50">
->>>>>>> Stashed changes
                                             <div className="flex items-center justify-between">
                                                 <div>
                                                     <h3 className="font-semibold text-lg">{assignment.title}</h3>

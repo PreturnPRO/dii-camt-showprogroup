@@ -575,13 +575,8 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-<<<<<<< Updated upstream
-          {/* Quick Actions */}
-          <div className="flex flex-col gap-3">
-=======
           {/* Right: Actions (Desktop Vertical Stack / Mobile Horizontal) */}
           <div className="flex sm:flex-row lg:flex-col items-stretch gap-2 shrink-0 w-full sm:w-auto lg:w-36 self-stretch lg:self-center justify-center">
->>>>>>> Stashed changes
             <Button
               onClick={() => navigate('/portfolio')}
               size="sm"

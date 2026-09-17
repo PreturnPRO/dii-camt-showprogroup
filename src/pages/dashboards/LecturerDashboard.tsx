@@ -100,14 +100,6 @@ export default function LecturerDashboard() {
       animate="visible"
       className="space-y-8 relative pb-10"
     >
-<<<<<<< Updated upstream
-      {/* Decorative Background */}
-      <div className="absolute top-0 left-0 w-full h-[300px] overflow-hidden -z-10 pointer-events-none rounded-3xl">
-        <div className="absolute -top-[20%] -left-[10%] w-[50%] h-[150%] rounded-full bg-emerald-400/20 dark:bg-emerald-900/20 blur-[100px]" />
-        <div className="absolute top-[10%] -right-[10%] w-[40%] h-[120%] rounded-full bg-teal-400/20 dark:bg-teal-900/20 blur-[120px]" />
-      </div>
-=======
->>>>>>> Stashed changes
 
       {/* Welcome Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 pt-4">
@@ -121,32 +113,20 @@ export default function LecturerDashboard() {
                 lecturer.position === 'professor' ? 'ศาสตราจารย์' : 'อาจารย์'
               }`}</span>
           </motion.div>
-<<<<<<< Updated upstream
-          <motion.h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-=======
           <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight leading-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
->>>>>>> Stashed changes
             {t.lecturerDashboard.hello} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">{lecturer.nameThai}</span> 👋
           </motion.h1>
         </div>
 
         <motion.div variants={itemVariants} className="flex items-center gap-3">
           <Link to="/schedule">
-<<<<<<< Updated upstream
-            <Button variant="outline" className="rounded-full px-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-slate-200/60 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
-=======
             <Button variant="outline" className="h-9 px-3.5 text-xs font-medium rounded-xl border-slate-200/80 dark:border-slate-800">
->>>>>>> Stashed changes
               <Calendar className="w-4 h-4 mr-2" />
               {t.lecturerDashboard.manageSchedule}
             </Button>
           </Link>
           <Link to="/messages">
-<<<<<<< Updated upstream
-            <Button className="rounded-full px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/50 text-white transition-all hover:scale-105 border-0">
-=======
             <Button className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white h-9 px-4 text-xs font-semibold rounded-xl">
->>>>>>> Stashed changes
               <MessageSquare className="w-4 h-4 mr-2" />
               {t.lecturerDashboard.messages}
             </Button>
@@ -159,20 +139,6 @@ export default function LecturerDashboard() {
         <motion.div
           whileHover={{ scale: 1.02 }}
           onClick={() => navigate('/courses')}
-<<<<<<< Updated upstream
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500 via-teal-500 to-cyan-500 p-6 text-white shadow-xl shadow-emerald-200 cursor-pointer"
-        >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <BookOpen className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90">{t.lecturerDashboard.coursesTaught}</span>
-            </div>
-            <div className="text-4xl font-bold">{lecturerCourses.length}</div>
-            <div className="text-sm text-white/80 mt-2">{t.lecturerDashboard.coursesThisSem}</div>
-=======
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
           
@@ -185,27 +151,12 @@ export default function LecturerDashboard() {
             </div>
             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{lecturerCourses.length}</div>
             <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t.lecturerDashboard.coursesThisSem}</div>
->>>>>>> Stashed changes
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
           onClick={() => navigate('/students')}
-<<<<<<< Updated upstream
-          className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-6 text-white shadow-xl shadow-blue-200 cursor-pointer"
-        >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <Users className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90">{t.lecturerDashboard.totalStudents}</span>
-            </div>
-            <div className="text-4xl font-bold">{totalStudents}</div>
-            <div className="text-sm text-white/80 mt-2">{t.lecturerDashboard.allStudents}</div>
-=======
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
           
@@ -218,30 +169,12 @@ export default function LecturerDashboard() {
             </div>
             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{totalStudents}</div>
             <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t.lecturerDashboard.allStudents}</div>
->>>>>>> Stashed changes
           </div>
         </motion.div>
 
         <motion.div
           whileHover={{ scale: 1.02 }}
           onClick={() => navigate('/students')}
-<<<<<<< Updated upstream
-          className={`relative overflow-hidden rounded-2xl p-6 text-white shadow-xl cursor-pointer ${atRiskAdvisees.length > 0
-            ? 'bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 shadow-orange-200'
-            : 'bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 shadow-purple-200'
-            }`}
-        >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <Award className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90">{t.lecturerDashboard.advisees}</span>
-            </div>
-            <div className="text-4xl font-bold">{adviseesList.length}/{lecturer.maxAdvisees}</div>
-            <div className="text-sm text-white/80 mt-2">
-=======
           className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 cursor-pointer ${atRiskAdvisees.length > 0
             ? ''
             : ''
@@ -257,7 +190,6 @@ export default function LecturerDashboard() {
             </div>
             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{adviseesList.length}/{lecturer.maxAdvisees}</div>
             <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">
->>>>>>> Stashed changes
               {atRiskAdvisees.length > 0 ? `${t.lecturerDashboard.atRisk} ${atRiskAdvisees.length} ${t.lecturerDashboard.people}` : t.lecturerDashboard.allNormal}
             </div>
           </div>
@@ -266,23 +198,6 @@ export default function LecturerDashboard() {
         <motion.div
           whileHover={{ scale: 1.02 }}
           onClick={() => navigate('/workload')}
-<<<<<<< Updated upstream
-          className={`relative overflow-hidden rounded-2xl p-6 text-white shadow-xl cursor-pointer ${workloadPercentage >= 80
-            ? 'bg-gradient-to-br from-red-500 via-rose-500 to-pink-500 shadow-red-200'
-            : 'bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 shadow-green-200'
-            }`}
-        >
-          <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
-                <Clock className="w-5 h-5" />
-              </div>
-              <span className="font-medium text-white/90">{t.lecturerDashboard.workload}</span>
-            </div>
-            <div className="text-3xl font-bold">{lecturer.teachingHours}/{lecturer.maxTeachingHours} ชม.</div>
-            <div className="text-sm text-white/80 mt-2">{workloadPercentage.toFixed(0)}% {t.lecturerDashboard.ofWorkTime}</div>
-=======
           className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 cursor-pointer ${workloadPercentage >= 80
             ? ''
             : ''
@@ -298,28 +213,18 @@ export default function LecturerDashboard() {
             </div>
             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{lecturer.teachingHours}/{lecturer.maxTeachingHours} ชม.</div>
             <div className="text-xs text-slate-400 dark:text-slate-500 mt-1">{workloadPercentage.toFixed(0)}% {t.lecturerDashboard.ofWorkTime}</div>
->>>>>>> Stashed changes
           </div>
         </motion.div>
       </motion.div>
 
       <motion.div variants={itemVariants} className="mt-8">
         <Tabs defaultValue="courses" className="space-y-6">
-<<<<<<< Updated upstream
-          <TabsList className="grid w-full grid-cols-5 lg:w-auto p-1 bg-slate-100/50 dark:bg-slate-800/50 backdrop-blur-md rounded-2xl">
-            <TabsTrigger value="courses" className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">{t.lecturerDashboard.coursesTab}</TabsTrigger>
-            <TabsTrigger value="students" className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">{t.lecturerDashboard.studentsTab}</TabsTrigger>
-            <TabsTrigger value="advisees" className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">{t.lecturerDashboard.adviseesTab}</TabsTrigger>
-            <TabsTrigger value="grades" className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">{t.lecturerDashboard.gradesTab}</TabsTrigger>
-            <TabsTrigger value="schedule" className="rounded-xl data-[state=active]:bg-white dark:data-[state=active]:bg-slate-700 data-[state=active]:shadow-sm transition-all">{t.lecturerDashboard.scheduleTab}</TabsTrigger>
-=======
           <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
             <TabsTrigger value="courses" className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t.lecturerDashboard.coursesTab}</TabsTrigger>
             <TabsTrigger value="students" className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t.lecturerDashboard.studentsTab}</TabsTrigger>
             <TabsTrigger value="advisees" className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t.lecturerDashboard.adviseesTab}</TabsTrigger>
             <TabsTrigger value="grades" className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t.lecturerDashboard.gradesTab}</TabsTrigger>
             <TabsTrigger value="schedule" className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-blue-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none">{t.lecturerDashboard.scheduleTab}</TabsTrigger>
->>>>>>> Stashed changes
           </TabsList>
 
           {/* Courses Tab */}
@@ -327,11 +232,7 @@ export default function LecturerDashboard() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
               {/* Courses List */}
               <div className="lg:col-span-2 space-y-4">
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                   <CardHeader>
                     <CardTitle>{t.lecturerDashboard.courseList}</CardTitle>
                     <CardDescription>เทอม 1/2568 • {lecturerCourses.length} วิชา</CardDescription>
@@ -389,11 +290,7 @@ export default function LecturerDashboard() {
               {/* Sidebar */}
               <div className="space-y-4">
                 {/* Workload */}
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                   <CardHeader>
                     <CardTitle className="text-sm">{t.lecturerDashboard.teachingWorkload}</CardTitle>
                   </CardHeader>
@@ -414,11 +311,7 @@ export default function LecturerDashboard() {
                 </Card>
 
                 {/* Upcoming Appointments */}
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="text-sm">{t.lecturerDashboard.upcomingAppointments}</CardTitle>
@@ -446,11 +339,7 @@ export default function LecturerDashboard() {
                 </Card>
 
                 {/* Office Hours */}
-<<<<<<< Updated upstream
-                <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
                 <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
                   <CardHeader>
                     <CardTitle className="text-sm">{t.lecturerDashboard.consultHours}</CardTitle>
                   </CardHeader>
@@ -469,11 +358,7 @@ export default function LecturerDashboard() {
 
           {/* Students Tab */}
           <TabsContent value="students">
-<<<<<<< Updated upstream
-            <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
             <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
               <CardHeader>
                 <CardTitle>{t.lecturerDashboard.allStudentsInCourses}</CardTitle>
                 <CardDescription>{t.lecturerDashboard.studentsInCourses}</CardDescription>
@@ -562,11 +447,7 @@ export default function LecturerDashboard() {
               </Card>
             )}
 
-<<<<<<< Updated upstream
-            <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
             <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
               <CardHeader>
                 <CardTitle>{t.lecturerDashboard.allAdvisees}</CardTitle>
                 <CardDescription>{adviseesList.length} {t.lecturerDashboard.people}</CardDescription>
@@ -604,11 +485,7 @@ export default function LecturerDashboard() {
 
           {/* Grades Tab */}
           <TabsContent value="grades">
-<<<<<<< Updated upstream
-            <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
             <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
               <CardHeader>
                 <CardTitle>{t.lecturerDashboard.gradeManagement}</CardTitle>
                 <CardDescription>{t.lecturerDashboard.gradeManagementDesc}</CardDescription>
@@ -655,11 +532,7 @@ export default function LecturerDashboard() {
 
           {/* Schedule Tab */}
           <TabsContent value="schedule">
-<<<<<<< Updated upstream
-            <Card className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm dark:bg-slate-900/50">
-=======
             <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
->>>>>>> Stashed changes
               <CardHeader>
                 <CardTitle>{t.lecturerDashboard.weeklySchedule}</CardTitle>
                 <CardDescription>{t.lecturerDashboard.weeklyScheduleDesc}</CardDescription>

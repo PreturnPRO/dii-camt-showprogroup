@@ -342,11 +342,7 @@ export default function SkillsRequirement() {
         )}
         {!isLoading && requirements.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-<<<<<<< Updated upstream
-            {language === 'th' ? 'ยังไม่มี Requirement จาก API' : 'No requirements from API yet.'}
-=======
             {language === 'th' ? 'เธขเธฑเธเนเธกเนเธกเธต Requirement เธเธฒเธ API' : 'No requirements from API yet.'}
->>>>>>> Stashed changes
           </div>
         )}
       </div>

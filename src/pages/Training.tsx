@@ -1,8 +1,4 @@
-<<<<<<< Updated upstream
-﻿import React, { useState } from 'react';
-=======
 import React, { useState } from 'react';
->>>>>>> Stashed changes
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -337,11 +333,7 @@ export default function Training() {
                 key={badge.id}
                 className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all ${
                   badge.earned
-<<<<<<< Updated upstream
-                    ? 'bg-amber-50 border border-amber-100 dark:bg-amber-950/20 dark:border-amber-900/30'
-=======
                     ? 'bg-amber-50 border border-amber-100'
->>>>>>> Stashed changes
                     : 'bg-slate-50 border border-slate-100 dark:border-slate-800 opacity-40 grayscale'
                 } dark:bg-slate-900/50`}
               >
@@ -353,11 +345,7 @@ export default function Training() {
               </div>
             ))}
           </div>
-<<<<<<< Updated upstream
-          <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-950/20 dark:to-orange-950/20 rounded-xl border border-amber-100 dark:border-amber-900/30">
-=======
           <div className="mt-4 p-3 bg-gradient-to-r from-amber-50 to-orange-50 rounded-xl border border-amber-100">
->>>>>>> Stashed changes
             <div className="flex items-center gap-2">
               <Star className="w-4 h-4 text-amber-500" />
               <span className="text-sm font-semibold text-amber-700">
@@ -559,11 +547,7 @@ export default function Training() {
                           <div
                             key={task.id}
                             className={`flex items-center gap-3 p-3 rounded-xl border transition-colors ${
-<<<<<<< Updated upstream
-                              task.done ? 'bg-emerald-50 border-emerald-100 dark:bg-emerald-950/20 dark:border-emerald-900/30' : 'bg-white border-slate-100 dark:border-slate-800'
-=======
                               task.done ? 'bg-emerald-50 border-emerald-100' : 'bg-white border-slate-100'
->>>>>>> Stashed changes
                             } dark:bg-slate-900/50`}
                           >
                             <CheckCircle2 className={`w-5 h-5 flex-shrink-0 ${task.done ? 'text-emerald-500' : 'text-slate-300'}`} />

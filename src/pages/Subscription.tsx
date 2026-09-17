@@ -28,11 +28,7 @@ export default function Subscription() {
         },
         {
             name: 'Professional', price: '฿5,000 / ปี', description: 'สำหรับบริษัทที่ต้องการหาบุคลากร', icon: Crown, current: true,
-<<<<<<< Updated upstream
-            gradient: 'from-orange-500 to-amber-500', border: 'border-orange-300', text: 'text-white', btnClass: 'bg-white dark:bg-slate-900 text-orange-600 hover:bg-orange-50',
-=======
             gradient: '', border: 'border-orange-300', text: 'text-white', btnClass: 'bg-white dark:bg-slate-900 text-orange-600 hover:bg-orange-50',
->>>>>>> Stashed changes
             features: ['ลงประกาศงานได้ 5 ตำแหน่ง', 'ดูโปรไฟล์นักศึกษาได้ไม่จำกัด', 'ตราสัญลักษณ์ Verified', 'แนะนำผู้สมัครที่ตรงเงื่อนไข'],
         },
         {
@@ -158,11 +154,7 @@ export default function Subscription() {
                     <CreditCard className="w-4 h-4 text-orange-500 dark:text-slate-400" />
                     <span>{t.subscriptionPage.subtitle}</span>
                 </motion.div>
-<<<<<<< Updated upstream
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-=======
                 <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
->>>>>>> Stashed changes
                     {t.subscriptionPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">{t.subscriptionPage.titleHighlight}</span>
                 </motion.h1>
                 <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 dark:text-slate-400 mt-3 max-w-lg mx-auto">
@@ -174,15 +166,9 @@ export default function Subscription() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                 {!isLoading && plans.map((plan, index) => (
                     <motion.div key={index} variants={itemVariants} whileHover={{ y: -8 }}
-<<<<<<< Updated upstream
-                        className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${plan.gradient} border ${plan.border} p-7 shadow-sm hover:shadow-xl transition-all flex flex-col ${plan.current ? 'ring-2 ring-orange-400 shadow-xl shadow-orange-200 scale-[1.02]' : ''}`}>
-                        {plan.current && (
-                            <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-lg shadow-orange-200">
-=======
                         className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${plan.gradient} border ${plan.border} p-7 shadow-sm hover:shadow-xl transition-all flex flex-col ${plan.current ? 'ring-2 ring-orange-400 shadow-sm scale-[1.02]' : ''}`}>
                         {plan.current && (
                             <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-orange-500 to-amber-500 text-white px-5 py-1.5 rounded-full text-sm font-bold shadow-lg">
->>>>>>> Stashed changes
                                 {t.subscriptionPage.currentPlan}
                             </div>
                         )}
@@ -191,15 +177,9 @@ export default function Subscription() {
                                 <plan.icon className="w-5 h-5" />
                                 <h3 className="text-xl font-bold">{plan.name}</h3>
                             </div>
-<<<<<<< Updated upstream
-                            <p className={`text-sm ${plan.current ? 'text-white/80' : 'text-slate-500 dark:text-slate-400'} mb-5`}>{plan.description}</p>
-                            <div className="mb-6">
-                                <span className="text-4xl font-bold">{plan.price}</span>
-=======
                             <p className={`text-sm ${plan.current ? 'text-slate-500 dark:text-slate-400' : 'text-slate-500 dark:text-slate-400'} mb-5`}>{plan.description}</p>
                             <div className="mb-6">
                                 <span className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{plan.price}</span>
->>>>>>> Stashed changes
                             </div>
                             <ul className="space-y-3 mb-8 flex-1">
                                 {plan.features.map((feature, i) => (
