@@ -123,11 +123,7 @@ export default function ActivitiesManagement() {
             : status === 'cancelled'
                 ? 'border-red-200 text-red-600 bg-red-50'
                 : 'border-emerald-200 text-emerald-600 bg-emerald-50'
-<<<<<<< Updated upstream
-            } dark:bg-slate-900/50 dark:text-slate-300`}>
-=======
             } dark:text-slate-300`}>
->>>>>>> Stashed changes
             {statusLabel(status)}
         </Badge>
     );

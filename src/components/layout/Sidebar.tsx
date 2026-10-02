@@ -1,10 +1,5 @@
-<<<<<<< Updated upstream
-import { Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
-=======
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
->>>>>>> Stashed changes
 import {
   LayoutDashboard,
   BookOpen,
@@ -32,14 +27,11 @@ import {
   Swords,
   Target,
   Bot,
-<<<<<<< Updated upstream
-=======
   ChevronLeft,
   ChevronRight,
   ChevronUp,
   LogOut,
   User,
->>>>>>> Stashed changes
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -166,35 +158,17 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
   }
 };
 
-<<<<<<< Updated upstream
-const getRoleAccent = (role: UserRole) => {
-  switch (role) {
-    case 'student':  return { dot: 'bg-blue-500',   active: 'bg-blue-600 text-white',   init: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
-    case 'lecturer': return { dot: 'bg-emerald-500', active: 'bg-emerald-600 text-white', init: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' };
-    case 'staff':    return { dot: 'bg-purple-500',  active: 'bg-purple-600 text-white',  init: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' };
-    case 'company':  return { dot: 'bg-amber-500',   active: 'bg-amber-600 text-white',   init: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' };
-    case 'admin':    return { dot: 'bg-red-500',     active: 'bg-red-600 text-white',     init: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' };
-    default:         return { dot: 'bg-slate-500',   active: 'bg-slate-700 text-white',   init: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' };
-  }
-};
-
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
-=======
 export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
->>>>>>> Stashed changes
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, switchRole } = useAuth();
   const { t } = useLanguage();
-<<<<<<< Updated upstream
-=======
   const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
 
   const handleLogout = () => {
     logout();
     navigate('/');
   };
->>>>>>> Stashed changes
 
   if (!user) return null;
 
@@ -220,26 +194,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
       {/* Sidebar - Deep High-Contrast Midnight Navy */}
       <aside
         className={cn(
-<<<<<<< Updated upstream
-          "fixed inset-y-0 left-0 z-50 h-[100dvh] w-64 shrink-0 self-start flex flex-col",
-          "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800",
-          "transition-transform duration-300 md:sticky md:inset-auto md:top-0 md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
-        )}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-4 py-4 border-b border-slate-200 dark:border-slate-800 shrink-0">
-          <Link to="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center shrink-0">
-              <span className="text-[9px] font-bold text-white dark:text-slate-900">SP</span>
-            </div>
-            <div>
-              <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">ShowPro</div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight capitalize">{user.role}</div>
-            </div>
-          </Link>
-          <Button variant="ghost" size="icon" className="md:hidden w-8 h-8 text-slate-400 hover:text-slate-900 dark:hover:text-white" onClick={onClose}>
-=======
           "fixed inset-y-0 left-0 z-50 h-[100dvh] shrink-0 bg-[#090d16] text-slate-100 shadow-2xl transition-all duration-300 ease-in-out flex flex-col overflow-visible border-r border-slate-800/80",
           sidebarWidth,
           // Mobile: slide in/out
@@ -263,39 +217,10 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
         {/* Mobile close button */}
         <div className="md:hidden flex items-center justify-end p-2 border-b border-slate-800/80">
           <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-8 w-8" onClick={onClose}>
->>>>>>> Stashed changes
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-<<<<<<< Updated upstream
-        {/* Navigation */}
-        <ScrollArea className="flex-1 min-h-0 py-3 px-3">
-          <nav className="space-y-0.5">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={onClose}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
-                    isActive
-                      ? `${accent.active}`
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className="font-medium truncate">{item.label}</span>
-                  {item.badge && (
-                    <span className={cn(
-                      "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                      isActive ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                    )}>
-                      {item.badge}
-                    </span>
-=======
         {/* Navigation - Smooth Scrollable Menu */}
         <div className="flex-1 min-h-0 py-3.5 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
           <TooltipProvider delayDuration={100}>
@@ -393,7 +318,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
                       </div>
                       <ChevronUp className="h-4 w-4 text-slate-400 shrink-0" />
                     </>
->>>>>>> Stashed changes
                   )}
                 </button>
               </DropdownMenuTrigger>
@@ -416,21 +340,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
                   </div>
                 </div>
 
-<<<<<<< Updated upstream
-        {/* User Profile */}
-        <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 p-3">
-          <div className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer">
-            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", accent.init)}>
-              {initials}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</div>
-              <div className="flex items-center gap-1.5">
-                <div className={cn("w-1.5 h-1.5 rounded-full", accent.dot)} />
-                <div className="text-xs text-slate-400 dark:text-slate-500 capitalize">{user.role}</div>
-              </div>
-            </div>
-=======
                 <DropdownMenuItem className="rounded-xl cursor-pointer py-2.5 px-3 text-slate-200 focus:bg-slate-800 focus:text-white" onClick={() => navigate('/personal-dashboard')}>
                   <User className="h-4 w-4 mr-2.5 text-slate-400" />
                   <span className="font-medium text-sm">{t.header?.profile || 'My Profile'}</span>
@@ -485,7 +394,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
->>>>>>> Stashed changes
           </div>
         )}
 

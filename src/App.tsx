@@ -69,72 +69,70 @@ const App = () => (
       <LanguageProvider>
         <AuthProvider>
           <SocketProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-              <GlobalPreloader />
-              <Suspense fallback={<RouteFallback />}>
-              <Routes>
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-                <Route path="/reset-password" element={<ForgotPasswordPage />} />
-                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route element={<DashboardLayout />}>
-                  <Route path="/dashboard" element={<Dashboard />} />
-                  <Route path="/personal-dashboard" element={<PersonalDashboard />} />
-                  <Route path="/courses" element={<Courses />} />
-                  <Route path="/schedule" element={<Schedule />} />
-                  <Route path="/grades" element={<Grades />} />
-                  <Route path="/activities" element={<Activities />} />
-                  <Route path="/messages" element={<Messages />} />
-                  <Route path="/settings" element={<Settings />} />
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <GlobalPreloader />
+                <Suspense fallback={<RouteFallback />}>
+                  <Routes>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/register" element={<RegisterPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+                    <Route path="/reset-password" element={<ForgotPasswordPage />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-service" element={<TermsOfService />} />
+                    <Route element={<DashboardLayout />}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/personal-dashboard" element={<PersonalDashboard />} />
+                      <Route path="/courses" element={<Courses />} />
+                      <Route path="/schedule" element={<Schedule />} />
+                      <Route path="/grades" element={<Grades />} />
+                      <Route path="/activities" element={<Activities />} />
+                      <Route path="/messages" element={<Messages />} />
+                      <Route path="/settings" element={<Settings />} />
 
-                  {/* Student Routes */}
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/internships" element={<Internships />} />
-                  <Route path="/requests" element={<Requests />} />
-                  <Route path="/training" element={<Training />} />
+                      {/* Student Routes */}
+                      <Route path="/portfolio" element={<Portfolio />} />
+                      <Route path="/internships" element={<Internships />} />
+                      <Route path="/requests" element={<Requests />} />
 
-                  {/* Lecturer Routes */}
-                  <Route path="/students" element={<Students />} />
-                  <Route path="/assignments" element={<Assignments />} />
-                  <Route path="/appointments" element={<Appointments />} />
-                  <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/workload" element={<Workload />} />
+                      {/* Lecturer Routes */}
+                      <Route path="/students" element={<Students />} />
+                      <Route path="/advisees" element={<Students />} />
+                      <Route path="/appointments" element={<Appointments />} />
+                      <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/workload" element={<Workload />} />
 
-                  {/* Staff Routes */}
-                  <Route path="/users" element={<UsersPage />} />
-                  <Route path="/reports" element={<Reports />} />
-                  <Route path="/notifications" element={<Notifications />} />
-                  <Route path="/automation" element={<Automation />} />
-                  <Route path="/audit" element={<Audit />} />
-                  <Route path="/budget" element={<Budget />} />
-                  <Route path="/network" element={<Network />} />
-                  <Route path="/documents" element={<Documents />} />
-                  <Route path="/personnel" element={<Personnel />} />
-                  <Route path="/workload-tracking" element={<WorkloadTracking />} />
-                  <Route path="/schedule-management" element={<ScheduleManagement />} />
-                  <Route path="/activities-management" element={<ActivitiesManagement />} />
+                      {/* Staff Routes */}
+                      <Route path="/users" element={<UsersPage />} />
+                      <Route path="/reports" element={<Reports />} />
+                      <Route path="/notifications" element={<Notifications />} />
+                      <Route path="/automation" element={<Automation />} />
+                      <Route path="/audit" element={<Audit />} />
+                      <Route path="/budget" element={<Budget />} />
+                      <Route path="/network" element={<Network />} />
+                      <Route path="/documents" element={<Documents />} />
+                      <Route path="/personnel" element={<Personnel />} />
+                      <Route path="/workload-tracking" element={<WorkloadTracking />} />
+                      <Route path="/schedule-management" element={<ScheduleManagement />} />
+                      <Route path="/activities-management" element={<ActivitiesManagement />} />
 
-                  {/* Company Routes */}
-                  <Route path="/job-postings" element={<JobPostings />} />
-                  <Route path="/skills-requirement" element={<SkillsRequirement />} />
-                  <Route path="/applicants" element={<Applicants />} />
-                  <Route path="/student-profiles" element={<StudentProfiles />} />
-                  <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/intern-tracking" element={<InternTracking />} />
-                  <Route path="/cooperation" element={<Cooperation />} />
-                  <Route path="/talent-search" element={<StudentProfiles />} />
-                </Route>
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-              </Suspense>
-            </BrowserRouter>
-          </TooltipProvider>
+                      {/* Company Routes */}
+                      <Route path="/job-postings" element={<JobPostings />} />
+                      <Route path="/skills-requirement" element={<SkillsRequirement />} />
+                      <Route path="/applicants" element={<Applicants />} />
+                      <Route path="/student-profiles" element={<StudentProfiles />} />
+                      <Route path="/intern-tracking" element={<InternTracking />} />
+                      <Route path="/cooperation" element={<Cooperation />} />
+                      <Route path="/talent-search" element={<StudentProfiles />} />
+                    </Route>
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </Suspense>
+              </BrowserRouter>
+            </TooltipProvider>
           </SocketProvider>
         </AuthProvider>
       </LanguageProvider>

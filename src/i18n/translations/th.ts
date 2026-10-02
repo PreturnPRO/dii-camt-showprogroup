@@ -48,6 +48,7 @@ export const th = {
     switchRole: 'เปลี่ยนบัญชี',
     logout: 'ออกจากระบบ',
     language: 'ภาษา',
+    search: 'ค้นหาในระบบ...',
   },
 
   // Sidebar Navigation

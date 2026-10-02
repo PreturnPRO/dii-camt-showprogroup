@@ -48,6 +48,7 @@ export const en = {
     switchRole: 'Switch Account',
     logout: 'Logout',
     language: 'Language',
+    search: 'Search the system...',
   },
 
   // Sidebar Navigation

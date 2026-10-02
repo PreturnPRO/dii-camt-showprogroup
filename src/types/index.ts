@@ -182,6 +182,7 @@ export interface Course {
   // Teaching
   lecturerId: string;
   lecturerName: string;
+  room?: string;
   sections: Section[];
 
   // Course info
@@ -204,7 +205,8 @@ export interface Course {
 
   // Grading
   grades: Grade[];
-  gradingCriteria?: GradingCriteria;
+  gradingCriteria?: GradingCriteria[];
+  gradeCutoffs?: GradeCutoff[];
 }
 
 export interface Section {
@@ -259,16 +261,24 @@ export interface Submission {
 }
 
 export interface GradingCriteria {
-  midterm: number; // percentage
-  final: number;
-  assignments: number;
-  participation: number;
-  project?: number;
+  id: string;
+  name: string;
+  weightPercentage: number;
+  maxScore: number;
+  orderIndex?: number;
+}
+
+export interface GradeCutoff {
+  id: string;
+  grade: string;
+  minScore: number;
 }
 
 export interface Grade {
+  id?: string;
   studentId: string;
   courseId: string;
+  scores?: { criteriaId: string; score: number }[];
   midterm?: number;
   final?: number;
   assignments?: number;

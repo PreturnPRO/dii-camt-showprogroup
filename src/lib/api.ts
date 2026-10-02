@@ -432,34 +432,6 @@ export const api = {
         body: payload,
       }),
   },
-  assignments: {
-    list: (query = "") => request<ApiEnvelope<{ assignments: unknown[] }>>(`/assignments${query}`),
-    get: (id: string) => request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${encodeURIComponent(id)}`),
-    create: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>("/assignments", {
-        method: "POST",
-        body: payload,
-      }),
-    update: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
-        method: "PATCH",
-        body: payload,
-      }),
-    remove: (id: string) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
-        method: "DELETE",
-      }),
-    submit: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/assignments/${id}/submissions`, {
-        method: "POST",
-        body: payload,
-      }),
-    gradeSubmission: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/submissions/${id}`, {
-        method: "PATCH",
-        body: payload,
-      }),
-  },
   courses: {
     list: (query = "") => request<ApiEnvelope<{ courses: unknown[] }>>(`/courses${query}`),
     get: (id: string) => request<ApiEnvelope<{ course: unknown }>>(`/courses/${id}`),
@@ -479,6 +451,8 @@ export const api = {
       ),
   },
   grades: {
+    exportCsv: (courseId: string) =>
+      requestBlob(`/courses/${encodeURIComponent(courseId)}/grades/export`),
     bulkUpdate: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ grades: unknown[]; updatedCount: number }>>("/grades/bulk", {
         method: "PATCH",
