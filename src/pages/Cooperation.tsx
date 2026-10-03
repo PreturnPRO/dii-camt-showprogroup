@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { Handshake, FileText, CheckCircle, Clock, Calendar, Download, Shield, Users } from 'lucide-react';
+import { Handshake, FileText, CheckCircle, Clock, Calendar, Download, Shield, Users, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -190,8 +190,18 @@ export default function Cooperation() {
                             </div>
                         </div>
                         <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                            <p>📞 053-942-xxx</p>
-                            <p>✉️ somchai@cmu.ac.th</p>
+                            <p className="flex items-center gap-2">
+                                <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <a href="tel:053942110" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                                    053-942110
+                                </a>
+                            </p>
+                            <p className="flex items-center gap-2">
+                                <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                <a href="mailto:somchai.c@cmu.ac.th" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                                    somchai.c@cmu.ac.th
+                                </a>
+                            </p>
                         </div>
                     </div>
                     <Button onClick={() => navigate('/messages')} className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 shadow-sm h-11">

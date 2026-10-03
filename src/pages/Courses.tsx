@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import * as XLSX from 'xlsx';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -106,6 +107,8 @@ const itemVariants = {
 export default function Courses() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') === 'registration' ? 'registration' : 'my-courses';
   const [searchQuery, setSearchQuery] = React.useState('');
   const [registrationQuery, setRegistrationQuery] = React.useState('');
   const [courses, setCourses] = React.useState<CourseRow[]>([]);
@@ -183,11 +186,7 @@ export default function Courses() {
   const registrationMatches = React.useMemo(() => {
     const q = registrationQuery.trim().toLowerCase();
     if (!q) return [];
-<<<<<<< Updated upstream
-    return visibleCourses.filter((course) => (
-=======
     return courses.filter((course) => (
->>>>>>> Stashed changes
       course.enrolledStudents.length < course.maxStudents &&
       (
         course.code?.toLowerCase().includes(q) ||
@@ -195,13 +194,8 @@ export default function Courses() {
         course.nameThai?.toLowerCase().includes(q)
       )
     ));
-<<<<<<< Updated upstream
-  }, [visibleCourses, registrationQuery]);
-  const totalCredits = user?.role === 'student' ? enrolledCourses.reduce((sum, course) => sum + course.credits, 0) : visibleCourses.reduce((sum, course) => sum + course.credits, 0);
-=======
   }, [courses, registrationQuery]);
   const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
->>>>>>> Stashed changes
   const creditProgress = Math.min((totalCredits / 22) * 100, 100);
 
   const handleRegistrationSearch = () => {
@@ -228,15 +222,6 @@ export default function Courses() {
       minStudents: String(course.minStudents),
       description: course.description || '',
       syllabus: course.syllabus || '',
-<<<<<<< Updated upstream
-      status: course.status || 'active',
-      room: course.room || '',
-      sectionNumber: course.sections?.[0]?.sectionNumber || '001',
-      scheduleDays: course.schedule?.map(s => s.day) || [],
-      scheduleStartTime: course.schedule?.[0]?.startTime || '09:00',
-      scheduleEndTime: course.schedule?.[0]?.endTime || '12:00',
-=======
->>>>>>> Stashed changes
     });
   };
 
@@ -623,7 +608,13 @@ export default function Courses() {
         </div>
 
         {/* Content Tabs */}
-        <Tabs defaultValue="my-courses" className="space-y-6">
+        <Tabs
+          value={currentTab}
+          onValueChange={(val) => {
+            setSearchParams(val === 'my-courses' ? {} : { tab: val });
+          }}
+          className="space-y-6"
+        >
           {/* Compact Segmented Control (Do NOT stretch across full width) */}
           <div className="flex items-center justify-between">
             <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
@@ -698,15 +689,6 @@ export default function Courses() {
                           <MoreHorizontal className="w-4 h-4" />
                         </div>
                       </div>
-<<<<<<< Updated upstream
-                      <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                        <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{t.coursesPage.lecturerSchedule}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                        <MapPin className="w-4 h-4 text-slate-400" />
-                        <span>{course.room || t.coursesPage.room}</span>
-=======
 
                       {/* Course Title & Description — Strongest text */}
                       <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors line-clamp-1 mb-1">
@@ -732,7 +714,6 @@ export default function Courses() {
                           <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                           <span className="truncate" title={roomText}>{roomText}</span>
                         </div>
->>>>>>> Stashed changes
                       </div>
                     </div>
 
@@ -769,43 +750,12 @@ export default function Courses() {
                   {t.coursesPage.recommendedDesc}
                 </p>
 
-<<<<<<< Updated upstream
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {visibleCourses.map((course) => (
-                    <div key={course.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50 flex flex-col justify-between" onClick={() => setViewingCourse(course)}>
-                      <div>
-                        <div className="flex justify-between items-start mb-3">
-                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{course.code}</Badge>
-                          <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{course.lecturerName || t.coursesPage.instructorTBA}</span>
-                        </div>
-                        <h3 className="font-bold text-lg mb-1">{course.name}</h3>
-                        <div className="text-sm text-indigo-200 mb-3">{course.nameThai}</div>
-                      </div>
-                      <div>
-                        <div className="flex justify-between items-center mb-4 text-sm text-indigo-100">
-                          <span>{course.credits} {t.coursesPage.credits}</span>
-                          <span>{course.enrolledStudents.length}/{course.maxStudents} {language === 'th' ? 'คน' : 'students'}</span>
-                        </div>
-                        <Button 
-                          size="sm" 
-                          className="w-full bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" 
-                          onClick={(e) => { e.stopPropagation(); enrollCourse(course); }}
-                          disabled={enrolledCourses.some(c => c.id === course.id) || course.enrolledStudents.length >= course.maxStudents}
-                        >
-                          {enrolledCourses.some(c => c.id === course.id) 
-                            ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered') 
-                            : course.enrolledStudents.length >= course.maxStudents 
-                              ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
-                              : t.coursesPage.addCourse}
-                        </Button>
-=======
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {courses.filter((course) => course.enrolledStudents.length < course.maxStudents).slice(0, 3).map((rec) => (
                     <div key={rec.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50">
                       <div className="flex justify-between items-start mb-3">
                         <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{rec.code}</Badge>
                         <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{rec.lecturerName || t.coursesPage.instructorTBA}</span>
->>>>>>> Stashed changes
                       </div>
                       <h3 className="font-bold text-lg mb-1">{rec.name}</h3>
                       <p className="text-sm text-indigo-200">{rec.credits} {t.coursesPage.credits}</p>
@@ -861,87 +811,6 @@ export default function Courses() {
             </motion.div>
           </TabsContent>
         </Tabs>
-<<<<<<< Updated upstream
-
-        {/* Course Details Dialog */}
-        <Dialog open={!!viewingCourse} onOpenChange={(open) => !open && setViewingCourse(null)}>
-          <DialogContent className="sm:max-w-[600px] bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2 text-xl">
-                <Badge variant="outline" className="bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-900/30 dark:text-indigo-300 dark:border-indigo-800">
-                  {viewingCourse?.code}
-                </Badge>
-                <span className="dark:text-slate-100">{language === 'th' ? viewingCourse?.nameThai : viewingCourse?.name}</span>
-              </DialogTitle>
-              <DialogDescription className="text-slate-500 dark:text-slate-400">
-                {language === 'en' ? viewingCourse?.nameThai : viewingCourse?.name}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-5 pt-4">
-              <div className="grid grid-cols-2 gap-4 bg-slate-50 dark:bg-slate-800/50 p-4 rounded-xl">
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'อาจารย์ผู้สอน' : 'Instructor'}</p>
-                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.lecturerName || (language === 'th' ? 'อ.ไม่ระบุ' : 'TBA')}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'หน่วยกิต' : 'Credits'}</p>
-                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.credits} {t.coursesPage.credits}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'สถานที่เรียน' : 'Room Location'}</p>
-                  <p className="font-medium text-slate-900 dark:text-slate-200">{viewingCourse?.room || (language === 'th' ? 'ไม่ระบุ' : 'TBA')}</p>
-                </div>
-                <div className="space-y-1">
-                  <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'ที่นั่งว่าง' : 'Available Seats'}</p>
-                  <p className="font-medium text-slate-900 dark:text-slate-200">
-                    {viewingCourse && (viewingCourse.maxStudents - (viewingCourse.enrolledStudents?.length || 0))} / {viewingCourse?.maxStudents}
-                  </p>
-                </div>
-              </div>
-              
-              {viewingCourse?.description && (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{language === 'th' ? 'คำอธิบายรายวิชา' : 'Description'}</p>
-                  <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed whitespace-pre-wrap">{viewingCourse.description}</p>
-                </div>
-              )}
-
-              {viewingCourse?.schedule && viewingCourse.schedule.length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-200">{language === 'th' ? 'เวลาเรียน' : 'Schedule'}</p>
-                  <div className="space-y-1 text-sm text-slate-600 dark:text-slate-300">
-                    {viewingCourse.schedule.map((s, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className="capitalize">{s.day}</span>
-                        <span>{s.startTime} - {s.endTime}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end pt-4 border-t border-slate-100 dark:border-slate-800 mt-4">
-              <Button 
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-xl"
-                onClick={() => {
-                  if (viewingCourse) {
-                    enrollCourse(viewingCourse);
-                    setViewingCourse(null);
-                  }
-                }}
-                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || (viewingCourse.enrolledStudents?.length || 0) >= viewingCourse.maxStudents}
-              >
-                {viewingCourse && enrolledCourses.some(c => c.id === viewingCourse.id)
-                  ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered')
-                  : viewingCourse && (viewingCourse.enrolledStudents?.length || 0) >= viewingCourse.maxStudents 
-                    ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
-                    : t.coursesPage.addCourse}
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-=======
->>>>>>> Stashed changes
       </motion.div>
     );
   }
@@ -1016,19 +885,19 @@ export default function Courses() {
         <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-4">
           <div>
             <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
-              <BookOpen className="w-4 h-4 text-purple-500 dark:text-slate-400" />
+              <BookOpen className="w-4 h-4 text-blue-500 dark:text-slate-400" />
               <span>{t.coursesPage.semesterLabel}</span>
             </motion.div>
             <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.coursesPage.manageCourses}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-fuchsia-600">
+              <span className="text-blue-600 dark:text-blue-400 ml-1">
                 {t.coursesPage.manageCoursesHighlight}
               </span>
             </motion.h1>
             <p className="text-slate-500 mt-2 text-sm dark:text-slate-400">
               {language === 'th'
                 ? 'จัดการรายวิชาจากข้อมูลระบบจริง เพิ่มและแก้ไขผ่าน API ได้'
-                : 'Course administration — add/edit/disable courses via live system data'}
+                : 'Course administration: add, edit, or manage courses via live system data'}
             </p>
           </div>
 

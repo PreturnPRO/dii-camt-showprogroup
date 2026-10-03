@@ -57,7 +57,7 @@ export default function LoginPage() {
             className="text-4xl font-bold mb-6 text-white leading-tight"
           >
             {t.login.welcomeTo}<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">ShowPro</span> Platform
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">Xchange</span> Platform
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -92,7 +92,7 @@ export default function LoginPage() {
         </div>
         
         <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
-            © 2026 ShowPro. All rights reserved.
+            © 2026 Xchange. All rights reserved.
         </div>
       </div>
 

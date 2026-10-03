@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -33,6 +33,7 @@ const itemVariants = {
 export default function Schedule() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Support ?view=week or ?view=month with 'week' as default
@@ -88,11 +89,7 @@ export default function Schedule() {
         day: dayIndexByName[slot.day.toLowerCase()] ?? 0,
         startTime: slot.startTime,
         endTime: slot.endTime,
-<<<<<<< Updated upstream
         room: slot.room || course.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
-=======
-        room: slot.room
->>>>>>> Stashed changes
       }))
     ).filter(item => item.day > 0);
   }, [courses]);
@@ -223,7 +220,7 @@ export default function Schedule() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
             >
-              {t.schedulePage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.titleHighlight}</span>
+              {t.schedulePage.title}<span className="text-blue-600 dark:text-blue-400 ml-1">{t.schedulePage.titleHighlight}</span>
             </motion.h1>
           </div>
           <div className="rounded-3xl border border-dashed border-slate-200 bg-white/70 p-10 text-center text-slate-500 shadow-sm dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
@@ -361,16 +358,18 @@ export default function Schedule() {
             variants={itemVariants}
             whileHover={{ y: -2 }}
             transition={{ duration: 0.15 }}
-            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden"
+            onClick={() => navigate('/courses')}
+            className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 shadow-sm relative overflow-hidden cursor-pointer hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-md transition-all group"
+            title={language === 'en' ? 'Go to course registration' : 'ไปหน้าลงทะเบียนเรียน'}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{t.schedulePage.totalCourses}</span>
-              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
+              <span className="text-xs font-medium text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{t.schedulePage.totalCourses}</span>
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform">
                 <BookOpen className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100">{studentCourses.length}</div>
-            <span className="text-[11px] text-slate-400 mt-0.5 block">{language === 'en' ? 'enrolled courses' : 'วิชาที่ลงทะเบียน'}</span>
+            <div className="text-2xl sm:text-3xl font-bold font-mono text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{studentCourses.length}</div>
+            <span className="text-[11px] text-slate-400 group-hover:text-blue-500 dark:group-hover:text-blue-400 transition-colors mt-0.5 block">{language === 'en' ? 'enrolled courses (click to register)' : 'วิชาที่ลงทะเบียน (คลิกไปหน้าลงทะเบียน)'}</span>
           </motion.div>
 
           <motion.div
@@ -429,8 +428,13 @@ export default function Schedule() {
               กำลังโหลดตารางเรียนจากระบบ...
             </div>
           ) : studentCourses.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate('/courses')}
+              className="rounded-xl border border-dashed border-slate-200 p-8 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400 cursor-pointer hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 transition-all"
+            >
+              {language === 'th' ? 'ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ คลิกเพื่อไปหน้าลงทะเบียน' : 'No registered courses yet. Click to go to course registration.'}
             </div>
           ) : (
             <AnimatePresence mode="wait">
@@ -486,17 +490,12 @@ export default function Schedule() {
                   ยังไม่มีคาบเรียนวันนี้จากระบบ
                 </div>
               )}
-<<<<<<< Updated upstream
-              {studentCourses.slice(0, 3).map((course, index) => {
-                const slot = course.schedule?.[0];
-                const location = [slot?.room, slot?.building].filter(Boolean).join(' ');
-=======
               {(() => {
-                const currentDayMap: Record<number, string> = {
-                  1: 'monday', 2: 'tuesday', 3: 'wednesday', 4: 'thursday', 5: 'friday', 6: 'saturday', 0: 'sunday'
-                };
-                const todayName = currentDayMap[new Date().getDay()];
->>>>>>> Stashed changes
+                const dayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon, ...
+                const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+                const todayName = dayNames[dayIndex];
+                const now = new Date();
+                const nowTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
                 // Flatten all slots and sort chronologically
                 type FlatSlot = {
@@ -506,35 +505,45 @@ export default function Schedule() {
                   isActiveNow: boolean;
                 };
 
-                const now = new Date();
-                const nowTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-                const allSlots: FlatSlot[] = studentCourses.flatMap(course =>
-                  (course.schedule || []).map(slot => {
-                    const isToday = slot.day.toLowerCase() === todayName;
-                    const isActiveNow = isToday && slot.startTime <= nowTime && slot.endTime > nowTime;
+                const allSlots: FlatSlot[] = (studentCourses || []).flatMap(course =>
+                  (course?.schedule || []).map(slot => {
+                    const slotDay = String(slot?.day || '').toLowerCase();
+                    const isToday = slotDay === todayName;
+                    const startTime = slot?.startTime || '00:00';
+                    const endTime = slot?.endTime || '23:59';
+                    const isActiveNow = isToday && startTime <= nowTime && endTime > nowTime;
                     return { course, slot, isToday, isActiveNow };
                   })
-                ).sort((a, b) => (a.slot.startTime || '').localeCompare(b.slot.startTime || ''));
+                ).sort((a, b) => (a.slot?.startTime || '').localeCompare(b.slot?.startTime || ''));
 
-                const displaySlots = allSlots.filter(s => s.isToday);
-                const finalSlots = displaySlots.length > 0 ? displaySlots : allSlots.slice(0, 3);
+                const todaySlots = allSlots.filter(s => s.isToday);
+                const finalSlots = todaySlots.length > 0 ? todaySlots : allSlots.slice(0, 3);
 
-                return finalSlots.map(({ course, slot, isActiveNow }, index) => {
+                if (finalSlots.length === 0) {
+                  return (
+                    <div className="rounded-xl border border-dashed border-slate-200 bg-white/50 p-6 text-center text-xs font-medium text-slate-500 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-400">
+                      ไม่มีคาบเรียนในวันนี้
+                    </div>
+                  );
+                }
+
+                return finalSlots.map(({ course, slot, isActiveNow }, idx) => {
                   const location = [slot?.room, slot?.building].filter(Boolean).join(' ');
 
                   return (
                     <motion.div
-                      key={`${course.id}-${index}`}
+                      key={`${course.id}-${slot?.id || idx}`}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
+                      transition={{ delay: idx * 0.05 }}
+                      onClick={() => navigate('/courses')}
                       className={cn(
-                        "flex items-center gap-3.5 p-3 rounded-xl border bg-white dark:bg-slate-900/80 shadow-sm transition-all duration-150 group cursor-default",
+                        "flex items-center gap-3.5 p-3 rounded-xl border bg-white dark:bg-slate-900/80 shadow-sm transition-all duration-150 group cursor-pointer",
                         isActiveNow
-                          ? "border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20"
-                          : "border-slate-200/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                          ? "border-blue-500/80 bg-blue-50/40 dark:bg-blue-950/20 hover:border-blue-600"
+                          : "border-slate-200/70 dark:border-slate-800 hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-md"
                       )}
+                      title={language === 'en' ? 'Click to view course details in registration' : 'คลิกเพื่อดูรายละเอียดในหน้าลงทะเบียน'}
                     >
                       {/* Time Block */}
                       <div className={cn(
@@ -627,11 +636,11 @@ export default function Schedule() {
       <div className="flex items-end justify-between">
         <div>
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">
-            <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
+            <Calendar className="w-4 h-4 text-blue-500 dark:text-slate-400" />
             <span>{t.schedulePage.lecturerSubtitle}</span>
           </motion.div>
           <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-              {t.schedulePage.lecturerTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.lecturerHighlight}</span>
+              {t.schedulePage.lecturerTitle}<span className="text-blue-600 dark:text-blue-400 ml-1">{t.schedulePage.lecturerHighlight}</span>
           </motion.h1>
         </div>
         <Button

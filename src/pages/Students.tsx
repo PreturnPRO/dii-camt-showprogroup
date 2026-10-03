@@ -1,11 +1,11 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { 
   Users, Search, Filter, GraduationCap, AlertTriangle, 
-  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen
+  Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen, Phone
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -206,7 +206,15 @@ export default function Students() {
                   <h5 className="font-bold text-slate-700 dark:text-slate-300 text-xs mb-1">ข้อมูลการติดต่อ</h5>
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <Mail className="w-3.5 h-3.5 text-blue-500 shrink-0" />
-                    <span className="truncate">{data.email}</span>
+                    <a href={`mailto:${data.email}`} className="truncate hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                      {data.email}
+                    </a>
+                  </div>
+                  <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
+                    <Phone className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                    <a href={`tel:${data.phone.split(' ')[0].replace(/-/g, '')}`} className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                      {data.phone}
+                    </a>
                   </div>
                   <div className="flex items-center gap-2 text-slate-600 dark:text-slate-300">
                     <BookOpen className="w-3.5 h-3.5 text-indigo-500 shrink-0" />
@@ -294,10 +302,22 @@ export default function Students() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setSelectedStudent(null)}>ปิด</Button>
             {selectedStudent && (
-              <Button onClick={() => handleMessageStudent(selectedStudent)}>
-                <Mail className="mr-2 h-4 w-4" />
-                ส่งข้อความ
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  className="gap-1.5 text-xs text-orange-600 border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400"
+                  onClick={() => {
+                    navigate(`/intern-tracking?internId=${selectedStudent.id}&tab=daily`);
+                  }}
+                >
+                  <BookOpen className="w-4 h-4 text-orange-500" />
+                  ตรวจไดอารี่ฝึกงาน
+                </Button>
+                <Button onClick={() => handleMessageStudent(selectedStudent)}>
+                  <Mail className="mr-2 h-4 w-4" />
+                  ส่งข้อความ
+                </Button>
+              </>
             )}
           </DialogFooter>
         </DialogContent>

@@ -10,6 +10,7 @@ import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
 import { GlobalPreloader } from "@/components/common/GlobalPreloader";
+import { RoleGuard } from "@/components/auth/RoleGuard";
 
 const queryClient = new QueryClient();
 
@@ -56,6 +57,9 @@ const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const Training = lazy(() => import("./pages/Training"));
 const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
 const Automation = lazy(() => import("./pages/Automation"));
+const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
+const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
+const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -86,14 +90,9 @@ const App = () => (
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<Dashboard />} />
                   <Route path="/personal-dashboard" element={<PersonalDashboard />} />
-                  <Route path="/courses" element={<Courses />} />
-                  <Route path="/schedule" element={<Schedule />} />
-                  <Route path="/grades" element={<Grades />} />
-                  <Route path="/activities" element={<Activities />} />
                   <Route path="/messages" element={<Messages />} />
                   <Route path="/settings" element={<Settings />} />
 
-<<<<<<< Updated upstream
                   {/* Academic (D-04: map ตาม Sidebar) */}
                   <Route path="/courses" element={<RoleGuard allowedRoles={['student', 'lecturer', 'staff', 'admin']}><Courses /></RoleGuard>} />
                   <Route path="/courses/:courseId/grading" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><CourseGradingSettings /></RoleGuard>} />
@@ -109,26 +108,12 @@ const App = () => (
                   <Route path="/training" element={<RoleGuard allowedRoles={['student']}><Training /></RoleGuard>} />
                   <Route path="/student/checkin" element={<RoleGuard allowedRoles={['student']}><StudentQRCheckIn /></RoleGuard>} />
 
-                  {/* Lecturer Routes */}
-                  <Route path="/students" element={<RoleGuard allowedRoles={['lecturer', 'staff', 'admin']}><Students /></RoleGuard>} />
+                  {/* Student & Lecturer Routes */}
+                  <Route path="/students" element={<RoleGuard allowedRoles={['student', 'lecturer', 'staff', 'admin']}><Students /></RoleGuard>} />
                   <Route path="/assignments" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Assignments /></RoleGuard>} />
                   <Route path="/appointments" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Appointments /></RoleGuard>} />
                   <Route path="/attendance" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Attendance /></RoleGuard>} />
                   <Route path="/workload" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Workload /></RoleGuard>} />
-=======
-                  {/* Student Routes */}
-                  <Route path="/portfolio" element={<Portfolio />} />
-                  <Route path="/internships" element={<Internships />} />
-                  <Route path="/requests" element={<Requests />} />
-                  <Route path="/training" element={<Training />} />
-
-                  {/* Lecturer Routes */}
-                  <Route path="/students" element={<Students />} />
-                  <Route path="/assignments" element={<Assignments />} />
-                  <Route path="/appointments" element={<Appointments />} />
-                  <Route path="/attendance" element={<Attendance />} />
-                  <Route path="/workload" element={<Workload />} />
->>>>>>> Stashed changes
 
                   {/* Staff Routes */}
                   <Route path="/users" element={<UsersPage />} />
@@ -144,27 +129,15 @@ const App = () => (
                   <Route path="/schedule-management" element={<ScheduleManagement />} />
                   <Route path="/activities-management" element={<ActivitiesManagement />} />
 
-<<<<<<< Updated upstream
                   {/* Company / Admin Routes */}
                   <Route path="/job-postings" element={<RoleGuard allowedRoles={['company', 'admin']}><JobPostings /></RoleGuard>} />
                   <Route path="/skills-requirement" element={<RoleGuard allowedRoles={['company', 'admin']}><SkillsRequirement /></RoleGuard>} />
                   <Route path="/applicants" element={<RoleGuard allowedRoles={['company', 'admin']}><Applicants /></RoleGuard>} />
                   <Route path="/student-profiles" element={<RoleGuard allowedRoles={['company', 'admin']}><StudentProfiles /></RoleGuard>} />
                   <Route path="/subscription" element={<RoleGuard allowedRoles={['company', 'admin']}><Subscription /></RoleGuard>} />
-                  <Route path="/intern-tracking" element={<RoleGuard allowedRoles={['company', 'admin']}><InternTracking /></RoleGuard>} />
+                  <Route path="/intern-tracking" element={<RoleGuard allowedRoles={['staff', 'admin', 'company', 'lecturer']}><InternTracking /></RoleGuard>} />
                   <Route path="/cooperation" element={<RoleGuard allowedRoles={['company', 'staff', 'admin']}><Cooperation /></RoleGuard>} />
                   <Route path="/talent-search" element={<RoleGuard allowedRoles={['company', 'admin']}><StudentProfiles /></RoleGuard>} />
-=======
-                  {/* Company Routes */}
-                  <Route path="/job-postings" element={<JobPostings />} />
-                  <Route path="/skills-requirement" element={<SkillsRequirement />} />
-                  <Route path="/applicants" element={<Applicants />} />
-                  <Route path="/student-profiles" element={<StudentProfiles />} />
-                  <Route path="/subscription" element={<Subscription />} />
-                  <Route path="/intern-tracking" element={<InternTracking />} />
-                  <Route path="/cooperation" element={<Cooperation />} />
-                  <Route path="/talent-search" element={<StudentProfiles />} />
->>>>>>> Stashed changes
                 </Route>
                 <Route path="*" element={<NotFound />} />
               </Routes>

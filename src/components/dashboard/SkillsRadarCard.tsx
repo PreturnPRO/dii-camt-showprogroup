@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Radar, Target } from 'lucide-react';
+import { Radar, Target, BarChart3, CheckCircle2, TrendingUp, Scale } from 'lucide-react';
 import {
     Tooltip,
     TooltipContent,
@@ -275,21 +275,39 @@ export function SkillsRadarCard({ technicalSkills, softSkills }: SkillsRadarProp
             </div>
 
             {/* Strength/Weakness Insights */}
-            <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-50/50 to-pink-50/50 border border-white/50">
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">📊 วิเคราะห์จุดแข็ง-จุดอ่อน</h4>
+            <div className="mt-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
+                <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-1.5">
+                    <BarChart3 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                    <span>วิเคราะห์จุดแข็ง-จุดอ่อน</span>
+                </h4>
                 <div className="space-y-2 text-xs text-slate-600 dark:text-slate-300">
                     {techAvg > softAvg ? (
                         <>
-                            <p>✅ <span className="font-medium text-violet-600">จุดแข็ง:</span> Technical Skills โดดเด่น เหมาะกับงาน Development</p>
-                            <p>📈 <span className="font-medium text-pink-600">ควรพัฒนา:</span> เพิ่มทักษะ Communication และการทำงานร่วมกับทีม</p>
+                            <p className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span><strong className="text-blue-600 dark:text-blue-400 font-semibold">จุดแข็ง:</strong> Technical Skills โดดเด่น เหมาะกับงาน Development</span>
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                                <TrendingUp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span><strong className="text-amber-600 font-semibold">ควรพัฒนา:</strong> เพิ่มทักษะ Communication และการทำงานร่วมกับทีม</span>
+                            </p>
                         </>
                     ) : techAvg < softAvg ? (
                         <>
-                            <p>✅ <span className="font-medium text-pink-600">จุดแข็ง:</span> Soft Skills ดีเยี่ยม เหมาะกับงาน PM/Lead</p>
-                            <p>📈 <span className="font-medium text-violet-600">ควรพัฒนา:</span> เพิ่มความแข็งแกร่งด้าน Technical</p>
+                            <p className="flex items-center gap-1.5">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                                <span><strong className="text-blue-600 dark:text-blue-400 font-semibold">จุดแข็ง:</strong> Soft Skills ดีเยี่ยม เหมาะกับงาน PM/Lead</span>
+                            </p>
+                            <p className="flex items-center gap-1.5">
+                                <TrendingUp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                                <span><strong className="text-amber-600 font-semibold">ควรพัฒนา:</strong> เพิ่มความแข็งแกร่งด้าน Technical</span>
+                            </p>
                         </>
                     ) : (
-                        <p>⚖️ <span className="font-medium text-indigo-600 dark:text-slate-300">สมดุล:</span> ทักษะทั้งสองด้านมีความสมดุลกัน</p>
+                        <p className="flex items-center gap-1.5">
+                            <Scale className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                            <span><strong className="text-blue-600 font-semibold">สมดุล:</strong> ทักษะทั้งสองด้านมีความสมดุลกัน</span>
+                        </p>
                     )}
                 </div>
             </div>

@@ -103,9 +103,9 @@ export function TechnicalSkillsRubricCard({
 
     const getTagLabel = (type: string) => {
         switch (type) {
-            case 'bug': return '🐛 Bug';
-            case 'suggestion': return '💡 Suggestion';
-            case 'good_job': return '⭐ Good Job';
+            case 'bug': return 'Bug';
+            case 'suggestion': return 'Suggestion';
+            case 'good_job': return 'Good Job';
             default: return type;
         }
     };

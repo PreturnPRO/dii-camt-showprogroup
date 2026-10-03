@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Bot, CalendarClock, CheckCircle2, Code2, Play, Plus, RefreshCw, Trash2, Zap } from 'lucide-react';
 import { toast } from 'sonner';
@@ -43,7 +43,7 @@ const emptyForm = {
   messageThai: 'There are items waiting for review.',
   badgeName: 'Milestone',
   badgeNameThai: 'Milestone',
-  badgeDescription: 'Awarded automatically by ShowPro.',
+  badgeDescription: 'Awarded automatically by Xchange.',
   badgeIcon: 'award',
   badgeCriteria: 'Automation criteria matched',
   isActive: true,

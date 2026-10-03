@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen } from 'lucide-react';
+import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -58,6 +58,8 @@ export default function Documents() {
     const [history, setHistory] = React.useState<DocumentHistoryRow[]>([]);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [documentForm, setDocumentForm] = React.useState({ type: 'transcript', studentId: '' });
+    const [issuingId, setIssuingId] = React.useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = React.useState(false);
 
     const mapDocumentRequest = React.useCallback((item: unknown, index: number): DocumentRequestRow => {
         const request = asRecord(item);
@@ -112,6 +114,8 @@ export default function Documents() {
     };
 
     const handleIssueDocument = async (request: DocumentRequestRow) => {
+        if (issuingId) return;
+        setIssuingId(request.id);
         try {
             if (request.type.toLowerCase().includes('transcript')) {
                 const blob = await api.documents.transcript(request.studentId);
@@ -133,6 +137,8 @@ export default function Documents() {
             toast.success(t.documentsPage.issueDoc);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to issue document');
+        } finally {
+            setIssuingId(null);
         }
     };
 
@@ -142,11 +148,12 @@ export default function Documents() {
     };
 
     const generateDocument = async () => {
-        if (!documentForm.studentId.trim()) {
+        if (!documentForm.studentId.trim() || isGenerating) {
             toast.error('กรุณากรอกรหัสนักศึกษา');
             return;
         }
 
+        setIsGenerating(true);
         try {
             const blob = documentForm.type === 'internship'
                 ? await api.documents.internshipCertificate(documentForm.studentId)
@@ -163,6 +170,8 @@ export default function Documents() {
             toast.success('ออกเอกสารแล้ว');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to generate document');
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -241,8 +250,23 @@ export default function Documents() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => openGenerateDialog(req.type.toLowerCase().includes('transcript') ? 'transcript' : 'internship', req.studentId)}>{t.documentsPage.viewDetails}</Button>
-                                    <Button size="sm" className="rounded-xl bg-blue-600 hover:bg-blue-700 text-xs shadow-sm" onClick={() => handleIssueDocument(req)}>
-                                        <Printer className="w-3.5 h-3.5 mr-1.5" /> {t.documentsPage.issueDoc}
+                                    <Button
+                                        size="sm"
+                                        className="rounded-xl bg-blue-600 hover:bg-blue-700 text-xs shadow-sm flex items-center gap-1.5"
+                                        onClick={() => handleIssueDocument(req)}
+                                        disabled={issuingId === req.id}
+                                    >
+                                        {issuingId === req.id ? (
+                                            <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                                <span>กำลังออกเอกสาร...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                                                <span>{t.documentsPage.issueDoc}</span>
+                                            </>
+                                        )}
                                     </Button>
                                 </div>
                             </motion.div>
@@ -304,7 +328,20 @@ export default function Documents() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ยกเลิก</Button>
-                        <Button onClick={generateDocument} className="bg-blue-600 hover:bg-blue-700">ออกเอกสาร</Button>
+                        <Button
+                            onClick={generateDocument}
+                            disabled={isGenerating}
+                            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                    <span>กำลังออกเอกสาร...</span>
+                                </>
+                            ) : (
+                                'ออกเอกสาร'
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

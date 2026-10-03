@@ -89,7 +89,7 @@ export default function ForgotPasswordPage() {
             className="text-4xl font-bold mb-6 text-white leading-tight"
           >
             {isTH ? 'กู้คืนบัญชีของคุณ' : 'Recover your account'}<br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">ShowPro</span>
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">Xchange</span>
           </motion.h1>
           <p className="text-slate-300 text-lg leading-relaxed">
             {isTH
@@ -99,7 +99,7 @@ export default function ForgotPasswordPage() {
         </div>
 
         <div className="relative z-10 text-center text-slate-500 text-sm mt-12">
-          © 2026 ShowPro. All rights reserved.
+          © 2026 Xchange. All rights reserved.
         </div>
       </div>
 

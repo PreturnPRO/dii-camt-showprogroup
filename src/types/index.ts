@@ -189,6 +189,7 @@ export interface Course {
   prerequisites: string[]; // Course codes
   learningOutcomes: string[];
   syllabus?: string;
+  room?: string;
 
   // Schedule
   schedule: Schedule[];
@@ -414,6 +415,10 @@ export interface InternshipLog {
   hours: number;
   learnings?: string;
   challenges?: string;
+  status?: 'pending' | 'approved' | 'needs_revision';
+  mentorComment?: string;
+  reviewedAt?: Date | string;
+  reviewedBy?: string;
 }
 
 export interface InternshipEvaluation {

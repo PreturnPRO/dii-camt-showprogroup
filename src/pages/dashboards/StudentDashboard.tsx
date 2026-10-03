@@ -479,95 +479,95 @@ export default function StudentDashboard() {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="space-y-5 pb-8"
+      className="w-full space-y-6 pb-12"
     >
       {/* Student Summary Header — Linear/Stripe Enterprise SaaS Identity Header */}
       <motion.div
         variants={itemVariants}
-        className="bg-white dark:bg-[#0c1222] rounded-2xl p-4 sm:px-6 sm:py-4 border border-slate-200/80 dark:border-slate-800 shadow-sm transition-all duration-200"
+        className="w-full bg-white dark:bg-[#0c1222] rounded-2xl p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-sm transition-all duration-200"
       >
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4 lg:gap-6">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5 lg:gap-8">
           {/* Left + Center: Identity Section */}
-          <div className="flex items-center gap-4 sm:gap-5 flex-1 min-w-0">
-            {/* Student Avatar (68px) with Status Ring */}
+          <div className="flex items-center gap-5 sm:gap-6 flex-1 min-w-0">
+            {/* Student Avatar with Status Ring */}
             <motion.div whileHover={{ scale: 1.02 }} transition={{ duration: 0.15 }} className="relative shrink-0">
-              <div className="w-[66px] h-[66px] sm:w-[70px] sm:h-[70px] rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-500/20 dark:from-blue-500/30 dark:to-indigo-500/30 p-0.5 shadow-sm">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-b from-blue-500/20 to-indigo-500/20 dark:from-blue-500/30 dark:to-indigo-500/30 p-1 shadow-sm">
                 <div className="w-full h-full rounded-[14px] bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex items-center justify-center overflow-hidden">
                   {student.avatar ? (
                     <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
                   ) : (
-                    <User className="w-8 h-8 text-slate-400" />
+                    <User className="w-10 h-10 text-slate-400" />
                   )}
                 </div>
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-blue-300 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-md border border-slate-700 shadow-xs leading-none">
+              <div className="absolute -bottom-1.5 -right-1.5 bg-slate-900 text-slate-100 dark:bg-slate-800 dark:text-blue-300 text-sm font-mono font-bold px-2.5 py-0.5 rounded-md border border-slate-700 shadow-sm leading-none">
                 {yearLabel}
               </div>
             </motion.div>
 
             {/* Content: 3 Clean Horizontal Tiers */}
-            <div className="flex-1 min-w-0 flex flex-col justify-center gap-1.5">
+            <div className="flex-1 min-w-0 flex flex-col justify-center gap-2.5">
               {/* Row 1: Student Thai Name (Primary Hero) + English Name */}
-              <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
-                <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+              <div className="flex flex-wrap items-baseline gap-x-3.5 gap-y-1">
+                <h1 className="text-3xl sm:text-4xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
                   {student.nameThai}
                 </h1>
-                <span className="text-xs sm:text-sm font-medium text-slate-400 dark:text-slate-400 font-mono tracking-wide">
+                <span className="text-base sm:text-lg font-semibold text-slate-500 dark:text-slate-400 font-mono tracking-wide">
                   {student.name}
                 </span>
               </div>
 
-              {/* Row 2: Metadata Badges on ONE Single Horizontal Row */}
-              <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-mono text-[11px] font-medium border border-slate-200/60 dark:border-slate-700/60">
+              {/* Row 2: Metadata Badges on ONE Single Horizontal Row (All text >= text-sm) */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
+                <span className="inline-flex items-center px-3 py-1 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-100 font-mono text-sm font-semibold border border-slate-200 dark:border-slate-700">
                   {student.studentId}
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-mono text-[11px] font-semibold border border-blue-200/50 dark:border-blue-800/40">
-                  <span className="text-[10px] font-normal text-slate-400 dark:text-slate-400">GPAX</span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 font-mono text-sm font-bold border border-blue-200/60 dark:border-blue-800/50">
+                  <span className="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400">GPAX</span>
                   {student.gpax.toFixed(2)}
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
-                <span className="text-slate-600 dark:text-slate-300 text-[11.5px] font-medium truncate max-w-[220px] sm:max-w-none">
+                <span className="text-slate-700 dark:text-slate-200 text-sm font-medium truncate max-w-[260px] sm:max-w-none">
                   {student.major}
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
-                <span className="text-slate-500 dark:text-slate-400 text-[11px] font-mono">
+                <span className="text-slate-600 dark:text-slate-400 text-sm font-mono font-medium">
                   {t.studentDashboard.semester} {student.semester}/{student.academicYear}
                 </span>
                 <span className="text-slate-300 dark:text-slate-700 select-none">·</span>
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-mono text-[11px] font-bold border border-indigo-200/50 dark:border-indigo-800/40">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-md bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 font-mono text-sm font-bold border border-indigo-200/60 dark:border-indigo-800/50">
                   <span>{student.gamificationPoints}</span>
-                  <span className="text-[9.5px] font-normal text-indigo-400">XP</span>
+                  <span className="text-xs sm:text-sm font-semibold text-indigo-400">XP</span>
                 </span>
               </div>
 
               {/* Row 3: Advisors (Compact modern chips) */}
-              <div className="flex flex-wrap items-center gap-2 pt-0.5 text-xs">
+              <div className="flex flex-wrap items-center gap-2.5 pt-0.5 text-sm">
                 <div
                   onClick={() => navigate('/students')}
-                  className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
+                  className="group cursor-pointer inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-50 hover:bg-blue-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
                   title={language === 'th' ? 'คลิกเพื่อดูข้อมูลอาจารย์ที่ปรึกษา' : 'Click to view advisor details'}
                 >
-                  <GraduationCap className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
-                  <span className="text-slate-400 dark:text-slate-400 text-[11px]">
+                  <GraduationCap className="w-4 h-4 text-blue-500 dark:text-blue-400 shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                     {language === 'th' ? 'อาจารย์ที่ปรึกษาหลัก:' : 'Main Advisor:'}
                   </span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px] group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                     {mainAdvisorName}
                   </span>
                 </div>
 
                 <div
                   onClick={() => navigate('/students')}
-                  className="group cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-50 hover:bg-indigo-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
+                  className="group cursor-pointer inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-slate-50 hover:bg-indigo-50/80 dark:bg-slate-800/50 dark:hover:bg-slate-800 border border-slate-200/60 dark:border-slate-700/50 transition-all duration-150"
                   title={language === 'th' ? 'คลิกเพื่อดูข้อมูลอาจารย์ที่ปรึกษา' : 'Click to view advisor details'}
                 >
-                  <UserCheck className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
-                  <span className="text-slate-400 dark:text-slate-400 text-[11px]">
+                  <UserCheck className="w-4 h-4 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                  <span className="text-slate-500 dark:text-slate-400 text-sm font-medium">
                     {language === 'th' ? 'อาจารย์ที่ปรึกษาร่วม:' : 'Co-Advisor:'}
                   </span>
-                  <span className="font-semibold text-slate-700 dark:text-slate-200 text-[11px] group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  <span className="font-bold text-slate-800 dark:text-slate-100 text-sm group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                     {coAdvisorName}
                   </span>
                 </div>
@@ -575,26 +575,19 @@ export default function StudentDashboard() {
             </div>
           </div>
 
-<<<<<<< Updated upstream
           {/* Quick Actions */}
-          <div className="flex flex-col gap-3">
-=======
-          {/* Right: Actions (Desktop Vertical Stack / Mobile Horizontal) */}
-          <div className="flex sm:flex-row lg:flex-col items-stretch gap-2 shrink-0 w-full sm:w-auto lg:w-36 self-stretch lg:self-center justify-center">
->>>>>>> Stashed changes
+          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col shrink-0">
             <Button
               onClick={() => navigate('/portfolio')}
-              size="sm"
-              className="bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white shadow-sm shadow-blue-600/20 rounded-xl text-xs h-8 px-4 font-semibold transition-all duration-150 flex-1 sm:flex-initial justify-center"
+              className="bg-blue-600 hover:bg-blue-500 active:scale-[0.98] text-white shadow-sm shadow-blue-600/20 rounded-xl text-sm sm:text-base h-11 px-5 font-semibold transition-all duration-150 flex-1 sm:flex-initial justify-center"
             >
-              <Trophy className="w-3.5 h-3.5 mr-1.5 text-blue-100" />
+              <Trophy className="w-4 h-4 mr-2 text-blue-100" />
               {t.studentDashboard.viewPortfolio}
             </Button>
             <Button
               onClick={() => navigate('/settings')}
               variant="outline"
-              size="sm"
-              className="rounded-xl text-xs h-8 px-4 border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all duration-150 flex-1 sm:flex-initial justify-center"
+              className="rounded-xl text-sm sm:text-base h-11 px-5 border-slate-200 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/40 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white transition-all duration-150 flex-1 sm:flex-initial justify-center font-semibold"
             >
               {t.studentDashboard.editProfile}
             </Button>
@@ -603,9 +596,9 @@ export default function StudentDashboard() {
       </motion.div>
 
       {/* Clean Linear-style Segmented Navigation Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4" onValueChange={setActiveTab}>
-        <div className="border-b border-slate-200/50 dark:border-slate-800/60 pb-0">
-          <TabsList className="bg-transparent border-none p-0 h-auto rounded-none flex flex-wrap gap-6 sm:gap-7">
+      <Tabs defaultValue="overview" className="space-y-5" onValueChange={setActiveTab}>
+        <div className="border-b border-slate-200/70 dark:border-slate-800 pb-0">
+          <TabsList className="bg-transparent border-none p-0 h-auto rounded-none flex flex-wrap gap-4 sm:gap-8">
             {[
               { id: 'overview', icon: Target, label: t.studentDashboard.overview || 'Overall' },
               { id: 'schedule', icon: Calendar, label: t.studentDashboard.schedule || 'Degree' },
@@ -617,14 +610,14 @@ export default function StudentDashboard() {
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="bg-transparent border-none p-0 pb-2.5 rounded-none data-[state=active]:bg-transparent data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:font-semibold font-normal text-xs text-slate-400 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 relative transition-colors duration-150 cursor-pointer"
+                className="bg-transparent border-none px-3 py-2.5 pb-3.5 rounded-none data-[state=active]:bg-transparent data-[state=active]:text-blue-600 data-[state=active]:dark:text-blue-400 data-[state=active]:font-bold font-semibold text-sm sm:text-base text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 relative transition-colors duration-150 cursor-pointer"
               >
-                <tab.icon className="w-3.5 h-3.5 mr-1.5 inline-block -mt-0.5 opacity-80" />
+                <tab.icon className="w-4.5 h-4.5 mr-2 inline-block -mt-0.5" />
                 <span>{tab.label}</span>
                 {activeTab === tab.id && (
                   <motion.div
                     layoutId="activeStudentTab"
-                    className="absolute bottom-0 left-0 right-0 h-[2px] bg-blue-600 dark:bg-blue-400 rounded-full"
+                    className="absolute bottom-0 left-0 right-0 h-[3px] bg-blue-600 dark:bg-blue-400 rounded-full"
                     transition={{ type: "spring", stiffness: 400, damping: 32 }}
                   />
                 )}
@@ -637,25 +630,25 @@ export default function StudentDashboard() {
           {/* Overview Tab */}
           {activeTab === 'overview' && (
             <TabsContent value="overview" className="mt-0" key="overview" forceMount>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                {/* Left Column — 2/3 */}
-                <div className="lg:col-span-2 space-y-5">
+              <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_420px] gap-6 w-full">
+                {/* Left Column — 2/3 (Takes available space, expands timetable) */}
+                <div className="space-y-6 min-w-0">
                   {/* Weekly Schedule */}
                   <motion.div variants={itemVariants}>
-                    <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-4 sm:p-5 shadow-sm border border-slate-200/70 dark:border-slate-800">
+                    <div className="bg-white dark:bg-slate-900/80 rounded-2xl p-6 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800">
                       {/* Integrated Header at the top of the card */}
-                      <div className="flex items-center justify-between pb-3.5 mb-3 border-b border-slate-100 dark:border-slate-800/80">
-                        <h2 className="text-sm sm:text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                          <Calendar className="w-4 h-4 text-blue-500 dark:text-blue-400" />
+                      <div className="flex items-center justify-between pb-4 mb-5 border-b border-slate-100 dark:border-slate-800">
+                        <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-3 tracking-tight">
+                          <Calendar className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                           {t.studentDashboard.weeklySchedule}
                         </h2>
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => navigate('/schedule')}
-                          className="text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-xs h-7 px-2.5 font-medium transition-colors cursor-pointer"
+                          className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm sm:text-base h-9 px-3.5 font-medium transition-colors cursor-pointer"
                         >
-                          {t.studentDashboard.fullscreen} <ChevronRight className="w-3.5 h-3.5 ml-1" />
+                          {t.studentDashboard.fullscreen} <ChevronRight className="w-4 h-4 ml-1" />
                         </Button>
                       </div>
                       <Timetable
@@ -667,54 +660,76 @@ export default function StudentDashboard() {
                   </motion.div>
 
                   {/* Current Courses */}
-                  <motion.div variants={itemVariants} className="space-y-2.5">
+                  <motion.div variants={itemVariants} className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2 tracking-tight">
-                        <BookOpen className="w-4 h-4 text-purple-500 dark:text-purple-400" />
-                        {t.studentDashboard.coursesThisSem}
-                      </h3>
-                      <Button variant="ghost" size="sm" className="text-slate-500 dark:text-slate-400 hover:text-purple-600 dark:hover:text-purple-400 text-xs h-7 px-2.5 font-medium transition-colors" onClick={() => navigate('/courses')}>{t.studentDashboard.viewAll}</Button>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => navigate('/courses')}
+                        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/courses'); } }}
+                        className="flex items-center gap-3 cursor-pointer group/title select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded-lg p-1 -m-1"
+                        title={t.studentDashboard.viewAll}
+                      >
+                        <BookOpen className="w-6 h-6 text-blue-600 dark:text-blue-400 group-hover/title:scale-110 transition-transform" />
+                        <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight group-hover/title:text-blue-600 dark:group-hover/title:text-blue-400 transition-colors">
+                          {t.studentDashboard.coursesThisSem}
+                        </h3>
+                      </div>
+                      <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 text-sm sm:text-base h-9 px-3.5 font-medium transition-colors" onClick={() => navigate('/courses')}>{t.studentDashboard.viewAll}</Button>
                     </div>
 
-                    <div className="grid gap-2.5">
-                      {currentCourses.slice(0, 3).map((course, index) => (
-                        <motion.div
-                          key={course.id}
-                          initial={{ opacity: 0, x: -6 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="group bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 p-3.5 rounded-xl shadow-sm hover:border-slate-300 dark:hover:border-slate-700 hover:shadow transition-all duration-200 cursor-pointer"
+                    <div className="grid gap-3.5">
+                      {currentCourses.length === 0 ? (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => navigate('/courses')}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/courses'); } }}
+                          className="bg-white dark:bg-slate-900/80 border border-dashed border-slate-200 dark:border-slate-800 p-6 rounded-xl text-center cursor-pointer hover:border-blue-400 dark:hover:border-blue-600 hover:bg-blue-50/20 dark:hover:bg-blue-950/20 transition-all"
                         >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3.5">
-                              <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800/90 flex items-center justify-center text-xs font-mono font-bold text-slate-700 dark:text-slate-300 border border-slate-200/60 dark:border-slate-700/60 group-hover:scale-105 transition-transform duration-150">
-                                {course.code?.substring(0, 3)}
-                              </div>
-                              <div>
-                                <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                                  {course.nameThai}
-                                </h4>
-                                <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                                  <span className="font-mono font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.2 rounded text-[11px] border border-slate-200/50 dark:border-slate-700/50">{course.code}</span>
-                                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                                  <span>{course.credits} {t.studentDashboard.credits}</span>
-                                  <span className="text-slate-300 dark:text-slate-700">•</span>
-                                  <span className="flex items-center gap-1"><GraduationCap className="w-3 h-3 text-slate-400" /> {course.lecturerName}</span>
+                          <p className="text-slate-500 dark:text-slate-400 text-sm">{language === 'th' ? 'ยังไม่มีรายวิชาในเทอมนี้ คลิกเพื่อไปหน้าลงทะเบียน' : 'No courses this semester. Click to go to course registration.'}</p>
+                        </div>
+                      ) : (
+                        currentCourses.slice(0, 3).map((course, index) => (
+                          <motion.div
+                            key={course.id}
+                            initial={{ opacity: 0, x: -6 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            onClick={() => navigate('/courses')}
+                            className="group bg-white dark:bg-slate-900/80 border border-slate-200/80 dark:border-slate-800 p-4 sm:p-5 rounded-xl shadow-xs hover:border-blue-300 dark:hover:border-blue-800 hover:shadow-md transition-all duration-200 cursor-pointer"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-4">
+                                <div className="w-14 h-14 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-base font-mono font-bold text-slate-800 dark:text-slate-200 border border-slate-200/70 dark:border-slate-700/60 group-hover:scale-105 transition-transform duration-150 shrink-0">
+                                  {course.code?.substring(0, 3)}
+                                </div>
+                                <div>
+                                  <h4 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                    {course.nameThai}
+                                  </h4>
+                                  <div className="flex flex-wrap items-center gap-2.5 text-sm sm:text-base text-slate-600 dark:text-slate-400 mt-1.5">
+                                    <span className="font-mono font-semibold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded text-sm border border-slate-200/70 dark:border-slate-700/60">{course.code}</span>
+                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                    <span className="font-medium">{course.credits} {t.studentDashboard.credits}</span>
+                                    <span className="text-slate-300 dark:text-slate-700">•</span>
+                                    <span className="flex items-center gap-1.5 font-medium"><GraduationCap className="w-4 h-4 text-slate-400" /> {course.lecturerName}</span>
+                                  </div>
                                 </div>
                               </div>
+                              <div className="w-9 h-9 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-900/30 transition-colors shrink-0">
+                                <ChevronRight className="w-4.5 h-4.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+                              </div>
                             </div>
-                            <div className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center group-hover:bg-blue-50 group-hover:text-blue-600 dark:group-hover:bg-blue-900/30 transition-colors">
-                              <ChevronRight className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))}
+                          </motion.div>
+                        ))
+                      )}
                     </div>
                   </motion.div>
                 </div>
 
-                {/* Right Column — 1/3 */}
-                <div className="space-y-5">
+                {/* Right Column — Fixed 420px sidebar column on desktop */}
+                <div className="space-y-6">
                   {/* Degree Progress */}
                   <motion.div variants={itemVariants}>
                     <DegreeProgressCard
@@ -755,45 +770,45 @@ export default function StudentDashboard() {
                   </motion.div>
 
                   {/* Upcoming Events */}
-                  <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-2xl p-5 shadow-sm border border-gray-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-orange-500" />
+                  <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-7 shadow-sm border border-slate-200/80 dark:border-slate-800">
+                    <div className="flex items-center justify-between mb-5">
+                      <h3 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-3">
+                        <Calendar className="w-6 h-6 text-orange-500" />
                         {t.studentDashboard.upcomingActivities}
                       </h3>
-                      <Badge variant="secondary" className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-none text-[10px] font-semibold dark:bg-orange-900/20 dark:text-orange-400">ใน 1 เดือน</Badge>
+                      <Badge variant="secondary" className="bg-orange-50 text-orange-600 hover:bg-orange-100 border-none text-xs sm:text-sm font-semibold px-3 py-1 rounded-full dark:bg-orange-900/20 dark:text-orange-400">ใน 1 เดือน</Badge>
                     </div>
 
-                    <div className="bg-gray-50 dark:bg-slate-800 rounded-xl border border-gray-100 dark:border-slate-700 p-0 sm:p-1 flex justify-center mb-4 overflow-hidden">
+                    <div className="bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/70 dark:border-slate-700/60 p-2 flex justify-center mb-5 overflow-hidden">
                       <CalendarUI
                         mode="single"
                         selected={new Date()}
-                        className="bg-transparent border-0 scale-[0.85] sm:scale-95 origin-top text-slate-800 dark:text-slate-100"
+                        className="bg-transparent border-0 scale-95 sm:scale-100 origin-top text-slate-800 dark:text-slate-100"
                       />
                     </div>
 
-                    <div className="space-y-2.5">
+                    <div className="space-y-3">
                       {upcomingActivities.map((activity, i) => (
-                        <div key={i} className="bg-gray-50 dark:bg-slate-800 p-3 rounded-xl border border-gray-100 dark:border-slate-700 hover:border-orange-200 dark:hover:border-orange-800 transition-colors cursor-pointer">
-                          <div className="flex items-start gap-2.5">
-                            <div className="w-8 h-8 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500 shrink-0">
-                              <Calendar className="w-3.5 h-3.5" />
+                        <div key={i} className="bg-slate-50 dark:bg-slate-800/60 p-4 rounded-xl border border-slate-200/70 dark:border-slate-700/60 hover:border-orange-200 dark:hover:border-orange-800 transition-colors cursor-pointer">
+                          <div className="flex items-start gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-orange-50 dark:bg-orange-900/20 flex items-center justify-center text-orange-500 shrink-0">
+                              <Calendar className="w-4.5 h-4.5" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-semibold text-slate-800 dark:text-slate-200 text-xs leading-tight line-clamp-2">{activity.titleThai}</h4>
-                              <div className="flex items-center gap-2 mt-1.5">
-                                <span className="text-[10px] font-medium text-orange-500">{new Date(activity.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</span>
-                                <Badge variant="secondary" className="text-[9px] bg-white dark:bg-slate-900 text-slate-500 h-4 px-1.5">+{activity.gamificationPoints} XP</Badge>
+                              <h4 className="font-bold text-slate-900 dark:text-slate-100 text-base leading-snug line-clamp-2">{activity.titleThai}</h4>
+                              <div className="flex items-center gap-2.5 mt-2">
+                                <span className="text-sm font-semibold text-orange-600 dark:text-orange-400">{new Date(activity.startDate).toLocaleDateString("th-TH", { day: "numeric", month: "short" })}</span>
+                                <Badge variant="secondary" className="text-xs sm:text-sm font-mono font-semibold bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-300 h-6 px-2.5">+{activity.gamificationPoints} XP</Badge>
                               </div>
                             </div>
                           </div>
                         </div>
                       ))}
                       {upcomingActivities.length === 0 && (
-                        <div className="text-center py-4 text-xs text-slate-400">ไม่มีกิจกรรมเร็วๆนี้</div>
+                        <div className="text-center py-6 text-sm text-slate-400 font-medium">ไม่มีกิจกรรมเร็วๆนี้</div>
                       )}
                     </div>
-                    <Button variant="outline" size="sm" className="w-full mt-3 rounded-xl border-dashed border-gray-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:text-orange-600 hover:border-orange-300 text-xs h-8" onClick={() => navigate("/activities")}>
+                    <Button variant="outline" size="sm" className="w-full mt-4 rounded-xl border-dashed border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:text-orange-600 hover:border-orange-300 text-sm sm:text-base h-11 font-semibold" onClick={() => navigate("/activities")}>
                       {t.studentDashboard.viewCalendar}
                     </Button>
                   </motion.div>

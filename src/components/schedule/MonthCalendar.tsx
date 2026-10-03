@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { cn } from '@/lib/utils';
@@ -31,6 +32,7 @@ const DAYS_HEADER = [
 
 export function MonthCalendar({ courses, currentDate, onSelectDate, onSwitchToWeek }: MonthCalendarProps) {
   const { language } = useLanguage();
+  const navigate = useNavigate();
   const isTH = language !== 'en';
 
   const [selectedDayEvents, setSelectedDayEvents] = React.useState<{
@@ -251,10 +253,15 @@ export function MonthCalendar({ courses, currentDate, onSelectDate, onSwitchToWe
             {selectedDayEvents?.events.map(({ course, slot }, idx) => (
               <div
                 key={idx}
-                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-blue-700 transition-colors"
+                onClick={() => {
+                  setSelectedDayEvents(null);
+                  navigate('/courses');
+                }}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200/70 dark:border-slate-700/60 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-xs transition-all cursor-pointer group"
+                title={isTH ? 'คลิกเพื่อไปหน้าลงทะเบียนเรียน' : 'Click to go to course registration'}
               >
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400">
+                  <span className="font-mono font-bold text-xs text-blue-600 dark:text-blue-400 group-hover:text-blue-700 dark:group-hover:text-blue-300">
                     {course.code}
                   </span>
                   <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-white dark:bg-slate-900 px-2 py-0.5 rounded-md border border-slate-200/60 dark:border-slate-800">

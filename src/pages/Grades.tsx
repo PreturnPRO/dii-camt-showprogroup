@@ -534,19 +534,11 @@ export default function Grades() {
                 const course = courses.find(c => c.id === grade.courseId);
                 if (!course) return null;
 
-<<<<<<< Updated upstream
-                const getGradeColor = (g: string) => {
-                  if (g === 'A') return 'bg-emerald-500 text-white shadow-emerald-200';
-                  if (g.startsWith('B')) return 'bg-blue-500 text-white shadow-blue-200';
-                  if (g.startsWith('C')) return 'bg-orange-500 text-white shadow-orange-200';
-                  return 'bg-red-500 text-white shadow-red-200';
-=======
                 const getGradeBadge = (g: string) => {
                   if (g === 'A') return 'bg-emerald-600 text-white';
                   if (g.startsWith('B')) return 'bg-blue-600 text-white';
                   if (g.startsWith('C')) return 'bg-amber-600 text-white';
                   return 'bg-red-600 text-white';
->>>>>>> Stashed changes
                 };
 
                 return (
@@ -556,30 +548,6 @@ export default function Grades() {
                     transition={{ duration: 0.15 }}
                     className="flex flex-col justify-between bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200"
                   >
-<<<<<<< Updated upstream
-                    <div className="flex justify-between items-start mb-6">
-                      <div className="flex gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-950 flex items-center justify-center font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-700">
-                          {course.code?.slice(-2) || 'XX'}
-                        </div>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900 dark:text-slate-200">{course.code}</h3>
-                          <p className="text-slate-500 text-sm line-clamp-1 dark:text-slate-400">{course.name}</p>
-                        </div>
-                      </div>
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-xl font-bold shadow-lg ${getGradeColor(grade.letterGrade)}`}>
-                        {grade.letterGrade}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2 mb-6">
-                      {course.gradingCriteria && course.gradingCriteria.map(c => {
-                        const scoreObj = grade.scores?.find(s => s.criteriaId === c.id);
-                        return (
-                          <div key={c.id} className="text-center p-2 rounded-xl bg-slate-50 dark:bg-slate-800 flex-1 min-w-[80px]">
-                            <div className="text-xs text-slate-400 mb-1 truncate" title={c.name}>{c.name}</div>
-                            <div className="font-bold text-slate-700 dark:text-slate-300">{scoreObj?.score ?? '-'}</div>
-=======
                     <div>
                       {/* Top Row: Contextual Credit Badge + Course Code + Grade Outcome */}
                       <div className="flex items-center justify-between gap-3 mb-3">
@@ -592,7 +560,6 @@ export default function Grades() {
                             <span className="text-[9px] text-slate-400 dark:text-slate-400 mt-0.5 leading-none">
                               หน่วยกิต
                             </span>
->>>>>>> Stashed changes
                           </div>
 
                           <div className="min-w-0">

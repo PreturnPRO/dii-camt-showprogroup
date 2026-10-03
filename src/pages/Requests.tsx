@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   FileBox, FileText, Clock, CheckCircle, XCircle, Plus, Filter, Send,
   Upload, X, AlertCircle, ArrowRight, Hourglass, Calendar, Download,
-  ChevronRight, FileQuestion, ArrowUpRight, Inbox
+  ChevronRight, FileQuestion, ArrowUpRight, Inbox, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -99,6 +99,7 @@ export default function Requests() {
     { id: 'general', name: language === 'en' ? 'General Request' : 'คำร้องทั่วไป', icon: <FileQuestion className="w-5 h-5" />, color: 'bg-slate-50 text-slate-600' },
   ];
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [requests, setRequests] = React.useState<RequestRow[]>([]);
   const [formData, setFormData] = React.useState({
     type: '',
@@ -143,11 +144,12 @@ export default function Requests() {
   }, []);
 
   const handleSubmit = async () => {
-    if (!formData.type || !formData.title || !formData.description) {
+    if (!formData.type || !formData.title || !formData.description || isSubmitting) {
       toast.error(t.requestsPage.fillComplete);
       return;
     }
 
+    setIsSubmitting(true);
     try {
       const response = await api.requests.create({
         type: formData.type,
@@ -176,6 +178,8 @@ export default function Requests() {
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -362,7 +366,21 @@ export default function Requests() {
 
             <DialogFooter className="p-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800 gap-2">
               <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)} className="rounded-xl h-9 text-xs">{t.common.cancel}</Button>
-              <Button size="sm" onClick={handleSubmit} className="rounded-xl h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold">{t.requestsPage.submitNow}</Button>
+              <Button
+                size="sm"
+                onClick={handleSubmit}
+                disabled={isSubmitting}
+                className="rounded-xl h-9 px-5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold flex items-center gap-1.5"
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1" />
+                    <span>{language === 'th' ? 'กำลังยื่นคำร้อง...' : 'Submitting...'}</span>
+                  </>
+                ) : (
+                  <span>{t.requestsPage.submitNow}</span>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

@@ -1,9 +1,11 @@
 import type { UserRole } from "@/types";
 
-const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
-const TOKEN_STORAGE_KEY = "showpro_auth_token";
+const TOKEN_STORAGE_KEY = "xchange_auth_token";
+const LEGACY_TOKEN_STORAGE_KEY = "showpro_auth_token";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
+
+const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
 
 export const API_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
@@ -81,7 +83,8 @@ const parseErrorPayload = async (response: Response) => {
   }
 };
 
-export const getStoredToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);
+export const getStoredToken = () =>
+  localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
 
 export const setStoredToken = (token: string) => {
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
@@ -89,6 +92,7 @@ export const setStoredToken = (token: string) => {
 
 export const clearStoredToken = () => {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
+  localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
 };
 
 export const normalizeRole = (role: BackendRole): UserRole => role.toLowerCase() as UserRole;
@@ -401,34 +405,6 @@ export const api = {
     create: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ enrollment: unknown }>>("/enrollments", {
         method: "POST",
-        body: payload,
-      }),
-  },
-  assignments: {
-    list: (query = "") => request<ApiEnvelope<{ assignments: unknown[] }>>(`/assignments${query}`),
-    get: (id: string) => request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${encodeURIComponent(id)}`),
-    create: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>("/assignments", {
-        method: "POST",
-        body: payload,
-      }),
-    update: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
-        method: "PATCH",
-        body: payload,
-      }),
-    remove: (id: string) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
-        method: "DELETE",
-      }),
-    submit: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/assignments/${id}/submissions`, {
-        method: "POST",
-        body: payload,
-      }),
-    gradeSubmission: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/submissions/${id}`, {
-        method: "PATCH",
         body: payload,
       }),
   },

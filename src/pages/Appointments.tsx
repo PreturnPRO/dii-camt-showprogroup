@@ -1,9 +1,9 @@
-﻿import React from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-    Calendar, Clock, Plus, CheckCircle, XCircle, User, MapPin, MessageSquare
+    Calendar, Clock, Plus, CheckCircle, XCircle, User, MapPin, MessageSquare, Loader2
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -354,8 +354,19 @@ export default function Appointments() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setBookingLecturer(null)} disabled={isBooking}>{t.common.cancel}</Button>
-                        <Button onClick={createAppointment} disabled={isBooking || !bookingPurpose.trim()}>
-                            {isBooking ? t.common.loading : t.appointmentsPage.bookTime}
+                        <Button
+                            onClick={createAppointment}
+                            disabled={isBooking || !bookingPurpose.trim()}
+                            className="flex items-center gap-1.5"
+                        >
+                            {isBooking ? (
+                                <>
+                                    <Loader2 className="w-4 h-4 animate-spin mr-1.5" />
+                                    {t.common.loading}
+                                </>
+                            ) : (
+                                t.appointmentsPage.bookTime
+                            )}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

@@ -205,7 +205,7 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
             <Search className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
             <input
               type="text"
-              placeholder={t.header?.search || "ค้นหาในระบบ..."}
+              placeholder={(t.header as Record<string, string>)?.search || (language === 'en' ? "Search..." : "ค้นหาในระบบ...")}
               className="bg-transparent border-none outline-none w-full text-sm text-slate-900 dark:text-slate-50 placeholder:text-slate-500/60 dark:placeholder:text-slate-400/60 font-medium"
             />
             <div className="flex items-center gap-0.5 shrink-0">

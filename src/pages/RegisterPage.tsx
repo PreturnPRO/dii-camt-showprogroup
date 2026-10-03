@@ -37,70 +37,12 @@ export default function RegisterPage() {
     });
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-<<<<<<< Updated upstream
   const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
     setRole(selectedRole);
     setStep(2);
   };
 
   const buildProfile = () => {
-    const timestamp = Date.now().toString().slice(-6);
-
-    if (role === 'student') {
-      return {
-        studentId: `STU${timestamp}`,
-        major: 'Digital Industry Integration',
-        program: 'bachelor',
-        year: 1,
-        semester: 1,
-        academicYear: '2569',
-        allowDataSharing: false,
-        allowPortfolioSharing: false,
-      };
-    }
-
-    if (role === 'lecturer') {
-      return {
-        lecturerId: `LEC${timestamp}`,
-        department: 'Digital Industry Integration',
-        position: 'instructor',
-        specialization: [],
-        researchInterests: [],
-      };
-    }
-
-    if (role === 'staff') {
-      return {
-        staffId: `STA${timestamp}`,
-        department: 'DII Office',
-        position: 'Staff',
-        permissions: ['students', 'courses', 'reports'],
-        canManageUsers: true,
-        canManageCourses: true,
-        canManageSchedules: true,
-        canViewReports: true,
-        canManageInternships: true,
-      };
-    }
-
-    return {
-      companyId: `COM${timestamp}`,
-      companyName: formData.name,
-      companyNameThai: formData.name,
-      industry: enterpriseData.industry || 'Technology',
-      size: role === 'enterprise' ? 'enterprise' : 'small',
-      website: enterpriseData.website || undefined,
-      address: enterpriseData.regBlock || undefined,
-      taxId: enterpriseData.taxId || undefined,
-      internshipSlots: 0,
-=======
-    const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
-        setRole(selectedRole);
-        setStep(2);
->>>>>>> Stashed changes
-    };
-
-    const buildProfile = () => {
         const timestamp = Date.now().toString().slice(-6);
         const baseId = formData.email.split('@')[0].replace(/[^a-zA-Z0-9]/g, '').toUpperCase().slice(0, 8) || timestamp;
 
@@ -270,7 +212,7 @@ export default function RegisterPage() {
                 </div>
 
                 <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
-                    © 2026 ShowPro. All rights reserved.
+                    © 2026 Xchange. All rights reserved.
                 </div>
             </div>
 

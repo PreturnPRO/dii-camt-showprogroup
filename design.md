@@ -149,6 +149,7 @@ Do **NOT** allow `TabsList` to stretch 100% across wide desktop viewports.
   ```
   *Example*: A 09:00–12:00 class spans exactly 3 rows (09, 10, 11) and terminates cleanly at 12:00 without bleeding into the 12:00 lunch row.
 - **Week / Month Navigation**: Always provide a modern segmented switch `[ สัปดาห์ | เดือน ]` synchronized with `?view=` URL search params.
+- **Interactive Course Slots**: Timetable class blocks (both desktop grid cells and mobile list items) must be clickable (`cursor-pointer`, hover highlight), navigating directly to `/courses` (Course Registration).
 
 ### 4.8 Portfolio & Project Cards (Zero Broken Media Guarantee)
 - **Never display raw alt-text or broken browser icons**.
@@ -165,6 +166,18 @@ Do **NOT** allow `TabsList` to stretch 100% across wide desktop viewports.
   - Render a subtle lock silhouette (`Lock` icon) with reduced opacity (60%) and dashed border.
 - **Badge Selection**: Selected badge features an explicit border highlight (`border-2 border-purple-500`) and an accent dot indicator at top-right. Only one badge selected at a time.
 - **Progress Counter**: Always display granular progress `6 / 10 ครั้ง (60%)` accompanied by the unlock rule text (`เข้าร่วมกิจกรรมให้ครบ 10 ครั้งเพื่อปลดล็อก`).
+
+### 4.10 Course & Registration Navigation Rules (Dashboard, Schedule, Timetable)
+- **Direct Interactive Links to Registration**:
+  - **Student Dashboard ("รายวิชาเทอมนี้")**: The section title (icon + text), "ดูทั้งหมด" button, and all course cards must be interactive (`cursor-pointer`, hover feedback, active states) and navigate directly to `/courses` (the Course Registration page).
+  - **Schedule Page**:
+    - Summary stat card "วิชาที่ลงทะเบียน" (`totalCourses`) must navigate to `/courses`.
+    - Every course item in "คาบเรียนวันนี้" (Today's Classes) must navigate to `/courses`.
+    - Modal dialogs in Month Calendar must link class entries to `/courses`.
+- **Zero Dead-End Empty States**:
+  - Whenever no courses or schedules exist, render an explicit, interactive call-to-action (CTA) card guiding students to register: *"ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ คลิกเพื่อไปหน้าลงทะเบียน"*.
+- **Tab Deep Linking (`useSearchParams`)**:
+  - `Courses.tsx` tabs must be controlled via URL parameters (`?tab=registration` or `?tab=my-courses`) to enable deep-linking from any component or external route.
 
 ---
 
@@ -185,6 +198,8 @@ Whenever asked to create or modify a ShowPro page, verify against this checklist
 - [ ] No arbitrary `max-w-md` or `max-w-lg` constraints left on full-page views.
 - [ ] Course/Grade cards use 2 columns on desktop (`md:grid-cols-2`) and stretch 100% of the content width.
 - [ ] Tab switches are compact segmented controls, not full-width stretched bars.
+- [ ] Course cards, timetable blocks, and schedule summaries are interactive and navigate directly to `/courses` (Course Registration).
+- [ ] Tab switches in Courses (`?tab=`) and Schedule (`?view=`) support URL search params for deep linking.
 - [ ] All images have verified error handling and fallback UI.
 - [ ] Monospace numbers for grades, credits, schedules, and points.
 - [ ] Cards in the same row have matching height (`flex flex-col justify-between`).
