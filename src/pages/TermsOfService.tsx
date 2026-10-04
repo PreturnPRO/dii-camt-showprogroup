@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Scale, ArrowLeft, FileText, AlertCircle, ShieldCheck, Ban, RefreshCw, Gavel, BookOpen, Users, Mail, HelpCircle } from 'lucide-react';
+import { Scale, ArrowLeft, FileText, AlertCircle, ShieldCheck, Ban, RefreshCw, Gavel, BookOpen, Users, Mail, HelpCircle, GraduationCap, Building2, Factory } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
 
@@ -47,9 +47,9 @@ export default function TermsOfService() {
     {
       icon: ShieldCheck,
       title: t.termsOfServicePage.section3Title,
-      color: 'from-violet-600 to-purple-600',
-      bg: 'bg-violet-50',
-      iconColor: 'text-violet-600',
+      color: 'from-indigo-600 to-blue-600',
+      bg: 'bg-indigo-50',
+      iconColor: 'text-indigo-600',
       items: [
         { subtitle: t.termsOfServicePage.section3Sub1, desc: t.termsOfServicePage.section3Desc1 },
         { subtitle: t.termsOfServicePage.section3Sub2, desc: t.termsOfServicePage.section3Desc2 },
@@ -117,7 +117,7 @@ export default function TermsOfService() {
               DII
             </div>
             <div>
-              <div className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-200">ShowPro</div>
+              <div className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-200">Xchange</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Digital Industry Integration</div>
             </div>
           </Link>
@@ -187,13 +187,13 @@ export default function TermsOfService() {
               </div>
               <div className="grid sm:grid-cols-4 gap-3">
                 {[
-                  { label: t.termsOfServicePage.roleStudent, icon: '🎓' },
-                  { label: t.termsOfServicePage.roleLecturer, icon: '📚' },
-                  { label: t.termsOfServicePage.roleStaff, icon: '🏢' },
-                  { label: t.termsOfServicePage.roleIndustry, icon: '🏭' },
+                  { label: t.termsOfServicePage.roleStudent, icon: GraduationCap },
+                  { label: t.termsOfServicePage.roleLecturer, icon: BookOpen },
+                  { label: t.termsOfServicePage.roleStaff, icon: Building2 },
+                  { label: t.termsOfServicePage.roleIndustry, icon: Factory },
                 ].map((role, i) => (
-                  <div key={i} className="bg-white rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm text-center dark:bg-slate-900">
-                    <div className="text-2xl mb-2">{role.icon}</div>
+                  <div key={i} className="bg-white rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm text-center dark:bg-slate-900 flex flex-col items-center justify-center">
+                    <role.icon className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
                     <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">{role.label}</span>
                   </div>
                 ))}
@@ -253,7 +253,7 @@ export default function TermsOfService() {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                     <a href="mailto:legal@camt.cmu.ac.th">
-                      <Button size="lg" className="h-14 px-8 bg-white dark:bg-slate-900 text-blue-700 hover:bg-blue-50 rounded-full text-lg font-semibold shadow-lg dark:text-slate-200">
+                      <Button size="lg" className="h-12 px-6 bg-white dark:bg-slate-900 text-blue-700 hover:bg-blue-50 rounded-lg text-base font-semibold shadow-md dark:text-slate-200">
                         <Mail className="w-5 h-5 mr-2" /> legal@camt.cmu.ac.th
                       </Button>
                     </a>
@@ -268,7 +268,7 @@ export default function TermsOfService() {
       {/* Footer */}
       <footer className="bg-slate-50 py-10 border-t border-slate-200 dark:bg-slate-800 dark:border-slate-700">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-          <div>© 2026 ShowPro. All rights reserved.</div>
+          <div>&copy; {new Date().getFullYear()} Xchange. All rights reserved.</div>
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="hover:text-slate-600 dark:text-slate-300">Privacy Policy</Link>
             <Link to="/terms-of-service" className="text-slate-600 font-medium dark:text-slate-300">Terms of Service</Link>

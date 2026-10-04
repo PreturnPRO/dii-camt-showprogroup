@@ -33,6 +33,7 @@ const router = Router();
 router.get(
   "/requests",
   requireAuth,
+  checkRole([Role.STUDENT, Role.STAFF, Role.ADMIN]),
   getRequests
 );
 
@@ -47,6 +48,7 @@ router.post(
 router.post(
   "/requests/:id/comment",
   requireAuth,
+  checkRole([Role.STUDENT, Role.STAFF, Role.ADMIN]),
   validate(requestCommentSchema),
   createRequestComment
 );

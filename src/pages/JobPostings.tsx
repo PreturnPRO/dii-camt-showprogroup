@@ -9,9 +9,9 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { JobPosting } from '@/types';
@@ -151,13 +151,13 @@ export default function JobPostings() {
                 const activeApplicants = editingJob.applicants.filter(
                     app => !['accepted', 'rejected'].includes(app.status)
                 );
-                
+
                 if (activeApplicants.length > 0) {
                     const recipientIds = activeApplicants.map(app => app.studentId);
                     try {
                         await api.notifications.broadcast({
                             title: language === 'th' ? 'มีการอัปเดตข้อมูลการจ้างงาน' : 'Job Posting Updated',
-                            message: language === 'th' 
+                            message: language === 'th'
                                 ? `ข้อมูลตำแหน่งงาน ${editingJob.title} ที่คุณสมัครไว้มีการอัปเดต โปรดตรวจสอบรายละเอียดใหม่`
                                 : `The job posting for ${editingJob.title} that you applied for has been updated. Please review the new details.`,
                             type: 'application',
@@ -455,8 +455,8 @@ export default function JobPostings() {
                         <div className="grid gap-2">
                             <Label>{t.jobPostings.deadline}</Label>
                             <Input type="date" value={formData.deadline} onChange={e => {
-                                setFormData({ 
-                                    ...formData, 
+                                setFormData({
+                                    ...formData,
                                     deadline: e.target.value
                                 });
                             }} />

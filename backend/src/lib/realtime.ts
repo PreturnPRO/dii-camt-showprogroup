@@ -12,7 +12,14 @@ type AuthPayload = {
 
 let io: Server | null = null;
 
-const getOrigins = () => env.CORS_ORIGIN.split(",").map((origin) => origin.trim());
+const getOrigins = () => {
+  const configured = env.CORS_ORIGIN.split(",").map((o) => o.trim()).filter(Boolean);
+  const devOrigins =
+    env.NODE_ENV === "development"
+      ? ["http://localhost:8080", "http://127.0.0.1:8080", "http://localhost:5173", "http://127.0.0.1:5173"]
+      : [];
+  return [...new Set([...configured, ...devOrigins])];
+};
 
 const extractToken = (authToken?: string, authorizationHeader?: string) => {
   if (authToken) {

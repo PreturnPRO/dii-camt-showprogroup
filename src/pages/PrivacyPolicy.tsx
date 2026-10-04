@@ -47,9 +47,9 @@ export default function PrivacyPolicy() {
     {
       icon: Lock,
       title: t.privacyPolicyPage.section3Title,
-      color: 'from-purple-600 to-pink-600',
-      bg: 'bg-purple-50',
-      iconColor: 'text-purple-600',
+      color: 'from-blue-600 to-indigo-600',
+      bg: 'bg-blue-50',
+      iconColor: 'text-blue-600',
       items: [
         { subtitle: t.privacyPolicyPage.section3Sub1, desc: t.privacyPolicyPage.section3Desc1 },
         { subtitle: t.privacyPolicyPage.section3Sub2, desc: t.privacyPolicyPage.section3Desc2 },
@@ -102,7 +102,7 @@ export default function PrivacyPolicy() {
               DII
             </div>
             <div>
-              <div className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-200">ShowPro</div>
+              <div className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-200">Xchange</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 font-medium tracking-wide">Digital Industry Integration</div>
             </div>
           </Link>
@@ -118,19 +118,19 @@ export default function PrivacyPolicy() {
       <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-purple-600/15 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
         </div>
 
         <div className="container mx-auto px-6 relative z-10 text-center max-w-4xl">
           <FadeIn>
-            <div className="inline-flex items-center gap-2 mb-8 px-4 py-2 bg-purple-500/10 backdrop-blur-md rounded-full border border-purple-500/20">
-              <Shield className="w-4 h-4 text-purple-400" />
-              <span className="text-sm font-medium text-purple-300">Privacy & Security</span>
+            <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 bg-blue-500/10 backdrop-blur-md rounded-md border border-blue-500/20">
+              <Shield className="w-4 h-4 text-blue-400" />
+              <span className="text-sm font-medium text-blue-300">Privacy & Security</span>
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
             <h1 className="text-4xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
-              {t.privacyPolicyPage.heroTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-rose-400">{t.privacyPolicyPage.heroTitleHighlight}</span>
+              {t.privacyPolicyPage.heroTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">{t.privacyPolicyPage.heroTitleHighlight}</span>
             </h1>
           </FadeIn>
           <FadeIn delay={0.2}>
@@ -158,16 +158,16 @@ export default function PrivacyPolicy() {
       <section className="py-16 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6">
           <FadeIn>
-            <div className="max-w-4xl mx-auto bg-gradient-to-br from-purple-50 to-pink-50 rounded-3xl p-8 lg:p-12 border border-purple-100">
+            <div className="max-w-4xl mx-auto bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-8 lg:p-12 border border-slate-200 dark:border-slate-700">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{t.privacyPolicyPage.summaryTitle}</h2>
               <p className="text-slate-600 leading-relaxed mb-6 dark:text-slate-300">
                 {t.privacyPolicyPage.summaryDesc}
               </p>
               <div className="grid sm:grid-cols-3 gap-4">
                 {[
-                  { icon: Lock, label: t.privacyPolicyPage.encryptedAES, color: 'text-purple-600 bg-purple-100' },
-                  { icon: UserCheck, label: 'PDPA Compliant', color: 'text-pink-600 bg-pink-100' },
-                  { icon: Shield, label: 'ISO 27001', color: 'text-indigo-600 bg-indigo-100' },
+                  { icon: Lock, label: t.privacyPolicyPage.encryptedAES, color: 'text-blue-600 bg-blue-100 dark:bg-blue-950 dark:text-blue-400' },
+                  { icon: UserCheck, label: 'PDPA Compliant', color: 'text-emerald-600 bg-emerald-100 dark:bg-emerald-950 dark:text-emerald-400' },
+                  { icon: Shield, label: 'ISO 27001', color: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-950 dark:text-indigo-400' },
                 ].map((badge, i) => (
                   <div key={i} className="flex items-center gap-3 bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
                     <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${badge.color}`}>
@@ -221,18 +221,18 @@ export default function PrivacyPolicy() {
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="max-w-4xl mx-auto text-center">
-              <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-purple-950 rounded-[2.5rem] p-12 lg:p-16 text-white relative overflow-hidden">
+              <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 rounded-2xl p-12 lg:p-16 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-purple-600/10 rounded-full blur-[120px]" />
+                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
                 <div className="relative z-10 space-y-6">
-                  <Mail className="w-12 h-12 text-purple-400 mx-auto" />
+                  <Mail className="w-12 h-12 text-blue-400 mx-auto" />
                   <h2 className="text-3xl lg:text-4xl font-bold">{t.privacyPolicyPage.contactTitle}</h2>
                   <p className="text-slate-300 text-lg max-w-xl mx-auto">
                     {t.privacyPolicyPage.contactDesc}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
                     <a href="mailto:dpo@camt.cmu.ac.th">
-                      <Button size="lg" className="h-14 px-8 bg-white dark:bg-slate-900 text-purple-700 hover:bg-purple-50 rounded-full text-lg font-semibold shadow-lg dark:text-slate-200">
+                      <Button size="lg" className="h-12 px-6 bg-white dark:bg-slate-900 text-blue-700 hover:bg-blue-50 rounded-lg text-base font-semibold shadow-md dark:text-slate-200">
                         <Mail className="w-5 h-5 mr-2" /> dpo@camt.cmu.ac.th
                       </Button>
                     </a>
@@ -247,7 +247,7 @@ export default function PrivacyPolicy() {
       {/* Footer */}
       <footer className="bg-slate-50 py-10 border-t border-slate-200 dark:bg-slate-800 dark:border-slate-700">
         <div className="container mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-sm text-slate-400">
-          <div>© 2026 ShowPro. All rights reserved.</div>
+          <div>&copy; {new Date().getFullYear()} Xchange. All rights reserved.</div>
           <div className="flex gap-6">
             <Link to="/privacy-policy" className="text-slate-600 font-medium dark:text-slate-300">Privacy Policy</Link>
             <Link to="/terms-of-service" className="hover:text-slate-600 dark:text-slate-300">Terms of Service</Link>

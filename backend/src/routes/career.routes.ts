@@ -15,6 +15,8 @@ import {
   internshipDocumentCreateSchema,
   internshipDocumentStatusSchema,
   talentQuerySchema,
+  careerGoalUpdateSchema,
+  trackWatchCreateSchema,
 } from "../schemas/career.schema";
 import {
   getJobsHandler,
@@ -31,12 +33,19 @@ import {
   createInternshipDocumentHandler,
   updateInternshipDocumentStatusHandler,
   searchTalentHandler,
+  getCareerTracksHandler,
+  getMyCareerGoalHandler,
+  updateMyCareerGoalHandler,
+  getTrackWatchesHandler,
+  createTrackWatchHandler,
+  deleteTrackWatchHandler,
 } from "../controllers/career.controller";
 
 const router = Router();
 
 router.get(
   "/jobs",
+  requireAuth,
   validate(jobQuerySchema, "query"),
   getJobsHandler
 );
@@ -90,6 +99,12 @@ router.post(
 router.get(
   "/applications",
   requireAuth,
+  // Only student (own applications) and company (own postings' applications)
+  // get scoped in getApplicationsHandler; any other role fell through with
+  // no where-clause at all and got every application system-wide, resumes
+  // and cover letters included. Admin is the only other role with a
+  // legitimate reason to see everything.
+  checkRole([Role.STUDENT, Role.COMPANY, Role.ADMIN]),
   validate(applicationQuerySchema, "query"),
   getApplicationsHandler
 );
@@ -146,6 +161,49 @@ router.get(
   checkRole([Role.COMPANY, Role.ADMIN, Role.STAFF, Role.LECTURER]),
   validate(talentQuerySchema, "query"),
   searchTalentHandler
+);
+
+router.get(
+  "/career-tracks",
+  requireAuth,
+  getCareerTracksHandler
+);
+
+router.get(
+  "/students/career-goal",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  getMyCareerGoalHandler
+);
+
+router.put(
+  "/students/career-goal",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  validate(careerGoalUpdateSchema),
+  updateMyCareerGoalHandler
+);
+
+router.get(
+  "/company/track-watches",
+  requireAuth,
+  checkRole([Role.COMPANY]),
+  getTrackWatchesHandler
+);
+
+router.post(
+  "/company/track-watches",
+  requireAuth,
+  checkRole([Role.COMPANY]),
+  validate(trackWatchCreateSchema),
+  createTrackWatchHandler
+);
+
+router.delete(
+  "/company/track-watches/:id",
+  requireAuth,
+  checkRole([Role.COMPANY]),
+  deleteTrackWatchHandler
 );
 
 export const careerRoutes = router;

@@ -594,19 +594,6 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     orderBy: { updatedAt: "desc" },
   });
 
-  const submissions = await prisma.submission.findMany({
-    where: { studentId: student.id },
-    include: {
-      assignment: {
-        select: {
-          title: true,
-        },
-      },
-    },
-    orderBy: { submittedAt: "desc" },
-    take: 20,
-  });
-
   const skillScoreFallback = average(
     student.skills.map((item) => skillLevelScore(item.level)),
     0,
@@ -629,9 +616,9 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     professorScore: roundScore(average(technicalRubrics.map((item) => item.professorScore), skillScoreFallback)),
     peerScore: roundScore(average(technicalRubrics.map((item) => item.peerScore), skillScoreFallback)),
     commentTags: {
-      bug: submissions.filter((item) => (item.score ?? 100) < 60 || item.feedback?.toLowerCase().includes("bug")).length,
-      suggestion: submissions.filter((item) => item.feedback && (item.score ?? 0) < 85).length,
-      goodJob: submissions.filter((item) => (item.score ?? 0) >= 85).length,
+      bug: 0,
+      suggestion: 0,
+      goodJob: 0,
     },
   };
 
@@ -657,7 +644,7 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
       opennessScore: item.skillName.toLowerCase().includes("open") || item.skillName.toLowerCase().includes("feedback")
         ? item.totalScore
         : softFallback,
-      comments: submissions.filter((submission) => submission.feedback).length,
+      comments: 0,
     })),
   };
 
@@ -693,12 +680,6 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     _count: { id: true },
   });
 
-  const completedQuests = await prisma.questEnrollment.count({
-    where: {
-      studentId: student.id,
-      status: "completed",
-    },
-  });
 
   res.json({
     success: true,
@@ -717,7 +698,6 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
       gamificationPoints: student.gamificationPoints,
       totalActivityHours: student.totalActivityHours,
       completedActivities: activitySummary._count.id,
-      completedQuests,
       badges: student.badges,
       gradeHistory,
       skillRubrics,

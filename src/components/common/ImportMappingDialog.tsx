@@ -1,5 +1,5 @@
 import React from 'react';
-import * as XLSX from 'xlsx';
+import { readTabularFile } from '@/lib/tabular-file';
 import { AlertCircle, CheckCircle2, FileSpreadsheet, Loader2, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -30,12 +30,7 @@ interface ImportMappingDialogProps {
 const NONE_VALUE = '__none__';
 
 const readWorkbookRows = async (file: File): Promise<ParsedImportRow[]> => {
-  const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array' });
-  const firstSheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[firstSheetName];
-  if (!sheet) return [];
-  return XLSX.utils.sheet_to_json<ParsedImportRow>(sheet, { defval: '' });
+  return readTabularFile(file);
 };
 
 export function ImportMappingDialog({
@@ -144,7 +139,7 @@ export function ImportMappingDialog({
               <Input
                 id="import-file"
                 type="file"
-                accept=".xlsx,.xls,.csv"
+                accept=".xlsx,.csv"
                 onChange={handleFileChange}
                 disabled={isReading || isImporting}
               />

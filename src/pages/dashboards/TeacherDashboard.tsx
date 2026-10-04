@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BookOpen, 
-  Users, 
-  ClipboardList, 
+import {
+  BookOpen,
+  Users,
+  ClipboardList,
   Calendar,
   ChevronRight,
   AlertTriangle,
@@ -258,7 +258,7 @@ export default function TeacherDashboard() {
                       <p className="text-xs text-muted-foreground">
                         {appointment.date.toLocaleDateString('th-TH')} • {appointment.startTime} น.
                       </p>
-                      <Badge 
+                      <Badge
                         variant={appointment.status === 'confirmed' ? 'default' : 'outline'}
                         className="mt-1 text-xs"
                       >
@@ -307,12 +307,6 @@ export default function TeacherDashboard() {
                 <Link to="/grades">
                   <ClipboardList className="mr-2 h-4 w-4" />
                   {t.teacherDashboard.recordGrades}
-                </Link>
-              </Button>
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <Link to="/assignments">
-                  <BookOpen className="mr-2 h-4 w-4" />
-                  {t.teacherDashboard.createAssignment}
                 </Link>
               </Button>
               <Button variant="outline" className="w-full justify-start" asChild>

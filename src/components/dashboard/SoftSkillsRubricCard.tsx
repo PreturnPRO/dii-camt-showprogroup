@@ -240,8 +240,9 @@ export function SoftSkillsRubricCard({
                                         <div className="text-sm font-bold text-emerald-600 dark:text-slate-300">{feedback.opennessScore}</div>
                                         <div className="text-[10px] text-slate-400">Open.</div>
                                     </div>
-                                    <Badge variant="secondary" className="text-xs">
-                                        💬 {feedback.comments}
+                                    <Badge variant="secondary" className="text-xs inline-flex items-center gap-1 font-normal">
+                                        <MessageSquare className="w-3 h-3 text-slate-500" />
+                                        <span>{feedback.comments}</span>
                                     </Badge>
                                 </div>
                             </motion.div>

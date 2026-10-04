@@ -161,7 +161,7 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
   }
 
   const criteriaList = course.gradingCriteria;
-  
+
   // CSV Header
   let csv = "Student ID,Name,";
   criteriaList.forEach(c => {
@@ -173,7 +173,7 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
   // CSV Rows
   course.enrollments.forEach(enrollment => {
     csv += `"${enrollment.student.studentId}","${enrollment.student.user.name}",`;
-    
+
     criteriaList.forEach(c => {
       const scoreObj = enrollment.scores.find(s => s.criteriaId === c.id);
       csv += `${scoreObj ? scoreObj.score : ""},`;
@@ -316,276 +316,6 @@ export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
   });
 });
 
-export const getAssignmentsHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const includeSubmissions = Boolean(req.query.includeSubmissions);
-  const courseId = req.query.courseId ? String(req.query.courseId) : undefined;
-
-  let where: Record<string, unknown> = {};
-
-  if (currentUser.role === Role.STUDENT) {
-    const student = await getStudentProfileByUserId(currentUser.id);
-    where = {
-      isPublished: true,
-      ...(courseId ? { courseId } : {}),
-      course: {
-        enrollments: {
-          some: {
-            studentId: student.id,
-          },
-        },
-      },
-    };
-  } else if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    where = {
-      ...(courseId ? { courseId } : {}),
-      course: {
-        lecturerId: lecturer.id,
-      },
-    };
-  } else {
-    where = courseId ? { courseId } : {};
-  }
-
-  const assignments = await prisma.assignment.findMany({
-    where,
-    include: {
-      course: {
-        include: {
-          lecturer: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-      submissions:
-        includeSubmissions || currentUser.role === Role.STUDENT
-          ? {
-              where:
-                currentUser.role === Role.STUDENT
-                  ? {
-                      student: {
-                        userId: currentUser.id,
-                      },
-                    }
-                  : undefined,
-              include: {
-                student: {
-                  include: {
-                    user: true,
-                  },
-                },
-              },
-              orderBy: {
-                submittedAt: "desc",
-              },
-            }
-          : false,
-    },
-    orderBy: [{ dueDate: "asc" }, { createdAt: "desc" }],
-  });
-
-  res.json({
-    success: true,
-    assignments,
-  });
-});
-
-export const getAssignmentByIdHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const assignment = await prisma.assignment.findUnique({
-    where: { id: String(req.params.id) },
-    include: {
-      course: {
-        include: {
-          lecturer: {
-            include: {
-              user: true,
-            },
-          },
-          enrollments: {
-            select: {
-              studentId: true,
-              student: {
-                select: {
-                  userId: true,
-                },
-              },
-            },
-          },
-        },
-      },
-      submissions: {
-        include: {
-          student: {
-            include: {
-              user: true,
-            },
-          },
-        },
-        orderBy: {
-          submittedAt: "desc",
-        },
-      },
-    },
-  });
-
-  if (!assignment) {
-    throw new AppError(404, "Assignment not found");
-  }
-
-  if (currentUser.role === Role.STUDENT) {
-    const ownsEnrollment = assignment.course.enrollments.some(
-      (item) => item.student.userId === currentUser.id,
-    );
-
-    if (!ownsEnrollment || !assignment.isPublished) {
-      throw new AppError(403, "You do not have access to this assignment");
-    }
-
-    return res.json({
-      success: true,
-      assignment: {
-        ...assignment,
-        submissions: assignment.submissions.filter(
-          (item) => item.student.userId === currentUser.id,
-        ),
-      },
-    });
-  }
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-
-    if (assignment.course.lecturerId !== lecturer.id) {
-      throw new AppError(403, "You do not manage this assignment");
-    }
-  }
-
-  res.json({
-    success: true,
-    assignment,
-  });
-});
-
-export const createAssignmentHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const course = await prisma.course.findUnique({
-    where: { id: req.body.courseId },
-  });
-
-  if (!course) {
-    throw new AppError(404, "Course not found");
-  }
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    if (course.lecturerId !== lecturer.id) {
-      throw new AppError(403, "You can only create assignments for your own courses");
-    }
-  }
-
-  const assignment = await prisma.assignment.create({
-    data: {
-      courseId: req.body.courseId,
-      title: req.body.title,
-      description: req.body.description,
-      type: req.body.type,
-      dueDate: req.body.dueDate,
-      maxScore: req.body.maxScore,
-      isPublished: req.body.isPublished ?? false,
-    },
-    include: {
-      course: {
-        include: {
-          lecturer: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-      submissions: {
-        include: {
-          student: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  res.status(201).json({
-    success: true,
-    assignment,
-  });
-});
-
-export const updateAssignmentHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const existing = await prisma.assignment.findUnique({
-    where: { id: String(req.params.id) },
-    include: {
-      course: true,
-    },
-  });
-
-  if (!existing) {
-    throw new AppError(404, "Assignment not found");
-  }
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    if (existing.course.lecturerId !== lecturer.id) {
-      throw new AppError(403, "You can only update assignments for your own courses");
-    }
-  }
-
-  const assignment = await prisma.assignment.update({
-    where: { id: existing.id },
-    data: {
-      title: req.body.title,
-      description: req.body.description,
-      type: req.body.type,
-      dueDate: req.body.dueDate,
-      maxScore: req.body.maxScore,
-      isPublished: req.body.isPublished,
-    },
-    include: {
-      course: {
-        include: {
-          lecturer: {
-            include: {
-              user: true,
-            },
-          },
-        },
-      },
-      submissions: {
-        include: {
-          student: {
-            include: {
-              user: true,
-            },
-          },
-        },
-        orderBy: {
-          submittedAt: "desc",
-        },
-      },
-    },
-  });
-
-  res.json({
-    success: true,
-    assignment,
-  });
-});
-
 export const deleteCourseHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const existing = await prisma.course.findUnique({
@@ -610,153 +340,6 @@ export const deleteCourseHandler = asyncHandler(async (req, res) => {
   res.json({
     success: true,
     message: "Course deleted successfully",
-  });
-});
-
-export const deleteAssignmentHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const existing = await prisma.assignment.findUnique({
-    where: { id: String(req.params.id) },
-    include: {
-      course: true,
-    },
-  });
-
-  if (!existing) {
-    throw new AppError(404, "Assignment not found");
-  }
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    if (existing.course.lecturerId !== lecturer.id) {
-      throw new AppError(403, "You can only delete assignments for your own courses");
-    }
-  }
-
-  const assignment = await prisma.assignment.delete({
-    where: { id: existing.id },
-  });
-
-  res.json({
-    success: true,
-    assignment,
-  });
-});
-
-export const submitAssignmentHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const student = await getStudentProfileByUserId(currentUser.id);
-  const assignment = await prisma.assignment.findUnique({
-    where: { id: String(req.params.id) },
-    include: {
-      course: {
-        include: {
-          enrollments: true,
-        },
-      },
-    },
-  });
-
-  if (!assignment) {
-    throw new AppError(404, "Assignment not found");
-  }
-
-  const isEnrolled = assignment.course.enrollments.some((item) => item.studentId === student.id);
-  if (!assignment.isPublished || !isEnrolled) {
-    throw new AppError(403, "You do not have access to submit this assignment");
-  }
-
-  const submission = await prisma.submission.upsert({
-    where: {
-      assignmentId_studentId: {
-        assignmentId: assignment.id,
-        studentId: student.id,
-      },
-    },
-    update: {
-      files: req.body.files,
-      submittedAt: new Date(),
-      status: new Date() > assignment.dueDate ? "late" : "submitted",
-    },
-    create: {
-      assignmentId: assignment.id,
-      studentId: student.id,
-      files: req.body.files,
-      status: new Date() > assignment.dueDate ? "late" : "submitted",
-    },
-    include: {
-      student: {
-        include: {
-          user: true,
-        },
-      },
-      assignment: {
-        include: {
-          course: true,
-        },
-      },
-    },
-  });
-
-  res.status(201).json({
-    success: true,
-    submission,
-  });
-});
-
-export const updateSubmissionHandler = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const existing = await prisma.submission.findUnique({
-    where: { id: String(req.params.id) },
-    include: {
-      assignment: {
-        include: {
-          course: true,
-        },
-      },
-      student: {
-        include: {
-          user: true,
-        },
-      },
-    },
-  });
-
-  if (!existing) {
-    throw new AppError(404, "Submission not found");
-  }
-
-  if (currentUser.role === Role.LECTURER) {
-    const lecturer = await getLecturerProfileByUserId(currentUser.id);
-    if (existing.assignment.course.lecturerId !== lecturer.id) {
-      throw new AppError(403, "You can only grade submissions for your own courses");
-    }
-  }
-
-  const submission = await prisma.submission.update({
-    where: { id: existing.id },
-    data: {
-      score: req.body.score,
-      feedback: req.body.feedback,
-      status: req.body.status,
-    },
-    include: {
-      student: {
-        include: {
-          user: true,
-        },
-      },
-      assignment: {
-        include: {
-          course: true,
-        },
-      },
-    },
-  });
-
-  res.json({
-    success: true,
-    submission,
   });
 });
 
@@ -911,7 +494,7 @@ async function checkAttendanceWarning(enrollmentId: string) {
       date: { lte: new Date() },
     },
   });
-  
+
   const totalSessions = distinctDaysResult.length;
   if (totalSessions === 0) return;
 
@@ -981,7 +564,7 @@ export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
     const lateCount = studentRecords.filter(r => r.status === 'late').length;
     const leaveCount = studentRecords.filter(r => r.status === 'leave').length;
     const absentCount = studentRecords.filter(r => r.status === 'absent').length;
-    
+
     // Default logic: late counts as present, leave doesn't penalize. Adjust as needed.
     // For now, percentage = (present + late) / totalSessions
     let percentage = 100;
@@ -1068,4 +651,3 @@ export const closeAttendanceSessionHandler = asyncHandler(async (req, res) => {
     session: updatedSession,
   });
 });
-

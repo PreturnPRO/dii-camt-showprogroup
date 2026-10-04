@@ -163,7 +163,7 @@ export default function ActivitiesManagement() {
                                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}

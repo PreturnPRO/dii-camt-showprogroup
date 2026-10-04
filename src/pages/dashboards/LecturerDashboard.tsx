@@ -119,19 +119,19 @@ export default function LecturerDashboard() {
               }`}</span>
           </motion.div>
           <motion.h1 className="text-4xl md:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-            {t.lecturerDashboard.hello} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">{lecturer.nameThai}</span> 👋
+            {t.lecturerDashboard.hello} <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-500">{lecturer.nameThai}</span>
           </motion.h1>
         </div>
 
         <motion.div variants={itemVariants} className="flex items-center gap-3">
           <Link to="/schedule">
-            <Button variant="outline" className="rounded-full px-6 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-slate-200/60 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
+            <Button variant="outline" className="rounded-lg px-5 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-slate-200/60 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all">
               <Calendar className="w-4 h-4 mr-2" />
               {t.lecturerDashboard.manageSchedule}
             </Button>
           </Link>
           <Link to="/messages">
-            <Button className="rounded-full px-6 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-200/50 dark:shadow-emerald-900/50 text-white transition-all hover:scale-105 border-0">
+            <Button className="rounded-lg px-5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm transition-all border-0">
               <MessageSquare className="w-4 h-4 mr-2" />
               {t.lecturerDashboard.messages}
             </Button>
@@ -270,9 +270,9 @@ export default function LecturerDashboard() {
                           </div>
                           <div className="text-center">
                             <div className="text-2xl font-bold text-purple-600 dark:text-slate-300">
-                              {course.assignments?.length || 0}
+                              {course.grades.length}
                             </div>
-                            <div className="text-xs text-gray-600 dark:text-slate-300">{t.lecturerDashboard.assignments}</div>
+                            <div className="text-xs text-gray-600 dark:text-slate-300">{t.lecturerDashboard.gradesTab}</div>
                           </div>
                         </div>
 
@@ -479,6 +479,12 @@ export default function LecturerDashboard() {
                             {student.academicStatus === 'normal' ? t.lecturerDashboard.normal : t.lecturerDashboard.risk}
                           </Badge>
                         </div>
+                        <Link to={`/intern-tracking?internId=${student.id}&tab=daily`}>
+                          <Button size="sm" variant="outline" className="gap-1.5 text-xs text-orange-600 border-orange-200 hover:bg-orange-50 dark:border-orange-800 dark:text-orange-400">
+                            <BookOpen className="w-3.5 h-3.5 text-orange-500" />
+                            {language === 'th' ? 'ตรวจไดอารี่ฝึกงาน' : 'Review Diary'}
+                          </Button>
+                        </Link>
                         <Button size="sm" variant="outline">{t.lecturerDashboard.viewData}</Button>
                       </div>
                     </div>

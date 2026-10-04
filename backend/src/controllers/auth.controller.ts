@@ -26,7 +26,18 @@ const requireFields = (profile: Record<string, unknown>, fields: string[]) => {
   }
 };
 
-const normalizePhone = (value: unknown) => String(value ?? "").replace(/\D/g, "");
+const normalizePhone = (value: unknown) => {
+  let digits = String(value ?? "").replace(/\D/g, "");
+  if (digits.startsWith("66")) {
+    digits = "0" + digits.slice(2);
+  }
+  if (digits.length > 0 && !digits.startsWith("0")) {
+    if (digits.length === 9 || digits.length === 8) {
+      digits = "0" + digits;
+    }
+  }
+  return digits;
+};
 
 const passwordMarker = (passwordHash: string) =>
   createHash("sha256").update(passwordHash).digest("hex");
@@ -85,6 +96,13 @@ const sendPasswordResetEmail = async (payload: {
 
 export const register = asyncHandler(async (req, res) => {
   const { email, password, name, nameThai, role, avatar, phone, profile } = req.body;
+
+  // Public self-registration must never be able to mint an ADMIN account —
+  // admin accounts are created only via the authenticated internal Users
+  // management flow (system.controller.ts createUserHandler).
+  if (role === Role.ADMIN) {
+    throw new AppError(403, "Cannot self-register as admin");
+  }
 
   const existingUser = await prisma.user.findUnique({
     where: { email },
@@ -169,11 +187,16 @@ export const register = asyncHandler(async (req, res) => {
             permissions: Array.isArray(profile.permissions)
               ? profile.permissions.map(String)
               : [],
-            canManageUsers: Boolean(profile.canManageUsers ?? true),
-            canManageCourses: Boolean(profile.canManageCourses ?? true),
-            canManageSchedules: Boolean(profile.canManageSchedules ?? true),
-            canViewReports: Boolean(profile.canViewReports ?? true),
-            canManageInternships: Boolean(profile.canManageInternships ?? true),
+            // Self-registered staff accounts start with zero elevated permissions —
+            // an existing admin must grant these explicitly via Users management.
+            // (The client-supplied profile.canManage* flags are intentionally
+            // ignored here, not just defaulted, so a crafted request body can't
+            // grant itself permissions either.)
+            canManageUsers: false,
+            canManageCourses: false,
+            canManageSchedules: false,
+            canViewReports: false,
+            canManageInternships: false,
           },
         });
         break;
@@ -259,6 +282,7 @@ export const login = asyncHandler(async (req, res) => {
       companyProfile: true,
       adminProfile: true,
     },
+    omit: { passwordHash: false },
   });
 
   if (!user || !(await comparePassword(password, user.passwordHash))) {
@@ -345,6 +369,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await prisma.user.findUnique({
     where: { email },
+    omit: { passwordHash: false },
   });
 
   const response: {
@@ -407,6 +432,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
 
   const user = await prisma.user.findUnique({
     where: { id: data.sub },
+    omit: { passwordHash: false },
   });
 
   if (!user || user.email !== data.email || data.marker !== passwordMarker(user.passwordHash)) {
@@ -461,15 +487,25 @@ export const logout = asyncHandler(async (req, res) => {
 
 export const updateProfile = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
-  const { name, nameThai, avatar, phone, currentPassword, newPassword, roleData } = req.body;
+  const { name, nameThai, avatar, phone, email, currentPassword, newPassword, roleData } = req.body;
 
   const existingUser = await prisma.user.findUnique({
     where: { id: currentUser.id },
     include: { companyProfile: true },
+    omit: { passwordHash: false },
   });
 
   if (!existingUser) {
     throw new AppError(404, "User not found");
+  }
+
+  if (email && email !== existingUser.email) {
+    const duplicateEmail = await prisma.user.findUnique({
+      where: { email },
+    });
+    if (duplicateEmail) {
+      throw new AppError(409, "Email is already in use by another account");
+    }
   }
 
   let passwordHash: string | undefined;
@@ -500,6 +536,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
         nameThai,
         avatar,
         phone,
+        email: email || undefined,
         ...(passwordHash ? { passwordHash } : {}),
       },
     });

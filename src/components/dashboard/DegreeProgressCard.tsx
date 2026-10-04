@@ -17,107 +17,126 @@ export function DegreeProgressCard({
 }: DegreeProgressProps) {
     const { language } = useLanguage();
     const isTH = language !== 'en';
-    const progressPercent = Math.min((earnedCredits / requiredCredits) * 100, 100);
+    const progressPercent = requiredCredits > 0 ? Math.min((earnedCredits / requiredCredits) * 100, 100) : 0;
     const remainingCredits = Math.max(requiredCredits - earnedCredits, 0);
 
-    // SVG ring
-    const radius = 54;
+    // SVG ring calculations (r=48, diameter=124)
+    const radius = 48;
     const circumference = 2 * Math.PI * radius;
     const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
 
-    const stats = [
-        {
-            icon: <CheckCircle className="w-4 h-4 text-violet-500" />,
-            label: isTH ? 'สำเร็จแล้ว' : 'Earned',
-            value: earnedCredits,
-            color: 'text-violet-700',
-        },
-        {
-            icon: <Clock className="w-4 h-4 text-blue-500 dark:text-slate-400" />,
-            label: isTH ? 'ลงทะเบียน' : 'Registered',
-            value: registeredCredits,
-            color: 'text-blue-700',
-        },
-        {
-            icon: <BookOpen className="w-4 h-4 text-slate-400" />,
-            label: isTH ? 'คงเหลือ' : 'Remaining',
-            value: remainingCredits,
-            color: 'text-slate-600',
-        },
-    ];
-
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-5 shadow-sm dark:bg-slate-900/50"
+            className="bg-white dark:bg-slate-900/80 border border-slate-200/70 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm h-full flex flex-col justify-between"
         >
             {/* Header */}
-            <div className="flex items-center gap-3 mb-5">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-purple-500/20">
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/40 shrink-0">
                     <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                    <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
                         {isTH ? 'ความก้าวหน้าของหลักสูตร' : 'Degree Progress'}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-mono mt-0.5">
                         {isTH ? `รวม ${requiredCredits} หน่วยกิต` : `${requiredCredits} credits total`}
                     </p>
                 </div>
             </div>
 
-            {/* Ring + stats */}
-            <div className="flex flex-col items-center gap-5">
-                {/* Circular ring */}
-                <div className="relative flex items-center justify-center">
-                    <svg width="140" height="140" className="-rotate-90">
-                        <circle
-                            cx="70" cy="70" r={radius}
-                            fill="none"
-                            stroke="#e2e8f0"
-                            strokeWidth="12"
-                        />
-                        <motion.circle
-                            cx="70" cy="70" r={radius}
-                            fill="none"
-                            stroke="url(#degreeGrad)"
-                            strokeWidth="12"
-                            strokeLinecap="round"
-                            strokeDasharray={circumference}
-                            initial={{ strokeDashoffset: circumference }}
-                            animate={{ strokeDashoffset }}
-                            transition={{ duration: 1.4, ease: 'easeOut' }}
-                        />
-                        <defs>
-                            <linearGradient id="degreeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                                <stop offset="0%" stopColor="#8b5cf6" />
-                                <stop offset="100%" stopColor="#a855f7" />
-                            </linearGradient>
-                        </defs>
-                    </svg>
-                    <div className="absolute flex flex-col items-center">
-                        <span className="text-2xl font-black text-slate-800 dark:text-slate-200">
-                            {Math.round(progressPercent)}%
-                        </span>
-                        <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                            {earnedCredits}/{requiredCredits}
-                        </span>
-                        <span className="text-[10px] text-slate-400">
-                            {isTH ? 'หน่วยกิต' : 'credits'}
-                        </span>
+            {/* Content: Ring on Left, Metric cards on Right */}
+            <div className="flex flex-col sm:flex-row items-center gap-5 sm:gap-6 flex-1">
+                {/* Left: Circular progress ring */}
+                <div className="w-[130px] h-[130px] flex items-center justify-center shrink-0">
+                    <div className="relative w-[124px] h-[124px] flex items-center justify-center">
+                        <svg width="124" height="124" className="-rotate-90">
+                            <circle
+                                cx="62" cy="62" r={radius}
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="9"
+                                className="text-slate-100 dark:text-slate-800/80"
+                            />
+                            <motion.circle
+                                cx="62" cy="62" r={radius}
+                                fill="none"
+                                stroke="url(#degreeGrad)"
+                                strokeWidth="9"
+                                strokeLinecap="round"
+                                strokeDasharray={circumference}
+                                initial={{ strokeDashoffset: circumference }}
+                                animate={{ strokeDashoffset }}
+                                transition={{ duration: 1.1, ease: 'easeOut' }}
+                            />
+                            <defs>
+                                <linearGradient id="degreeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#2563eb" />
+                                    <stop offset="100%" stopColor="#3b82f6" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center px-1 select-none pointer-events-none">
+                            <span className="text-3xl font-black tracking-tight text-slate-900 dark:text-slate-50 font-mono leading-none">
+                                {Math.round(progressPercent)}%
+                            </span>
+                            <div className="text-xs font-mono font-medium text-slate-600 dark:text-slate-300 mt-1">
+                                <span className="font-bold text-slate-800 dark:text-slate-100">{earnedCredits}</span>
+                                <span className="text-slate-400 mx-0.5">/</span>
+                                <span>{requiredCredits}</span>
+                            </div>
+                            <span className="text-[11px] text-slate-400 font-sans tracking-wide">
+                                {isTH ? 'หน่วยกิต' : 'credits'}
+                            </span>
+                        </div>
                     </div>
                 </div>
 
-                {/* Stat pills */}
-                <div className="grid grid-cols-3 gap-2 w-full">
-                    {stats.map((s, i) => (
-                        <div key={i} className="flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-950 rounded-2xl p-3">
-                            {s.icon}
-                            <span className={`text-lg font-black ${s.color}`}>{s.value}</span>
-                            <span className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-tight">{s.label}</span>
+                {/* Right: Stacked Cards (Earned on top, Registered & Remaining side-by-side without truncation) */}
+                <div className="flex flex-col gap-2.5 flex-1 w-full min-w-0">
+                    {/* Upper Block: Earned credits (Main highlight) */}
+                    <div className="flex items-center justify-between bg-blue-50/70 dark:bg-blue-950/30 border border-blue-200/60 dark:border-blue-800/50 rounded-xl p-3 transition-colors">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                            <CheckCircle className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                            <div>
+                                <span className="text-sm font-bold text-slate-900 dark:text-slate-100 block leading-tight">
+                                    {isTH ? 'หน่วยกิตสะสมที่ผ่าน' : 'Earned Credits'}
+                                </span>
+                                <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">
+                                    {isTH ? 'สำเร็จเรียบร้อยแล้ว' : 'Completed'}
+                                </span>
+                            </div>
                         </div>
-                    ))}
+                        <span className="text-2xl font-black font-mono text-blue-600 dark:text-blue-400 shrink-0 ml-2">
+                            {earnedCredits}
+                        </span>
+                    </div>
+
+                    {/* Lower Block: Registered & Remaining with Clean flex-col Layout (Zero Truncation!) */}
+                    <div className="grid grid-cols-2 gap-2.5">
+                        <div className="flex flex-col justify-between bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 rounded-xl p-2.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">
+                                <Clock className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+                                <span className="truncate">{isTH ? 'ลงทะเบียน' : 'Registered'}</span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold font-mono text-blue-600 dark:text-blue-400">{registeredCredits}</span>
+                                <span className="text-xs text-slate-400 font-sans">{isTH ? 'นก.' : 'cr'}</span>
+                            </div>
+                        </div>
+
+                        <div className="flex flex-col justify-between bg-slate-50/80 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-800 rounded-xl p-2.5 min-w-0">
+                            <div className="flex items-center gap-1.5 text-xs text-slate-600 dark:text-slate-400 font-medium mb-1">
+                                <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                                <span className="truncate">{isTH ? 'คงเหลือ' : 'Remaining'}</span>
+                            </div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-bold font-mono text-slate-800 dark:text-slate-200">{remainingCredits}</span>
+                                <span className="text-xs text-slate-400 font-sans">{isTH ? 'นก.' : 'cr'}</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </motion.div>

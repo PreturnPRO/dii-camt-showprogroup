@@ -44,12 +44,30 @@ const matchSkills = (requiredSkills: string[], studentSkills: string[]) => {
 };
 
 export const getJobsHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const company =
+    currentUser.role === Role.COMPANY
+      ? await getCompanyProfileByUserId(currentUser.id)
+      : null;
+  // Company/Admin may see full applicant lists; everyone else (student, lecturer,
+  // staff browsing the job board) only ever sees posting details, never other
+  // people's application/user records.
+  const isPrivileged = currentUser.role === Role.ADMIN || Boolean(company);
+
   const jobs = await prisma.jobPosting.findMany({
     where: {
       AND: [
         req.query.type ? { type: String(req.query.type) } : {},
         req.query.status ? { status: String(req.query.status) } : {},
-        req.query.companyId ? { companyId: String(req.query.companyId) } : {},
+        // A company can only ever query its own postings — companyId is never
+        // trusted from the client for that role. Admin may still filter by any
+        // companyId via the query param.
+        company
+          ? { companyId: company.id }
+          : req.query.companyId && currentUser.role === Role.ADMIN
+            ? { companyId: String(req.query.companyId) }
+            : {},
+        !isPrivileged ? { status: "open" } : {},
         req.query.q
           ? {
               OR: [
@@ -62,12 +80,16 @@ export const getJobsHandler = asyncHandler(async (req, res) => {
       ],
     },
     include: {
-      company: { include: { user: true } },
-      applications: {
-        include: {
-          student: { include: { user: true } },
-        },
-      },
+      company: { include: { user: { select: { id: true, name: true, email: true } } } },
+      ...(isPrivileged
+        ? {
+            applications: {
+              include: {
+                student: { include: { user: { select: { id: true, name: true, email: true } } } },
+              },
+            },
+          }
+        : {}),
     },
     orderBy: [{ postedAt: "desc" }],
   });
@@ -179,12 +201,17 @@ export const createJobHandler = asyncHandler(async (req, res) => {
       location: req.body.location,
       workType: req.body.workType,
       startDate: req.body.startDate,
-      deadline: req.body.deadline,
+      // No deadline supplied = "continuous hiring" — the column itself is still
+      // required, so this stands in for "no closing date" without a schema
+      // migration; the UI never surfaces this far-future value to anyone.
+      deadline: req.body.deadline ?? new Date(Date.now() + 5 * 365 * 24 * 60 * 60 * 1000),
       maxApplicants: req.body.maxApplicants,
-      status: req.body.status ?? "open",
+      // New postings always start as draft — they must be explicitly published
+      // before students can see them (fixes the phantom-posting leak).
+      status: req.body.status ?? "draft",
     },
     include: {
-      company: { include: { user: true } },
+      company: { include: { user: { select: { id: true, name: true, email: true } } } },
     },
   });
 
@@ -214,14 +241,20 @@ export const updateJobHandler = asyncHandler(async (req, res) => {
     throw new AppError(403, "You can only manage your own job postings");
   }
 
+  // companyId must never be settable through this endpoint — the ownership
+  // check above only validates the *current* owner, so without stripping
+  // this, a company could PATCH its own job's companyId to reassign it into
+  // another company's account.
+  const { companyId: _ignoredCompanyId, ...updateData } = req.body;
+
   const job = await prisma.jobPosting.update({
     where: { id: jobId },
-    data: req.body,
+    data: updateData,
     include: {
-      company: { include: { user: true } },
+      company: { include: { user: { select: { id: true, name: true, email: true } } } },
       applications: {
         include: {
-          student: { include: { user: true } },
+          student: { include: { user: { select: { id: true, name: true, email: true } } } },
         },
       },
     },
@@ -329,8 +362,13 @@ export const getApplicationsHandler = asyncHandler(async (req, res) => {
       ],
     },
     include: {
-      student: { include: { user: true } },
-      jobPosting: { include: { company: { include: { user: true } } } },
+      student: {
+        include: {
+          user: { select: { id: true, name: true, nameThai: true, email: true } },
+          skills: { include: { skill: true } },
+        },
+      },
+      jobPosting: { include: { company: { include: { user: { select: { id: true, name: true, email: true } } } } } },
     },
     orderBy: { appliedAt: "desc" },
   });
@@ -596,10 +634,15 @@ export const searchTalentHandler = asyncHandler(async (req, res) => {
       success: true,
       talents: await searchTalent(company.id, {
         jobId: req.query.jobId ? String(req.query.jobId) : undefined,
+        skills: req.query.skills
+          ? String(req.query.skills).split(",").map((s) => s.trim()).filter(Boolean)
+          : undefined,
+        careerTrackId: req.query.careerTrackId ? String(req.query.careerTrackId) : undefined,
         q: req.query.q ? String(req.query.q) : undefined,
         major: req.query.major ? String(req.query.major) : undefined,
         minGpax:
           typeof req.query.minGpax !== "undefined" ? Number(req.query.minGpax) : undefined,
+        year: typeof req.query.year !== "undefined" ? Number(req.query.year) : undefined,
       }),
     });
   }
@@ -614,7 +657,7 @@ export const searchTalentHandler = asyncHandler(async (req, res) => {
       ],
     },
     include: {
-      user: true,
+      user: { select: { id: true, name: true, nameThai: true } },
       skills: { include: { skill: true } },
       portfolio: { include: { projects: true } },
       badges: true,
@@ -634,4 +677,129 @@ export const searchTalentHandler = asyncHandler(async (req, res) => {
       badges: student.badges,
     })),
   });
+});
+
+export const getCareerTracksHandler = asyncHandler(async (_req, res) => {
+  const tracks = await prisma.careerTrack.findMany({ orderBy: { name: "asc" } });
+  res.json({ success: true, tracks });
+});
+
+export const getMyCareerGoalHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const student = await getStudentProfileByUserId(currentUser.id);
+  const goal = await prisma.studentCareerGoal.findUnique({
+    where: { studentId: student.id },
+    include: { careerTrack: true },
+  });
+  res.json({ success: true, goal });
+});
+
+export const updateMyCareerGoalHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const student = await getStudentProfileByUserId(currentUser.id);
+  const careerTrackId = req.body.careerTrackId as string | null;
+
+  if (careerTrackId === null) {
+    await prisma.studentCareerGoal.deleteMany({ where: { studentId: student.id } });
+    res.json({ success: true, goal: null });
+    return;
+  }
+
+  const track = await prisma.careerTrack.findUnique({ where: { id: careerTrackId } });
+  if (!track) {
+    throw new AppError(404, "Career track not found");
+  }
+
+  const goal = await prisma.studentCareerGoal.upsert({
+    where: { studentId: student.id },
+    update: { careerTrackId },
+    create: { studentId: student.id, careerTrackId },
+    include: { careerTrack: true },
+  });
+
+  res.json({ success: true, goal });
+});
+
+export const getTrackWatchesHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const company = await getCompanyProfileByUserId(currentUser.id);
+  const watches = await prisma.companyTrackWatch.findMany({
+    where: { companyId: company.id },
+    include: { careerTrack: true },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+  const results = await Promise.all(
+    watches.map(async (watch) => {
+      const goalSetters = await prisma.studentCareerGoal.findMany({
+        where: { careerTrackId: watch.careerTrackId },
+        include: { student: { include: { skills: { include: { skill: true } } } } },
+      });
+      const desired = watch.desiredSkills.map((skill) => skill.toLowerCase());
+      // No desired skills specified = nothing to clear, everyone who set the
+      // goal counts as "reached" it.
+      const matchedCount = desired.length === 0
+        ? goalSetters.length
+        : goalSetters.filter((goal) => {
+            const skillSet = new Set(goal.student.skills.map((item) => item.skill.name.toLowerCase()));
+            return desired.every((skill) => skillSet.has(skill));
+          }).length;
+      const newCount = goalSetters.filter((goal) => goal.createdAt >= sevenDaysAgo).length;
+
+      return {
+        id: watch.id,
+        careerTrack: {
+          id: watch.careerTrack.id,
+          name: watch.careerTrack.name,
+          nameThai: watch.careerTrack.nameThai,
+        },
+        desiredSkills: watch.desiredSkills,
+        totalGoalSetters: goalSetters.length,
+        matchedCount,
+        newCount,
+      };
+    }),
+  );
+
+  res.json({ success: true, watches: results });
+});
+
+export const createTrackWatchHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const company = await getCompanyProfileByUserId(currentUser.id);
+  const careerTrackId = String(req.body.careerTrackId);
+
+  const track = await prisma.careerTrack.findUnique({ where: { id: careerTrackId } });
+  if (!track) {
+    throw new AppError(404, "Career track not found");
+  }
+
+  const watch = await prisma.companyTrackWatch.upsert({
+    where: { companyId_careerTrackId: { companyId: company.id, careerTrackId } },
+    update: { desiredSkills: Array.isArray(req.body.desiredSkills) ? req.body.desiredSkills.map(String) : [] },
+    create: {
+      companyId: company.id,
+      careerTrackId,
+      desiredSkills: Array.isArray(req.body.desiredSkills) ? req.body.desiredSkills.map(String) : [],
+    },
+    include: { careerTrack: true },
+  });
+
+  res.status(201).json({ success: true, watch });
+});
+
+export const deleteTrackWatchHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const company = await getCompanyProfileByUserId(currentUser.id);
+  const watchId = String(req.params.id);
+
+  const existing = await prisma.companyTrackWatch.findUnique({ where: { id: watchId } });
+  if (!existing || existing.companyId !== company.id) {
+    throw new AppError(404, "Track watch not found");
+  }
+
+  await prisma.companyTrackWatch.delete({ where: { id: watchId } });
+  res.json({ success: true });
 });

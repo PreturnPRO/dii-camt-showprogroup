@@ -30,16 +30,3 @@ export const workloadSchema = z.object({
   advisingHours: z.coerce.number().int().nonnegative(),
   serviceHours: z.coerce.number().int().nonnegative().default(0),
 });
-
-export const paymentSchema = z.object({
-  companyId: z.string().optional(),
-  amount: z.coerce.number().positive(),
-  planName: z.string().min(1),
-  status: z.string().optional(),
-  receiptUrl: z.string().url().optional(),
-  referenceNumber: z.string().optional(),
-});
-
-export const paymentQuerySchema = z.object({
-  companyId: z.string().optional(),
-});

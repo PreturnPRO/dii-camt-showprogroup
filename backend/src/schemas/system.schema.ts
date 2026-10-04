@@ -70,6 +70,8 @@ export const userUpdateSchema = z.object({
   phone: z.string().optional().nullable(),
   avatar: z.string().url().optional().nullable(),
   isActive: z.boolean().optional(),
+  role: z.nativeEnum(Role).optional(), // D-14: อนุญาตให้ admin/staff เปลี่ยน role
+  password: z.string().min(8).optional(), // D-15: admin/staff reset password
   roleData: z.record(z.any()).default({}),
 });
 
