@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen } from 'lucide-react';
+import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -58,6 +58,8 @@ export default function Documents() {
     const [history, setHistory] = React.useState<DocumentHistoryRow[]>([]);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [documentForm, setDocumentForm] = React.useState({ type: 'transcript', studentId: '' });
+    const [issuingId, setIssuingId] = React.useState<string | null>(null);
+    const [isGenerating, setIsGenerating] = React.useState(false);
 
     const mapDocumentRequest = React.useCallback((item: unknown, index: number): DocumentRequestRow => {
         const request = asRecord(item);
@@ -112,6 +114,8 @@ export default function Documents() {
     };
 
     const handleIssueDocument = async (request: DocumentRequestRow) => {
+        if (issuingId) return;
+        setIssuingId(request.id);
         try {
             if (request.type.toLowerCase().includes('transcript')) {
                 const blob = await api.documents.transcript(request.studentId);
@@ -133,6 +137,8 @@ export default function Documents() {
             toast.success(t.documentsPage.issueDoc);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to issue document');
+        } finally {
+            setIssuingId(null);
         }
     };
 
@@ -142,11 +148,12 @@ export default function Documents() {
     };
 
     const generateDocument = async () => {
-        if (!documentForm.studentId.trim()) {
+        if (!documentForm.studentId.trim() || isGenerating) {
             toast.error('กรุณากรอกรหัสนักศึกษา');
             return;
         }
 
+        setIsGenerating(true);
         try {
             const blob = documentForm.type === 'internship'
                 ? await api.documents.internshipCertificate(documentForm.studentId)
@@ -163,6 +170,8 @@ export default function Documents() {
             toast.success('ออกเอกสารแล้ว');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to generate document');
+        } finally {
+            setIsGenerating(false);
         }
     };
 
@@ -188,28 +197,28 @@ export default function Documents() {
                     <Printer className="w-4 h-4 text-blue-500 dark:text-slate-400" />
                     <span>{t.documentsPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.documentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.documentsPage.titleHighlight}</span>
                 </motion.h1>
             </div>
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {docTemplates.map((doc, idx) => (
-                    <motion.div key={idx} whileHover={{ scale: 1.03, y: -4 }} onClick={() => openGenerateDialog(doc.type)} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${doc.color} p-6 text-white shadow-xl cursor-pointer group`}>
-                        <div className="absolute -top-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500 dark:bg-slate-900/50" />
+                    <motion.div key={idx} whileHover={{ scale: 1.03, y: -4 }} onClick={() => openGenerateDialog(doc.type)} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${doc.color} p-6 text-white shadow-sm cursor-pointer group`}>
+                        <div className="absolute -top-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
                         <div className="relative z-10">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm w-fit mb-4 dark:bg-slate-900/50">
+                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm w-fit mb-4">
                                 <doc.icon className="w-6 h-6" />
                             </div>
                             <h3 className="font-bold text-lg mb-1">{doc.title}</h3>
-                            <p className="text-sm text-white/80">{doc.desc}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400">{doc.desc}</p>
                         </div>
                     </motion.div>
                 ))}
             </motion.div>
 
             <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <div className="flex justify-between items-center mb-5">
                         <div>
                             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.documentsPage.pendingRequests}</h3>
@@ -219,7 +228,7 @@ export default function Documents() {
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                             <Input
                                 placeholder={t.documentsPage.searchRequests}
-                                className="pl-9 rounded-xl bg-white/80 dark:bg-slate-900/50"
+                                className="pl-9 rounded-xl bg-white/80"
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                             />
@@ -241,8 +250,23 @@ export default function Documents() {
                                 </div>
                                 <div className="flex gap-2">
                                     <Button size="sm" variant="outline" className="rounded-xl text-xs" onClick={() => openGenerateDialog(req.type.toLowerCase().includes('transcript') ? 'transcript' : 'internship', req.studentId)}>{t.documentsPage.viewDetails}</Button>
-                                    <Button size="sm" className="rounded-xl bg-blue-600 hover:bg-blue-700 text-xs shadow-lg shadow-blue-200" onClick={() => handleIssueDocument(req)}>
-                                        <Printer className="w-3.5 h-3.5 mr-1.5" /> {t.documentsPage.issueDoc}
+                                    <Button
+                                        size="sm"
+                                        className="rounded-xl bg-blue-600 hover:bg-blue-700 text-xs shadow-sm flex items-center gap-1.5"
+                                        onClick={() => handleIssueDocument(req)}
+                                        disabled={issuingId === req.id}
+                                    >
+                                        {issuingId === req.id ? (
+                                            <>
+                                                <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                                <span>กำลังออกเอกสาร...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Printer className="w-3.5 h-3.5 mr-1.5" />
+                                                <span>{t.documentsPage.issueDoc}</span>
+                                            </>
+                                        )}
                                     </Button>
                                 </div>
                             </motion.div>
@@ -250,7 +274,7 @@ export default function Documents() {
                     </div>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-2 bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <FolderOpen className="w-5 h-5 text-emerald-500 dark:text-slate-400" /> {t.documentsPage.history}
                     </h3>
@@ -304,7 +328,20 @@ export default function Documents() {
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setIsDialogOpen(false)}>ยกเลิก</Button>
-                        <Button onClick={generateDocument} className="bg-blue-600 hover:bg-blue-700">ออกเอกสาร</Button>
+                        <Button
+                            onClick={generateDocument}
+                            disabled={isGenerating}
+                            className="bg-blue-600 hover:bg-blue-700 flex items-center gap-1.5"
+                        >
+                            {isGenerating ? (
+                                <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                                    <span>กำลังออกเอกสาร...</span>
+                                </>
+                            ) : (
+                                'ออกเอกสาร'
+                            )}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

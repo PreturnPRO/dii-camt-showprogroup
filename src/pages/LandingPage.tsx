@@ -1,17 +1,37 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowRight, BookOpen, Users, Building2, Briefcase, GraduationCap, Trophy, Globe, CheckCircle2, BarChart3, Handshake, Clock, Mail, Phone, Moon, Sun } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowRight,
+  BookOpen,
+  Users,
+  Building2,
+  Briefcase,
+  GraduationCap,
+  Trophy,
+  Globe,
+  CheckCircle2,
+  ChevronRight,
+  Mail,
+  Phone,
+  MapPin,
+  Clock,
+  Menu,
+  X,
+  FileCheck,
+  Shield,
+  Layers,
+  Laptop
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useTheme } from 'next-themes';
 
 const FadeIn = ({ children, delay = 0, className = "" }: { children: React.ReactNode, delay?: number, className?: string }) => (
   <motion.div
-    initial={{ opacity: 0, y: 20 }}
+    initial={{ opacity: 0, y: 15 }}
     whileInView={{ opacity: 1, y: 0 }}
-    viewport={{ once: true, margin: "-50px" }}
-    transition={{ duration: 0.5, delay, ease: [0.21, 0.47, 0.32, 0.98] }}
+    viewport={{ once: true, margin: "-30px" }}
+    transition={{ duration: 0.5, delay, ease: [0.25, 0.1, 0.25, 1.0] }}
     className={className}
   >
     {children}
@@ -20,433 +40,607 @@ const FadeIn = ({ children, delay = 0, className = "" }: { children: React.React
 
 export default function LandingPage() {
   const { t, language, toggleLanguage } = useLanguage();
-  const { theme, setTheme } = useTheme();
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const [scrolled, setScrolled] = React.useState(false);
-  React.useEffect(() => {
+  useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Helper for smooth scrolling to anchor
+  const scrollToSection = (id: string) => {
+    setMobileMenuOpen(false);
+    const element = document.getElementById(id);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950 overflow-hidden font-sans text-slate-900 dark:text-slate-100">
-
-      {/* Navbar */}
-      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/95 dark:bg-slate-950/95 border-b border-slate-200 dark:border-slate-800 backdrop-blur-sm' : 'bg-transparent'}`}>
-        <div className="mx-auto max-w-6xl flex items-center justify-between h-16 px-6">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center">
-              <img src="/showpro_logo.png" alt="ShowPro" className="w-5 h-5 object-contain dark:invert" />
+    <div id="top" className="min-h-screen bg-slate-50 dark:bg-slate-950 font-sans text-slate-900 dark:text-slate-100 transition-colors duration-300 overflow-x-hidden selection:bg-blue-600/15 selection:text-blue-600">
+      {/* Top Navbar */}
+      <nav
+        className={`fixed top-0 w-full z-50 transition-all duration-300 px-4 sm:px-6 pt-3 sm:pt-4 pointer-events-none ${
+          scrolled ? 'pt-2 sm:pt-3' : ''
+        }`}
+      >
+        <div
+          className={`pointer-events-auto mx-auto max-w-6xl flex items-center justify-between transition-all duration-300 ${
+            scrolled
+              ? 'h-16 px-5 sm:px-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-xl'
+              : 'h-18 px-4 bg-transparent border-transparent shadow-none'
+          }`}
+        >
+          {/* Logo (Clicks to top of page) */}
+          <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 group">
+            <div className="w-10 h-10 bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 rounded-lg flex items-center justify-center text-white shadow-sm transition-transform duration-200 group-hover:scale-105">
+              <img src="/showpro_logo.png" alt="Xchange" className="w-6 h-6 object-contain" />
             </div>
-            <span className="font-bold text-lg text-slate-900 dark:text-white tracking-tight">ShowPro</span>
-          </div>
+            <div className="flex flex-col">
+              <div className="font-bold text-lg tracking-tight text-slate-900 dark:text-slate-100 leading-none">Xchange</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold tracking-wider uppercase mt-1">DII CAMT CMU</div>
+            </div>
+          </Link>
 
-          <div className="hidden md:flex items-center gap-6">
-            <a href="#features" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navFeatures}</a>
-            <a href="#stats" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navStats}</a>
-            <a href="#partners" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navPartners}</a>
-            <a href="#contact" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navContact}</a>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <button onClick={toggleLanguage} className="text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors font-medium">
-              {language === 'th' ? 'EN' : 'TH'}
+          {/* Desktop Navigation Links */}
+          <div className="hidden md:flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 px-2 py-1 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+            <button
+              onClick={() => scrollToSection('features')}
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+            >
+              {t.landing.navFeatures}
             </button>
             <button
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="w-8 h-8 flex items-center justify-center rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              aria-label="toggle dark mode"
+              onClick={() => scrollToSection('pillars')}
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 transition-colors"
             >
-              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+              {language === 'th' ? 'เสาหลักระบบ' : 'Core Pillars'}
             </button>
-            <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white">
+            <button
+              onClick={() => scrollToSection('partners')}
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+            >
+              {t.landing.navPartners}
+            </button>
+            <button
+              onClick={() => scrollToSection('contact')}
+              className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white dark:hover:bg-slate-700 transition-colors"
+            >
+              {t.landing.navContact}
+            </button>
+          </div>
+
+          {/* Right Actions */}
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={toggleLanguage}
+              className="h-9 px-3 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-800/60 text-slate-700 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400 text-xs font-semibold gap-1.5"
+            >
+              <Globe className="h-3.5 w-3.5" />
+              <span>{language === 'th' ? 'EN' : 'TH'}</span>
+            </Button>
+
+            <Link to="/login" className="hidden sm:block">
+              <Button variant="ghost" className="h-9 px-4 rounded-lg font-medium text-xs text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
                 {t.landing.login}
               </Button>
             </Link>
+
             <Link to="/register">
-              <Button size="sm" className="bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 rounded-md">
+              <Button className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow-sm transition-colors">
                 {t.landing.register}
               </Button>
             </Link>
+
+            {/* Mobile Hamburger Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden h-9 w-9 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+              aria-label="Toggle navigation menu"
+            >
+              {mobileMenuOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </Button>
           </div>
         </div>
-      </nav>
 
-      {/* Hero */}
-      <section className="min-h-screen flex flex-col pt-36 md:pt-48 pb-24 bg-white dark:bg-slate-950">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn delay={0.1}>
-            <div className="inline-flex items-center gap-2 mb-6 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-800">
-              <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
-              <span className="text-xs font-medium text-blue-700 dark:text-blue-400">
-                {language === 'th' ? 'ระบบจัดการสาขา DII — CAMT มหาวิทยาลัยเชียงใหม่' : 'DII Department Management — CAMT, Chiang Mai University'}
-              </span>
-            </div>
-          </FadeIn>
-
-          <FadeIn delay={0.15}>
-            <h1 className="text-5xl sm:text-6xl md:text-7xl font-bold text-slate-900 dark:text-white leading-[1.05] tracking-tight mb-6">
-              {language === 'th' ? (
-                <>ระบบบริหารจัดการ<br />การศึกษาครบวงจร</>
-              ) : (
-                <>Academic<br />management,<br />simplified.</>
-              )}
-            </h1>
-          </FadeIn>
-
-          <FadeIn delay={0.2}>
-            <p className="text-lg text-slate-500 dark:text-slate-400 mb-10 leading-relaxed max-w-xl">
-              {language === 'th'
-                ? 'ครอบคลุมทุกมิติของวงจรการศึกษา ตั้งแต่ลงทะเบียน การวัดผล กิจกรรม ฝึกงาน ไปจนถึงการหางาน สำหรับ 5 กลุ่มผู้ใช้งาน'
-                : 'Covers the full student lifecycle — enrollment, grading, activities, internships, and career placement — across 5 user roles.'}
-            </p>
-          </FadeIn>
-
-          <FadeIn delay={0.25} className="flex flex-col sm:flex-row gap-3">
-            <Link to="/register">
-              <Button className="h-11 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 rounded-md font-medium">
-                {t.landing.getStartedFree}
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="outline" className="h-11 px-8 rounded-md border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 font-medium">
-                {t.landing.login}
-              </Button>
-            </Link>
-          </FadeIn>
-
-          {/* Hero dashboard mockup - clean, real UI preview */}
-          <FadeIn delay={0.4} className="mt-20 hidden sm:block">
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl shadow-slate-200/50 dark:shadow-black/30">
-              {/* Browser chrome */}
-              <div className="h-9 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-4 gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                  <div className="w-2.5 h-2.5 rounded-full bg-slate-300 dark:bg-slate-700"></div>
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="h-5 w-56 bg-white dark:bg-slate-800 rounded border border-slate-200 dark:border-slate-700 flex items-center justify-center">
-                    <span className="text-[10px] text-slate-400 dark:text-slate-500">app.showpro.com/dashboard</span>
-                  </div>
-                </div>
+        {/* Mobile Navigation Drawer / Menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="pointer-events-auto md:hidden mx-auto max-w-6xl mt-2 p-5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-xl flex flex-col gap-3"
+            >
+              <div className="flex flex-col gap-1 pb-3 border-b border-slate-100 dark:border-slate-800">
+                <button
+                  onClick={() => scrollToSection('features')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  {t.landing.navFeatures}
+                </button>
+                <button
+                  onClick={() => scrollToSection('pillars')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  {language === 'th' ? 'เสาหลักระบบ' : 'Core Pillars'}
+                </button>
+                <button
+                  onClick={() => scrollToSection('partners')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  {t.landing.navPartners}
+                </button>
+                <button
+                  onClick={() => scrollToSection('contact')}
+                  className="w-full text-left px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
+                >
+                  {t.landing.navContact}
+                </button>
               </div>
 
-              {/* Dashboard UI */}
-              <div className="bg-slate-50 dark:bg-slate-950 flex" style={{ minHeight: '340px' }}>
-                {/* Sidebar */}
-                <div className="w-48 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 flex flex-col gap-1 shrink-0">
-                  <div className="flex items-center gap-2 mb-5 px-2 pt-1">
-                    <div className="w-6 h-6 bg-slate-900 dark:bg-white rounded-md"></div>
-                    <div className="h-3 w-16 bg-slate-900 dark:bg-slate-200 rounded"></div>
-                  </div>
-                  {['Dashboard', 'เกรด', 'กิจกรรม', 'พอร์ตโฟลิโอ', 'ฝึกงาน', 'คำร้อง'].map((item, i) => (
-                    <div key={i} className={`h-8 flex items-center px-2 gap-2 rounded-md ${i === 0 ? 'bg-slate-900 dark:bg-slate-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                      <div className={`w-3 h-3 rounded-sm ${i === 0 ? 'bg-white/40' : 'bg-slate-300 dark:bg-slate-600'}`}></div>
-                      <div className={`h-2 rounded ${i === 0 ? 'w-14 bg-white/60' : 'w-12 bg-slate-200 dark:bg-slate-700'}`}></div>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Main content */}
-                <div className="flex-1 p-6 flex flex-col gap-4">
-                  {/* Header */}
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <div className="h-4 w-32 bg-slate-800 dark:bg-slate-200 rounded mb-1.5"></div>
-                      <div className="h-2.5 w-24 bg-slate-300 dark:bg-slate-600 rounded"></div>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="w-8 h-8 bg-slate-200 dark:bg-slate-700 rounded-full"></div>
-                      <div className="w-8 h-8 bg-slate-900 dark:bg-slate-200 rounded-full"></div>
-                    </div>
-                  </div>
-
-                  {/* Stat cards */}
-                  <div className="grid grid-cols-4 gap-3">
-                    {[
-                      { label: 'GPA', value: '3.75', color: 'bg-blue-50 dark:bg-blue-900/20' },
-                      { label: 'หน่วยกิต', value: '96/135', color: 'bg-emerald-50 dark:bg-emerald-900/20' },
-                      { label: 'กิจกรรม', value: '18', color: 'bg-amber-50 dark:bg-amber-900/20' },
-                      { label: 'XP', value: '4,200', color: 'bg-purple-50 dark:bg-purple-900/20' },
-                    ].map((card, i) => (
-                      <div key={i} className={`${card.color} rounded-lg p-3 border border-slate-100 dark:border-slate-800`}>
-                        <div className="h-2 w-10 bg-slate-400 dark:bg-slate-500 rounded mb-2"></div>
-                        <div className="h-5 w-14 bg-slate-800 dark:bg-slate-200 rounded font-mono"></div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Chart area */}
-                  <div className="flex-1 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
-                    <div className="h-3 w-24 bg-slate-300 dark:bg-slate-600 rounded mb-4"></div>
-                    <div className="flex items-end gap-2 h-24">
-                      {[55, 72, 45, 88, 63, 79, 50, 91, 68].map((h, i) => (
-                        <div key={i} className="flex-1 bg-blue-100 dark:bg-blue-900/30 rounded-t" style={{ height: `${h}%` }}>
-                          <div className="w-full h-0.5 bg-blue-500 dark:bg-blue-400 rounded-t"></div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* Features */}
-      <section id="features" className="py-32 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn>
-            <div className="mb-16">
-              <p className="text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-3">{t.landing.navFeatures}</p>
-              <h2 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
-                {t.landing.featuresTitle1}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 max-w-xl leading-relaxed">
-                {t.landing.featuresDesc}
-              </p>
-            </div>
-          </FadeIn>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: GraduationCap,
-                title: t.landing.forStudents,
-                desc: t.landing.forStudentsDesc,
-                accent: 'text-blue-600 dark:text-blue-400',
-                bg: 'bg-blue-50 dark:bg-blue-900/20',
-              },
-              {
-                icon: BookOpen,
-                title: t.landing.forLecturers,
-                desc: t.landing.forLecturersDesc,
-                accent: 'text-emerald-600 dark:text-emerald-400',
-                bg: 'bg-emerald-50 dark:bg-emerald-900/20',
-              },
-              {
-                icon: Briefcase,
-                title: t.landing.forIndustry,
-                desc: t.landing.forIndustryDesc,
-                accent: 'text-amber-600 dark:text-amber-400',
-                bg: 'bg-amber-50 dark:bg-amber-900/20',
-              },
-              {
-                icon: BarChart3,
-                title: t.landing.smartReports,
-                desc: t.landing.smartReportsDesc,
-                accent: 'text-purple-600 dark:text-purple-400',
-                bg: 'bg-purple-50 dark:bg-purple-900/20',
-              },
-              {
-                icon: Users,
-                title: language === 'th' ? 'จัดการผู้ใช้ 5 บทบาท' : '5 Role-Based Access',
-                desc: language === 'th' ? 'นักศึกษา อาจารย์ เจ้าหน้าที่ บริษัท และผู้ดูแลระบบ มี Dashboard และสิทธิ์การเข้าถึงเฉพาะตัว' : 'Student, Lecturer, Staff, Company, and Admin each get tailored dashboards and scoped access.',
-                accent: 'text-slate-600 dark:text-slate-400',
-                bg: 'bg-slate-100 dark:bg-slate-800/50',
-              },
-              {
-                icon: Trophy,
-                title: t.landing.fastProcessing,
-                desc: t.landing.fastProcessingDesc,
-                accent: 'text-rose-600 dark:text-rose-400',
-                bg: 'bg-rose-50 dark:bg-rose-900/20',
-              },
-            ].map((feature, i) => (
-              <FadeIn key={i} delay={i * 0.07}>
-                <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 p-6 hover:border-slate-300 dark:hover:border-slate-700 transition-colors">
-                  <div className={`w-10 h-10 rounded-lg ${feature.bg} flex items-center justify-center mb-4`}>
-                    <feature.icon className={`w-5 h-5 ${feature.accent}`} />
-                  </div>
-                  <h3 className="font-semibold text-slate-900 dark:text-white mb-2">{feature.title}</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">{feature.desc}</p>
-                </div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section id="stats" className="py-24 bg-slate-900 dark:bg-black border-t border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white tracking-tight mb-3">
-              {language === 'th' ? 'ตัวเลขที่สะท้อนความจริง' : 'Built for real scale'}
-            </h2>
-            <p className="text-slate-400 text-sm">
-              {language === 'th' ? 'ระบบที่ใช้งานจริงในสาขา DII CAMT มหาวิทยาลัยเชียงใหม่' : 'Used in DII CAMT, Chiang Mai University'}
-            </p>
-          </FadeIn>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: language === 'th' ? 'ผู้ใช้งานในระบบ' : 'Users in system', value: '5,000+' },
-              { label: language === 'th' ? 'บริษัทพันธมิตร' : 'Industry partners', value: '200+' },
-              { label: language === 'th' ? 'อัตราความพึงพอใจ' : 'Placement rate', value: '98%' },
-              { label: language === 'th' ? 'คะแนนความพึงพอใจ' : 'System rating', value: '4.9/5' },
-            ].map((stat, i) => (
-              <FadeIn key={i} delay={i * 0.1} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">{stat.value}</div>
-                <div className="text-sm text-slate-400">{stat.label}</div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Partners */}
-      <section id="partners" className="py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">{language === 'th' ? 'พันธมิตรและองค์กรที่ร่วมงาน' : 'Partners & organizations'}</p>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {language === 'th' ? 'เชื่อมต่อกับภาคอุตสาหกรรม' : 'Connected to industry'}
-            </h2>
-          </FadeIn>
-
-          <FadeIn delay={0.1} className="relative overflow-hidden">
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white dark:from-slate-950 to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white dark:from-slate-950 to-transparent z-10 pointer-events-none" />
-            <div className="flex overflow-hidden py-4 items-center">
-              <motion.div
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-                className="flex gap-16 shrink-0 items-center opacity-50"
-              >
-                {[...Array(2)].map((_, setIdx) => (
-                  <React.Fragment key={setIdx}>
-                    {['CLBS', 'AXONS', 'G-ABLE', 'BeNeat', 'TCC', 'MOVE'].map((name, i) => (
-                      <span key={`${setIdx}-${i}`} className="text-xl font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap tracking-tight">
-                        {name}
-                      </span>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </motion.div>
-            </div>
-          </FadeIn>
-
-          {/* Testimonial */}
-          <FadeIn delay={0.2} className="mt-20 max-w-2xl mx-auto">
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-8 bg-slate-50 dark:bg-slate-900">
-              <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed mb-6 italic">
-                "{t.landing.testimonialQuote}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                    {t.landing.testimonialName?.charAt(0) || 'A'}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900 dark:text-white text-sm">{t.landing.testimonialName}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{t.landing.testimonialRole}</div>
-                </div>
-              </div>
-            </div>
-          </FadeIn>
-        </div>
-      </section>
-
-      {/* CTA / Contact */}
-      <section id="contact" className="py-24 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <div className="grid md:grid-cols-2 gap-16 items-start">
-            <FadeIn>
-              <p className="text-xs font-semibold uppercase tracking-widest text-blue-600 dark:text-blue-400 mb-3">{language === 'th' ? 'เริ่มต้นใช้งาน' : 'Get started'}</p>
-              <h2 className="text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4 leading-tight">
-                {language === 'th' ? 'พร้อมเข้าร่วมระบบ ShowPro แล้วหรือยัง?' : 'Ready to join ShowPro?'}
-              </h2>
-              <p className="text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-                {t.landing.ctaDesc}
-              </p>
-              <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/register">
-                  <Button className="h-11 px-8 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 rounded-md font-medium">
-                    {t.landing.registerNow} <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link to="/login">
-                  <Button variant="outline" className="h-11 px-8 rounded-md border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-800 font-medium">
+              <div className="flex items-center justify-between pt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={toggleLanguage}
+                  className="h-9 px-3 rounded-lg text-xs font-medium gap-2 border-slate-200 dark:border-slate-700"
+                >
+                  <Globe className="h-3.5 w-3.5" />
+                  <span>{language === 'th' ? 'เปลี่ยนเป็น English' : 'Switch to ภาษาไทย'}</span>
+                </Button>
+                <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" size="sm" className="h-9 px-4 rounded-lg text-xs font-semibold">
                     {t.landing.login}
                   </Button>
                 </Link>
               </div>
-            </FadeIn>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </nav>
 
-            <FadeIn delay={0.15}>
-              <div className="space-y-4">
-                <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                    <Globe className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 mb-0.5">Website</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">www.camt.cmu.ac.th</p>
-                  </div>
-                </div>
-                <div className="bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 p-5 flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center shrink-0">
-                    <Phone className="w-5 h-5 text-slate-600 dark:text-slate-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400 mb-0.5">{language === 'th' ? 'โทรศัพท์' : 'Phone'}</p>
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">053-942110</p>
-                  </div>
-                </div>
+      {/* Hero Section */}
+      <section className="relative pt-36 pb-24 md:pt-44 md:pb-32 overflow-hidden border-b border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900/60">
+        {/* Subtle geometric grid background */}
+        <div className="absolute inset-0 bg-[linear-gradient(to_right,#e2e8f008_1px,transparent_1px),linear-gradient(to_bottom,#e2e8f008_1px,transparent_1px)] dark:bg-[linear-gradient(to_right,#1e293b15_1px,transparent_1px),linear-gradient(to_bottom,#1e293b15_1px,transparent_1px)] bg-[size:3rem_3rem] pointer-events-none" />
 
+        <div className="container mx-auto px-4 sm:px-6 relative z-10 max-w-5xl text-center">
+          {/* Institutional Badge */}
+          <FadeIn delay={0.05} className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-100/70 dark:bg-slate-800/70 text-slate-700 dark:text-slate-300 text-xs font-semibold">
+              <span className="w-2 h-2 rounded-full bg-blue-600 dark:bg-blue-400" />
+              <span>{language === 'th' ? 'วิทยาลัยศิลปะ สื่อ และเทคโนโลยี มหาวิทยาลัยเชียงใหม่' : 'College of Arts, Media and Technology, CMU'}</span>
+            </div>
+          </FadeIn>
+
+          {/* Main Title - Grounded and Professional */}
+          <FadeIn delay={0.1}>
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15] mb-6">
+              {language === 'th' ? (
+                <>
+                  ระบบบริหารจัดการและบูรณาการภาคอุตสาหกรรม <br />
+                  <span className="text-blue-600 dark:text-blue-400">Digital Industry Integration (Xchange)</span>
+                </>
+              ) : (
+                <>
+                  Digital Industry Integration & Career Management <br />
+                  <span className="text-blue-600 dark:text-blue-400">Next-Generation Academic Ecosystem</span>
+                </>
+              )}
+            </h1>
+          </FadeIn>
+
+          {/* Description */}
+          <FadeIn delay={0.15}>
+            <p className="text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-3xl mx-auto mb-10 leading-relaxed font-normal">
+              {language === 'th'
+                ? 'แพลตฟอร์มศูนย์กลางข้อมูลวิชาการ จัดการตารางเรียน-ตารางสอน ติดตามภาระงาน พอร์ตโฟลิโอ และเครือข่ายสหกิจศึกษาระหว่างนักศึกษา อาจารย์ บุคลากร และภาคอุตสาหกรรมดิจิทัล'
+                : 'A unified enterprise platform connecting students, faculty, personnel, and leading digital industry partners with real-time academic records, workload tracking, internship management, and talent discovery.'}
+            </p>
+          </FadeIn>
+
+          {/* Call to Actions (Standard rectangular buttons, no pill shapes) */}
+          <FadeIn delay={0.2} className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
+            <Link to="/register" className="w-full sm:w-auto">
+              <Button className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
+                {t.landing.getStartedFree}
+                <ArrowRight className="w-4 h-4 ml-2" />
+              </Button>
+            </Link>
+            <Link to="/login" className="w-full sm:w-auto">
+              <Button variant="outline" className="w-full sm:w-auto h-11 px-6 rounded-lg text-sm font-semibold text-slate-800 dark:text-slate-200 border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
+                {t.landing.viewDemo}
+              </Button>
+            </Link>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-24 bg-slate-50 dark:bg-slate-950 relative border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="max-w-3xl mb-16">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
+              System Modules
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
+              {t.landing.featuresTitle1} {t.landing.featuresTitle2}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
+              {t.landing.featuresDesc}
+            </p>
+          </div>
+
+          {/* Symmetrical 4-Card Grid with Consistent Design */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Student Card */}
+            <FadeIn delay={0.05} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+              <div>
+                <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6">
+                  <GraduationCap className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t.landing.forStudents}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{t.landing.forStudentsDesc}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <span>Student Portal</span>
+                <ChevronRight className="w-4 h-4" />
               </div>
             </FadeIn>
+
+            {/* Smart Analytics */}
+            <FadeIn delay={0.1} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+              <div>
+                <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-6">
+                  <FileCheck className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t.landing.smartReports}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{t.landing.smartReportsDesc}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <span>Analytics Engine</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </FadeIn>
+
+            {/* Lecturer Card */}
+            <FadeIn delay={0.15} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+              <div>
+                <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-100 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-6">
+                  <BookOpen className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t.landing.forLecturers}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{t.landing.forLecturersDesc}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <span>Academic Portal</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </FadeIn>
+
+            {/* Industry Card */}
+            <FadeIn delay={0.2} className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200/80 dark:border-slate-800 p-6 flex flex-col justify-between shadow-sm hover:border-blue-300 dark:hover:border-blue-700 transition-colors">
+              <div>
+                <div className="w-12 h-12 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 flex items-center justify-center mb-6">
+                  <Briefcase className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t.landing.forIndustry}</h3>
+                <p className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed mb-6">{t.landing.forIndustryDesc}</p>
+              </div>
+              <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs font-semibold text-blue-600 dark:text-blue-400">
+                <span>Enterprise Pool</span>
+                <ChevronRight className="w-4 h-4" />
+              </div>
+            </FadeIn>
+          </div>
+        </div>
+      </section>
+
+      {/* Core System Pillars (Replaced fake metrics with authentic system capabilities) */}
+      <section id="pillars" className="py-24 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="text-center max-w-3xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold uppercase tracking-wider mb-4">
+              Integrated Architecture
+            </div>
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
+              {language === 'th' ? 'เสาหลักโครงสร้างระบบ Xchange' : 'Core Architecture Pillars'}
+            </h2>
+            <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
+              {language === 'th'
+                ? 'ออกแบบตามโครงสร้างหลักสูตรและระเบียบการศึกษาของวิทยาลัยศิลปะ สื่อ และเทคโนโลยี เพื่อการใช้งานจริงอย่างเป็นระบบ'
+                : 'Designed according to academic regulations and curriculum requirements for rigorous operational excellence.'}
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              {
+                title: language === 'th' ? 'ระบบหลักสูตร & ทะเบียน' : 'Curriculum & Courses',
+                desc: language === 'th' ? 'จัดการวิชาเรียน แผนการเรียน รูบริกการวัดผล และการตัดเกรดอิงตามเกณฑ์มาตรฐาน' : 'Course management, syllabus planning, evaluation rubrics, and standardized grading.',
+                icon: BookOpen,
+              },
+              {
+                title: language === 'th' ? 'ติดตามภาระงานอาจารย์' : 'Faculty Workload Tracking',
+                desc: language === 'th' ? 'ระบบบันทึกและประมวลผลภาระงานสอน ที่ปรึกษา งานวิจัย และงานบริการวิชาการ' : 'Tracking teaching hours, advisory duties, research contributions, and institutional service.',
+                icon: Layers,
+              },
+              {
+                title: language === 'th' ? 'เครือข่ายฝึกงาน & สหกิจ' : 'Internship & MOU Network',
+                desc: language === 'th' ? 'เชื่อมต่อสถานประกอบการชั้นนำ บันทึกสมุดฝึกงาน (Diary) และการประเมินจากผู้ควบคุม' : 'Industry partnerships, intern diary monitoring, and supervisor performance appraisals.',
+                icon: Building2,
+              },
+              {
+                title: language === 'th' ? 'พอร์ตโฟลิโอ & ทักษะดิจิทัล' : 'Talent Pool & E-Portfolio',
+                desc: language === 'th' ? 'รวบรวมทักษะดิจิทัล ผลงานโปรเจกต์ และประวัติทางวิชาการเพื่อโอกาสทางอาชีพ' : 'Verified project showcase, digital skill rubrics, and academic credential verification.',
+                icon: Laptop,
+              },
+            ].map((pillar, index) => (
+              <FadeIn key={index} delay={index * 0.05} className="p-6 rounded-xl border border-slate-200/80 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
+                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+                  <pillar.icon className="w-5 h-5" />
+                </div>
+                <h3 className="font-bold text-base text-slate-900 dark:text-white mb-2">{pillar.title}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{pillar.desc}</p>
+              </FadeIn>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Partners Section */}
+      <section id="partners" className="py-20 bg-slate-50 dark:bg-slate-950 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="text-center mb-12">
+            <div className="text-xs font-bold tracking-widest text-slate-500 dark:text-slate-400 uppercase mb-2">
+              Industry Collaboration
+            </div>
+            <h2 className="text-xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+              {language === 'th' ? 'เครือข่ายความร่วมมือภาคอุตสาหกรรม' : 'Verified Industry Network'}
+            </h2>
+          </div>
+
+          {/* Clean Partner Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-center">
+            {[
+              { name: 'CLBS', sub: 'Chiang Mai' },
+              { name: 'AXONS', sub: 'Agri-Tech' },
+              { name: 'G-ABLE', sub: 'Digital Solutions' },
+              { name: 'BeNeat', sub: 'Tech Startup' },
+              { name: 'TCC Group', sub: 'Enterprise' },
+              { name: 'MOVE+', sub: 'Digital Media' },
+            ].map((partner, idx) => (
+              <div
+                key={idx}
+                className="p-5 rounded-lg border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 flex flex-col items-center justify-center shadow-xs"
+              >
+                <div className="font-bold text-base text-slate-800 dark:text-slate-200 tracking-tight">{partner.name}</div>
+                <div className="text-[11px] text-slate-400 mt-1">{partner.sub}</div>
+              </div>
+            ))}
+          </div>
+
+          {/* Institutional Endorsement Card (Replaced fake reviews with official CAMT endorsement) */}
+          <div className="mt-16 max-w-3xl mx-auto p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-center shadow-xs">
+            <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-6 h-6" />
+            </div>
+            <h3 className="font-bold text-lg text-slate-900 dark:text-white mb-2">
+              {language === 'th'
+                ? 'หลักสูตรบูรณาการอุตสาหกรรมดิจิทัล (Digital Industry Integration)'
+                : 'Digital Industry Integration Curriculum'}
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-2xl mx-auto">
+              {language === 'th'
+                ? 'วิทยาลัยศิลปะ สื่อ และเทคโนโลยี มหาวิทยาลัยเชียงใหม่ มุ่งมั่นพัฒนาแพลตฟอร์ม Xchange เพื่อสนับสนุนการเรียนการสอนแบบ Work-Integrated Learning (WIL) เสริมสร้างทักษะจริงและเชื่อมโยงโอกาสทางวิชาชีพอย่างไร้รอยต่อ'
+                : 'College of Arts, Media and Technology (CAMT), Chiang Mai University is committed to fostering Work-Integrated Learning (WIL) through Xchange, enabling authentic industry competencies.'}
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-24 bg-white dark:bg-slate-900 border-b border-slate-200/80 dark:border-slate-800/80">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left Column: CTA & Links */}
+            <div>
+              <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
+                {t.landing.getInTouch}
+              </div>
+              <h2 className="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-tight mb-6">
+                {language === 'th' ? 'พร้อมเริ่มต้นใช้งานระบบ?' : 'Ready to Get Started?'}
+              </h2>
+              <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed mb-8">
+                {t.landing.contactDesc}
+              </p>
+
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Link to="/register">
+                  <Button className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm">
+                    {t.landing.registerNow}
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </Button>
+                </Link>
+                <a href="mailto:dii@camt.cmu.ac.th">
+                  <Button variant="outline" className="w-full sm:w-auto h-11 px-6 rounded-lg text-sm font-semibold border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-800 dark:text-slate-200">
+                    <Mail className="w-4 h-4 mr-2" />
+                    {t.landing.contactUs}
+                  </Button>
+                </a>
+              </div>
+            </div>
+
+            {/* Right Column: Genuine University Contact Info Card (Replaced empty box) */}
+            <div className="p-8 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 shadow-sm space-y-6">
+              <div>
+                <div className="font-bold text-lg text-slate-900 dark:text-white mb-1">
+                  {language === 'th' ? 'วิทยาลัยศิลปะ สื่อ และเทคโนโลยี' : 'College of Arts, Media and Technology'}
+                </div>
+                <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">มหาวิทยาลัยเชียงใหม่ (CMU)</div>
+              </div>
+
+              <div className="space-y-4 text-sm text-slate-600 dark:text-slate-300">
+                <div className="flex items-start gap-3">
+                  <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
+                  <span>239 ถ.ห้วยแก้ว ต.สุเทพ อ.เมือง จ.เชียงใหม่ 50200</span>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Phone className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <a href="tel:053942110" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                    053-942110
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Mail className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <a href="mailto:dii@camt.cmu.ac.th" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                    dii@camt.cmu.ac.th
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <Globe className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <a href="https://www.camt.cmu.ac.th" target="_blank" rel="noopener noreferrer" className="hover:text-blue-600 dark:hover:text-blue-400 hover:underline">
+                    www.camt.cmu.ac.th
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>จันทร์ - ศุกร์ 08:30 - 16:30 น. (เว้นวันหยุดราชการ)</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 py-10">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <div className="flex flex-col md:flex-row justify-between gap-8 mb-10">
-            <div className="max-w-xs">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-white dark:text-slate-900">SP</span>
+      <footer className="bg-slate-50 dark:bg-slate-950 pt-16 pb-12">
+        <div className="container mx-auto px-4 sm:px-6 max-w-6xl">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 mb-12">
+            {/* Col 1: Brand */}
+            <div className="space-y-4">
+              <Link to="/" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} className="flex items-center gap-3 group">
+                <div className="w-9 h-9 bg-blue-600 rounded-lg flex items-center justify-center text-white shadow-xs">
+                  <img src="/showpro_logo.png" alt="Xchange" className="w-5 h-5 object-contain" />
                 </div>
-                <span className="font-bold text-slate-900 dark:text-white">ShowPro</span>
-              </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                <div className="flex flex-col">
+                  <span className="font-bold text-lg text-slate-900 dark:text-slate-100 tracking-tight">Xchange</span>
+                  <span className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">DII CAMT CMU</span>
+                </div>
+              </Link>
+              <p className="text-slate-600 dark:text-slate-400 text-xs leading-relaxed">
                 {t.landing.footerDesc1} {t.landing.footerDesc2}
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-8">
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t.landing.mainMenu}</h4>
-                <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                  <li><a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.home}</a></li>
-                  <li><a href="#" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.aboutUs}</a></li>
-                  <li><a href="#features" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navFeatures}</a></li>
-                </ul>
-              </div>
-              <div>
-                <h4 className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-4">{t.landing.forUsers}</h4>
-                <ul className="space-y-3 text-sm text-slate-500 dark:text-slate-400">
-                  <li><Link to="/login" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.login}</Link></li>
-                  <li><Link to="/register" className="hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.register}</Link></li>
-                  <li><Link to="/privacy-policy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy</Link></li>
-                </ul>
-              </div>
+            {/* Col 2: Navigation Links */}
+            <div>
+              <h4 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-xs">{t.landing.mainMenu}</h4>
+              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <li>
+                  <button onClick={() => scrollToSection('top')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {t.landing.home}
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection('features')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {t.landing.navFeatures}
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection('pillars')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {language === 'th' ? 'เสาหลักระบบ' : 'Core Pillars'}
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => scrollToSection('partners')} className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {t.landing.navPartners}
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: Portal Links */}
+            <div>
+              <h4 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-xs">{t.landing.forUsers}</h4>
+              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <li>
+                  <Link to="/login" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {t.landing.login}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/register" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    {t.landing.register}
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/privacy-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Privacy Policy
+                  </Link>
+                </li>
+                <li>
+                  <Link to="/terms-of-service" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    Terms of Service
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 4: Official Contact */}
+            <div>
+              <h4 className="font-bold text-slate-900 dark:text-white mb-4 uppercase tracking-wider text-xs">{t.landing.footerContact}</h4>
+              <ul className="space-y-2.5 text-xs text-slate-600 dark:text-slate-400 font-medium">
+                <li>
+                  <a
+                    href="https://www.camt.cmu.ac.th"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                  >
+                    <Globe className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>www.camt.cmu.ac.th</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="tel:053942110" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <Phone className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>053-942110</span>
+                  </a>
+                </li>
+                <li>
+                  <a href="mailto:dii@camt.cmu.ac.th" className="flex items-center gap-2 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    <Mail className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                    <span>dii@camt.cmu.ac.th</span>
+                  </a>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <div className="border-t border-slate-100 dark:border-slate-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-400">
-            <span>&copy; {new Date().getFullYear()} ShowPro — DII CAMT, Chiang Mai University. {t.landing.allRightsReserved}</span>
+          <div className="border-t border-slate-200/80 dark:border-slate-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+            <div>
+              &copy; {new Date().getFullYear()} Xchange (DII CAMT CMU). {t.landing.allRightsReserved}
+            </div>
             <div className="flex gap-6">
-              <Link to="/privacy-policy" className="hover:text-slate-900 dark:hover:text-white transition-colors">Privacy Policy</Link>
-              <Link to="/terms-of-service" className="hover:text-slate-900 dark:hover:text-white transition-colors">Terms of Service</Link>
+              <Link to="/privacy-policy" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Privacy Policy
+              </Link>
+              <Link to="/terms-of-service" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                Terms of Service
+              </Link>
             </div>
           </div>
         </div>

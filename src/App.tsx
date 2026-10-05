@@ -9,8 +9,7 @@ import { SocketProvider } from "@/contexts/SocketContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
 import { ThemeProvider } from "@/components/theme-provider";
 import { DashboardLayout } from "@/components/layout/DashboardLayout";
-import { RoleGuard } from "@/components/layout/RoleGuard";
-
+import { RoleGuard } from "@/components/auth/RoleGuard";
 import { GlobalPreloader } from "@/components/common/GlobalPreloader";
 
 const queryClient = new QueryClient();
@@ -23,11 +22,9 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Courses = lazy(() => import("./pages/Courses"));
 const Schedule = lazy(() => import("./pages/Schedule"));
 const Grades = lazy(() => import("./pages/Grades"));
-const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
 const Activities = lazy(() => import("./pages/Activities"));
 const Portfolio = lazy(() => import("./pages/Portfolio"));
 const Internships = lazy(() => import("./pages/Internships"));
-const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const Requests = lazy(() => import("./pages/Requests"));
 const Messages = lazy(() => import("./pages/Messages"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -59,6 +56,8 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const SkillsRequirement = lazy(() => import("./pages/SkillsRequirement"));
 const Automation = lazy(() => import("./pages/Automation"));
+const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings"));
+const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
 
@@ -136,7 +135,7 @@ const App = () => (
                   <Route path="/skills-requirement" element={<RoleGuard allowedRoles={['company', 'admin']}><SkillsRequirement /></RoleGuard>} />
                   <Route path="/applicants" element={<RoleGuard allowedRoles={['company', 'admin']}><Applicants /></RoleGuard>} />
                   <Route path="/student-profiles" element={<RoleGuard allowedRoles={['company', 'admin']}><StudentProfiles /></RoleGuard>} />
-                  <Route path="/intern-tracking" element={<RoleGuard allowedRoles={['company', 'admin']}><InternTracking /></RoleGuard>} />
+                  <Route path="/intern-tracking" element={<RoleGuard allowedRoles={['company', 'staff', 'admin', 'lecturer']}><InternTracking /></RoleGuard>} />
                   <Route path="/cooperation" element={<RoleGuard allowedRoles={['company', 'staff', 'admin']}><Cooperation /></RoleGuard>} />
                   <Route path="/talent-search" element={<RoleGuard allowedRoles={['company', 'admin']}><TalentSearch /></RoleGuard>} />
                 </Route>

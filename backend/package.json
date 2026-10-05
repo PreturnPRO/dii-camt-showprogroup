@@ -8,8 +8,8 @@
     "start": "node dist/src/server.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:migrate": "prisma migrate dev",
-    "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:migrate": "node scripts/check-database-url.cjs && prisma migrate dev",
+    "prisma:seed": "node scripts/check-database-url.cjs && tsx prisma/seed.ts",
     "validate": "prisma validate && tsc --noEmit"
   },
   "dependencies": {
@@ -22,7 +22,7 @@
     "helmet": "^8.0.0",
     "jsonwebtoken": "^9.0.2",
     "morgan": "^1.10.0",
-    "multer": "^2.1.1",
+    "multer": "^2.4.0",
     "node-cron": "^4.2.1",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
@@ -46,5 +46,10 @@
     "prisma": "^6.7.0",
     "tsx": "^4.19.4",
     "typescript": "^5.7.3"
+  },
+  "overrides": {
+    "deepmerge-ts": "^8.0.0",
+    "esbuild": "^0.28.1",
+    "qs": "^6.16.0"
   }
 }

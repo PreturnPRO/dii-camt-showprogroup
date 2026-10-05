@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, BookOpen, ClipboardList, ChevronRight } from 'lucide-react';
+import { Users, Calendar, BookOpen, ClipboardList, ChevronRight, UserCog } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -35,33 +35,38 @@ export default function LecturerDashboard() {
   const [adviseeCount, setAdviseeCount] = React.useState<number | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
-  const nameThai = user?.nameThai || user?.name || '';
+  const rawUser = asRecord(user?.raw);
+  const lecturerProfile = asRecord(rawUser.lecturerProfile);
+  const nameThai = (lecturerProfile.nameThai as string) || user?.name || '';
 
-  const copy = language === 'th'
-    ? {
-        title: 'Teacher Dashboard',
-        subtitle: `สวัสดี ${nameThai}`,
-        totalAdvisee: 'นักศึกษาในที่ปรึกษา',
-        weeklySchedule: 'ตารางสอนประจำสัปดาห์',
-        coursesList: 'รายวิชาที่สอน',
-        upcoming: 'งาน/นัดหมายที่จะถึง',
-        noCourses: 'ยังไม่มีวิชาที่สอนในเทอมนี้',
-        noUpcoming: 'ไม่มีงานหรือนัดหมายที่จะถึง',
-        viewAll: 'ดูทั้งหมด',
-        credits: 'หน่วยกิต',
-      }
-    : {
-        title: 'Teacher Dashboard',
-        subtitle: `Hello, ${nameThai}`,
-        totalAdvisee: 'Total advisee',
-        weeklySchedule: 'Weekly teaching schedule',
-        coursesList: 'Courses list',
-        upcoming: 'Upcoming work & appointments',
-        noCourses: 'No courses this term.',
-        noUpcoming: 'No upcoming work or appointments.',
-        viewAll: 'View all',
-        credits: 'credits',
-      };
+  const copy =
+    language === 'th'
+      ? {
+          title: 'แดชบอร์ดอาจารย์',
+          subtitle: `สวัสดี ${nameThai}`,
+          totalAdvisee: 'นักศึกษาในที่ปรึกษาทั้งหมด',
+          weeklySchedule: 'ตารางสอนประจำสัปดาห์',
+          coursesList: 'รายวิชาที่สอน',
+          upcoming: 'งานและนัดหมายที่กำลังจะมาถึง',
+          noCourses: 'ยังไม่มีวิชาที่สอนในเทอมนี้',
+          noUpcoming: 'ไม่มีงานหรือนัดหมายที่จะถึง',
+          viewAll: 'ดูทั้งหมด',
+          credits: 'หน่วยกิต',
+          reviewDiary: 'ตรวจไดอารี่ฝึกงาน',
+        }
+      : {
+          title: 'Teacher Dashboard',
+          subtitle: `Hello, ${nameThai}`,
+          totalAdvisee: 'Total advisee',
+          weeklySchedule: 'Weekly teaching schedule',
+          coursesList: 'Courses list',
+          upcoming: 'Upcoming work & appointments',
+          noCourses: 'No courses this term.',
+          noUpcoming: 'No upcoming work or appointments.',
+          viewAll: 'View all',
+          credits: 'credits',
+          reviewDiary: 'Review Diary',
+        };
 
   React.useEffect(() => {
     let mounted = true;
@@ -117,7 +122,16 @@ export default function LecturerDashboard() {
           </motion.p>
         </div>
 
-        <motion.div variants={itemVariants}>
+        <motion.div variants={itemVariants} className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate('/intern-tracking')}
+            className="rounded-xl border-slate-200 dark:border-slate-800 text-xs sm:text-sm"
+          >
+            <UserCog className="w-4 h-4 mr-1.5 text-blue-500" />
+            {copy.reviewDiary}
+          </Button>
           <Badge
             onClick={() => navigate('/advisees')}
             className="cursor-pointer text-sm px-4 py-2 bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"

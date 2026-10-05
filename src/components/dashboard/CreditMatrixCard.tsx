@@ -382,8 +382,8 @@ export function CreditMatrixCard({ courses, categoryTotals, gpax }: CreditMatrix
                             <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">{gpaxValue.toFixed(2)}</p>
                         </div>
                         <div className="text-right">
-                            <Badge className="bg-indigo-100 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">
-                                {gpaxValue >= 3.5 ? '🏆 Distinction' : gpaxValue >= 3.0 ? '⭐ Excellent' : '✅ Good'}
+                            <Badge className="bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800">
+                                {gpaxValue >= 3.5 ? 'Distinction' : gpaxValue >= 3.0 ? 'Excellent' : 'Good'}
                             </Badge>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-2">/ 4.00</p>
                         </div>

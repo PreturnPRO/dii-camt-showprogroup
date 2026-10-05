@@ -39,6 +39,10 @@ export interface Student extends BaseUser {
   // Advisor
   advisorId?: string;
   advisorName?: string;
+  advisorNameThai?: string;
+  coAdvisorId?: string;
+  coAdvisorName?: string;
+  coAdvisorNameThai?: string;
 
   // Skills & Portfolio
   skills: Skill[];
@@ -169,7 +173,6 @@ export interface Course {
   name: string;
   nameThai: string;
   credits: number;
-  status?: 'draft' | 'pending' | 'active' | 'archived';
 
   // Academic period
   semester: number; // 1, 2, 3 (summer)
@@ -186,10 +189,10 @@ export interface Course {
   prerequisites: string[]; // Course codes
   learningOutcomes: string[];
   syllabus?: string;
+  room?: string;
 
   // Schedule
   schedule: Schedule[];
-  room?: string;
 
   // Enrollment
   enrolledStudents: string[]; // Student IDs
@@ -198,8 +201,6 @@ export interface Course {
 
   // Materials
   materials: CourseMaterial[];
-  assignments: Assignment[];
-
   // Grading
   grades: Grade[];
   gradingCriteria?: CourseGradingCriteria[];
@@ -235,28 +236,6 @@ export interface CourseMaterial {
   size?: string;
 }
 
-export interface Assignment {
-  id: string;
-  title: string;
-  description: string;
-  type: 'individual' | 'group';
-  dueDate: Date;
-  maxScore: number;
-  submissions: Submission[];
-  isPublished: boolean;
-}
-
-export interface Submission {
-  id: string;
-  studentId: string;
-  studentIds?: string[]; // For group work
-  submittedAt: Date;
-  files: string[];
-  score?: number;
-  feedback?: string;
-  status: 'submitted' | 'graded' | 'late' | 'missing';
-}
-
 export interface CourseGradingCriteria {
   id: string;
   courseId: string;
@@ -274,19 +253,19 @@ export interface CourseGradeCutoff {
 }
 
 export interface EnrollmentScore {
-  id: string;
-  enrollmentId: string;
+  id?: string;
+  enrollmentId?: string;
   criteriaId: string;
+  criteriaName?: string;
   score: number;
 }
 
 export interface Grade {
   studentId: string;
   courseId: string;
-
   scores?: EnrollmentScore[];
   total?: number;
-  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W' | string;
+  letterGrade?: string;
   gradedBy: string;
   gradedAt?: Date;
   remarks?: string;
@@ -425,6 +404,10 @@ export interface InternshipLog {
   hours: number;
   learnings?: string;
   challenges?: string;
+  status?: 'pending' | 'approved' | 'needs_revision';
+  mentorComment?: string;
+  reviewedAt?: Date | string;
+  reviewedBy?: string;
 }
 
 export interface InternshipEvaluation {
@@ -844,4 +827,3 @@ export interface StudentRequest {
   createdAt: Date;
   updatedAt: Date;
 }
-

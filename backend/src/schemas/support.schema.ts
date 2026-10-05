@@ -12,7 +12,7 @@ export const requestCommentSchema = z.object({
 });
 
 export const requestStatusSchema = z.object({
-  status: z.string().min(1),
+  status: z.enum(["approved", "rejected", "completed"]),
   reviewNotes: z.string().optional(),
   assignedTo: z.string().optional(),
   completedAt: z.coerce.date().optional(),

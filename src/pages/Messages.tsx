@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCheck, ChevronLeft, Info, MessageCircle, MoreHorizontal, Paperclip, Plus, Search, Send } from 'lucide-react';
@@ -322,7 +322,7 @@ export default function Messages() {
                 className="h-11 rounded-full border-slate-200 bg-white pl-10 dark:border-slate-800 dark:bg-slate-900"
               />
               {recipients.length > 0 && (
-                <div className="absolute left-0 right-0 top-12 z-30 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-800 dark:bg-slate-900">
+                <div className="absolute left-0 right-0 top-12 z-30 max-h-72 overflow-y-auto rounded-2xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900">
                   {recipients.map((recipient) => (
                     <button
                       key={recipient.id}

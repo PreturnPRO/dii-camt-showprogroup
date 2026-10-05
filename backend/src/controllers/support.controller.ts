@@ -95,6 +95,13 @@ export const createRequestComment = asyncHandler(async (req, res) => {
     throw new AppError(404, "Request not found");
   }
 
+  if (
+    currentUser.role === Role.STUDENT &&
+    existingRequest.student.userId !== currentUser.id
+  ) {
+    throw new AppError(403, "You can only comment on your own requests");
+  }
+
   const comment = await prisma.requestComment.create({
     data: {
       requestId,
