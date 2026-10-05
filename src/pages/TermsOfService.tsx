@@ -166,14 +166,14 @@ export default function TermsOfService() {
             </div>
           </FadeIn>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
+        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white dark:from-slate-950 to-transparent pointer-events-none" />
       </section>
 
       {/* Quick Summary */}
       <section className="py-16 bg-white dark:bg-slate-900">
         <div className="container mx-auto px-6">
           <FadeIn>
-            <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-cyan-50 rounded-3xl p-8 lg:p-12 border border-blue-100">
+            <div className="max-w-4xl mx-auto bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-slate-900 dark:to-slate-950 rounded-3xl p-8 lg:p-12 border border-blue-100 dark:border-slate-800">
               <div className="flex items-start gap-4 mb-6">
                 <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0 dark:bg-slate-800">
                   <AlertCircle className="w-6 h-6 text-blue-600 dark:text-slate-300" />

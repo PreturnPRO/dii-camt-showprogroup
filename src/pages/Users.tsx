@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles } from 'lucide-react';
+import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,6 +14,8 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asRecord, asString, roleToClient } from '@/lib/live-data';
+import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
+import { buildSafeIdentifier, companyImportFields, type MappedImportRow } from '@/lib/import-mapping';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -202,10 +204,16 @@ export default function UsersPage() {
     const [users, setUsers] = useState<UserRow[]>([]);
 
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isCompanyImportOpen, setIsCompanyImportOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<UserRow | null>(null);
     const [formData, setFormData] = useState<UserFormData>(emptyForm);
 
     const totalUsers = users.length;
+
+    const loadUsers = React.useCallback(async () => {
+        const response = await api.users.list();
+        setUsers(response.users.map(mapBackendUser));
+    }, [mapBackendUser]);
 
     React.useEffect(() => {
         let isMounted = true;
@@ -222,6 +230,62 @@ export default function UsersPage() {
         };
     }, [mapBackendUser]);
 
+    const buildCompanyImportPayload = (row: MappedImportRow) => {
+        const values = row.values;
+        const companyId = values.companyId;
+        const companyName = values.companyName;
+        const phone = values.phone;
+        const email =
+            values.email ||
+            `${buildSafeIdentifier(phone || companyId, `company${row.rowNumber}`)}@company.showpro.local`;
+
+        return {
+            name: companyName,
+            nameThai: values.companyNameThai || companyName,
+            email,
+            phone,
+            password: values.password || undefined,
+            role: 'COMPANY',
+            isActive: true,
+            profile: {
+                companyId,
+                companyName,
+                companyNameThai: values.companyNameThai || companyName,
+                industry: values.industry,
+                size: values.size || 'small',
+                website: values.website || undefined,
+                address: values.address || undefined,
+                productsServices: values.productsServices || undefined,
+                contactPersonName: values.contactPersonName || undefined,
+                contactPersonRole: values.contactPersonRole || undefined,
+                contactPersonEmail: values.contactPersonEmail || values.email || undefined,
+                contactPersonPhone: values.contactPersonPhone || phone || undefined,
+                socialMedia: values.socialMedia || undefined,
+                onboardingStatus: 'profile_incomplete',
+            },
+        };
+    };
+
+    const handleCompanyImport = async (rows: MappedImportRow[]) => {
+        const response = await api.users.importCompanies(
+            rows.map((row) => ({
+                rowNumber: row.rowNumber,
+                ...asRecord(buildCompanyImportPayload(row).profile),
+                email: buildCompanyImportPayload(row).email,
+                phone: buildCompanyImportPayload(row).phone,
+                password: buildCompanyImportPayload(row).password,
+            })),
+        );
+
+        await loadUsers();
+        toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
+        if (response.failedCount > 0) {
+            toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
+        }
+
+        return { successCount: response.createdCount, failureCount: response.failedCount };
+    };
+
     const handleAdd = () => {
         setEditingUser(null);
         setFormData(emptyForm);
@@ -235,7 +299,7 @@ export default function UsersPage() {
             nameThai: user.nameThai || user.name,
             email: user.email || '',
             phone: user.phone || '',
-            role: user.type === 'admin' ? 'staff' : user.type,
+            role: user.type === 'admin' ? 'student' : user.type,
             status: user.isActive === false ? 'inactive' : 'active',
             identifier: user.identifier || '',
             department: user.department || 'Digital Industry Integration',
@@ -323,12 +387,15 @@ export default function UsersPage() {
     const handleSave = async () => {
         if (editingUser) {
             try {
+                const selectedRole = formData.role;
+                const isRoleChanging = selectedRole !== editingUser.type && !(editingUser.type === 'admin' && selectedRole === 'student');
                 const response = await api.users.update(editingUser.id, {
                     name: formData.name,
                     nameThai: formData.nameThai || formData.name,
                     phone: formData.phone,
                     isActive: formData.status === 'active',
-                    roleData: buildProfile(editingUser.type === 'admin' ? 'staff' : editingUser.type),
+                    ...(isRoleChanging ? { role: selectedRole.toUpperCase() } : {}),
+                    roleData: buildProfile(selectedRole),
                 });
                 setUsers(users.map(u => u.id === editingUser.id ? mapBackendUser(response.user) : u));
                 toast.success(t.users.editSuccess);
@@ -363,13 +430,15 @@ export default function UsersPage() {
             case 'lecturer': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.lecturer}</Badge>;
             case 'staff': return <Badge className="bg-purple-100 text-purple-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.staff}</Badge>;
             case 'company': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.roles.company}</Badge>;
+            case 'admin': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.roles.admin}</Badge>; // D-18
             default: return <Badge>{role}</Badge>;
         }
     };
 
     const filteredUsers = users.filter(u =>
     (u.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        u.email?.toLowerCase().includes(searchQuery.toLowerCase()))
+        u.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        getRoleText(u.type).toLowerCase().includes(searchQuery.toLowerCase())) // D-20: ค้นด้วย role ได้
     );
 
     return (
@@ -396,11 +465,23 @@ export default function UsersPage() {
                 </div>
 
                 <motion.div className="flex gap-3" variants={itemVariants}>
+                    <Button variant="outline" onClick={() => setIsCompanyImportOpen(true)} className="rounded-xl">
+                        <Upload className="w-4 h-4 mr-2" />Import บริษัท
+                    </Button>
                     <Button onClick={handleAdd} className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20">
                         <Plus className="w-4 h-4 mr-2" />{t.users.addNew}
                     </Button>
                 </motion.div>
             </div>
+
+            <ImportMappingDialog
+                open={isCompanyImportOpen}
+                onOpenChange={setIsCompanyImportOpen}
+                title="Import ข้อมูลบริษัท"
+                description="อัปโหลด Excel/CSV แล้วกำหนดว่าคอลัมน์ใดตรงกับข้อมูลบริษัทก่อนสร้างบัญชี"
+                fields={companyImportFields}
+                onImport={handleCompanyImport}
+            />
 
             {/* Stats Grid - Bento Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -492,9 +573,10 @@ export default function UsersPage() {
                         <TabsTrigger value="lecturer">{t.roles.lecturer}</TabsTrigger>
                         <TabsTrigger value="staff">{t.roles.staff}</TabsTrigger>
                         <TabsTrigger value="company">{t.roles.company}</TabsTrigger>
+                        <TabsTrigger value="admin">{t.roles.admin}</TabsTrigger>
                     </TabsList>
 
-                    {['all', 'student', 'lecturer', 'staff', 'company'].map(tab => (
+                    {['all', 'student', 'lecturer', 'staff', 'company', 'admin'].map(tab => (
                         <TabsContent key={tab} value={tab}>
                             <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm"><CardContent className="pt-6">
                                 <div className="space-y-3">
@@ -596,7 +678,6 @@ export default function UsersPage() {
                             <Select
                                 value={formData.role}
                                 onValueChange={(val) => setFormData({ ...formData, role: val as Exclude<UserType, 'admin'> })}
-                                disabled={!!editingUser} // Prevent role change on edit for simplicity
                             >
                                 <SelectTrigger>
                                     <SelectValue />
