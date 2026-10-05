@@ -60,6 +60,7 @@ export default function UsersPage() {
         contactPersonEmail?: string;
         contactPersonPhone?: string;
         socialMedia?: string;
+        lastLogin?: string;
         [key: string]: unknown;
     };
 
@@ -190,6 +191,7 @@ export default function UsersPage() {
             contactPersonEmail: asString(companyProfile.contactPersonEmail),
             contactPersonPhone: asString(companyProfile.contactPersonPhone),
             socialMedia: asString(companyProfile.socialMedia),
+            lastLogin: source.lastLogin ? String(source.lastLogin) : undefined,
             studentProfile,
             lecturerProfile,
             staffProfile,
@@ -517,6 +519,9 @@ export default function UsersPage() {
                                                     <div>
                                                         <div className="font-semibold text-gray-900 dark:text-slate-200">{user.name}</div>
                                                         <div className="text-sm text-gray-500 dark:text-slate-400">{user.email || 'No email'}</div>
+                                                        <div className="text-xs text-gray-400 dark:text-slate-500">
+                                                            เข้าระบบล่าสุด: {user.lastLogin ? new Date(user.lastLogin).toLocaleString('th-TH', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'ยังไม่เคยเข้าระบบ'}
+                                                        </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3">

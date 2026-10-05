@@ -41,7 +41,7 @@ export function Timetable({ courses, onCourseClick }: TimetableProps) {
     }
   };
 
-  // Process schedule data using course.schedule array
+  // Process schedule data supporting both course.schedule and course.sections[0].schedule
   const schedulesByDay = useMemo(() => {
     const result: Record<string, { course: Course; schedule: Schedule }[]> = {
       monday: [],
@@ -54,8 +54,9 @@ export function Timetable({ courses, onCourseClick }: TimetableProps) {
     };
 
     courses.forEach(course => {
-      course.schedule?.forEach(schedule => {
-        const day = schedule.day.toLowerCase();
+      const schedules = (course.schedule || course.sections?.[0]?.schedule || []) as Schedule[];
+      schedules.forEach(schedule => {
+        const day = (schedule.day || '').toLowerCase();
         if (result[day]) {
           result[day].push({ course, schedule });
         }
@@ -117,7 +118,7 @@ export function Timetable({ courses, onCourseClick }: TimetableProps) {
                   if (classAtThisTime) {
                     const { course, schedule } = classAtThisTime;
                     const isFirstSlot = schedule.startTime === time;
-                    
+
                     if (isFirstSlot) {
                       // Calculate exact number of 1-hour slots
                       const startHour = parseInt(schedule.startTime.split(':')[0], 10);

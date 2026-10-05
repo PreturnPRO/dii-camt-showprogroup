@@ -21,7 +21,8 @@ export const jobCreateSchema = z.object({
   location: z.string().min(1),
   workType: z.string().min(1),
   startDate: z.coerce.date().optional(),
-  deadline: z.coerce.date(),
+  // Optional: postings with no deadline are "continuous hiring" (no closing date shown in the UI).
+  deadline: z.coerce.date().optional(),
   maxApplicants: z.coerce.number().int().positive().optional(),
   status: z.string().optional(),
 });
@@ -69,9 +70,21 @@ export const internshipDocumentStatusSchema = z.object({
   status: z.enum(["pending", "approved", "rejected"]),
 });
 
+export const careerGoalUpdateSchema = z.object({
+  careerTrackId: z.string().min(1).nullable(),
+});
+
+export const trackWatchCreateSchema = z.object({
+  careerTrackId: z.string().min(1),
+  desiredSkills: z.array(z.string()).default([]),
+});
+
 export const talentQuerySchema = z.object({
   jobId: z.string().optional(),
+  skills: z.string().optional(),
+  careerTrackId: z.string().optional(),
   q: z.string().optional(),
   major: z.string().optional(),
   minGpax: z.coerce.number().optional(),
+  year: z.coerce.number().optional(),
 });

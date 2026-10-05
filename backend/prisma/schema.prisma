@@ -68,7 +68,6 @@ model StudentProfile {
   skills              StudentSkill[]
   enrollments         Enrollment[]
   activityEnrollments ActivityEnrollment[]
-  questEnrollments    QuestEnrollment[]
   portfolio           Portfolio?
   internship          InternshipRecord?
   requests            Request[]
@@ -82,9 +81,33 @@ model StudentProfile {
   applications        Application[]
   appointments        Appointment[]        @relation("StudentAppointments")
   skillRubrics        SkillRubric[]
-  submissions         Submission[]
+  careerGoal          StudentCareerGoal?
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
+}
+
+// A shared, global catalog of career tracks (e.g. "Frontend Developer").
+// Students self-declare one as their target; companies watch tracks to see
+// how many students are aiming for that direction, even before they have
+// the matching skills yet.
+model CareerTrack {
+  id             String              @id @default(cuid())
+  key            String              @unique
+  name           String
+  nameThai       String
+  createdAt      DateTime            @default(now())
+  studentGoals   StudentCareerGoal[]
+  companyWatches CompanyTrackWatch[]
+}
+
+model StudentCareerGoal {
+  id            String         @id @default(cuid())
+  studentId     String         @unique
+  student       StudentProfile @relation(fields: [studentId], references: [id])
+  careerTrackId String
+  careerTrack   CareerTrack    @relation(fields: [careerTrackId], references: [id])
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model LecturerProfile {
@@ -149,10 +172,25 @@ model CompanyProfile {
   canContactStudents Boolean             @default(true)
   jobPostings        JobPosting[]
   cooperation        CooperationRecord[]
-  payments           PaymentHistory[]
   interns            InternshipRecord[]
+  trackWatches       CompanyTrackWatch[]
   createdAt          DateTime            @default(now())
   updatedAt          DateTime            @updatedAt
+}
+
+// A company "watching" a career track — the Dashboard hero shows how many
+// students have set this as their goal, and how many already have the
+// company's desired skills for it. No matching/scoring beyond an honest count.
+model CompanyTrackWatch {
+  id            String         @id @default(cuid())
+  companyId     String
+  company       CompanyProfile @relation(fields: [companyId], references: [id])
+  careerTrackId String
+  careerTrack   CareerTrack    @relation(fields: [careerTrackId], references: [id])
+  desiredSkills String[]       @default([])
+  createdAt     DateTime       @default(now())
+
+  @@unique([companyId, careerTrackId])
 }
 
 model AdminProfile {
@@ -182,14 +220,9 @@ model Course {
   prerequisites    String[]         @default([])
   learningOutcomes String[]         @default([])
   syllabus         String?
-  schedule         Json?
-  room             String?
   status           String           @default("active")
-  maxStudents      Int              @default(60)
-  minStudents      Int              @default(1)
   sections         Section[]
   materials        CourseMaterial[]
-  assignments      Assignment[]
   enrollments      Enrollment[]
   attendanceSessions AttendanceSession[]
   gradingCriteria  CourseGradingCriteria[]
@@ -207,6 +240,7 @@ model Section {
   facilityId  String?
   facility    Facility?    @relation(fields: [facilityId], references: [id])
   maxStudents Int          @default(60)
+  minStudents Int          @default(1)
   schedule    Json
   enrollments Enrollment[]
 
@@ -302,36 +336,6 @@ model AttendanceSession {
   records     AttendanceRecord[]
 }
 
-model Assignment {
-  id          String       @id @default(cuid())
-  courseId    String
-  course      Course       @relation(fields: [courseId], references: [id])
-  title       String
-  description String
-  type        String
-  dueDate     DateTime
-  maxScore    Int
-  isPublished Boolean      @default(false)
-  submissions Submission[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-model Submission {
-  id           String         @id @default(cuid())
-  assignmentId String
-  assignment   Assignment     @relation(fields: [assignmentId], references: [id])
-  studentId    String
-  student      StudentProfile @relation(fields: [studentId], references: [id])
-  files        String[]       @default([])
-  submittedAt  DateTime       @default(now())
-  score        Float?
-  feedback     String?
-  status       String         @default("submitted")
-
-  @@unique([assignmentId, studentId])
-}
-
 model CourseMaterial {
   id         String   @id @default(cuid())
   courseId   String
@@ -419,50 +423,6 @@ model SkillRubric {
   updatedAt      DateTime       @updatedAt
 }
 
-model Quest {
-  id            String            @id @default(cuid())
-  title         String
-  titleEn       String
-  description   String
-  descriptionEn String
-  type          String
-  difficulty    String
-  category      String
-  xp            Int
-  coins         Int
-  deadline      DateTime
-  assignerId    String
-  assignerType  String
-  tasks         QuestTask[]
-  enrollments   QuestEnrollment[]
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-}
-
-model QuestTask {
-  id         String @id @default(cuid())
-  questId    String
-  quest      Quest  @relation(fields: [questId], references: [id])
-  title      String
-  titleEn    String
-  sortOrder  Int    @default(0)
-}
-
-model QuestEnrollment {
-  id             String         @id @default(cuid())
-  questId        String
-  quest          Quest          @relation(fields: [questId], references: [id])
-  studentId      String
-  student        StudentProfile @relation(fields: [studentId], references: [id])
-  status         String         @default("in-progress")
-  progress       Int            @default(0)
-  completedTasks String[]       @default([])
-  rewardGranted  Boolean        @default(false)
-  startedAt      DateTime       @default(now())
-  completedAt    DateTime?
-
-  @@unique([questId, studentId])
-}
 
 model InternshipRecord {
   id                String               @id @default(cuid())
@@ -598,18 +558,6 @@ model WorkloadRecord {
   advisingHours Int
   serviceHours  Int              @default(0)
   createdAt     DateTime         @default(now())
-}
-
-model PaymentHistory {
-  id              String         @id @default(cuid())
-  companyId       String
-  company         CompanyProfile @relation(fields: [companyId], references: [id])
-  amount          Float
-  planName        String
-  referenceNumber String?
-  date            DateTime       @default(now())
-  status          String         @default("paid")
-  receiptUrl      String?
 }
 
 model Request {

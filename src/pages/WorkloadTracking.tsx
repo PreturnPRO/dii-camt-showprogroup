@@ -150,7 +150,7 @@ export default function WorkloadTracking() {
                     { icon: TrendingUp, label: t.workloadTrackingPage.normalStatus, value: String(lecturerData.length - overloaded), gradient: '', shadow: '' },
                 ].map((stat, i) => (
                     <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
-                        
+
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>

@@ -999,7 +999,8 @@ export default function StaffDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {courses.slice(0, 5).map((course) => {
-                  const capacity = course.maxStudents ? clampPercent((course.enrolled / course.maxStudents) * 100) : 0;
+                  const maxStudents = course.maxStudents;
+                  const capacity = maxStudents ? clampPercent((course.enrolled / maxStudents) * 100) : 0;
                   return (
                     <div key={course.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">
                       <div className="flex items-center justify-between gap-3">
@@ -1008,7 +1009,7 @@ export default function StaffDashboard() {
                             {course.code} · {course.name}
                           </div>
                           <div className="text-sm text-slate-500 dark:text-slate-400">
-                            เทอม {course.semester}/{course.academicYear} · {course.enrolled}/{course.maxStudents || '-'} คน
+                            เทอม {course.semester}/{course.academicYear} · {course.enrolled}/{maxStudents || '-'} คน
                           </div>
                         </div>
                         <Badge variant="outline">{capacity}%</Badge>

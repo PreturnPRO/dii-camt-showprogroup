@@ -17,7 +17,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { API_BASE_URL, api } from '@/lib/api';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 
 const containerVariants = {
@@ -43,46 +43,18 @@ type RequestRow = {
   documents: string[];
   studentName?: string;
   studentId?: string;
+  comments: RequestComment[];
 };
 
-const initialRequests: RequestRow[] = [
-  {
-    id: '1',
-    type: 'Over-registration / ลงทะเบียนเรียนเกิน',
-    title: 'ขอลงทะเบียนเรียนเกิน 22 หน่วยกิต',
-    status: 'pending',
-    step: 2,
-    totalSteps: 4,
-    createdAt: '2026-01-08',
-    updatedAt: '2026-01-09',
-    description: 'ขอลงทะเบียนเรียนเกินเนื่องจากต้องการจบการศึกษาตามกำหนด วิชาที่ต้องการเพิ่มคือ 261499',
-    documents: ['transcript.pdf', 'reg_form.pdf']
-  },
-  {
-    id: '2',
-    type: 'Certificate Request / ขอใบรับรอง',
-    title: 'ขอใบรับรองนักศึกษา (ภาษาอังกฤษ)',
-    status: 'approved',
-    step: 3,
-    totalSteps: 3,
-    createdAt: '2026-01-05',
-    updatedAt: '2026-01-06',
-    description: 'สำหรับใช้ในการทำวีซ่าท่องเที่ยวต่างประเทศ',
-    documents: []
-  },
-  {
-    id: '3',
-    type: 'Section Change / ขอเปลี่ยนกลุ่ม',
-    title: 'ขอเปลี่ยนกลุ่มเรียน DII345',
-    status: 'rejected',
-    step: 1,
-    totalSteps: 3,
-    createdAt: '2026-03-03',
-    updatedAt: '2026-03-04',
-    description: 'ขอเปลี่ยนจากกลุ่ม 01 เป็นกลุ่ม 02 เนื่องจากตารางเรียนชนกับวิชาเลือกเสรี',
-    documents: ['schedule.png']
-  },
-];
+type RequestComment = {
+  id: string;
+  authorId: string;
+  text: string;
+  createdAt: string;
+};
+
+const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
+const ALLOWED_ATTACHMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 
 export default function Requests() {
   const { user } = useAuth();
@@ -100,7 +72,16 @@ export default function Requests() {
   ];
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
+  const [downloadingAttachment, setDownloadingAttachment] = React.useState<number | null>(null);
   const [requests, setRequests] = React.useState<RequestRow[]>([]);
+  const [requestLoadError, setRequestLoadError] = React.useState('');
+  const [reloadRequestsKey, setReloadRequestsKey] = React.useState(0);
+  const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
+  const [selectedRequest, setSelectedRequest] = React.useState<RequestRow | null>(null);
+  const [commentText, setCommentText] = React.useState('');
+  const [expandedFaq, setExpandedFaq] = React.useState<number | null>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   const [formData, setFormData] = React.useState({
     type: '',
     title: '',
@@ -109,6 +90,7 @@ export default function Requests() {
 
   React.useEffect(() => {
     let isMounted = true;
+    setRequestLoadError('');
 
     api.requests.list()
       .then((response) => {
@@ -132,16 +114,30 @@ export default function Requests() {
             documents: asArray<string>(request.documents),
             studentName: asString(studentUser.nameThai, asString(studentUser.name, '-')),
             studentId: asString(student.studentId),
+            comments: asArray(request.comments).map((commentValue) => {
+              const comment = asRecord(commentValue);
+              return {
+                id: asString(comment.id),
+                authorId: asString(comment.authorId),
+                text: asString(comment.text),
+                createdAt: asDate(comment.createdAt).toISOString(),
+              };
+            }),
           };
         });
         setRequests(mapped);
       })
-      .catch(() => undefined);
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        const message = error instanceof Error ? error.message : 'Unable to load requests';
+        setRequestLoadError(message);
+        toast.error(language === 'th' ? `โหลดคำร้องไม่สำเร็จ: ${message}` : `Unable to load requests: ${message}`);
+      });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [language, reloadRequestsKey]);
 
   const handleSubmit = async () => {
     if (!formData.type || !formData.title || !formData.description || isSubmitting) {
@@ -151,11 +147,15 @@ export default function Requests() {
 
     setIsSubmitting(true);
     try {
+      const documents = await Promise.all(selectedFiles.map(async (file) => {
+        const upload = await api.files.upload(file, { category: 'student-requests', visibility: 'private' });
+        return asString(asRecord(upload.asset).url);
+      }));
       const response = await api.requests.create({
         type: formData.type,
         title: formData.title,
         description: formData.description,
-        documents: [],
+        documents,
       });
       const request = asRecord(response.request);
       const createdAt = asDate(request.submittedAt, new Date()).toISOString().split('T')[0];
@@ -170,11 +170,13 @@ export default function Requests() {
         createdAt,
         updatedAt: createdAt,
         documents: asArray<string>(request.documents),
+        comments: [],
       };
 
-      setRequests([newRequest, ...requests]);
+      setRequests((current) => [newRequest, ...current]);
       setIsDialogOpen(false);
       setFormData({ type: '', title: '', description: '' });
+      setSelectedFiles([]);
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
@@ -193,6 +195,12 @@ export default function Requests() {
         step: status === 'rejected' ? 1 : item.totalSteps,
         updatedAt: asDate(updated.reviewedAt, new Date()).toISOString().split('T')[0],
       } : item));
+      setSelectedRequest((current) => current?.id === request.id ? {
+        ...current,
+        status: asString(updated.status, status),
+        step: status === 'rejected' ? 1 : current.totalSteps,
+        updatedAt: asDate(updated.reviewedAt, new Date()).toISOString().split('T')[0],
+      } : current);
       toast.success(status === 'approved' ? 'อนุมัติคำร้องแล้ว' : status === 'completed' ? 'ปิดคำร้องแล้ว' : 'ปฏิเสธคำร้องแล้ว');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update request');
@@ -209,8 +217,69 @@ export default function Requests() {
   };
 
   const openRequestDetails = (request: RequestRow) => {
-    const student = request.studentName ? `${request.studentName}${request.studentId ? ` (${request.studentId})` : ''}` : '';
-    toast.info([request.title, student, request.description].filter(Boolean).join(' • '));
+    setSelectedRequest(request);
+    setCommentText('');
+  };
+
+  const handleAddComment = async () => {
+    const text = commentText.trim();
+    if (!selectedRequest || !text || isSubmittingComment) return;
+
+    setIsSubmittingComment(true);
+    try {
+      const response = await api.requests.addComment(selectedRequest.id, text);
+      const comment = asRecord(response.comment);
+      const nextComment = {
+        id: asString(comment.id, String(Date.now())),
+        authorId: asString(comment.authorId, user?.id ?? ''),
+        text: asString(comment.text, text),
+        createdAt: asDate(comment.createdAt, new Date()).toISOString(),
+      };
+      setRequests((current) => current.map((request) => request.id === selectedRequest.id
+        ? { ...request, comments: [...request.comments, nextComment] }
+        : request));
+      setSelectedRequest((current) => current?.id === selectedRequest.id
+        ? { ...current, comments: [...current.comments, nextComment] }
+        : current);
+      setCommentText('');
+      toast.success(language === 'th' ? 'เพิ่มข้อความแล้ว' : 'Comment added');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to add comment');
+    } finally {
+      setIsSubmittingComment(false);
+    }
+  };
+
+  const handleDownloadAttachment = async (path: string, index: number) => {
+    let assetId: string | undefined;
+    try {
+      const attachmentUrl = new URL(path, API_BASE_URL);
+      assetId = attachmentUrl.pathname.match(/\/files\/assets\/([^/]+)$/)?.[1];
+    } catch {
+      return;
+    }
+
+    if (!assetId || downloadingAttachment !== null) return;
+
+    setDownloadingAttachment(index);
+    try {
+      const blob = await api.files.download(decodeURIComponent(assetId));
+      const objectUrl = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      const extension = blob.type === 'application/pdf' ? '.pdf'
+        : blob.type === 'image/jpeg' ? '.jpg'
+          : blob.type === 'image/png' ? '.png' : '';
+      link.download = `request-attachment-${index + 1}${extension}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to download attachment');
+    } finally {
+      setDownloadingAttachment(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -356,16 +425,67 @@ export default function Requests() {
 
               <div className="space-y-1.5">
                 <Label className="text-xs text-slate-700 dark:text-slate-300 font-semibold">{t.requestsPage.attachments}</Label>
-                <div className="border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+                  multiple
+                  className="sr-only"
+                  onChange={(event) => {
+                    const files = Array.from(event.currentTarget.files ?? []);
+                    const validFiles = files.filter((file) => {
+                      if (!ALLOWED_ATTACHMENT_TYPES.has(file.type) || file.size > MAX_ATTACHMENT_SIZE) {
+                        toast.error(language === 'th'
+                          ? `${file.name}: รองรับเฉพาะ PDF, JPG, PNG ขนาดไม่เกิน 10MB`
+                          : `${file.name}: use PDF, JPG, or PNG files up to 10MB`);
+                        return false;
+                      }
+                      return true;
+                    });
+                    setSelectedFiles((current) => [
+                      ...current,
+                      ...validFiles.filter((file) => !current.some((existing) =>
+                        existing.name === file.name &&
+                        existing.size === file.size &&
+                        existing.lastModified === file.lastModified)),
+                    ]);
+                    event.currentTarget.value = '';
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                >
                   <Upload className="w-6 h-6 mb-2 text-slate-400 group-hover:text-blue-500 transition-colors" />
                   <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">{t.requestsPage.uploadClick}</p>
                   <p className="text-[10px] mt-0.5 opacity-70">{t.requestsPage.fileSupport}</p>
-                </div>
+                </button>
+                {selectedFiles.length > 0 && (
+                  <ul className="space-y-1">
+                    {selectedFiles.map((file, index) => (
+                      <li key={`${file.name}-${file.lastModified}`} className="flex items-center justify-between gap-2 text-xs">
+                        <span className="truncate text-slate-600 dark:text-slate-300">{file.name}</span>
+                        <button
+                          type="button"
+                          aria-label={language === 'th' ? `ลบไฟล์ ${file.name}` : `Remove ${file.name}`}
+                          onClick={() => setSelectedFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}
+                          className="text-slate-400 hover:text-red-500"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             </div>
 
             <DialogFooter className="p-4 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-100 dark:border-slate-800 gap-2">
-              <Button variant="ghost" size="sm" onClick={() => setIsDialogOpen(false)} className="rounded-xl h-9 text-xs">{t.common.cancel}</Button>
+              <Button variant="ghost" size="sm" onClick={() => {
+                setIsDialogOpen(false);
+                setSelectedFiles([]);
+              }} className="rounded-xl h-9 text-xs">{t.common.cancel}</Button>
               <Button
                 size="sm"
                 onClick={handleSubmit}
@@ -382,6 +502,94 @@ export default function Requests() {
                 )}
               </Button>
             </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={selectedRequest !== null} onOpenChange={(open) => {
+          if (!open) setSelectedRequest(null);
+        }}>
+          <DialogContent className="sm:max-w-[640px] max-h-[85vh] overflow-y-auto bg-white dark:bg-[#0c1222]">
+            {selectedRequest && (
+              <>
+                <DialogHeader>
+                  <DialogTitle>{selectedRequest.title}</DialogTitle>
+                  <DialogDescription>
+                    {selectedRequest.type} · {getStatusText(selectedRequest.status)}
+                    {selectedRequest.studentName && ` · ${selectedRequest.studentName}`}
+                    {selectedRequest.studentId && ` (${selectedRequest.studentId})`}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="whitespace-pre-wrap text-sm text-slate-700 dark:text-slate-300">{selectedRequest.description}</p>
+                  {selectedRequest.documents.length > 0 && (
+                    <section className="space-y-2">
+                      <h3 className="text-sm font-semibold">{t.requestsPage.attachments}</h3>
+                      <ul className="space-y-1">
+                        {selectedRequest.documents.map((document, index) => {
+                          const href = document.startsWith('http')
+                            ? document
+                            : `${new URL(API_BASE_URL).origin}${document.startsWith('/') ? document : `/${document}`}`;
+                          return (
+                            <li key={`${document}-${index}`}>
+                              <a
+                                href={href}
+                                target="_blank"
+                                rel="noreferrer"
+                                onClick={(event) => {
+                                  if (/\/files\/assets\/[^/]+$/.test(new URL(href).pathname)) {
+                                    event.preventDefault();
+                                    void handleDownloadAttachment(document, index);
+                                  }
+                                }}
+                                aria-busy={downloadingAttachment === index}
+                                className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline dark:text-blue-400"
+                              >
+                                <Download className="h-4 w-4" />
+                                {language === 'th' ? `เอกสารแนบ ${index + 1}` : `Attachment ${index + 1}`}
+                              </a>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </section>
+                  )}
+                  <section className="space-y-2">
+                    <h3 className="text-sm font-semibold">{language === 'th' ? 'ประวัติการสนทนา' : 'Conversation'}</h3>
+                    {selectedRequest.comments.length === 0 ? (
+                      <p className="text-sm text-slate-500">{language === 'th' ? 'ยังไม่มีข้อความ' : 'No comments yet.'}</p>
+                    ) : (
+                      <ul className="space-y-2">
+                        {selectedRequest.comments.map((comment) => (
+                          <li key={comment.id} className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
+                            <p className="mb-1 text-xs font-medium text-slate-500">
+                              {comment.authorId === user?.id
+                                ? (language === 'th' ? 'คุณ' : 'You')
+                                : (canReviewRequest
+                                  ? (language === 'th' ? 'นักศึกษา' : 'Student')
+                                  : (language === 'th' ? 'เจ้าหน้าที่' : 'Staff'))}
+                            </p>
+                            <p className="whitespace-pre-wrap">{comment.text}</p>
+                            <p className="mt-1 text-xs text-slate-500">
+                              {comment.createdAt ? new Date(comment.createdAt).toLocaleString(language === 'th' ? 'th-TH' : 'en-US') : ''}
+                            </p>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                    <Textarea
+                      value={commentText}
+                      onChange={(event) => setCommentText(event.target.value)}
+                      placeholder={language === 'th' ? 'เขียนข้อความถึงผู้เกี่ยวข้อง...' : 'Write a message about this request...'}
+                      maxLength={2000}
+                    />
+                    <Button onClick={handleAddComment} disabled={!commentText.trim() || isSubmittingComment}>
+                      {isSubmittingComment ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      {language === 'th' ? 'ส่งข้อความ' : 'Send message'}
+                    </Button>
+                  </section>
+                </div>
+              </>
+            )}
           </DialogContent>
         </Dialog>
       </div>
@@ -439,12 +647,22 @@ export default function Requests() {
           </div>
 
           <div className="space-y-3.5">
-            {requests.length === 0 && (
-              <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
-                <Inbox className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-50" />
-                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">ยังไม่มีคำร้อง</h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงระบบ</p>
+            {requestLoadError && (
+              <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
+                <p>{language === 'th' ? 'ไม่สามารถโหลดคำร้องได้' : 'Could not load requests'}: {requestLoadError}</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => setReloadRequestsKey((current) => current + 1)}>
+                  {language === 'th' ? 'ลองอีกครั้ง' : 'Retry'}
+                </Button>
               </div>
+            )}
+            {requests.length === 0 && (
+              !requestLoadError && (
+                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
+                  <Inbox className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">{language === 'th' ? 'ยังไม่มีคำร้อง' : 'No requests yet'}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{language === 'th' ? 'กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงระบบ' : 'Create a request to get started.'}</p>
+                </div>
+              )
             )}
 
             {requests.map((req) => {
@@ -540,8 +758,18 @@ export default function Requests() {
 
                     <div className="flex items-center gap-2">
                       {canReviewRequest && req.status === 'pending' && (
-                        <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg" onClick={() => handleUpdateRequestStatus(req, 'approved')}>
-                          {t.requestsPage.approved}
+                        <>
+                          <Button size="sm" variant="outline" className="h-8 text-xs text-red-600" onClick={() => handleUpdateRequestStatus(req, 'rejected')}>
+                            {language === 'th' ? 'ปฏิเสธ' : 'Reject'}
+                          </Button>
+                          <Button size="sm" className="h-8 text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg" onClick={() => handleUpdateRequestStatus(req, 'approved')}>
+                            {t.requestsPage.approved}
+                          </Button>
+                        </>
+                      )}
+                      {canReviewRequest && req.status === 'approved' && (
+                        <Button size="sm" className="h-8 text-xs bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg" onClick={() => handleUpdateRequestStatus(req, 'completed')}>
+                          {language === 'th' ? 'ทำเครื่องหมายเสร็จสิ้น' : 'Mark complete'}
                         </Button>
                       )}
                       <Button
@@ -563,6 +791,7 @@ export default function Requests() {
         {/* Right Column: Quick Actions + Support Center + FAQ (4 of 12 cols => ~33%) */}
         <div className="lg:col-span-4 space-y-4">
           {/* Quick Actions (บริการที่ใช้บ่อย) */}
+          {canCreateRequest && (
           <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
             <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3 px-1">บริการที่ใช้บ่อย</h3>
             <div className="grid grid-cols-2 gap-2.5">
@@ -575,8 +804,6 @@ export default function Requests() {
                     if (canCreateRequest) {
                       setFormData((current) => ({ ...current, type: type.name }));
                       setIsDialogOpen(true);
-                    } else {
-                      toast.info(type.name);
                     }
                   }}
                   className="bg-slate-50/70 dark:bg-slate-900/60 p-3 rounded-xl border border-slate-100 dark:border-slate-800/70 flex flex-col items-center text-center gap-2 hover:border-blue-300 dark:hover:border-blue-800/60 transition-all cursor-pointer group"
@@ -589,6 +816,7 @@ export default function Requests() {
               ))}
             </div>
           </div>
+          )}
 
           {/* Support Center (ศูนย์บริการช่วยเหลือ) */}
           <div className="bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 p-4 shadow-xs">
@@ -603,9 +831,9 @@ export default function Requests() {
             </div>
 
             <div className="space-y-2 mt-3">
-              <div
+              <a
+                href="tel:053942123"
                 className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-                onClick={() => window.location.href = 'tel:053942123'}
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-700 dark:text-blue-300 flex items-center justify-center font-mono font-bold text-[10.5px]">
@@ -617,11 +845,13 @@ export default function Requests() {
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </div>
+              </a>
 
-              <div
+              <a
+                href="https://line.me/R/ti/p/@diicamt"
+                target="_blank"
+                rel="noreferrer"
                 className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
-                onClick={() => toast.info('LINE Official: @diicamt')}
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-400 flex items-center justify-center font-mono font-bold text-[10.5px]">
@@ -633,7 +863,7 @@ export default function Requests() {
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-              </div>
+              </a>
             </div>
 
             <Button
@@ -656,15 +886,42 @@ export default function Requests() {
                 ? ['How many days does a certificate request take?', 'Steps for leave of absence', 'How to reset password?', 'Download form G.01']
                 : ['การขอใบรับรองใช้เวลากี่วัน?', 'ขั้นตอนการลาพักการศึกษา', 'ลืมรหัสผ่านทำอย่างไร?', 'ดาวน์โหลดแบบฟอร์ม คำร้อง ก.01']
               ).map((q, i) => (
-                <div
-                  key={i}
-                  className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer group transition-all"
-                  onClick={() => toast.info(q)}
-                >
-                  <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-medium">
-                    {q}
-                  </span>
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500 group-hover:text-blue-600 group-hover:translate-x-0.5 transition-all" />
+                <div key={i}>
+                {i === 2 ? (
+                  <button
+                    type="button"
+                    onClick={() => navigate('/forgot-password')}
+                    className="flex w-full items-center justify-between p-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 group transition-all"
+                  >
+                    <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-medium">{q}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-300 dark:text-slate-500 group-hover:text-blue-600" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    aria-expanded={expandedFaq === i || expandedFaq === -1}
+                    onClick={() => setExpandedFaq((current) => current === i ? null : i)}
+                    className="flex w-full items-center justify-between p-2 rounded-lg text-left hover:bg-slate-50 dark:hover:bg-slate-800/50 group transition-all"
+                  >
+                    <span className="text-xs text-slate-600 dark:text-slate-300 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors font-medium">{q}</span>
+                    <ChevronRight className={`w-3.5 h-3.5 text-slate-300 dark:text-slate-500 group-hover:text-blue-600 transition-transform ${expandedFaq === i || expandedFaq === -1 ? 'rotate-90' : ''}`} />
+                  </button>
+                )}
+                {(expandedFaq === i || expandedFaq === -1) && i !== 2 && (
+                  <p className="px-2 pb-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                    {language === 'th'
+                      ? i === 0
+                        ? 'ระยะเวลาดำเนินการขึ้นอยู่กับประเภทคำร้องและเอกสารที่แนบ ตรวจสอบสถานะได้ที่หน้านี้ หรือส่งข้อความสอบถามเจ้าหน้าที่'
+                        : i === 1
+                          ? 'เลือกประเภทลาพักการศึกษาในแบบฟอร์ม ระบุเหตุผลและแนบเอกสารประกอบ จากนั้นส่งคำร้องเพื่อติดตามผลที่หน้านี้'
+                          : 'หากต้องการแบบฟอร์ม ก.01 โปรดส่งข้อความหาเจ้าหน้าที่เพื่อขอแบบฟอร์มฉบับล่าสุด'
+                      : i === 0
+                        ? 'Processing time depends on the request type and supporting documents. Track the status here or message staff for an estimate.'
+                        : i === 1
+                          ? 'Choose Leave of Absence in the request form, provide the reason and supporting documents, then submit and track it here.'
+                          : 'Message staff to request the latest G.01 form.'}
+                  </p>
+                )}
                 </div>
               ))}
             </div>
@@ -672,7 +929,7 @@ export default function Requests() {
               variant="ghost"
               size="sm"
               className="w-full mt-2 text-[11px] font-semibold text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 h-7"
-              onClick={() => toast.info(language === 'th' ? 'FAQ ทั้งหมดจะเปิดในศูนย์ช่วยเหลือ' : 'Full FAQ will open in Help Center.')}
+              onClick={() => setExpandedFaq((current) => current === -1 ? null : -1)}
             >
               {t.requestsPage.viewAllFAQ}
             </Button>

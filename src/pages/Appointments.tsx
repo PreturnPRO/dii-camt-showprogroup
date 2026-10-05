@@ -129,9 +129,9 @@ export default function Appointments() {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'pending': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.appointmentsPage.pendingTab}</Badge>;
-            case 'confirmed': return <Badge className="bg-blue-100 text-blue-700 dark:text-slate-300 dark:bg-slate-800">{t.appointmentsPage.confirmedTab}</Badge>;
-            case 'completed': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.appointmentsPage.completedTab}</Badge>;
+            case 'pending': return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">{t.appointmentsPage.pendingTab}</Badge>;
+            case 'confirmed': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">{t.appointmentsPage.confirmedTab}</Badge>;
+            case 'completed': return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{t.appointmentsPage.completedTab}</Badge>;
             default: return <Badge>{status}</Badge>;
         }
     };
@@ -164,7 +164,7 @@ export default function Appointments() {
                     { label: t.appointmentsPage.allTab, value: appointments.length, gradient: '', icon: Calendar },
                 ].map((stat, i) => (
                     <motion.div key={i} whileHover={{ scale: 1.02 }} className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5`}>
-                        
+
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-5 h-5" /></div>
@@ -239,7 +239,7 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'confirmed').map((apt) => (
-                                    <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-gradient-to-r from-blue-50 to-white">
+                                    <div key={apt.id} className="flex items-start gap-4 p-4 border dark:border-slate-700 rounded-xl bg-gradient-to-r from-blue-50 to-white dark:from-slate-800 dark:to-slate-800/60">
                                         <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                             <div className="text-xs">{new Date(apt.date).toLocaleDateString('th-TH', { month: 'short' })}</div>
@@ -273,7 +273,7 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'pending').map((apt) => (
-                                    <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50">
+                                    <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900/30">
                                         <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                         </div>

@@ -69,7 +69,8 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
 
   // Check Schedule Conflicts
   const targetCourse = await prisma.course.findUnique({
-    where: { id: data.courseId }
+    where: { id: data.courseId },
+    include: { sections: true }
   });
 
   if (!targetCourse) {
@@ -78,10 +79,10 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
 
   const currentEnrollments = await prisma.enrollment.findMany({
     where: { studentId: student.id, status: { not: "dropped" } }, // ไม่นับวิชาที่ถอนเป็นเวลาชน
-    include: { course: true }
+    include: { course: { include: { sections: true } } }
   });
 
-  const targetSchedule = Array.isArray(targetCourse.schedule) ? targetCourse.schedule as any[] : [];
+  const targetSchedule = Array.isArray(targetCourse.sections?.[0]?.schedule) ? targetCourse.sections[0].schedule as any[] : [];
   
   if (targetSchedule.length > 0) {
     const toMinutes = (timeStr: string) => {
@@ -91,7 +92,7 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
     };
 
     for (const enrolled of currentEnrollments) {
-      const enrolledSchedule = Array.isArray(enrolled.course.schedule) ? enrolled.course.schedule as any[] : [];
+      const enrolledSchedule = Array.isArray(enrolled.course.sections?.[0]?.schedule) ? enrolled.course.sections[0].schedule as any[] : [];
       for (const tSlot of targetSchedule) {
         for (const eSlot of enrolledSchedule) {
           if (tSlot.day === eSlot.day) {

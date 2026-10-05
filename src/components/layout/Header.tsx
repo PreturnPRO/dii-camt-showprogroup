@@ -82,8 +82,8 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
   useEffect(() => {
     const handleScroll = (e?: Event) => {
       const target = e?.target as HTMLElement | Document | null;
-      const scrollY = (target && target instanceof HTMLElement) 
-        ? target.scrollTop 
+      const scrollY = (target && target instanceof HTMLElement)
+        ? target.scrollTop
         : (window.scrollY || document.documentElement.scrollTop || 0);
       setScrolled(scrollY > 20);
     };

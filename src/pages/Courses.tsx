@@ -1,6 +1,6 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import * as XLSX from 'xlsx';
+import { readTabularFile } from '@/lib/tabular-file';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Student } from '@/types';
@@ -57,13 +57,14 @@ type ImportCoursePayload = {
   academicYear: string;
   year: number;
   lecturerId: string;
-  maxStudents: number;
-  minStudents: number;
+  sections: Array<{ number: string; maxStudents: number; minStudents: number; schedule: unknown[] }>;
   description: string;
   syllabus: string;
 };
 
-const headerAliases: Record<string, keyof ImportCoursePayload> = {
+type ImportCourseInput = Omit<ImportCoursePayload, 'sections'> & { maxStudents: number; minStudents: number };
+
+const headerAliases: Record<string, keyof ImportCourseInput> = {
   code: 'code',
   coursecode: 'code',
   name: 'name',
@@ -264,8 +265,20 @@ export default function Courses() {
         academicYear: courseForm.academicYear.trim(),
         year: Number(courseForm.year),
         lecturerId: courseForm.lecturerId,
-        maxStudents: Number(courseForm.maxStudents),
-        minStudents: Number(courseForm.minStudents),
+        sections: editingCourse?.sections.length
+          ? editingCourse.sections.map((section) => ({
+              number: section.sectionNumber,
+              room: section.room,
+              maxStudents: section.maxStudents,
+              minStudents: 0,
+              schedule: section.schedule,
+            }))
+          : [{
+              number: '01',
+              maxStudents: Number(courseForm.maxStudents),
+              minStudents: Number(courseForm.minStudents),
+              schedule: [],
+            }],
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
       };
@@ -303,20 +316,11 @@ export default function Courses() {
   };
 
   const parseCourseImportFile = async (file: File) => {
-    const isCsv = file.name.toLowerCase().endsWith('.csv');
-    const workbook = isCsv
-      ? XLSX.read(await file.text(), { type: 'string' })
-      : XLSX.read(await file.arrayBuffer(), { type: 'array' });
-    const sheetName = workbook.SheetNames[0];
-    if (!sheetName) return [];
-    return XLSX.utils.sheet_to_json<Record<string, unknown>>(workbook.Sheets[sheetName], {
-      defval: '',
-      raw: false,
-    });
+    return readTabularFile(file);
   };
 
   const normalizeImportCourse = (row: Record<string, unknown>, fallbackLecturerId: string): ImportCoursePayload => {
-    const normalized: Partial<Record<keyof ImportCoursePayload, string>> = {};
+    const normalized: Partial<Record<keyof ImportCourseInput, string>> = {};
     Object.entries(row).forEach(([header, value]) => {
       const field = headerAliases[normalizeHeader(header)];
       if (field) normalized[field] = String(value ?? '').trim();
@@ -331,8 +335,12 @@ export default function Courses() {
       academicYear: normalized.academicYear || String(new Date().getFullYear() + 543),
       year: asNumber(normalized.year, 1),
       lecturerId: normalized.lecturerId || fallbackLecturerId,
-      maxStudents: asNumber(normalized.maxStudents, 60),
-      minStudents: asNumber(normalized.minStudents, 1),
+      sections: [{
+        number: '01',
+        maxStudents: asNumber(normalized.maxStudents, 60),
+        minStudents: asNumber(normalized.minStudents, 0),
+        schedule: [],
+      }],
       description: normalized.description || '',
       syllabus: normalized.syllabus || '',
     };
@@ -576,7 +584,7 @@ export default function Courses() {
             <div className="text-2xl sm:text-3xl font-extrabold font-mono text-slate-900 dark:text-slate-50 tracking-tight">{totalCredits}</div>
             <div className="mt-2 text-[11px] text-slate-500 dark:text-slate-400 flex items-center justify-between">
               <span>{t.coursesPage.maxCredits}</span>
-              <span className="font-mono">{creditProgress}%</span>
+              <span className="font-mono">{creditProgress.toFixed(2)}%</span>
             </div>
             {/* Mini Progress Bar */}
             <div className="mt-2 h-1.5 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
@@ -905,7 +913,7 @@ export default function Courses() {
             <input
               ref={importInputRef}
               type="file"
-              accept=".csv,.xlsx,.xls"
+              accept=".csv,.xlsx"
               className="hidden"
               onChange={importCoursesFromFile}
             />
@@ -944,8 +952,8 @@ export default function Courses() {
               </CardTitle>
               <CardDescription>
                 {language === 'th'
-                  ? 'ใช้ไฟล์ .csv, .xlsx หรือ .xls โดยแถวแรกต้องเป็น header ตาม template'
-                  : 'Use .csv, .xlsx, or .xls. The first row must contain headers from the template.'}
+                  ? 'ใช้ไฟล์ .csv หรือ .xlsx โดยแถวแรกต้องเป็น header ตาม template'
+                  : 'Use .csv or .xlsx. The first row must contain headers from the template.'}
               </CardDescription>
             </CardHeader>
             <CardContent className="grid gap-4 text-sm text-slate-600 dark:text-slate-300 md:grid-cols-[1fr_260px]">

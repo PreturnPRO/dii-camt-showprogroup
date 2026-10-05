@@ -56,7 +56,7 @@ export function GlassCard({
       {variant === 'gradient' && (
         <div className="absolute -top-24 -right-24 w-48 h-48 bg-gradient-to-br from-white/20 to-transparent rounded-full blur-2xl" />
       )}
-      
+
       {(title || description || Icon) && (
         <CardHeader className="relative z-10">
           <div className="flex items-start justify-between">
@@ -145,7 +145,7 @@ export function QuickStat({ label, value, icon: Icon, trend, color = 'blue' }: Q
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      
+
       {/* Decorative element */}
       <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-gradient-to-br from-gray-100 to-gray-200 rounded-full opacity-50" />
     </motion.div>

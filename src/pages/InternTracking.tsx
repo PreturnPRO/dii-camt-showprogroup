@@ -413,7 +413,7 @@ export default function InternTracking() {
     if (!selectedIntern) return;
     const todayStr = new Date().toISOString().slice(0, 10);
     const existingIndex = selectedIntern.stipend.paymentHistory.findIndex(p => p.month === stipendFormMonth);
-    let updatedHistory = [...selectedIntern.stipend.paymentHistory];
+    const updatedHistory = [...selectedIntern.stipend.paymentHistory];
 
     const newPaymentRecord: MonthlyPayment = {
       id: existingIndex >= 0 ? updatedHistory[existingIndex].id : `pay-${Date.now()}`,

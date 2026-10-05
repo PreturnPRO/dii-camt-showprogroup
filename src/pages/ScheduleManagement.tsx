@@ -73,7 +73,7 @@ export default function ScheduleManagement() {
                         const sections = asArray(course.sections);
                         const slots = sections.length
                             ? sections.flatMap((section, sectionIndex) => asArray(asRecord(section).schedule).map((slot, scheduleIndex) => ({ slot, section, sectionIndex, scheduleIndex })))
-                            : asArray(course.schedule).map((slot, scheduleIndex) => ({ slot, section: {}, sectionIndex: undefined, scheduleIndex }));
+                            : asArray(course.sections?.[0]?.schedule).map((slot, scheduleIndex) => ({ slot, section: {}, sectionIndex: undefined, scheduleIndex }));
 
                         return slots.map(({ slot, section, sectionIndex, scheduleIndex }, slotIndex) => {
                             const scheduleSlot = asRecord(slot);
@@ -271,10 +271,8 @@ export default function ScheduleManagement() {
                 });
                 await api.courses.update(item.courseId, { sections: nextSections });
             } else {
-                const nextSchedule = asArray(courseRecord.schedule).map((slot, scheduleIndex) =>
-                    scheduleIndex === item.scheduleIndex ? { ...asRecord(slot), ...nextSlot } : asRecord(slot),
-                );
-                await api.courses.update(item.courseId, { schedule: nextSchedule });
+                toast.error('This schedule entry is not attached to a course section');
+                return;
             }
 
             setSchedule((current) => current.map((slot) =>

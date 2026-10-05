@@ -95,6 +95,13 @@ export const createRequestComment = asyncHandler(async (req, res) => {
     throw new AppError(404, "Request not found");
   }
 
+  if (
+    currentUser.role === Role.STUDENT &&
+    existingRequest.student.userId !== currentUser.id
+  ) {
+    throw new AppError(403, "You can only comment on your own requests");
+  }
+
   const comment = await prisma.requestComment.create({
     data: {
       requestId,
@@ -246,6 +253,18 @@ export const createAppointment = asyncHandler(async (req, res) => {
     messageThai: `${student.user.nameThai} ขอจองนัดหมายวันที่ ${appointment.date.toISOString().slice(0, 10)}`,
     type: "appointment",
     priority: "medium",
+    channels: ["in-app"],
+    actionUrl: "/appointments",
+  });
+
+  await createNotification({
+    userId: student.userId,
+    title: "Appointment requested",
+    titleThai: "ส่งคำขอนัดหมายแล้ว",
+    message: `You have successfully requested an appointment with ${appointment.lecturer.user.name} on ${appointment.date.toISOString().slice(0, 10)}.`,
+    messageThai: `คุณได้ส่งคำขอนัดหมายกับ ${appointment.lecturer.user.nameThai} ในวันที่ ${appointment.date.toISOString().slice(0, 10)} สำเร็จแล้ว`,
+    type: "appointment",
+    priority: "low",
     channels: ["in-app"],
     actionUrl: "/appointments",
   });

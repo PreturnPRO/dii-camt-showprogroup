@@ -1,11 +1,9 @@
 import type { UserRole } from "@/types";
 
+const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
 const TOKEN_STORAGE_KEY = "xchange_auth_token";
-const LEGACY_TOKEN_STORAGE_KEY = "showpro_auth_token";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
-
-const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
 
 export const API_BASE_URL = trimTrailingSlash(
   import.meta.env.VITE_API_BASE_URL || DEFAULT_API_BASE_URL,
@@ -83,8 +81,7 @@ const parseErrorPayload = async (response: Response) => {
   }
 };
 
-export const getStoredToken = () =>
-  localStorage.getItem(TOKEN_STORAGE_KEY) || localStorage.getItem(LEGACY_TOKEN_STORAGE_KEY);
+export const getStoredToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);
 
 export const setStoredToken = (token: string) => {
   localStorage.setItem(TOKEN_STORAGE_KEY, token);
@@ -92,7 +89,6 @@ export const setStoredToken = (token: string) => {
 
 export const clearStoredToken = () => {
   localStorage.removeItem(TOKEN_STORAGE_KEY);
-  localStorage.removeItem(LEGACY_TOKEN_STORAGE_KEY);
 };
 
 export const normalizeRole = (role: BackendRole): UserRole => role.toLowerCase() as UserRole;
@@ -198,6 +194,14 @@ export const api = {
         method: "POST",
         body: { email, password },
       }),
+    companyLogin: (phone: string) =>
+      request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
+        "/auth/company-login",
+        {
+          method: "POST",
+          body: { phone },
+        },
+      ),
     register: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
         "/auth/register",
@@ -307,6 +311,29 @@ export const api = {
   careerTargets: {
     list: () => request<ApiEnvelope<{ targets: unknown[] }>>("/career-targets"),
   },
+  careerTracks: {
+    list: () => request<ApiEnvelope<{ tracks: unknown[] }>>("/career-tracks"),
+  },
+  careerGoal: {
+    get: () => request<ApiEnvelope<{ goal: unknown }>>("/students/career-goal"),
+    set: (careerTrackId: string | null) =>
+      request<ApiEnvelope<{ goal: unknown }>>("/students/career-goal", {
+        method: "PUT",
+        body: { careerTrackId },
+      }),
+  },
+  trackWatches: {
+    list: () => request<ApiEnvelope<{ watches: unknown[] }>>("/company/track-watches"),
+    create: (careerTrackId: string, desiredSkills: string[]) =>
+      request<ApiEnvelope<{ watch: unknown }>>("/company/track-watches", {
+        method: "POST",
+        body: { careerTrackId, desiredSkills },
+      }),
+    remove: (id: string) =>
+      request<ApiEnvelope<{ success: boolean }>>(`/company/track-watches/${id}`, {
+        method: "DELETE",
+      }),
+  },
   applications: {
     update: (id: string, payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ application: unknown }>>(`/applications/${id}`, {
@@ -327,6 +354,8 @@ export const api = {
       request<ApiEnvelope<{ profile: unknown }>>(
         `/students/profile${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
       ),
+    profileById: (id: string) =>
+      request<ApiEnvelope<{ profile: unknown }>>(`/students/profile/${encodeURIComponent(id)}`),
     stats: (studentId?: string) =>
       request<ApiEnvelope<{ stats: unknown }>>(
         `/students/stats${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
@@ -345,6 +374,22 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    importCompanies: (rows: Record<string, unknown>[]) =>
+      request<ApiEnvelope<{ createdCount: number; updatedCount: number; failedCount: number; results: unknown[] }>>(
+        "/users/import/companies",
+        {
+          method: "POST",
+          body: { rows },
+        },
+      ),
+    importStudents: (rows: Record<string, unknown>[]) =>
+      request<ApiEnvelope<{ createdCount: number; updatedCount: number; failedCount: number; results: unknown[] }>>(
+        "/users/import/students",
+        {
+          method: "POST",
+          body: { rows },
+        },
+      ),
     update: (id: string, payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ user: unknown }>>(`/users/${id}`, {
         method: "PATCH",
@@ -407,33 +452,9 @@ export const api = {
         method: "POST",
         body: payload,
       }),
-  },
-  assignments: {
-    list: (query = "") => request<ApiEnvelope<{ assignments: unknown[] }>>(`/assignments${query}`),
-    get: (id: string) => request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${encodeURIComponent(id)}`),
-    create: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>("/assignments", {
-        method: "POST",
-        body: payload,
-      }),
-    update: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
-        method: "PATCH",
-        body: payload,
-      }),
-    remove: (id: string) =>
-      request<ApiEnvelope<{ assignment: unknown }>>(`/assignments/${id}`, {
+    remove: (courseId: string) =>
+      request<ApiEnvelope<{ message: string }>>(`/enrollments/course/${courseId}`, {
         method: "DELETE",
-      }),
-    submit: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/assignments/${id}/submissions`, {
-        method: "POST",
-        body: payload,
-      }),
-    gradeSubmission: (id: string, payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ submission: unknown }>>(`/submissions/${id}`, {
-        method: "PATCH",
-        body: payload,
       }),
   },
   courses: {
@@ -448,6 +469,10 @@ export const api = {
       request<ApiEnvelope<{ course: unknown }>>(`/courses/${id}`, {
         method: "PATCH",
         body: payload,
+      }),
+    delete: (id: string) =>
+      request<ApiEnvelope<{ message: string }>>(`/courses/${id}`, {
+        method: "DELETE",
       }),
     lecturerSchedule: (lecturerId?: string) =>
       request<ApiEnvelope<{ lecturer: unknown; schedule: unknown[] }>>(
@@ -468,6 +493,8 @@ export const api = {
       request<ApiEnvelope<{ student: unknown; transcript: unknown[] }>>(
         `/student/transcript${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
       ),
+    exportCsv: (courseId: string) =>
+      requestBlob(`/courses/${encodeURIComponent(courseId)}/grades/export`),
   },
   attendance: {
     report: (query = "") => request<ApiEnvelope<{ attendance: unknown[] }>>(`/attendance/report${query}`),
@@ -476,6 +503,24 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    startSession: (payload: Record<string, unknown>) =>
+      request<ApiEnvelope<{ session: unknown }>>("/attendance/sessions", {
+        method: "POST",
+        body: payload,
+      }),
+    checkInSession: (payload: Record<string, unknown>) =>
+      request<ApiEnvelope<{ attendance: unknown }>>("/attendance/sessions/check-in", {
+        method: "POST",
+        body: payload,
+      }),
+    closeSession: (id: string) =>
+      request<ApiEnvelope<{ session: unknown }>>(`/attendance/sessions/${id}/close`, {
+        method: "PATCH",
+      }),
+    summary: (courseId: string) =>
+      request<ApiEnvelope<{ totalSessions: number; summary: unknown[] }>>(`/attendance/summary/${courseId}`),
+    history: (courseId: string, studentId: string) =>
+      request<ApiEnvelope<{ history: unknown[] }>>(`/attendance/history/${courseId}/${studentId}`),
   },
   activities: {
     list: (query = "") => request<ApiEnvelope<{ activities: unknown[] }>>(`/activities${query}`),
@@ -536,24 +581,6 @@ export const api = {
   talent: {
     search: (query = "") => request<ApiEnvelope<{ talents: unknown[] }>>(`/talent/search${query}`),
   },
-  quests: {
-    list: (query = "") => request<ApiEnvelope<{ quests: unknown[] }>>(`/quests${query}`),
-    create: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ quest: unknown }>>("/quests", {
-        method: "POST",
-        body: payload,
-      }),
-    accept: (questId: string) =>
-      request<ApiEnvelope<{ enrollment: unknown }>>("/quests/accept", {
-        method: "POST",
-        body: { questId },
-      }),
-    completeTask: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ enrollment: unknown }>>("/quests/task/complete", {
-        method: "PATCH",
-        body: payload,
-      }),
-  },
   facilities: {
     list: () => request<ApiEnvelope<{ facilities: unknown[] }>>("/facilities"),
     create: (payload: Record<string, unknown>) =>
@@ -595,18 +622,6 @@ export const api = {
   audit: {
     list: () => request<ApiEnvelope<{ logs: unknown[] }>>("/audit"),
   },
-  subscription: {
-    plans: () => request<ApiEnvelope<{ plans: unknown[] }>>("/subscription/plans"),
-    payments: (companyId?: string) =>
-      request<ApiEnvelope<{ payments: unknown[] }>>(
-        `/subscription/payments${companyId ? `?companyId=${encodeURIComponent(companyId)}` : ""}`,
-      ),
-    createPayment: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ payment: unknown }>>("/subscription/payment", {
-        method: "POST",
-        body: payload,
-      }),
-  },
   documents: {
     transcript: (studentId?: string) =>
       requestBlob(
@@ -644,6 +659,8 @@ export const api = {
     },
     sign: (id: string) =>
       request<ApiEnvelope<{ asset: unknown; signedUrl: string }>>(`/files/assets/${id}/sign`),
+    download: (id: string) =>
+      requestBlob(`/files/assets/${encodeURIComponent(id)}`),
   },
   offices: {
     slots: (lecturerId: string, date?: string) =>

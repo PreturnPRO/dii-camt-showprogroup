@@ -1,59 +1,57 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  BookOpen,
   Calendar,
-  FileText,
-  Users,
-  Building2,
-  Trophy,
-  MessageSquare,
-  Settings,
+  BookOpen,
   GraduationCap,
-  ClipboardList,
-  BarChart3,
+  Trophy,
+  FileText,
   Briefcase,
-  UserCog,
-  Shield,
+  ClipboardList,
+  MessageSquare,
+  Users,
+  Settings,
   Bell,
-  X,
-  DollarSign,
-  Search,
-  Clock,
+  BarChart3,
+  Shield,
   Building,
-  Target,
   Bot,
+  UserCheck,
   ChevronLeft,
   ChevronRight,
-  ChevronUp,
   LogOut,
+  ChevronUp,
   User,
+  Target,
+  UserCog,
+  Building2,
+  Search,
+  Clock,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { UserRole } from '@/types';
-import { Button } from '@/components/ui/button';
+import type { UserRole } from '@/types';
+import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuPortal,
-} from '@/components/ui/dropdown-menu';
 
 interface NavItem {
   icon: React.ElementType;
@@ -65,8 +63,8 @@ interface NavItem {
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  isCollapsed: boolean;
-  onToggleCollapse: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => {
@@ -84,77 +82,75 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Trophy, label: nav.activities || 'Activities', href: '/activities' },
         { icon: FileText, label: nav.portfolio || 'Portfolio', href: '/portfolio' },
         { icon: Briefcase, label: nav.internships || 'Internships', href: '/internships' },
+        { icon: Clock, label: nav.applicationHistory || 'Application History', href: '/application-history' },
         { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
         { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: Users, label: nav.adviseeStudents || 'Teacher', href: '/students' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'lecturer':
       return [
         ...commonItems,
         { icon: Calendar, label: nav.teachingSchedule || 'Teaching Schedule', href: '/schedule' },
-        { icon: Users, label: nav.adviseeStudents || 'Advisees', href: '/students' },
+        { icon: Users, label: nav.adviseeStudents || 'Advisees', href: '/advisees' },
+        { icon: UserCheck, label: nav.allStudents || 'Students', href: '/students' },
         { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
         { icon: ClipboardList, label: nav.attendanceBehavior || 'Attendance', href: '/attendance' },
         { icon: GraduationCap, label: nav.grading || 'Grading', href: '/grades' },
         { icon: FileText, label: nav.appointments || 'Appointments', href: '/appointments' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
         { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'staff':
       return [
         ...commonItems,
         { icon: Users, label: nav.users || 'Users', href: '/users' },
-        { icon: GraduationCap, label: nav.studentDatabase || 'Students', href: '/students' },
-        { icon: BookOpen, label: nav.curriculumCourses || 'Curriculum', href: '/courses' },
-        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
-        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: DollarSign, label: nav.budgetProcurement || 'Budget', href: '/budget' },
-        { icon: Building2, label: nav.cooperationNetwork || 'Cooperation', href: '/network' },
-        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
-        { icon: FileText, label: nav.issueDocuments || 'Documents', href: '/documents' },
-        { icon: UserCog, label: nav.personnelManagement || 'Personnel', href: '/personnel' },
-        { icon: Calendar, label: nav.scheduleRoomManagement || 'Rooms', href: '/schedule-management' },
-        { icon: Trophy, label: nav.activityManagement || 'Activities', href: '/activities-management' },
-        { icon: Clock, label: nav.workloadTracking || 'Workload', href: '/workload-tracking' },
-        { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
-        { icon: Shield, label: nav.audit || 'Audit', href: '/audit' },
         { icon: Bell, label: nav.announcementManagement || 'Announcements', href: '/notifications' },
+        { icon: Clock, label: nav.workloadTracking || 'Workload', href: '/workload-tracking' },
+        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
+        { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
+        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
+        { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'company':
       return [
         ...commonItems,
         { icon: Briefcase, label: nav.jobPostings || 'Job Postings', href: '/job-postings' },
         { icon: Target, label: nav.skillsRequirement || 'Skills', href: '/skills-requirement' },
-        { icon: Search, label: nav.searchStudents || 'Search Students', href: '/student-profiles' },
+        { icon: Search, label: nav.searchStudents || 'Search Students', href: '/talent-search' },
         { icon: Users, label: nav.applicants || 'Applicants', href: '/applicants' },
         { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
         { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
-        { icon: DollarSign, label: nav.subscriptionPackage || 'Subscription', href: '/subscription' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'admin':
       return [
         ...commonItems,
         { icon: Users, label: nav.userManagement || 'User Management', href: '/users' },
-        { icon: BookOpen, label: nav.curriculumCourses || 'Curriculum', href: '/courses' },
-        { icon: Calendar, label: nav.teachingScheduleAdmin || 'Schedules', href: '/schedule-management' },
-        { icon: DollarSign, label: nav.budgetProcurement || 'Budget', href: '/budget' },
-        { icon: UserCog, label: nav.personnelManagement || 'Personnel', href: '/personnel' },
-        { icon: FileText, label: nav.documentsRequests || 'Documents', href: '/documents' },
+        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
+        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
         { icon: Building2, label: nav.cooperationNetwork || 'Network', href: '/network' },
         { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
         { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
         { icon: Briefcase, label: nav.jobsInternships || 'Jobs & Interns', href: '/job-postings' },
-        { icon: Search, label: nav.studentDatabase || 'Student DB', href: '/student-profiles' },
+        { icon: Search, label: nav.studentDatabase || 'Student DB', href: '/talent-search' },
         { icon: Building, label: nav.partnerCompanies || 'Partners', href: '/cooperation' },
         { icon: Bell, label: nav.announcementsNotifications || 'Notifications', href: '/notifications' },
         { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
         { icon: Shield, label: nav.auditLogs || 'Audit Logs', href: '/audit' },
+        { icon: Settings, label: nav.systemSettings || 'Settings', href: '/settings' },
       ];
     default:
       return commonItems;
   }
 };
 
-export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse = () => {} }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, logout, switchRole } = useAuth();
@@ -170,7 +166,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        if (!isCollapsed) onToggleCollapse();
+        if (!isCollapsed && onToggleCollapse) onToggleCollapse();
         if (isOpen) onClose();
       }
     };
@@ -182,9 +178,6 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
 
   const navItems = getNavItems(user.role, t.nav as unknown as Record<string, string>);
 
-  // Determine whether overlay backdrop should be visible:
-  // Desktop: visible when expanded (!isCollapsed)
-  // Mobile: visible when open (isOpen)
   const isOverlayActive = !isCollapsed || isOpen;
 
   return (
@@ -196,16 +189,13 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-            className={cn(
-              "fixed inset-0 z-40 bg-black/50 backdrop-blur-sm transition-opacity cursor-pointer",
-              // On desktop, only show backdrop when expanded
-              isCollapsed && "hidden md:hidden"
-            )}
+            transition={{ duration: 0.2 }}
             onClick={() => {
-              if (!isCollapsed) onToggleCollapse();
+              if (!isCollapsed && onToggleCollapse) onToggleCollapse();
               if (isOpen) onClose();
             }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
+            aria-hidden="true"
           />
         )}
       </AnimatePresence>
@@ -221,45 +211,84 @@ export function Sidebar({ isOpen, onClose, isCollapsed, onToggleCollapse }: Side
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        {/* Toggle Collapse/Expand Button (Floating arrow badge centered vertically) */}
-        <button
-          onClick={onToggleCollapse}
-          title={isCollapsed ? "ขยายเมนู (Expand sidebar)" : "ย่อเมนู (Collapse sidebar) [Esc]"}
-          className="hidden md:flex absolute top-1/2 -right-3.5 -translate-y-1/2 z-50 w-7 h-7 rounded-full bg-[#0d1527] hover:bg-blue-600 text-slate-300 hover:text-white border border-slate-700/80 shadow-xl items-center justify-center cursor-pointer transition-all duration-200 hover:scale-110"
-        >
-          {isCollapsed ? (
-            <ChevronRight className="w-4 h-4" />
-          ) : (
-            <ChevronLeft className="w-4 h-4" />
-          )}
-        </button>
+        {/* Sidebar Header: Logo + Collapse/Expand Toggle Button */}
+        <div className={cn(
+          "h-16 flex items-center shrink-0 border-b border-slate-800/80 transition-all duration-200",
+          isCollapsed ? "justify-center px-0" : "justify-between px-5"
+        )}>
+          {/* Logo / Brand Mark */}
+          <Link
+            to="/dashboard"
+            onClick={onClose}
+            className="flex items-center gap-3.5 group min-w-0"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+              D
+            </div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent truncate">
+                  DII CAMT
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 truncate">
+                  ShowPro Portal
+                </span>
+              </div>
+            )}
+          </Link>
 
-        {/* Mobile Header / Close Button */}
-        <div className="md:hidden flex items-center justify-end p-3 border-b border-slate-800/80">
-          <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white h-9 w-9" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
+          {/* Desktop Toggle Button: Icon stays at right edge when expanded, or hovers nicely */}
+          {!isCollapsed && (
+            <button
+              onClick={onToggleCollapse}
+              title="Collapse sidebar (Ctrl+[)"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all duration-150 shrink-0"
+              aria-label="Collapse sidebar"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
         </div>
 
-        {/* Navigation - Smooth Scrollable Menu */}
-        <div className="flex-1 min-h-0 py-4 overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        {/* When collapsed: Floating Expand Button just beneath header */}
+        {isCollapsed && (
+          <div className="hidden md:flex justify-center py-2 border-b border-slate-800/60">
+            <button
+              onClick={onToggleCollapse}
+              title="Expand sidebar (Ctrl+])"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all duration-150"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 custom-scrollbar">
           <TooltipProvider delayDuration={100}>
-            <nav className="px-2.5 space-y-2">
+            <nav className="space-y-1">
               {navItems.map((item) => {
-                const isActive = location.pathname === item.href;
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+
                 const linkContent = (
                   <Link
-                    key={item.href + item.label}
+                    key={item.href}
                     to={item.href}
                     onClick={() => {
-                      if (!isCollapsed) onToggleCollapse();
-                      onClose();
+                      if (isOpen) onClose();
+                      if (!isCollapsed && onToggleCollapse) onToggleCollapse();
                     }}
                     className={cn(
-                      "relative flex items-center h-12 px-3 rounded-xl transition-all duration-150 group overflow-hidden cursor-pointer",
+                      "relative flex items-center rounded-xl transition-all duration-150 group font-medium",
+                      isCollapsed
+                        ? "justify-center h-11 w-11 mx-auto"
+                        : "px-3.5 py-2.5 w-full",
                       isActive
-                        ? "bg-blue-600/20 text-white font-semibold border border-blue-500/40 shadow-sm"
-                        : "text-slate-300 hover:text-white hover:bg-slate-800/60"
+                        ? "bg-blue-600/15 text-blue-400 font-semibold"
+                        : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
                     )}
                   >
                     {isActive && (

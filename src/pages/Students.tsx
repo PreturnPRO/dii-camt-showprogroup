@@ -3,8 +3,8 @@ import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { 
-  Users, Search, Filter, GraduationCap, AlertTriangle, 
+import {
+  Users, Search, Filter, GraduationCap, AlertTriangle,
   Eye, Mail, TrendingUp, ChevronRight, Award, BookOpen, Phone
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,7 +79,7 @@ export default function Students() {
   }, []);
 
   const filteredStudents = students.filter(student => {
-    const matchesSearch = 
+    const matchesSearch =
       student.nameThai.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       student.studentId.includes(searchQuery);
@@ -109,10 +109,10 @@ export default function Students() {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'normal': return <Badge className="bg-emerald-100 text-emerald-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.normal}</Badge>;
-      case 'probation': return <Badge className="bg-orange-100 text-orange-700 dark:text-slate-300">{t.studentsPage.probation}</Badge>;
-      case 'risk': return <Badge className="bg-red-100 text-red-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.risk}</Badge>;
-      case 'dropped': return <Badge className="bg-gray-100 text-gray-700 dark:text-slate-300 dark:bg-slate-800">{t.studentsPage.dismissed}</Badge>;
+      case 'normal': return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{t.studentsPage.normal}</Badge>;
+      case 'probation': return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">{t.studentsPage.probation}</Badge>;
+      case 'risk': return <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-400">{t.studentsPage.risk}</Badge>;
+      case 'dropped': return <Badge className="bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-slate-400">{t.studentsPage.dismissed}</Badge>;
       default: return <Badge>{status}</Badge>;
     }
   };
@@ -339,7 +339,7 @@ export default function Students() {
           whileHover={{ scale: 1.02 }}
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -355,7 +355,7 @@ export default function Students() {
           whileHover={{ scale: 1.02 }}
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -371,7 +371,7 @@ export default function Students() {
           whileHover={{ scale: 1.02 }}
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -387,7 +387,7 @@ export default function Students() {
           whileHover={{ scale: 1.02 }}
           className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
         >
-          
+
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -465,7 +465,7 @@ export default function Students() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all cursor-pointer group dark:border-slate-700"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
                   onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
@@ -485,7 +485,7 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold">GPA {student.gpa.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPA {student.gpa.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}

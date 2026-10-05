@@ -1,6 +1,7 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import {
   Target, Plus, Trash2, Edit2, Users, Briefcase, Star, Search, ChevronRight,
   Code, Palette, Database, Brain, Globe, Shield, BarChart3, Sparkles, X, Save
@@ -70,8 +71,13 @@ export default function SkillsRequirement() {
   const [showMatches, setShowMatches] = useState(false);
   const [selectedReq, setSelectedReq] = useState<RequirementRow | null>(null);
   const [editingReq, setEditingReq] = useState<RequirementRow | null>(null);
+  const { user, updateProfile } = useAuth();
+  const rawUser = asRecord(user?.raw);
+  const companyProfile = asRecord(rawUser.companyProfile);
+  const currentCompanyProfileId = asString(companyProfile.id);
+
   const [formData, setFormData] = useState({
-    name: '', description: '', priority: 'medium' as string,
+    name: '', description: '', priority: 'medium' as string, positions: 1,
     skills: [{ name: '', level: 'beginner' }] as { name: string; level: string }[],
   });
 
@@ -107,7 +113,9 @@ export default function SkillsRequirement() {
         if (!isMounted) return;
 
         if (jobsResponse.status === 'fulfilled') {
-          const mapped = jobsResponse.value.jobs.map((job) => mapJobRequirement(job));
+          const mapped = jobsResponse.value.jobs
+            .filter((job: any) => job.companyId === currentCompanyProfileId && job.type === 'skill_requirement')
+            .map((job) => mapJobRequirement(job));
           setRequirements(mapped);
         }
 
@@ -176,8 +184,8 @@ export default function SkillsRequirement() {
   const handleSave = async () => {
     const payload = {
       title: formData.name,
-      type: 'internship',
-      positions: 1,
+      type: 'skill_requirement',
+      positions: formData.positions,
       description: formData.description || formData.name,
       responsibilities: [],
       requirements: formData.skills.map((skill) => skill.name).filter(Boolean),
@@ -198,10 +206,25 @@ export default function SkillsRequirement() {
         const response = await api.jobs.create(payload);
         setRequirements((current) => [mapJobRequirement(response.job), ...current]);
       }
+      
+      // Update internshipSlots quota
+      const currentSlots = asNumber(companyProfile.internshipSlots, 0);
+      const addedPositions = editingReq 
+        ? formData.positions - editingReq.positions // if edit, add the difference
+        : formData.positions;
+        
+      if (addedPositions !== 0) {
+        await updateProfile({
+           roleData: {
+             internshipSlots: Math.max(0, currentSlots + addedPositions)
+           }
+        });
+      }
+
       toast({ title: tr.saveRequirement, description: formData.name });
       setShowForm(false);
       setEditingReq(null);
-      setFormData({ name: '', description: '', priority: 'medium', skills: [{ name: '', level: 'beginner' }] });
+      setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] });
     } catch (error) {
       toast({ title: tr.saveRequirement, description: error instanceof Error ? error.message : 'Unable to save requirement' });
     }
@@ -228,7 +251,7 @@ export default function SkillsRequirement() {
           <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             {tr.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">{tr.titleHighlight}</span>
           </motion.h1>
-          <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
+          <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
             <Plus className="w-4 h-4" /> {tr.createNew}
           </Button>
         </div>
@@ -243,7 +266,7 @@ export default function SkillsRequirement() {
           { icon: Star, label: tr.avgMatch, value: `${requirements.length ? Math.round(requirements.reduce((s, r) => s + r.avgMatch, 0) / requirements.length) : 0}%`, gradient: '', shadow: '' },
         ].map((stat, i) => (
           <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
-            
+
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
@@ -295,7 +318,7 @@ export default function SkillsRequirement() {
               </div>
 
               {/* Match stats */}
-              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 mb-4">
+              <div className="flex items-center gap-4 p-3 rounded-xl bg-indigo-50 border border-indigo-100 dark:bg-indigo-950/30 dark:border-indigo-900/30 mb-4">
                 <div className="flex-1">
                   <div className="text-xs text-slate-500 dark:text-slate-400 mb-1">{tr.matchScore}</div>
                   <Progress value={req.avgMatch} className="h-2" />
@@ -321,6 +344,7 @@ export default function SkillsRequirement() {
                       name: req.name,
                       description: req.description,
                       priority: req.priority,
+                      positions: req.positions,
                       skills: req.skills.length ? req.skills : [{ name: '', level: 'beginner' }],
                     });
                     setShowForm(true);
@@ -342,7 +366,7 @@ export default function SkillsRequirement() {
         )}
         {!isLoading && requirements.length === 0 && (
           <div className="lg:col-span-2 rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-            {language === 'th' ? 'ยังไม่มี Requirement จาก API' : 'No requirements from API yet.'}
+            {language === 'th' ? 'ยังไม่มี Requirement' : 'No requirements yet.'}
           </div>
         )}
       </div>
@@ -376,6 +400,16 @@ export default function SkillsRequirement() {
                   <SelectItem value="low">{tr.low}</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            
+            <div>
+              <Label>จำนวนตำแหน่ง (คน)</Label>
+              <Input 
+                type="number" 
+                min={1} 
+                value={formData.positions} 
+                onChange={e => setFormData(prev => ({ ...prev, positions: parseInt(e.target.value) || 1 }))} 
+              />
             </div>
 
             <div>
@@ -462,7 +496,7 @@ export default function SkillsRequirement() {
             ))}
             {matches.length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {language === 'th' ? 'ยังไม่มีผลจับคู่จาก API' : 'No match results from API yet.'}
+                {language === 'th' ? 'ยังไม่มีผลจับคู่' : 'No match results yet.'}
               </div>
             )}
           </div>

@@ -50,7 +50,6 @@ const emptyCourse = (index = 0): Course => ({
   maxStudents: 0,
   minStudents: 0,
   materials: [],
-  assignments: [],
   grades: [],
 });
 
@@ -303,15 +302,10 @@ const normalizeMaterialType = (value: unknown) => {
   return (["video", "document", "slide", "link"].includes(type) ? type : "document") as Course["materials"][number]["type"];
 };
 
-const normalizeAssignmentType = (value: unknown) => {
-  const type = asString(value, "individual").toLowerCase();
-  return (type === "group" ? "group" : "individual") as Course["assignments"][number]["type"];
-};
-
 const normalizeJobType = (value: unknown, fallback: JobPosting["type"] = "internship") => {
   const type = asString(value, fallback).toLowerCase();
   return (
-    ["internship", "full-time", "part-time", "contract"].includes(type)
+    ["internship", "full-time", "part-time", "contract", "skill_requirement"].includes(type)
       ? type
       : fallback
   ) as JobPosting["type"];
@@ -324,7 +318,7 @@ const normalizeWorkType = (value: unknown, fallback: JobPosting["workType"] = "o
 
 const normalizeJobStatus = (value: unknown, fallback: JobPosting["status"] = "open") => {
   const status = asString(value, fallback).toLowerCase();
-  return (["open", "closed", "filled"].includes(status) ? status : fallback) as JobPosting["status"];
+  return (["draft", "open", "closed", "filled"].includes(status) ? status : fallback) as JobPosting["status"];
 };
 
 const normalizeCompanySize = (value: unknown, fallback: Company["size"] = "medium") => {
@@ -382,7 +376,9 @@ export const mapCourse = (value: unknown, index = 0): Course => {
   const lecturerUser = asRecord(lecturer.user);
   const enrollments = asArray(source.enrollments);
   const sections = asArray(source.sections);
-  const courseSchedule = asArray(source.schedule);
+  const courseSchedule = asArray(source.schedule).length
+    ? asArray(source.schedule)
+    : sections.flatMap((section) => asArray(asRecord(section).schedule));
 
   const mappedSchedule = courseSchedule.length
     ? courseSchedule.map((slot, slotIndex) => mapSchedule(slot, slotIndex, fallback.schedule[slotIndex]))
@@ -415,8 +411,8 @@ export const mapCourse = (value: unknown, index = 0): Course => {
         return asString(enrollment.studentId, asString(student.studentId, asString(student.id)));
       })
       .filter(Boolean),
-    maxStudents: asNumber(source.maxStudents, fallback.maxStudents),
-    minStudents: asNumber(source.minStudents, fallback.minStudents),
+    maxStudents: asNumber(source.maxStudents, sections.reduce<number>((sum, item) => sum + asNumber(asRecord(item).maxStudents, 0), 0)),
+    minStudents: asNumber(source.minStudents, sections.reduce<number>((sum, item) => sum + asNumber(asRecord(item).minStudents, 0), 0)),
     sections: sections.length
       ? sections.map((item, sectionIndex) => {
           const section = asRecord(item);
@@ -448,20 +444,27 @@ export const mapCourse = (value: unknown, index = 0): Course => {
         size: asString(material.size, ""),
       };
     }),
-    assignments: asArray(source.assignments).map((item, assignmentIndex) => {
-      const assignment = asRecord(item);
+    grades: fallback.grades,
+    gradingCriteria: asArray(source.gradingCriteria).map((item, criteriaIndex) => {
+      const criteria = asRecord(item);
       return {
-        id: asString(assignment.id, `${fallback.id}-assignment-${assignmentIndex}`),
-        title: asString(assignment.title, "Assignment"),
-        description: asString(assignment.description, ""),
-        type: normalizeAssignmentType(assignment.type),
-        dueDate: asDate(assignment.dueDate),
-        maxScore: asNumber(assignment.maxScore, 100),
-        submissions: asArray(assignment.submissions) as Course["assignments"][number]["submissions"],
-        isPublished: asBoolean(assignment.isPublished, true),
+        id: asString(criteria.id, `${fallback.id}-criteria-${criteriaIndex}`),
+        courseId: asString(criteria.courseId, asString(source.id, fallback.id)),
+        name: asString(criteria.name, `Criteria ${criteriaIndex + 1}`),
+        weightPercentage: asNumber(criteria.weightPercentage, 0),
+        maxScore: asNumber(criteria.maxScore, 100),
+        orderIndex: asNumber(criteria.orderIndex, criteriaIndex),
       };
     }),
-    grades: fallback.grades,
+    gradeCutoffs: asArray(source.gradeCutoffs).map((item, cutoffIndex) => {
+      const cutoff = asRecord(item);
+      return {
+        id: asString(cutoff.id, `${fallback.id}-cutoff-${cutoffIndex}`),
+        courseId: asString(cutoff.courseId, asString(source.id, fallback.id)),
+        grade: asString(cutoff.grade),
+        minScore: asNumber(cutoff.minScore, 0),
+      };
+    }),
   };
 };
 
@@ -814,11 +817,17 @@ export const mapGrade = (value: unknown, index = 0): Grade => {
     ...fallback,
     studentId: asString(source.studentId, fallback.studentId),
     courseId: asString(source.courseId, asString(course.id, fallback.courseId)),
-    midterm: source.midterm === null || typeof source.midterm === "undefined" ? undefined : asNumber(source.midterm, 0),
-    final: source.final === null || typeof source.final === "undefined" ? undefined : asNumber(source.final, 0),
-    assignments: source.assignments === null || typeof source.assignments === "undefined" ? undefined : asNumber(source.assignments, 0),
-    participation: source.participation === null || typeof source.participation === "undefined" ? undefined : asNumber(source.participation, 0),
-    project: source.project === null || typeof source.project === "undefined" ? undefined : asNumber(source.project, 0),
+    scores: asArray(source.scores).map((item) => {
+      const score = asRecord(item);
+      const criterion = asRecord(score.criteria);
+      return {
+        id: asString(score.id) || undefined,
+        enrollmentId: asString(score.enrollmentId) || undefined,
+        criteriaId: asString(score.criteriaId),
+        criteriaName: asString(criterion.name),
+        score: asNumber(score.score, 0),
+      };
+    }),
     total: source.total === null || typeof source.total === "undefined" ? undefined : asNumber(source.total, 0),
     letterGrade: (asString(source.letterGrade) || undefined) as Grade["letterGrade"],
     gradedBy: asString(source.gradedBy),

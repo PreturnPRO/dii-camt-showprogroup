@@ -90,7 +90,7 @@ export default function LoginPage() {
             </p>
           </motion.div>
         </div>
-        
+
         <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
             © 2026 Xchange. All rights reserved.
         </div>

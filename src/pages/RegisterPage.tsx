@@ -351,7 +351,7 @@ export default function RegisterPage() {
                                         {t.register.registerAs} <span className="font-bold text-blue-600 px-2 py-1 bg-blue-50 rounded-lg dark:text-slate-300 dark:bg-slate-800">
                                             {role === 'student' ? t.roles.student :
                                                 role === 'company' ? t.roles.company :
-                                                    role === 'lecturer' ? t.roles.lecturer : 
+                                                    role === 'lecturer' ? t.roles.lecturer :
                                                         role === 'enterprise' ? 'Enterprise Entity' : t.roles.staff}
                                         </span>
                                     </p>

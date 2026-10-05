@@ -18,6 +18,8 @@ import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCompany, mapCourse, mapGrade, mapJob, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import type { Company, Course, Grade, JobPosting, Student } from '@/types';
+import AdminDashboard from '../AdminDashboard';
+import StaffDashboard from '../StaffDashboard';
 
 // =============================================================================
 // 1. MOBILE COMPANY DASHBOARD (เน้นพิเศษสำหรับสถานประกอบการ)
@@ -1023,7 +1025,12 @@ export function MobileDashboard() {
     case 'lecturer':
       return <MobileLecturerDashboard />;
     case 'student':
-    default:
       return <MobileStudentDashboard />;
+    case 'admin':
+      return <AdminDashboard />;
+    case 'staff':
+      return <StaffDashboard />;
+    default:
+      return null;
   }
 }

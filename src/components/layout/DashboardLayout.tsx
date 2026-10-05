@@ -6,6 +6,7 @@ import { MobileHeader } from './mobile/MobileHeader';
 import { MobileBottomNav } from './mobile/MobileBottomNav';
 import { MobileDrawer } from './mobile/MobileDrawer';
 import { useAuth } from '@/contexts/AuthContext';
+import { CompanyOnboardingDialog } from '@/components/common/CompanyOnboardingDialog';
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -94,6 +95,7 @@ export function DashboardLayout() {
           onClose={() => setIsMobileDrawerOpen(false)}
         />
       </div>
+      <CompanyOnboardingDialog />
     </div>
   );
 }

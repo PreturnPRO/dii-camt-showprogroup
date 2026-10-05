@@ -35,7 +35,7 @@ export default function Schedule() {
   const { t, language } = useLanguage();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  
+
   // Support ?view=week or ?view=month with 'week' as default
   const initialView = searchParams.get('view') === 'month' ? 'month' : 'week';
   const [calendarView, setCalendarView] = React.useState<'week' | 'month'>(initialView);

@@ -198,7 +198,7 @@ export default function Budget() {
                     { icon: Receipt, label: t.budgetPage.pendingApproval, value: String(pendingCount), sub: t.budgetPage.disbursementReqs, gradient: '', shadow: '' },
                 ].map((stat, i) => (
                     <motion.div key={i} whileHover={{ scale: 1.02 }} className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 ${stat.shadow}`}>
-                        
+
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-3">
                                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-5 h-5" /></div>

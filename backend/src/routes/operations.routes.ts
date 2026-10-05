@@ -8,8 +8,6 @@ import {
   budgetUpdateSchema,
   cooperationSchema,
   workloadSchema,
-  paymentSchema,
-  paymentQuerySchema,
 } from "../schemas/operations.schema";
 import {
   getBudget,
@@ -21,9 +19,6 @@ import {
   createCooperation,
   getWorkload,
   createWorkload,
-  getSubscriptionPlans,
-  getSubscriptionPayments,
-  createSubscriptionPayment,
 } from "../controllers/operations.controller";
 
 const router = Router();
@@ -93,27 +88,6 @@ router.post(
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(workloadSchema),
   createWorkload
-);
-
-router.get(
-  "/subscription/plans",
-  getSubscriptionPlans
-);
-
-router.get(
-  "/subscription/payments",
-  requireAuth,
-  checkRole([Role.COMPANY, Role.ADMIN]),
-  validate(paymentQuerySchema, "query"),
-  getSubscriptionPayments
-);
-
-router.post(
-  "/subscription/payment",
-  requireAuth,
-  checkRole([Role.COMPANY, Role.ADMIN]),
-  validate(paymentSchema),
-  createSubscriptionPayment
 );
 
 export const operationsRoutes = router;

@@ -201,11 +201,10 @@ export interface Course {
 
   // Materials
   materials: CourseMaterial[];
-  assignments: Assignment[];
-
   // Grading
   grades: Grade[];
-  gradingCriteria?: GradingCriteria;
+  gradingCriteria?: CourseGradingCriteria[];
+  gradeCutoffs?: CourseGradeCutoff[];
 }
 
 export interface Section {
@@ -237,46 +236,36 @@ export interface CourseMaterial {
   size?: string;
 }
 
-export interface Assignment {
+export interface CourseGradingCriteria {
   id: string;
-  title: string;
-  description: string;
-  type: 'individual' | 'group';
-  dueDate: Date;
+  courseId: string;
+  name: string;
+  weightPercentage: number;
   maxScore: number;
-  submissions: Submission[];
-  isPublished: boolean;
+  orderIndex: number;
 }
 
-export interface Submission {
+export interface CourseGradeCutoff {
   id: string;
-  studentId: string;
-  studentIds?: string[]; // For group work
-  submittedAt: Date;
-  files: string[];
-  score?: number;
-  feedback?: string;
-  status: 'submitted' | 'graded' | 'late' | 'missing';
+  courseId: string;
+  grade: string;
+  minScore: number;
 }
 
-export interface GradingCriteria {
-  midterm: number; // percentage
-  final: number;
-  assignments: number;
-  participation: number;
-  project?: number;
+export interface EnrollmentScore {
+  id?: string;
+  enrollmentId?: string;
+  criteriaId: string;
+  criteriaName?: string;
+  score: number;
 }
 
 export interface Grade {
   studentId: string;
   courseId: string;
-  midterm?: number;
-  final?: number;
-  assignments?: number;
-  participation?: number;
-  project?: number;
+  scores?: EnrollmentScore[];
   total?: number;
-  letterGrade?: 'A' | 'B+' | 'B' | 'C+' | 'C' | 'D+' | 'D' | 'F' | 'I' | 'W';
+  letterGrade?: string;
   gradedBy: string;
   gradedAt?: Date;
   remarks?: string;
@@ -443,7 +432,7 @@ export interface JobPosting {
 
   // Job details
   title: string;
-  type: 'internship' | 'full-time' | 'part-time' | 'contract';
+  type: 'internship' | 'full-time' | 'part-time' | 'contract' | 'skill_requirement';
   positions: number;
 
   // Description
@@ -469,7 +458,7 @@ export interface JobPosting {
   maxApplicants?: number;
 
   // Status
-  status: 'open' | 'closed' | 'filled';
+  status: 'draft' | 'open' | 'closed' | 'filled';
   isActive: boolean;
   postedAt: Date;
 }
@@ -838,4 +827,3 @@ export interface StudentRequest {
   createdAt: Date;
   updatedAt: Date;
 }
-

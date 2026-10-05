@@ -164,15 +164,14 @@ const roleDashboardConfig: Record<Exclude<UserRole, 'student'>, {
             { label: 'ผู้สมัคร', path: '/applicants', icon: Users },
             { label: 'ค้นหานักศึกษา', path: '/student-profiles', icon: GraduationCap },
             { label: 'ติดตามฝึกงาน', path: '/intern-tracking', icon: Building2 },
-            { label: 'แพ็กเกจ', path: '/subscription', icon: Wallet },
             { label: 'ข้อความ', path: '/messages', icon: MessageSquare },
         ],
-        focus: ['ตรวจผู้สมัครใหม่', 'อัปเดตสถานะนักศึกษาฝึกงาน', 'ดูสิทธิ์แพ็กเกจปัจจุบัน'],
+        focus: ['ตรวจผู้สมัครใหม่', 'อัปเดตสถานะนักศึกษาฝึกงาน', 'ติดตามข้อความใหม่'],
         defaultMetrics: [
             { label: 'ประกาศงาน', value: '0', description: 'ตำแหน่งที่เปิด', icon: Briefcase, tone: 'from-emerald-500 to-teal-600' },
             { label: 'ผู้สมัคร', value: '0', description: 'ใบสมัครทั้งหมด', icon: Users, tone: 'from-blue-500 to-indigo-600' },
             { label: 'ฝึกงาน', value: '0', description: 'รายการ internship', icon: Building2, tone: 'from-violet-500 to-purple-600' },
-            { label: 'การชำระเงิน', value: '0', description: 'รายการ subscription', icon: Wallet, tone: 'from-amber-500 to-orange-600' },
+            { label: 'ข้อความ', value: '0', description: 'ข้อความในระบบ', icon: MessageSquare, tone: 'from-amber-500 to-orange-600' },
         ],
     },
     admin: {
@@ -515,11 +514,11 @@ export default function PersonalDashboard() {
                         { ...config.defaultMetrics[3], value: String(rowsFromResult(auditResult, 'logs').length) },
                     ]);
                 } else if (role === 'company') {
-                    const [jobsResult, applicationsResult, internshipsResult, paymentsResult] = await Promise.allSettled([
+                    const [jobsResult, applicationsResult, internshipsResult, messagesResult] = await Promise.allSettled([
                         api.jobs.list(),
                         api.applications.list(),
                         api.internship.list(),
-                        api.subscription.payments(),
+                        api.messages.list(),
                     ]);
 
                     if (!mounted) return;
@@ -527,7 +526,7 @@ export default function PersonalDashboard() {
                         { ...config.defaultMetrics[0], value: String(rowsFromResult(jobsResult, 'jobs').length) },
                         { ...config.defaultMetrics[1], value: String(rowsFromResult(applicationsResult, 'applications').length) },
                         { ...config.defaultMetrics[2], value: String(rowsFromResult(internshipsResult, 'internships').length) },
-                        { ...config.defaultMetrics[3], value: String(rowsFromResult(paymentsResult, 'payments').length) },
+                        { ...config.defaultMetrics[3], value: String(rowsFromResult(messagesResult, 'messages').length) },
                     ]);
                 } else if (role === 'admin') {
                     const [usersResult, reportsResult, auditResult, notificationsResult] = await Promise.allSettled([

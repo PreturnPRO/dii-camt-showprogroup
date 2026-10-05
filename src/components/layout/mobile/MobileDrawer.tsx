@@ -64,9 +64,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             { icon: GraduationCap, label: 'ผลการเรียน', labelEn: 'Grades', href: '/grades' },
           ],
           services: [
-            { icon: ClipboardList, label: 'งาน / Assignment', labelEn: 'Assignments', href: '/assignments' },
             { icon: FileCheck, label: 'ลงทะเบียนเรียน', labelEn: 'Enrollment', href: '/enrollment' },
-            { icon: CreditCard, label: 'ค่าเทอม', labelEn: 'Tuition Fees', href: '/tuition' },
             { icon: Bell, label: 'การแจ้งเตือน', labelEn: 'Notifications', href: '/notifications' },
           ],
           extras: [

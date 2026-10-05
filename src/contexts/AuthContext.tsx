@@ -30,6 +30,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
+  companyLogin: (phone: string) => Promise<boolean>;
   register: (payload: RegisterPayload) => Promise<boolean>;
   updateProfile: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -107,6 +108,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applySessionUser],
   );
 
+  const companyLogin = useCallback(
+    async (phone: string): Promise<boolean> => {
+      const response = await api.auth.companyLogin(phone);
+      
+      const rawUser: any = (response.user as any).raw || response.user;
+      const onboardingStatus = rawUser?.companyProfile?.onboardingStatus;
+      
+      if (onboardingStatus !== 'completed') {
+        sessionStorage.setItem('showpro_company_first_access', 'true');
+      } else {
+        sessionStorage.removeItem('showpro_company_first_access');
+      }
+      
+      setStoredToken(response.token);
+      await applySessionUser(response.user);
+      return true;
+    },
+    [applySessionUser],
+  );
+
   const register = useCallback(
     async (payload: RegisterPayload): Promise<boolean> => {
       const response = await api.auth.register({
@@ -158,13 +179,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
+      companyLogin,
       register,
       updateProfile,
       logout,
       switchRole,
       refreshSession,
     }),
-    [isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
+    [companyLogin, isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

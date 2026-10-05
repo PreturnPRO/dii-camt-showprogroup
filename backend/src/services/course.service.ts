@@ -27,8 +27,9 @@ export const getCourses = async (query: { q?: string; semester?: number; academi
       lecturer: { include: { user: true } },
       sections: { include: { facility: true } },
       materials: true,
-      assignments: true,
       enrollments: true,
+      gradingCriteria: { orderBy: { orderIndex: "asc" } },
+      gradeCutoffs: true,
     },
     orderBy: [{ academicYear: "desc" }, { semester: "desc" }, { code: "asc" }],
   });
@@ -43,7 +44,6 @@ export const getCourseById = async (courseIdentifier: string) => {
       lecturer: { include: { user: true } },
       sections: { include: { facility: true } },
       materials: true,
-      assignments: { include: { submissions: true } },
       enrollments: {
         include: {
           student: { include: { user: true } },
@@ -61,7 +61,7 @@ export const getCourseById = async (courseIdentifier: string) => {
 
 export const createCourse = async (data: any) => {
   const { sections, materials, gradingCriteria: inputGradingCriteria, gradeCutoffs, ...courseData } = data;
-  
+
   let gradingCriteria = inputGradingCriteria;
   if (!gradingCriteria || gradingCriteria.length === 0) {
     gradingCriteria = [
@@ -72,7 +72,7 @@ export const createCourse = async (data: any) => {
       { name: 'Project', weightPercentage: 10, maxScore: 100, orderIndex: 4 },
     ];
   }
-  
+
   let finalGradeCutoffs = gradeCutoffs;
   if (!finalGradeCutoffs || finalGradeCutoffs.length === 0) {
     finalGradeCutoffs = [
@@ -86,7 +86,7 @@ export const createCourse = async (data: any) => {
       { grade: 'F', minScore: 0 },
     ];
   }
-  
+
   if (gradingCriteria) {
     const totalWeight = gradingCriteria.reduce((sum: number, c: any) => sum + (Number(c.weightPercentage) || 0), 0);
     if (totalWeight > 100) {
@@ -295,9 +295,6 @@ export const importCourses = async (coursesData: any[]) => {
           description: courseData.description || "",
           prerequisites: courseData.prerequisites || [],
           status: "active",
-          room: courseData.room || "",
-          schedule: courseData.schedule || [],
-          maxStudents: courseData.maxStudents || 60,
           sections: {
             create: [
               {

@@ -30,11 +30,8 @@ type EnrollmentRow = {
   courseId: string;
   courseCode: string;
   courseName: string;
-  midterm?: number;
-  final?: number;
-  assignments?: number;
-  participation?: number;
-  project?: number;
+  criteria: Array<{ id: string; name: string; maxScore: number }>;
+  scores: Array<{ criteriaId: string; score: number }>;
   total?: number;
   letterGrade?: string;
   remarks?: string;
@@ -125,7 +122,7 @@ export default function Grades() {
       Promise.allSettled([
         api.students.profile(),
         api.students.stats(),
-        api.grades.transcript(),
+        api.enrollments.list(),
         api.courses.list(),
       ]).then(([profileResult, statsResult, transcriptResult, coursesResult]) => {
         if (!mounted) return;
@@ -140,8 +137,8 @@ export default function Grades() {
         setStudent(nextStudent);
 
         if (transcriptResult.status === 'fulfilled') {
-          setGrades(transcriptResult.value.transcript.map(mapGrade));
-          const transcriptCourses = transcriptResult.value.transcript
+          setGrades(transcriptResult.value.enrollments.map(mapGrade));
+          const transcriptCourses = transcriptResult.value.enrollments
             .map((item, index) => mapCourse(asRecord(item).course, index))
             .filter((course) => course.id);
           if (transcriptCourses.length > 0) {
@@ -161,15 +158,25 @@ export default function Grades() {
         if (mounted) setIsLoading(false);
       });
     } else {
+      // Staff/admin aren't lecturers — lecturerSchedule() would 400 without an
+      // explicit lecturerId, so they get the full course list instead. The
+      // backend already scopes enrollments to "everything" for these roles.
+      const coursesRequest = user?.role === 'lecturer'
+        ? api.courses.lecturerSchedule().then((response) => response.schedule)
+        : api.courses.list().then((response) => response.courses);
+
       Promise.allSettled([
-        api.courses.lecturerSchedule().then((response) => response.schedule),
+        coursesRequest,
         api.enrollments.list(),
       ])
         .then(([coursesResult, enrollmentsResult]) => {
           if (!mounted) return;
 
+          const loadedCourses = coursesResult.status === 'fulfilled'
+            ? coursesResult.value.map(mapCourse)
+            : [];
           if (coursesResult.status === 'fulfilled') {
-            setCourses(coursesResult.value.map(mapCourse));
+            setCourses(loadedCourses);
           } else {
             setCourses([]);
           }
@@ -192,11 +199,17 @@ export default function Grades() {
                 courseId: asString(enrollment.courseId),
                 courseCode: asString(course.code),
                 courseName: asString(course.nameThai, asString(course.name)),
-                midterm: enrollment.midterm === null ? undefined : asNumber(enrollment.midterm, 0),
-                final: enrollment.final === null ? undefined : asNumber(enrollment.final, 0),
-                assignments: enrollment.assignments === null ? undefined : asNumber(enrollment.assignments, 0),
-                participation: enrollment.participation === null ? undefined : asNumber(enrollment.participation, 0),
-                project: enrollment.project === null ? undefined : asNumber(enrollment.project, 0),
+                criteria: (loadedCourses.find((loadedCourse) => loadedCourse.id === asString(enrollment.courseId))?.gradingCriteria ?? []).map((criterion, index) => {
+                  return {
+                    id: criterion.id,
+                    name: criterion.name || `Criteria ${index + 1}`,
+                    maxScore: criterion.maxScore,
+                  };
+                }),
+                scores: asArray(enrollment.scores).map((item) => {
+                  const score = asRecord(item);
+                  return { criteriaId: asString(score.criteriaId), score: asNumber(score.score, 0) };
+                }),
                 total,
                 letterGrade: asString(enrollment.letterGrade),
                 remarks: asString(enrollment.remarks),
@@ -233,18 +246,28 @@ export default function Grades() {
     }
   };
 
-  const updateEnrollmentDraft = (id: string, field: keyof EnrollmentRow, value: string) => {
+  const updateEnrollmentScore = (id: string, criteriaId: string, value: string) => {
     setEnrollments((current) => current.map((item) => {
       if (item.id !== id) return item;
-      if (['midterm', 'final', 'assignments', 'participation', 'project', 'total'].includes(field)) {
-        return { ...item, [field]: value === '' ? undefined : Number(value) };
-      }
-      return { ...item, [field]: value };
+      if (value === '') return item;
+      const scores = item.scores.filter((score) => score.criteriaId !== criteriaId);
+      scores.push({ criteriaId, score: Number(value) });
+      return { ...item, scores };
+    }));
+  };
+
+  const updateEnrollmentDraft = (id: string, field: 'total' | 'letterGrade' | 'remarks', value: string) => {
+    setEnrollments((current) => current.map((item) => item.id !== id ? item : {
+      ...item,
+      [field]: field === 'total' ? (value === '' ? undefined : Number(value)) : value,
     }));
   };
 
   const saveLecturerGrades = async () => {
-    const rowsToSave = enrollments.filter((item) => selectedCourseId === 'all' || item.courseId === selectedCourseId);
+    const rowsToSave = enrollments.filter((item) =>
+      (selectedCourseId === 'all' || item.courseId === selectedCourseId) &&
+      (item.scores.length > 0 || item.total !== undefined || Boolean(item.letterGrade) || Boolean(item.remarks)),
+    );
     setIsSaving(true);
     try {
       const response = await api.grades.bulkUpdate({
@@ -252,11 +275,7 @@ export default function Grades() {
           enrollmentId: item.id,
           studentId: item.studentId,
           courseId: item.courseId,
-          midterm: item.midterm,
-          final: item.final,
-          assignments: item.assignments,
-          participation: item.participation,
-          project: item.project,
+          scores: item.scores,
           total: item.total,
           letterGrade: item.letterGrade || undefined,
           remarks: item.remarks || undefined,
@@ -274,11 +293,15 @@ export default function Grades() {
         if (!updated) return item;
         return {
           ...item,
-          midterm: updated.midterm === null ? undefined : asNumber(updated.midterm, item.midterm),
-          final: updated.final === null ? undefined : asNumber(updated.final, item.final),
-          assignments: updated.assignments === null ? undefined : asNumber(updated.assignments, item.assignments),
-          participation: updated.participation === null ? undefined : asNumber(updated.participation, item.participation),
-          project: updated.project === null ? undefined : asNumber(updated.project, item.project),
+          scores: asArray(updated.scores).map((value) => {
+            const score = asRecord(value);
+            return { criteriaId: asString(score.criteriaId), score: asNumber(score.score, 0) };
+          }).length
+            ? asArray(updated.scores).map((value) => {
+                const score = asRecord(value);
+                return { criteriaId: asString(score.criteriaId), score: asNumber(score.score, 0) };
+              })
+            : item.scores,
           total: updated.total === null ? undefined : asNumber(updated.total, item.total),
           letterGrade: asString(updated.letterGrade, item.letterGrade),
           remarks: asString(updated.remarks, item.remarks),
@@ -534,7 +557,8 @@ export default function Grades() {
                 const course = courses.find(c => c.id === grade.courseId);
                 if (!course) return null;
 
-                const getGradeBadge = (g: string) => {
+                const getGradeBadge = (g?: string) => {
+                  if (!g) return 'bg-slate-400 text-white';
                   if (g === 'A') return 'bg-emerald-600 text-white';
                   if (g.startsWith('B')) return 'bg-blue-600 text-white';
                   if (g.startsWith('C')) return 'bg-amber-600 text-white';
@@ -582,18 +606,12 @@ export default function Grades() {
 
                       {/* Score Breakdown Strip with prominent Total */}
                       <div className="grid grid-cols-4 gap-2 my-3 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 text-center font-mono">
-                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Mid</div>
-                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.midterm || '-'}</div>
-                        </div>
-                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Final</div>
-                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.final || '-'}</div>
-                        </div>
-                        <div className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
-                          <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5">Assign</div>
-                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{grade.assignments || '-'}</div>
-                        </div>
+                        {grade.scores?.slice(0, 3).map((score) => (
+                          <div key={score.criteriaId} className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50">
+                            <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5 truncate">{score.criteriaName || 'Score'}</div>
+                            <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{score.score}</div>
+                          </div>
+                        ))}
                         <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60">
                           <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-sans font-bold mb-0.5">Total</div>
                           <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total}</div>
@@ -736,8 +754,12 @@ export default function Grades() {
   const filteredEnrollments = selectedCourseId === 'all'
     ? enrollments
     : enrollments.filter((item) => item.courseId === selectedCourseId);
+  const saveableEnrollments = filteredEnrollments.filter((item) =>
+    item.scores.length > 0 || item.total !== undefined || Boolean(item.letterGrade) || Boolean(item.remarks),
+  );
   const gradedCount = enrollments.filter((item) => item.letterGrade).length;
   const pendingCount = enrollments.length - gradedCount;
+  const maxCriteriaCount = Math.max(0, ...filteredEnrollments.map((row) => row.criteria.length));
 
   return (
     <motion.div
@@ -797,7 +819,7 @@ export default function Grades() {
                 <option key={course.id} value={course.id}>{course.code} - {course.name}</option>
               ))}
             </select>
-            <Button onClick={saveLecturerGrades} disabled={isSaving || filteredEnrollments.length === 0} className="h-11 rounded-2xl">
+            <Button onClick={saveLecturerGrades} disabled={isSaving || saveableEnrollments.length === 0} className="h-11 rounded-2xl">
               {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึกคะแนน' : 'Save grades')}
             </Button>
           </div>
@@ -810,20 +832,16 @@ export default function Grades() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[980px] space-y-2">
-              <div className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400">
+              <div className="grid gap-2 px-3 text-xs font-bold uppercase tracking-wide text-slate-400" style={{ gridTemplateColumns: `minmax(180px,1.3fr) minmax(120px,1fr) repeat(${maxCriteriaCount},88px) 88px 80px minmax(140px,1.2fr)` }}>
                 <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
                 <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
-                <span>Mid</span>
-                <span>Final</span>
-                <span>Assign</span>
-                <span>Part.</span>
-                <span>Project</span>
+                {Array.from({ length: maxCriteriaCount }, (_, index) => <span key={index}>Score {index + 1}</span>)}
                 <span>Total</span>
                 <span>Grade</span>
                 <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>
               </div>
               {filteredEnrollments.map((row) => (
-                <div key={row.id} className="grid grid-cols-[1.3fr_1fr_repeat(6,88px)_100px_1.2fr] items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70">
+                <div key={row.id} className="grid items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70" style={{ gridTemplateColumns: `minmax(180px,1.3fr) minmax(120px,1fr) repeat(${maxCriteriaCount},88px) 88px 80px minmax(140px,1.2fr)` }}>
                   <div className="min-w-0">
                     <div className="truncate text-sm font-bold text-slate-900 dark:text-slate-100">{row.studentName}</div>
                     <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.studentCode}</div>
@@ -832,16 +850,20 @@ export default function Grades() {
                     <div className="truncate text-sm font-bold text-emerald-700 dark:text-emerald-300">{row.courseCode}</div>
                     <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
                   </div>
-                  {(['midterm', 'final', 'assignments', 'participation', 'project', 'total'] as const).map((field) => (
+                  {row.criteria.map((criterion) => (
                     <Input
-                      key={field}
+                      key={criterion.id}
                       type="number"
                       min="0"
-                      value={row[field] ?? ''}
-                      onChange={(event) => updateEnrollmentDraft(row.id, field, event.target.value)}
+                      max={criterion.maxScore}
+                      title={`${criterion.name} (max ${criterion.maxScore})`}
+                      value={row.scores.find((score) => score.criteriaId === criterion.id)?.score ?? ''}
+                      onChange={(event) => updateEnrollmentScore(row.id, criterion.id, event.target.value)}
                       className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center dark:border-slate-700 dark:bg-slate-900"
                     />
                   ))}
+                  {Array.from({ length: maxCriteriaCount - row.criteria.length }, (_, index) => <span key={`empty-${index}`} />)}
+                  <Input type="number" min="0" value={row.total ?? ''} onChange={(event) => updateEnrollmentDraft(row.id, 'total', event.target.value)} className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center dark:border-slate-700 dark:bg-slate-900" />
                   <Input
                     value={row.letterGrade ?? ''}
                     onChange={(event) => updateEnrollmentDraft(row.id, 'letterGrade', event.target.value.toUpperCase())}

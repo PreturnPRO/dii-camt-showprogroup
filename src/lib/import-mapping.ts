@@ -91,6 +91,19 @@ export const guessColumnMapping = (columns: string[], fields: ImportField[]): Co
 
 const cleanCellValue = (value: unknown) => String(value ?? '').trim();
 
+export const normalizePhone = (value: string): string => {
+  let digits = value.replace(/\D/g, '');
+  if (digits.startsWith('66')) {
+    digits = '0' + digits.slice(2);
+  }
+  if (digits.length > 0 && !digits.startsWith('0')) {
+    if (digits.length === 9 || digits.length === 8) {
+      digits = '0' + digits;
+    }
+  }
+  return digits;
+};
+
 export const mapRows = (
   rows: ParsedImportRow[],
   fields: ImportField[],
@@ -100,8 +113,12 @@ export const mapRows = (
     rowNumber: index + 2,
     values: fields.reduce<Record<string, string>>((values, field) => {
       const sourceColumn = mapping[field.key];
-      const value = sourceColumn ? cleanCellValue(row[sourceColumn]) : '';
-      values[field.key] = value || cleanCellValue(field.defaultValue);
+      let value = sourceColumn ? cleanCellValue(row[sourceColumn]) : '';
+      value = value || cleanCellValue(field.defaultValue);
+      if (field.type === 'phone' && value) {
+        value = normalizePhone(value);
+      }
+      values[field.key] = value;
       return values;
     }, {}),
   }));

@@ -17,15 +17,15 @@ interface StatsCardProps {
   className?: string;
 }
 
-export function StatsCard({ 
-  title, 
-  value, 
+export function StatsCard({
+  title,
+  value,
   subtitle,
-  description, 
-  icon, 
-  trend, 
+  description,
+  icon,
+  trend,
   variant = 'default',
-  className 
+  className
 }: StatsCardProps) {
   const getVariantStyles = () => {
     switch (variant) {

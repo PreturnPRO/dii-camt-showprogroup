@@ -382,7 +382,7 @@ export default function StudentProfiles() {
                     )}
                     {!isLoading && filteredStudents.length === 0 && (
                         <div className="md:col-span-2 lg:col-span-3 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-                            ยังไม่มีโปรไฟล์นักศึกษาจาก API หรือไม่ตรงกับตัวกรอง
+                            ยังไม่มีโปรไฟล์นักศึกษา หรือไม่ตรงกับตัวกรอง
                         </div>
                     )}
                 </div>

@@ -35,3 +35,5 @@ guide/*
 .env.test.local
 .env.production
 .env.production.local
+
+.playwright-mcp

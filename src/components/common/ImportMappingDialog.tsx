@@ -29,9 +29,16 @@ interface ImportMappingDialogProps {
 
 const NONE_VALUE = '__none__';
 
+const isCsvFile = (file: File) =>
+  file.name.toLowerCase().endsWith('.csv') || file.type === 'text/csv';
+
 const readWorkbookRows = async (file: File): Promise<ParsedImportRow[]> => {
   const buffer = await file.arrayBuffer();
-  const workbook = XLSX.read(buffer, { type: 'array' });
+
+  const workbook = isCsvFile(file)
+    ? XLSX.read(new TextDecoder('utf-8').decode(buffer), { type: 'string' })
+    : XLSX.read(buffer, { type: 'array' });
+
   const firstSheetName = workbook.SheetNames[0];
   const sheet = workbook.Sheets[firstSheetName];
   if (!sheet) return [];
@@ -126,8 +133,8 @@ export function ImportMappingDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-5xl">
-        <DialogHeader>
+      <DialogContent className="max-w-5xl max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="flex items-center gap-2">
             <FileSpreadsheet className="h-5 w-5 text-emerald-600" />
             {title}
@@ -135,7 +142,7 @@ export function ImportMappingDialog({
           <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-5">
+        <div className="flex-1 min-h-0 overflow-y-auto space-y-5 pr-1">
           <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
             <Label htmlFor="import-file" className="mb-2 block text-sm font-medium">
               เลือกไฟล์ Excel หรือ CSV
@@ -213,7 +220,7 @@ export function ImportMappingDialog({
               )}
 
               <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-800">
-                <div className="max-h-72 overflow-auto">
+                <div className="max-h-48 overflow-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -243,20 +250,20 @@ export function ImportMappingDialog({
 
           {error && (
             <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              <AlertCircle className="h-4 w-4" />
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {result && (
             <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
-              <CheckCircle2 className="h-4 w-4" />
+              <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
               Import สำเร็จ {result.successCount} รายการ, ไม่สำเร็จ {result.failureCount} รายการ
             </div>
           )}
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="flex-shrink-0">
           <Button variant="outline" onClick={() => handleOpenChange(false)} disabled={isImporting}>
             ปิด
           </Button>

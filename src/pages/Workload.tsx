@@ -73,11 +73,11 @@ export default function Workload() {
                     const mappedSlots = scheduleItems.flatMap((item, courseIndex) => {
                         const course = asRecord(item);
                         const sections = asArray(course.sections);
-                        const sectionSource = sections.length ? sections : [course];
+                        const sectionSource = sections.length ? sections : [course.sections?.[0] || {}];
 
                         return sectionSource.map((sectionItem, sectionIndex) => {
                             const section = asRecord(sectionItem);
-                            const schedule = asRecord(section.schedule || course.schedule);
+                            const schedule = asRecord(section.schedule || course.sections?.[0]?.schedule);
                             const startTime = asString(schedule.startTime, asString(schedule.start, '09:00'));
                             const endTime = asString(schedule.endTime, asString(schedule.end, '12:00'));
 
@@ -144,7 +144,7 @@ export default function Workload() {
                     whileHover={{ scale: 1.02 }}
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -168,7 +168,7 @@ export default function Workload() {
                     whileHover={{ scale: 1.02 }}
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -185,7 +185,7 @@ export default function Workload() {
                     whileHover={{ scale: 1.02 }}
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -202,7 +202,7 @@ export default function Workload() {
                     whileHover={{ scale: 1.02 }}
                     className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
                             <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">

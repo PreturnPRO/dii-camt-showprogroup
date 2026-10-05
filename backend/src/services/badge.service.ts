@@ -73,10 +73,6 @@ export const evaluateStudentBadges = async (studentId: string) => {
     include: {
       badges: true,
       portfolio: { include: { projects: true } },
-      questEnrollments: {
-        where: { status: "completed" },
-        select: { id: true },
-      },
     },
   });
 
@@ -89,7 +85,7 @@ export const evaluateStudentBadges = async (studentId: string) => {
     xp: student.xp,
     gamificationPoints: student.gamificationPoints,
     totalActivityHours: student.totalActivityHours,
-    completedQuests: student.questEnrollments.length,
+    completedQuests: 0,
     projects: student.portfolio?.projects.length ?? 0,
   };
 

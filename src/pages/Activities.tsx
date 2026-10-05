@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/tooltip';
 import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapActivity, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { mapActivity } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import type { Activity, Student } from '@/types';
 
@@ -293,23 +293,17 @@ export default function Activities() {
   React.useEffect(() => {
     let mounted = true;
 
-    Promise.allSettled([api.activities.list(), api.player.stats()])
-      .then(([activitiesResult, statsResult]) => {
+    Promise.allSettled([api.activities.list()])
+      .then(([activitiesResult]) => {
         if (!mounted) return;
-
-        let nextStudent = emptyStudent;
-        if (statsResult.status === 'fulfilled') {
-          nextStudent = mapStudentStatsToStudent(emptyStudent, statsResult.value.stats);
-          setStudent(nextStudent);
-        }
 
         if (activitiesResult.status === 'fulfilled') {
           setActivities(activitiesResult.value.activities.map(mapActivity));
           setLeaderboard(
             buildLeaderboard(
               activitiesResult.value.activities,
-              user?.nameThai || user?.name || nextStudent.nameThai,
-              nextStudent.gamificationPoints,
+              user?.nameThai || user?.name || emptyStudent.nameThai,
+              emptyStudent.gamificationPoints,
             ),
           );
         }

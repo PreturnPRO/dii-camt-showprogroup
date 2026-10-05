@@ -2,7 +2,6 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { getCompanyProfileByUserId, getLecturerProfileByUserId } from "../services/profile.service";
-import { createCompanyPayment } from "../services/subscription.service";
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
@@ -190,81 +189,5 @@ export const createWorkload = asyncHandler(async (req, res) => {
   res.status(201).json({
     success: true,
     workload: record,
-  });
-});
-
-export const getSubscriptionPlans = asyncHandler(async (_req, res) => {
-  res.json({
-    success: true,
-    plans: [
-      {
-        name: "free",
-        price: 0,
-        features: ["1 active job posting", "Basic applicant tracking", "Public company profile"],
-      },
-      {
-        name: "pro",
-        price: 4900,
-        features: ["10 active job postings", "Talent search", "Intern tracking", "Priority support"],
-      },
-      {
-        name: "enterprise",
-        price: 12900,
-        features: ["Unlimited postings", "Advanced analytics", "Dedicated success manager"],
-      },
-    ],
-  });
-});
-
-export const getSubscriptionPayments = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const companyId =
-    currentUser.role === Role.COMPANY
-      ? (await getCompanyProfileByUserId(currentUser.id)).id
-      : req.query.companyId
-        ? String(req.query.companyId)
-        : undefined;
-
-  const payments = await prisma.paymentHistory.findMany({
-    where: companyId ? { companyId } : undefined,
-    include: {
-      company: {
-        include: {
-          user: true,
-        },
-      },
-    },
-    orderBy: { date: "desc" },
-  });
-
-  res.json({
-    success: true,
-    payments,
-  });
-});
-
-export const createSubscriptionPayment = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const companyId =
-    currentUser.role === Role.COMPANY
-      ? (await getCompanyProfileByUserId(currentUser.id)).id
-      : req.body.companyId;
-
-  if (!companyId) {
-    throw new AppError(400, "companyId is required");
-  }
-
-  const payment = await createCompanyPayment({
-    companyId,
-    amount: req.body.amount,
-    planName: req.body.planName,
-    status: req.body.status,
-    receiptUrl: req.body.receiptUrl,
-    referenceNumber: req.body.referenceNumber,
-  });
-
-  res.status(201).json({
-    success: true,
-    payment,
   });
 });

@@ -162,21 +162,24 @@ export default function Portfolio() {
       startDate: new Date(projectForm.startDate),
       url: projectForm.url.trim() || undefined,
       images: [],
+      highlights: [],
     };
 
     try {
-      const response = await api.portfolio.save({
-        bio: currentPortfolio?.bio ?? '',
-        projects: [...(currentPortfolio?.projects ?? []), projectPayload],
+      const response = await api.students.updateProfile({
+        portfolio: {
+          summary: currentPortfolio?.summary ?? '',
+          summaryThai: currentPortfolio?.summaryThai ?? '',
+          githubUrl: currentPortfolio?.githubUrl ?? '',
+          linkedinUrl: currentPortfolio?.linkedinUrl ?? '',
+          personalWebsite: currentPortfolio?.personalWebsite ?? '',
+          isPublic: currentPortfolio?.isPublic ?? true,
+          sharedWith: currentPortfolio?.sharedWith ?? [],
+          projects: [...(currentPortfolio?.projects ?? []), projectPayload],
+        },
       });
 
-      setStudent((current) => ({
-        ...current,
-        portfolio: {
-          bio: response.portfolio.bio ?? '',
-          projects: response.portfolio.projects ?? [],
-        },
-      }));
+      setStudent(mapStudent(response.profile));
 
       setProjectForm({
         title: '',
@@ -522,15 +525,15 @@ export default function Portfolio() {
                         variant="ghost"
                         size="icon"
                         aria-label="LinkedIn Profile"
-                        disabled={!student.linkedin}
-                        onClick={() => student.linkedin && window.open(student.linkedin, '_blank')}
+                        disabled={!student.portfolio?.linkedinUrl}
+                        onClick={() => student.portfolio?.linkedinUrl && window.open(student.portfolio.linkedinUrl, '_blank')}
                         className="h-10 w-10 min-h-[40px] min-w-[40px] bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/60 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Linkedin className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p className="text-xs">{student.linkedin ? 'เยี่ยมชม LinkedIn' : 'ยังไม่ได้เชื่อมต่อ LinkedIn'}</p>
+                      <p className="text-xs">{student.portfolio?.linkedinUrl ? 'เยี่ยมชม LinkedIn' : 'ยังไม่ได้เชื่อมต่อ LinkedIn'}</p>
                     </TooltipContent>
                   </Tooltip>
 
@@ -540,15 +543,15 @@ export default function Portfolio() {
                         variant="ghost"
                         size="icon"
                         aria-label="GitHub Profile"
-                        disabled={!student.github}
-                        onClick={() => student.github && window.open(student.github, '_blank')}
+                        disabled={!student.portfolio?.githubUrl}
+                        onClick={() => student.portfolio?.githubUrl && window.open(student.portfolio.githubUrl, '_blank')}
                         className="h-10 w-10 min-h-[40px] min-w-[40px] bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Github className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p className="text-xs">{student.github ? 'เยี่ยมชม GitHub' : 'ยังไม่ได้เชื่อมต่อ GitHub'}</p>
+                      <p className="text-xs">{student.portfolio?.githubUrl ? 'เยี่ยมชม GitHub' : 'ยังไม่ได้เชื่อมต่อ GitHub'}</p>
                     </TooltipContent>
                   </Tooltip>
 
@@ -558,15 +561,15 @@ export default function Portfolio() {
                         variant="ghost"
                         size="icon"
                         aria-label="Personal Website"
-                        disabled={!student.website}
-                        onClick={() => student.website && window.open(student.website, '_blank')}
+                        disabled={!student.portfolio?.personalWebsite}
+                        onClick={() => student.portfolio?.personalWebsite && window.open(student.portfolio.personalWebsite, '_blank')}
                         className="h-10 w-10 min-h-[40px] min-w-[40px] bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/60 rounded-xl transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         <Globe className="w-4 h-4" />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top">
-                      <p className="text-xs">{student.website ? 'เยี่ยมชม Website' : 'ยังไม่ได้เชื่อมต่อ Website'}</p>
+                      <p className="text-xs">{student.portfolio?.personalWebsite ? 'เยี่ยมชม Website' : 'ยังไม่ได้เชื่อมต่อ Website'}</p>
                     </TooltipContent>
                   </Tooltip>
                 </div>

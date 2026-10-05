@@ -8,7 +8,6 @@ import { documentsRoutes } from "./documents.routes";
 import { facilitiesRoutes } from "./facilities.routes";
 import { filesRoutes } from "./files.routes";
 import { operationsRoutes } from "./operations.routes";
-import { questsRoutes } from "./quests.routes";
 import { studentsRoutes } from "./students.routes";
 import { supportRoutes } from "./support.routes";
 import { systemRoutes } from "./system.routes";
@@ -25,7 +24,6 @@ router.get("/", (_req, res) => {
 router.use(authRoutes);
 router.use(studentsRoutes);
 router.use(academicRoutes);
-router.use(questsRoutes);
 router.use(careerRoutes);
 router.use(activitiesRoutes);
 router.use(operationsRoutes);

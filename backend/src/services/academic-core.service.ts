@@ -59,36 +59,3 @@ export const recordAttendance = async (data: { enrollmentId: string; date: Date;
   });
 };
 
-export const getAssignments = async (query: { courseId?: string; includeSubmissions?: boolean }) => {
-  return await prisma.assignment.findMany({
-    where: {
-      ...(query.courseId ? { courseId: String(query.courseId) } : {}),
-    },
-    include: {
-      course: true,
-      ...(query.includeSubmissions ? { submissions: { include: { student: { include: { user: true } } } } } : {}),
-    },
-    orderBy: { dueDate: "asc" },
-  });
-};
-
-export const createAssignment = async (data: any) => {
-  return await prisma.assignment.create({
-    data,
-    include: { course: true },
-  });
-};
-
-export const submitAssignment = async (assignmentId: string, studentId: string, files: string[]) => {
-  return await prisma.submission.create({
-    data: {
-      assignmentId,
-      studentId,
-      files,
-    },
-    include: {
-      assignment: true,
-      student: { include: { user: true } },
-    },
-  });
-};
