@@ -17,7 +17,7 @@ const pages: Record<string, string[]> = {
 };
 
 // API errors that already existed before this plan (baseline recorded in the plan ledger)
-const BASELINE: RegExp[] = [/^404 GET \/api\/player\/stats/];
+const BASELINE: RegExp[] = [];
 
 for (const [email, routes] of Object.entries(pages)) {
   test(`${email} pages load without API errors or crashes`, async ({ page }) => {

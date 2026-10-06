@@ -15,12 +15,12 @@ import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapActivity, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { mapActivity, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { buildLeaderboard, type LeaderboardEntry } from '@/lib/activity-leaderboard';
 import { toast } from 'sonner';
 import type { Activity, Student } from '@/types';
 
 type ActivityRow = Activity;
-type LeaderboardRow = { rank: number; name: string; points: number; badge: string };
 
 const emptyStudent: Student = {
   id: '',
@@ -62,47 +62,6 @@ const emptyStudent: Student = {
     history: [],
   },
   timeline: [],
-};
-
-const buildLeaderboard = (
-  rawActivities: unknown[],
-  currentUserName: string,
-  currentPoints: number,
-): LeaderboardRow[] => {
-  const totals = new Map<string, { name: string; points: number }>();
-
-  rawActivities.forEach((item) => {
-    const activity = asRecord(item);
-    const points = asNumber(activity.gamificationPoints, 0);
-
-    asArray(activity.enrollments).forEach((enrollmentItem) => {
-      const enrollment = asRecord(enrollmentItem);
-      const student = asRecord(enrollment.student);
-      const studentUser = asRecord(student.user);
-      const id = asString(enrollment.studentId, asString(student.id, asString(studentUser.id)));
-      const name = asString(studentUser.nameThai, asString(studentUser.name, "Student"));
-      const status = asString(enrollment.status).toLowerCase();
-      const earned = status === "completed" || status === "attended" ? points : Math.ceil(points / 2);
-
-      if (!id) return;
-      const current = totals.get(id) ?? { name, points: 0 };
-      totals.set(id, { name: current.name, points: current.points + earned });
-    });
-  });
-
-  if (currentUserName && !Array.from(totals.values()).some((item) => item.name === currentUserName)) {
-    totals.set("current-user", { name: currentUserName, points: currentPoints });
-  }
-
-  return Array.from(totals.values())
-    .sort((a, b) => b.points - a.points)
-    .slice(0, 5)
-    .map((item, index) => ({
-      rank: index + 1,
-      name: item.name,
-      points: item.points,
-      badge: index === 0 ? "Top" : "",
-    }));
 };
 
 const containerVariants = {
@@ -206,13 +165,12 @@ export default function Activities() {
   const [activities, setActivities] = React.useState<ActivityRow[]>([]);
   const [student, setStudent] = React.useState<Student>(emptyStudent);
   const [selectedActivity, setSelectedActivity] = React.useState<ActivityRow | null>(null);
-  const [leaderboard, setLeaderboard] = React.useState<LeaderboardRow[]>([]);
+  const [leaderboard, setLeaderboard] = React.useState<LeaderboardEntry[]>([]);
 
   const upcomingActivities = activities.filter(a => a.status === 'upcoming');
+  // only activities this student actually joined; past activities they never joined are not "history" (audit F6)
   const historyActivities = activities.filter(a =>
-    a.enrolledStudents.includes(student.id) ||
-    a.attendedStudents.includes(student.id) ||
-    new Date(a.endDate).getTime() < Date.now(),
+    a.enrolledStudents.includes(student.id) || a.attendedStudents.includes(student.id),
   );
   const studentPoints = student.gamificationPoints;
   const studentHours = student.totalActivityHours;
@@ -222,25 +180,26 @@ export default function Activities() {
   React.useEffect(() => {
     let mounted = true;
 
+    // the student's own profile + stats; /player/stats never existed (audit F6)
     Promise.allSettled([
       api.activities.list(),
-      api.player.stats(),
-    ]).then(([activitiesResult, statsResult]) => {
+      api.students.profile(),
+      api.students.stats(),
+    ]).then(([activitiesResult, profileResult, statsResult]) => {
       if (!mounted) return;
 
       let nextStudent = emptyStudent;
-      if (statsResult.status === 'fulfilled') {
-        nextStudent = mapStudentStatsToStudent(emptyStudent, statsResult.value.stats);
-        setStudent(nextStudent);
+      if (profileResult.status === 'fulfilled') {
+        nextStudent = mapStudent(profileResult.value.profile);
       }
+      if (statsResult.status === 'fulfilled') {
+        nextStudent = mapStudentStatsToStudent(nextStudent, statsResult.value.stats);
+      }
+      setStudent(nextStudent);
 
       if (activitiesResult.status === 'fulfilled') {
         setActivities(activitiesResult.value.activities.map(mapActivity));
-        setLeaderboard(buildLeaderboard(
-          activitiesResult.value.activities,
-          user?.nameThai || user?.name || nextStudent.nameThai,
-          nextStudent.gamificationPoints,
-        ));
+        setLeaderboard(buildLeaderboard(activitiesResult.value.activities, nextStudent.id));
       }
     }).catch((error) => {
       console.warn('Unable to load activities from API', error);
@@ -249,17 +208,13 @@ export default function Activities() {
     return () => {
       mounted = false;
     };
-  }, [user?.name, user?.nameThai]);
+  }, []);
 
   const refreshActivities = React.useCallback(async () => {
     const response = await api.activities.list();
     setActivities(response.activities.map(mapActivity));
-    setLeaderboard(buildLeaderboard(
-      response.activities,
-      user?.nameThai || user?.name || student.nameThai,
-      student.gamificationPoints,
-    ));
-  }, [student.gamificationPoints, student.nameThai, user?.name, user?.nameThai]);
+    setLeaderboard(buildLeaderboard(response.activities, student.id));
+  }, [student.id]);
 
   const handleEnroll = async (activityId: string) => {
     try {
@@ -354,40 +309,25 @@ export default function Activities() {
           label={t.activitiesPage.totalPoints}
           value={studentPoints}
           gradient="bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
-          subtext={
-            <div className="flex items-center gap-1.5 text-xs text-orange-100 bg-orange-500/30 w-fit px-2 py-1 rounded-lg backdrop-blur-sm">
-              <Flame className="w-3 h-3 fill-orange-100" />
-              <span>Level 12 Explorer</span>
-            </div>
-          }
         />
         <StatCard
           icon={Clock}
           label={t.activitiesPage.activityHours}
           value={`${studentHours} ${t.activitiesPage.hours}`}
           gradient="bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600"
-          subtext={
-            <div className="h-1.5 w-full bg-black/20 rounded-full mt-2 overflow-hidden">
-              <div
-                className="h-full bg-white dark:bg-slate-900 rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]"
-                style={{ width: `${Math.min((studentHours / 100) * 100, 100)}%` }}
-              />
-            </div>
-          }
         />
         <StatCard
           icon={Star}
           label={t.activitiesPage.badgesEarned}
           value={badgesEarned}
           gradient="bg-gradient-to-br from-blue-500 via-blue-600 to-indigo-600"
-          subtext={<span className="text-blue-100 text-xs">{t.activitiesPage.unlockNext}</span>}
         />
+        {/* there is no level system, hour target or term goal in the data, so none is shown (audit F6) */}
         <StatCard
           icon={Target}
-          label={t.activitiesPage.semesterGoal}
-          value={`${Math.min(enrolledCount, 5)}/5`}
+          label={language === 'th' ? 'กิจกรรมที่ลงทะเบียน' : 'Activities joined'}
+          value={enrolledCount}
           gradient="bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500"
-          subtext={<span className="text-purple-100 text-xs text-right block">{Math.min(enrolledCount * 20, 100)}% {t.activitiesPage.achieved}</span>}
         />
       </div>
 
@@ -447,7 +387,6 @@ export default function Activities() {
                           <div>
                             <div className="flex gap-2 mb-3">
                               <Badge variant="secondary" className="bg-indigo-50 text-indigo-600 hover:bg-indigo-100 border-0 rounded-lg px-2.5 dark:text-slate-300">{activity.type}</Badge>
-                              {index === 0 && <Badge className="bg-orange-500 hover:bg-orange-600 border-0 rounded-lg px-2.5 shadow-lg shadow-orange-500/20">{t.activitiesPage.hotRecommended}</Badge>}
                             </div>
                             <h3 className="text-2xl font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 transition-colors mb-2 tracking-tight">{activity.title}</h3>
                             <div className="flex flex-wrap gap-4 text-sm text-slate-500 dark:text-slate-400 font-medium">
@@ -559,9 +498,12 @@ export default function Activities() {
                 <Trophy className="w-5 h-5 text-amber-500" />
                 {t.activitiesPage.leaderboard}
               </h3>
-              <Badge variant="outline" className="rounded-full border-slate-200 dark:border-slate-700 text-slate-400 text-[10px] uppercase tracking-wider">{t.activitiesPage.thisSemester}</Badge>
+              <span className="text-[11px] text-slate-400 leading-snug text-right">{language === 'th' ? 'แต้มจากกิจกรรมที่ได้รับรางวัลแล้ว' : 'Points from rewarded activities'}</span>
             </div>
             <div className="space-y-4">
+              {leaderboard.length === 0 && (
+                <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{language === 'th' ? 'ยังไม่มีใครได้รับแต้มจากกิจกรรม' : 'Nobody has earned activity points yet'}</p>
+              )}
               {leaderboard.map((user, idx) => (
                 <div key={idx} className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${user.rank === 1 ? 'bg-amber-400/10 border border-amber-200/50 shadow-inner' : 'hover:bg-white/50'} dark:bg-slate-900/50`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${user.rank === 1 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-white/50' :
@@ -577,14 +519,14 @@ export default function Activities() {
                   </Avatar>
                   <div className="flex-1">
                     <div className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                      {user.name} <span className="text-lg">{user.badge}</span>
+                      {user.name} {user.rank === 1 && <span className="text-xs text-amber-600">Top</span>}
+                      {user.isViewer && <span className="text-xs text-indigo-500">({language === 'th' ? 'คุณ' : 'you'})</span>}
                     </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 font-medium">{user.points} XP</div>
                   </div>
                 </div>
               ))}
             </div>
-            <Button variant="outline" className="w-full mt-8 rounded-xl border-dashed border-slate-300 text-slate-500 dark:text-slate-400 hover:text-indigo-600 hover:border-indigo-300 h-11 font-medium">{t.activitiesPage.viewAllRanks}</Button>
           </div>
 
           <div className="relative overflow-hidden bg-gradient-to-br from-indigo-900 via-slate-900 to-black rounded-[2rem] shadow-2xl p-7 text-white">
@@ -600,31 +542,18 @@ export default function Activities() {
                 <div className="text-[10px] text-slate-400 font-bold tracking-widest uppercase">{badgesEarned} Unlocked</div>
               </div>
 
-              <div className="grid grid-cols-4 gap-3">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-                  <div key={i} className="aspect-square rounded-2xl bg-white/5 backdrop-blur-md border border-white/10 flex items-center justify-center hover:bg-white/15 transition-all cursor-pointer group shadow-sm dark:bg-slate-900/50">
-                    {i <= 3 ? (
-                      <div className="text-2xl group-hover:scale-125 group-hover:rotate-12 transition-all duration-500">
-                        {i === 1 ? '🚀' : i === 2 ? '🎯' : '💎'}
-                      </div>
-                    ) : (
-                      <div className="w-2.5 h-2.5 rounded-full bg-white/20 group-hover:bg-white/40 transition-colors dark:bg-slate-900/50" />
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="mt-8 pt-6 border-t border-white/10">
-                <div className="flex justify-between items-end mb-2">
-                  <div>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">{t.activitiesPage.nextBadge}</p>
-                    <p className="text-sm font-bold text-purple-200">Activity Master</p>
-                  </div>
-                  <div className="text-xs font-bold text-white">60%</div>
+              {/* real badges only; next-badge progress had no data behind it (audit F6) */}
+              {student.badges.length === 0 ? (
+                <p className="text-sm text-slate-300 leading-relaxed">{language === 'th' ? 'ยังไม่มี badge' : 'No badges yet'}</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {student.badges.map((badge, i) => (
+                    <span key={i} className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-sm">
+                      {asString(asRecord(badge).nameThai, asString(asRecord(badge).name, '-'))}
+                    </span>
+                  ))}
                 </div>
-                <Progress value={60} className="h-2 bg-white/10 dark:bg-slate-900/50" indicatorClassName="bg-gradient-to-r from-purple-400 to-indigo-400" />
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-2 text-center font-medium">{t.activitiesPage.joinToUnlock}</p>
-              </div>
+              )}
             </div>
           </div>
         </motion.div>
@@ -656,23 +585,7 @@ export default function Activities() {
                 </div>
               </div>
               <div className="flex justify-end gap-3">
-                {selectedActivity.enrolledStudents.includes(student.id) && selectedActivity.checkInEnabled && (
-                  <Button
-                    variant="outline"
-                    onClick={async () => {
-                      try {
-                        await api.activities.checkIn(selectedActivity.id);
-                        await refreshActivities();
-                        toast.success('เช็คอินสำเร็จ');
-                        setSelectedActivity(null);
-                      } catch (error) {
-                        toast.error(error instanceof Error ? error.message : 'เช็คอินไม่สำเร็จ');
-                      }
-                    }}
-                  >
-                    Check in
-                  </Button>
-                )}
+                {/* self check-in hidden until a check-in method is chosen (Por 6/10/69) */}
                 <Button
                   disabled={selectedActivity.enrolledStudents.includes(student.id)}
                   onClick={async () => {

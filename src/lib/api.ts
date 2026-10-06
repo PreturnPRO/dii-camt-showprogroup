@@ -546,9 +546,6 @@ export const api = {
         body: payload,
       }),
   },
-  player: {
-    stats: () => request<ApiEnvelope<{ stats: unknown }>>("/player/stats"),
-  },
   internship: {
     list: () => request<ApiEnvelope<{ internships: unknown[] }>>("/internships"),
     get: (studentId?: string) =>
