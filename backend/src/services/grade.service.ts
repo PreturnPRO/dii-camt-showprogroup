@@ -1,8 +1,9 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
 import { createAuditLog } from "./audit.service";
 import { createNotification } from "./notification.service";
+import { computeGpa, type GradedRow } from "./gpa";
 
 type GradeInput = {
   enrollmentId?: string;
@@ -16,55 +17,46 @@ type GradeInput = {
   reason?: string;
 };
 
-const gradePointMap: Record<string, number> = {
-  A: 4,
-  "B+": 3.5,
-  B: 3,
-  "C+": 2.5,
-  C: 2,
-  "D+": 1.5,
-  D: 1,
-  F: 0,
-};
+/** GPAX over every term, GPA over the student's current term; W/I/ungraded/dropped never count (gpa.ts). */
+type Db = Prisma.TransactionClient | typeof prisma;
 
-const passingGrades = new Set(["A", "B+", "B", "C+", "C", "D+", "D"]);
-
-const recalculateAcademicStats = async (studentId: string) => {
-  const enrollments = await prisma.enrollment.findMany({
-    where: {
-      studentId,
-      letterGrade: { not: null },
-    },
-    include: {
-      course: true,
-    },
+const recalculateAcademicStats = async (studentId: string, db: Db = prisma) => {
+  const student = await db.studentProfile.findUniqueOrThrow({
+    where: { id: studentId },
+    select: { semester: true, academicYear: true },
   });
-
-  const totalCredits = enrollments.reduce((sum, item) => sum + item.course.credits, 0);
-  const earnedCredits = enrollments.reduce(
-    (sum, item) => sum + (item.letterGrade && passingGrades.has(item.letterGrade) ? item.course.credits : 0),
-    0,
+  const enrollments = await db.enrollment.findMany({
+    where: { studentId },
+    include: { course: true },
+  });
+  const rows: GradedRow[] = enrollments.map((item) => ({
+    letterGrade: item.letterGrade,
+    credits: item.course.credits,
+    status: item.status,
+    semester: item.course.semester,
+    academicYear: item.course.academicYear,
+  }));
+  const all = computeGpa(rows);
+  const term = computeGpa(
+    rows.filter((row) => row.semester === student.semester && row.academicYear === student.academicYear),
   );
-  const weightedPoints = enrollments.reduce((sum, item) => {
-    if (!item.letterGrade) {
-      return sum;
-    }
 
-    return sum + (gradePointMap[item.letterGrade] ?? 0) * item.course.credits;
-  }, 0);
-
-  const gpax = totalCredits > 0 ? Number((weightedPoints / totalCredits).toFixed(2)) : 0;
-
-  await prisma.studentProfile.update({
+  await db.studentProfile.update({
     where: { id: studentId },
     data: {
-      earnedCredits,
-      gpax,
-      gpa: gpax,
+      earnedCredits: all.earnedCredits,
+      gpax: all.gpa ?? 0,
+      gpa: term.gpa ?? 0,
     },
   });
 };
 
+const enrollmentInclude = { course: { include: { gradingCriteria: true, gradeCutoffs: true } } } as const;
+const loadEnrollment = (id: string) => prisma.enrollment.findUnique({ where: { id }, include: enrollmentInclude });
+
+type RowError = { index: number; studentId: string; message: string };
+
+/** Validates every row first; writes all of them in one transaction, or none (owner decision 7/10/69). */
 export const bulkUpdateGrades = async (
   actorUserId: string,
   grades: GradeInput[],
@@ -74,150 +66,153 @@ export const bulkUpdateGrades = async (
     throw new AppError(400, "At least one grade item is required");
   }
 
-  const updated = [];
   const actor = await prisma.user.findUnique({
     where: { id: actorUserId },
     include: { lecturerProfile: true },
   });
 
-  for (const grade of grades) {
-    const enrollment =
-      (grade.enrollmentId
-        ? await prisma.enrollment.findUnique({
-            where: { id: grade.enrollmentId },
-            include: { course: { include: { gradingCriteria: true, gradeCutoffs: true } } },
-          })
-        : await prisma.enrollment.findUnique({
-            where: {
-              studentId_courseId: {
-                studentId: grade.studentId,
-                courseId: grade.courseId,
-              },
-            },
-            include: { course: { include: { gradingCriteria: true, gradeCutoffs: true } } },
-          })) ?? null;
+  // 1) check every row; nothing is written yet
+  const errors: RowError[] = [];
+  type LoadedEnrollment = NonNullable<Awaited<ReturnType<typeof loadEnrollment>>>;
+  const checked: Array<{ grade: GradeInput; enrollment: LoadedEnrollment }> = [];
+  for (const [index, grade] of grades.entries()) {
+    const enrollment = grade.enrollmentId
+      ? await prisma.enrollment.findUnique({ where: { id: grade.enrollmentId }, include: enrollmentInclude })
+      : await prisma.enrollment.findUnique({
+          where: { studentId_courseId: { studentId: grade.studentId, courseId: grade.courseId } },
+          include: enrollmentInclude,
+        });
 
     if (!enrollment) {
-      throw new AppError(
-        404,
-        `Enrollment not found for student ${grade.studentId} and course ${grade.courseId}`,
-      );
+      errors.push({ index, studentId: grade.studentId, message: `Enrollment not found for course ${grade.courseId}` });
+      continue;
     }
-
     if (actor?.role === Role.LECTURER && enrollment.course.lecturerId !== actor.lecturerProfile?.id) {
       throw new AppError(403, "You can only update grades for your own courses");
     }
-
-    const previousGrade = enrollment.letterGrade;
-    
-    let computedTotal = grade.total ?? 0;
-    if (grade.scores && grade.scores.length > 0 && enrollment.course.gradingCriteria) {
-      let calcTotal = 0;
-      for (const s of grade.scores) {
-        const c = enrollment.course.gradingCriteria.find(x => x.id === s.criteriaId);
-        if (c) {
-          calcTotal += (s.score / c.maxScore) * c.weightPercentage;
-        }
+    if (enrollment.status === "dropped") {
+      errors.push({ index, studentId: grade.studentId, message: "This enrollment was dropped" });
+      continue;
+    }
+    for (const s of grade.scores ?? []) {
+      const criterion = enrollment.course.gradingCriteria.find((c) => c.id === s.criteriaId);
+      if (!criterion) {
+        errors.push({ index, studentId: grade.studentId, message: `Criterion ${s.criteriaId} does not belong to this course` });
+      } else if (s.score > criterion.maxScore) {
+        errors.push({ index, studentId: grade.studentId, message: `Score ${s.score} is above the maximum ${criterion.maxScore} for ${criterion.name}` });
       }
-      computedTotal = Math.round(calcTotal * 100) / 100;
-    } else if (grade.total !== undefined) {
-      computedTotal = grade.total;
     }
+    checked.push({ grade, enrollment });
+  }
+  if (errors.length > 0) {
+    throw new AppError(400, "Some grade rows are invalid; nothing was saved", { rows: errors });
+  }
 
-    let finalLetterGrade = grade.letterGrade;
-    if (!finalLetterGrade && enrollment.course.gradeCutoffs && enrollment.course.gradeCutoffs.length > 0) {
-      const cutoffs = [...enrollment.course.gradeCutoffs].sort((a, b) => b.minScore - a.minScore);
-      const cutoff = cutoffs.find(c => computedTotal >= c.minScore);
-      finalLetterGrade = cutoff ? cutoff.grade : "F";
-    }
+  // 2) write everything in one transaction
+  const results = await prisma.$transaction(async (tx) => {
+    const written = [];
+    for (const { grade, enrollment } of checked) {
+      const previousScores = await tx.enrollmentScore.findMany({ where: { enrollmentId: enrollment.id } });
+      const scoresChanged = (grade.scores ?? []).some(
+        (s) => previousScores.find((p) => p.criteriaId === s.criteriaId)?.score !== s.score,
+      );
+      for (const s of grade.scores ?? []) {
+        await tx.enrollmentScore.upsert({
+          where: { enrollmentId_criteriaId: { enrollmentId: enrollment.id, criteriaId: s.criteriaId } },
+          update: { score: s.score },
+          create: { enrollmentId: enrollment.id, criteriaId: s.criteriaId, score: s.score },
+        });
+      }
 
-    const result = await prisma.$transaction(async (tx) => {
+      // total comes from every stored criterion score, so a partial entry never wipes the others
+      let total = enrollment.total;
       if (grade.scores && grade.scores.length > 0) {
-        for (const s of grade.scores) {
-          await tx.enrollmentScore.upsert({
-            where: {
-              enrollmentId_criteriaId: {
-                enrollmentId: enrollment.id,
-                criteriaId: s.criteriaId,
-              },
-            },
-            update: { score: s.score },
-            create: { enrollmentId: enrollment.id, criteriaId: s.criteriaId, score: s.score },
-          });
-        }
+        const stored = await tx.enrollmentScore.findMany({ where: { enrollmentId: enrollment.id } });
+        const sum = stored.reduce((acc, s) => {
+          const c = enrollment.course.gradingCriteria.find((x) => x.id === s.criteriaId);
+          return c ? acc + (s.score / c.maxScore) * c.weightPercentage : acc;
+        }, 0);
+        total = Math.round(sum * 100) / 100;
+      } else if (grade.total !== undefined) {
+        total = grade.total;
       }
 
-      return tx.enrollment.update({
-        where: { id: enrollment.id },
-        data: {
+      let letterGrade = grade.letterGrade ?? enrollment.letterGrade;
+      if (!grade.letterGrade && total !== null && enrollment.course.gradeCutoffs.length > 0) {
+        const cutoff = [...enrollment.course.gradeCutoffs]
+          .sort((a, b) => b.minScore - a.minScore)
+          .find((c) => total! >= c.minScore);
+        letterGrade = cutoff ? cutoff.grade : "F";
+      }
 
-          total: computedTotal,
-          letterGrade: finalLetterGrade,
-          remarks: grade.remarks,
-          gradedBy: actorUserId,
-          gradedAt: new Date(),
-        },
-        include: {
-          course: true,
-          student: { include: { user: true } },
-          scores: true,
+      // the sheet re-sends every row; a row that changes nothing writes nothing and tells no one
+      const remarksChanged = grade.remarks !== undefined && grade.remarks !== enrollment.remarks;
+      if (!scoresChanged && !remarksChanged && total === enrollment.total && letterGrade === enrollment.letterGrade) {
+        continue;
+      }
+
+      const result = await tx.enrollment.update({
+        where: { id: enrollment.id },
+        data: { total, letterGrade, remarks: grade.remarks, gradedBy: actorUserId, gradedAt: new Date() },
+        include: { course: true, student: { include: { user: true } }, scores: true },
+      });
+
+      await tx.gradeHistory.create({
+        data: {
+          enrollmentId: enrollment.id,
+          modifiedBy: actorUserId,
+          previousGrade: enrollment.letterGrade,
+          newGrade: letterGrade ?? "N/A",
+          reason: grade.reason ?? "Bulk grade update",
         },
       });
-    });
 
-    await prisma.gradeHistory.create({
-      data: {
-        enrollmentId: enrollment.id,
-        modifiedBy: actorUserId,
-        previousGrade,
-        newGrade: finalLetterGrade ?? "N/A",
-        reason: grade.reason ?? "Bulk grade update",
-      },
-    });
+      await tx.timelineEvent.create({
+        data: {
+          studentId: result.studentId,
+          type: "grade",
+          title: `Grade updated: ${result.course.code}`,
+          titleThai: `อัปเดตผลการเรียน: ${result.course.code}`,
+          description: `ผลการเรียนวิชา ${result.course.name} ถูกบันทึกเป็น ${letterGrade ?? "-"}`,
+          semester: result.course.semester,
+          academicYear: result.course.academicYear,
+          relatedId: result.courseId,
+          relatedType: "course",
+          tags: ["grade", result.course.code],
+        },
+      });
 
+      written.push({ result, previousGrade: enrollment.letterGrade, letterGrade, total });
+    }
+    // GPA/GPAX are part of the same commit, so a failing side effect below cannot leave them stale
+    for (const studentId of new Set(written.map((w) => w.result.studentId))) {
+      await recalculateAcademicStats(studentId, tx);
+    }
+    return written;
+  }, { timeout: 30_000, maxWait: 10_000 });
+
+  // 3) side effects only after the commit; best effort — the grades are already saved
+  for (const { result, previousGrade, letterGrade, total } of results) {
     await createAuditLog({
       userId: actorUserId,
       action: "GRADE_UPDATED",
       resource: "Enrollment",
-      resourceId: enrollment.id,
+      resourceId: result.id,
       req: reqIp ? ({ ip: reqIp } as never) : undefined,
-      changes: {
-        previousGrade,
-        newGrade: finalLetterGrade,
-        total: computedTotal,
-      },
-    });
-
-    await prisma.timelineEvent.create({
-      data: {
-        studentId: result.studentId,
-        type: "grade",
-        title: `Grade updated: ${result.course.code}`,
-        titleThai: `อัปเดตผลการเรียน: ${result.course.code}`,
-        description: `ผลการเรียนวิชา ${result.course.name} ถูกบันทึกเป็น ${finalLetterGrade ?? "-"}`,
-        semester: result.course.semester,
-        academicYear: result.course.academicYear,
-        relatedId: result.courseId,
-        relatedType: "course",
-        tags: ["grade", result.course.code],
-      },
-    });
-
+      changes: { previousGrade, newGrade: letterGrade, total },
+    }).catch((error) => console.error("grade audit log failed", error));
     await createNotification({
       userId: result.student.userId,
       title: "Grade updated",
       titleThai: "ผลการเรียนมีการอัปเดต",
-      message: `Your grade for ${result.course.code} has been updated to ${finalLetterGrade ?? "-"}.`,
-      messageThai: `ผลการเรียนวิชา ${result.course.code} ถูกอัปเดตเป็น ${finalLetterGrade ?? "-"}`,
+      message: `Your grade for ${result.course.code} has been updated to ${letterGrade ?? "-"}.`,
+      messageThai: `ผลการเรียนวิชา ${result.course.code} ถูกอัปเดตเป็น ${letterGrade ?? "-"}`,
       type: "grade",
       priority: "high",
       channels: ["in-app"],
       actionUrl: "/grades",
-    });
-
-    await recalculateAcademicStats(result.studentId);
-    updated.push(result);
+    }).catch((error) => console.error("grade notification failed", error));
   }
 
-  return updated;
+  return results.map((r) => r.result);
 };

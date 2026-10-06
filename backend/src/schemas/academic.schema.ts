@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ALL_GRADES, COUNTED_GRADES } from "../services/gpa";
 import { httpUrl } from "./url";
 
 export const courseQuerySchema = z.object({
@@ -6,6 +7,20 @@ export const courseQuerySchema = z.object({
   semester: z.coerce.number().int().optional(),
   academicYear: z.string().optional(),
   lecturerId: z.string().optional(),
+});
+
+const gradingCriterionSchema = z.object({
+  id: z.string().optional(),
+  name: z.string().min(1),
+  weightPercentage: z.coerce.number().min(0).max(100),
+  maxScore: z.coerce.number().positive(),
+  orderIndex: z.coerce.number().int().min(0).optional(),
+});
+
+// cutoffs map a total to a counted grade; W and I are never computed from scores
+const gradeCutoffSchema = z.object({
+  grade: z.enum(COUNTED_GRADES),
+  minScore: z.coerce.number().min(0).max(100),
 });
 
 export const courseCreateSchema = z.object({
@@ -44,6 +59,8 @@ export const courseCreateSchema = z.object({
       }),
     )
     .default([]),
+  gradingCriteria: z.array(gradingCriterionSchema).optional(),
+  gradeCutoffs: z.array(gradeCutoffSchema).optional(),
 });
 
 export const courseUpdateSchema = courseCreateSchema.partial().extend({
@@ -64,21 +81,27 @@ export const enrollSchema = z.object({
 });
 
 export const gradeBulkSchema = z.object({
-  grades: z.array(
-    z.object({
-      enrollmentId: z.string().optional(),
-      studentId: z.string().min(1),
-      courseId: z.string().min(1),
-      scores: z.array(z.object({
-        criteriaId: z.string(),
-        score: z.coerce.number(),
-      })).optional(),
-      total: z.coerce.number().optional(),
-      letterGrade: z.string().optional(),
-      remarks: z.string().optional(),
-      reason: z.string().optional(),
-    }),
-  ),
+  grades: z
+    .array(
+      z.object({
+        enrollmentId: z.string().optional(),
+        studentId: z.string().min(1),
+        courseId: z.string().min(1),
+        scores: z
+          .array(
+            z.object({
+              criteriaId: z.string().min(1),
+              score: z.coerce.number().min(0),
+            }),
+          )
+          .optional(),
+        total: z.coerce.number().min(0).max(100).optional(),
+        letterGrade: z.enum(ALL_GRADES).optional(),
+        remarks: z.string().optional(),
+        reason: z.string().optional(),
+      }),
+    )
+    .min(1),
 });
 
 export const gradesHistoryParamsSchema = z.object({

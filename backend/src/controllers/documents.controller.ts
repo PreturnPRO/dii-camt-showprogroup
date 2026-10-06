@@ -36,7 +36,7 @@ export const getTranscript = asyncHandler(async (req, res) => {
   await assertCanViewStudentRecord(currentUser, student);
 
   const transcript = await prisma.enrollment.findMany({
-    where: { studentId: student.id },
+    where: { studentId: student.id, status: { not: "dropped" } },
     include: {
       course: true,
     },

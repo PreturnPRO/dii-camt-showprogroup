@@ -113,10 +113,22 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
   }
 
   // ถ้าเคยถอนวิชานี้ → reactivate row เดิม (กันชน unique studentId+courseId) · ถ้าไม่เคย → สร้างใหม่
+  // re-enrolling after a drop starts clean: no old scores, total or grade come back
+  if (existing) {
+    await prisma.enrollmentScore.deleteMany({ where: { enrollmentId: existing.id } });
+  }
   const enrollment = existing
     ? await prisma.enrollment.update({
         where: { id: existing.id },
-        data: { status: "enrolled", sectionId: data.sectionId },
+        data: {
+          status: "enrolled",
+          sectionId: data.sectionId,
+          total: null,
+          letterGrade: null,
+          remarks: null,
+          gradedBy: null,
+          gradedAt: null,
+        },
         include: {
           student: { include: { user: true } },
           course: true,
@@ -170,6 +182,10 @@ export const dropCourseByStudent = async (currentUser: any, courseId: string) =>
 
   if (!existing) {
     throw new AppError(404, "Enrollment not found");
+  }
+  // owner decision 7/10/69: a course that already has a grade stays on the record
+  if (existing.letterGrade !== null) {
+    throw new AppError(409, "A graded course cannot be dropped");
   }
 
   // soft delete: เปลี่ยนสถานะเป็น dropped (กัน FK กับ gradeHistory/scores + เก็บประวัติเกรด)

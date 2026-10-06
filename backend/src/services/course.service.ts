@@ -44,6 +44,8 @@ export const getCourseById = async (courseIdentifier: string) => {
       lecturer: { include: { user: true } },
       sections: { include: { facility: true } },
       materials: true,
+      gradingCriteria: { orderBy: { orderIndex: "asc" } },
+      gradeCutoffs: true,
       enrollments: {
         include: {
           student: { include: { user: true } },

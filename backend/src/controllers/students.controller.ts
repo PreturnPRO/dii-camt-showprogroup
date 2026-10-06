@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
+import { computeGpa, termGpas, type GradedRow } from "../services/gpa";
 import { assertCanViewStudentRecord, canViewStudentRecord, gpaBand, isStaffOrAdmin, lecturerProfileIdOf, lecturerStudentsWhere } from "../services/access-policy";
 import { evaluateStudentBadges } from "../services/badge.service";
 import {
@@ -600,13 +601,24 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
   await assertCanViewStudentRecord(currentUser, student);
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { studentId: student.id },
+    where: { studentId: student.id, status: { not: "dropped" } },
     include: {
       course: true,
       history: true,
     },
     orderBy: { updatedAt: "desc" },
   });
+  const gradedRows: GradedRow[] = enrollments.map((item) => ({
+    letterGrade: item.letterGrade,
+    credits: item.course.credits,
+    status: item.status,
+    semester: item.course.semester,
+    academicYear: item.course.academicYear,
+  }));
+  const termGpa = termGpas(gradedRows);
+  const currentTermGpa = computeGpa(
+    gradedRows.filter((row) => row.semester === student.semester && row.academicYear === student.academicYear),
+  ).gpa;
 
   const gradeHistory = enrollments.map((item) => ({
     courseId: item.courseId,
@@ -734,6 +746,8 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
       completedActivities: activitySummary._count.id,
       badges: student.badges,
       gradeHistory,
+      termGpa,
+      currentTermGpa,
       skillRubrics,
       skillSummary: {
         technical: technicalSummary,

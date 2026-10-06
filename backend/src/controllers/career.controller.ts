@@ -1,7 +1,7 @@
 import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
-import { isStaffOrAdmin, lecturerProfileIdOf } from "../services/access-policy";
+import { gpaBand, isStaffOrAdmin, lecturerProfileIdOf } from "../services/access-policy";
 import { createNotification } from "../services/notification.service";
 import { getCompanyProfileByUserId, getStudentProfileByUserId } from "../services/profile.service";
 import { searchTalent } from "../services/talent.service";
@@ -339,6 +339,16 @@ export const createApplicationHandler = asyncHandler(async (req, res) => {
   });
 });
 
+/** Companies see an applicant's GPA band only, never the exact GPA/GPAX (S-b1 company policy). */
+const forViewer = <T extends { student?: ({ gpa?: number; gpax?: number } & object) | null }>(
+  application: T,
+  role: Role,
+): T => {
+  if (role !== Role.COMPANY || !application.student) return application;
+  const { gpa: _gpa, gpax, ...student } = application.student;
+  return { ...application, student: { ...student, gpaBand: gpaBand(gpax) } };
+};
+
 export const getApplicationsHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const company =
@@ -373,7 +383,7 @@ export const getApplicationsHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    applications,
+    applications: applications.map((application) => forViewer(application, currentUser.role)),
   });
 });
 
@@ -426,7 +436,7 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    application: updated,
+    application: forViewer(updated, currentUser.role),
   });
 });
 
