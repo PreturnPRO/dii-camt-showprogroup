@@ -1,4 +1,5 @@
 import React from 'react';
+import { openExternal } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, Search, Filter, Eye, Mail, Star, Code, Award, ChevronRight, Sparkles, Shield, Briefcase, FileText, UserCheck, ExternalLink, LockKeyhole, MessageSquare } from 'lucide-react';
@@ -452,9 +453,9 @@ export default function StudentProfiles() {
                                         ))}
                                     </div>
                                     <div className="mt-3 flex flex-wrap gap-2">
-                                        {selectedStudent.portfolio?.githubUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.portfolio?.githubUrl, '_blank', 'noopener,noreferrer')}><ExternalLink className="w-3.5 h-3.5 mr-1" /> GitHub</Button>}
-                                        {selectedStudent.portfolio?.linkedinUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.portfolio?.linkedinUrl, '_blank', 'noopener,noreferrer')}><ExternalLink className="w-3.5 h-3.5 mr-1" /> LinkedIn</Button>}
-                                        {selectedStudent.cvUrl && <Button size="sm" variant="outline" onClick={() => window.open(selectedStudent.cvUrl, '_blank', 'noopener,noreferrer')}><FileText className="w-3.5 h-3.5 mr-1" /> CV</Button>}
+                                        {selectedStudent.portfolio?.githubUrl && <Button size="sm" variant="outline" onClick={() => openExternal(selectedStudent.portfolio?.githubUrl)}><ExternalLink className="w-3.5 h-3.5 mr-1" /> GitHub</Button>}
+                                        {selectedStudent.portfolio?.linkedinUrl && <Button size="sm" variant="outline" onClick={() => openExternal(selectedStudent.portfolio?.linkedinUrl)}><ExternalLink className="w-3.5 h-3.5 mr-1" /> LinkedIn</Button>}
+                                        {selectedStudent.cvUrl && <Button size="sm" variant="outline" onClick={() => openExternal(selectedStudent.cvUrl)}><FileText className="w-3.5 h-3.5 mr-1" /> CV</Button>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

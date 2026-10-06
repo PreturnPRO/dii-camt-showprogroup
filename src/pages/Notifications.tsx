@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeInternalPath } from '@/lib/safe-url';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -121,8 +122,9 @@ export default function Notifications() {
         if (!notification.isRead) {
             await handleMarkRead(notification.id);
         }
-        if (notification.actionUrl) {
-            navigate(notification.actionUrl);
+        const path = safeInternalPath(notification.actionUrl);
+        if (path) {
+            navigate(path);
         }
     };
 

@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { safeExternalUrl } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, X, Heart, Send, Eye, Lock } from 'lucide-react';
@@ -401,11 +402,11 @@ export default function TalentSearch() {
                   {profileStudent.skills.map((s) => <Badge key={s} variant="secondary">{s}</Badge>)}
                 </div>
                 <div className="flex gap-3 text-sm">
-                  {profileStudent.portfolio?.githubUrl && (
-                    <a href={profileStudent.portfolio.githubUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{copy.githubLink}</a>
+                  {safeExternalUrl(profileStudent.portfolio?.githubUrl) && (
+                    <a href={safeExternalUrl(profileStudent.portfolio.githubUrl)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{copy.githubLink}</a>
                   )}
-                  {profileStudent.portfolio?.linkedinUrl && (
-                    <a href={profileStudent.portfolio.linkedinUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{copy.linkedinLink}</a>
+                  {safeExternalUrl(profileStudent.portfolio?.linkedinUrl) && (
+                    <a href={safeExternalUrl(profileStudent.portfolio.linkedinUrl)} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">{copy.linkedinLink}</a>
                   )}
                 </div>
                 <Button size="sm" onClick={() => reachOut(profileStudent)}>

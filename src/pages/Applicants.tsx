@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { openExternal } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -470,7 +471,7 @@ export default function Applicants() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => selected.resumeUrl ? window.open(selected.resumeUrl, '_blank', 'noopener,noreferrer') : toast.info(copy.noResume)}
+                      onClick={() => selected.resumeUrl ? openExternal(selected.resumeUrl) : toast.info(copy.noResume)}
                     >
                       <FileText className="w-4 h-4 mr-1.5" /> {copy.openResume}
                     </Button>

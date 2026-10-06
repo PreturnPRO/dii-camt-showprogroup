@@ -425,8 +425,8 @@ export default function Settings() {
                     {user?.role === 'student' && (
                       <div className="space-y-2">
                         <Label className="ml-1 text-slate-700 dark:text-slate-300 font-bold">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-                        <Select value={semester} onValueChange={setSemester}>
-                          <SelectTrigger className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500">
+                        <Select value={semester} onValueChange={setSemester} disabled={user?.role === 'student'}>
+                          <SelectTrigger data-testid="semester-select" className="h-14 rounded-2xl bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 shadow-inner px-5 font-medium focus-visible:ring-indigo-500">
                             <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
                           </SelectTrigger>
                           <SelectContent>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { openExternal } from '@/lib/safe-url';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
@@ -549,7 +550,7 @@ export default function Portfolio() {
               className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-lg shadow-slate-900/20 flex-1 sm:flex-initial"
               onClick={() => {
                 if (student.cvUrl) {
-                  window.open(student.cvUrl, '_blank', 'noopener,noreferrer');
+                  openExternal(student.cvUrl);
                   return;
                 }
                 toast.info('ยังไม่มี CV ในโปรไฟล์ กรุณาเพิ่มลิงก์ CV ที่หน้า Settings');
@@ -767,13 +768,13 @@ export default function Portfolio() {
               </div>
 
               <div className="flex gap-2 justify-center">
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl dark:text-slate-300 dark:bg-slate-800" onClick={() => student.portfolio?.linkedinUrl && window.open(student.portfolio.linkedinUrl, '_blank')}>
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl dark:text-slate-300 dark:bg-slate-800" onClick={() => student.portfolio?.linkedinUrl && openExternal(student.portfolio.linkedinUrl)}>
                   <Linkedin className="w-5 h-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl dark:text-slate-200 dark:bg-slate-800" onClick={() => student.portfolio?.githubUrl && window.open(student.portfolio.githubUrl, '_blank')}>
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-xl dark:text-slate-200 dark:bg-slate-800" onClick={() => student.portfolio?.githubUrl && openExternal(student.portfolio.githubUrl)}>
                   <Github className="w-5 h-5" />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl dark:text-slate-300" onClick={() => student.portfolio?.personalWebsite && window.open(student.portfolio.personalWebsite, '_blank')}>
+                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl dark:text-slate-300" onClick={() => student.portfolio?.personalWebsite && openExternal(student.portfolio.personalWebsite)}>
                   <Globe className="w-5 h-5" />
                 </Button>
               </div>

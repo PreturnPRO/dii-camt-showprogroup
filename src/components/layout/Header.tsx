@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { safeInternalPath } from '@/lib/safe-url';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
@@ -124,8 +125,9 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
       });
       window.dispatchEvent(new CustomEvent('showpro:notification-read', { detail: { id: notification.id, readAt: new Date() } }));
     }
-    if (notification.actionUrl) {
-      navigate(notification.actionUrl);
+    const path = safeInternalPath(notification.actionUrl);
+    if (path) {
+      navigate(path);
       setShowNotifications(false);
     }
   };

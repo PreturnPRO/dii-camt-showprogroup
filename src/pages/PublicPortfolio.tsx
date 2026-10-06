@@ -1,4 +1,5 @@
 import React from 'react';
+import { openExternal } from '@/lib/safe-url';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
@@ -125,22 +126,22 @@ export default function PublicPortfolio() {
                 </div>
                 <div className="flex gap-3 justify-center md:justify-start">
                   {student.portfolio?.linkedinUrl && (
-                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => window.open(student.portfolio?.linkedinUrl, '_blank')}>
+                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => openExternal(student.portfolio?.linkedinUrl)}>
                       <Linkedin className="w-5 h-5 text-blue-600" />
                     </Button>
                   )}
                   {student.portfolio?.githubUrl && (
-                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => window.open(student.portfolio?.githubUrl, '_blank')}>
+                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => openExternal(student.portfolio?.githubUrl)}>
                       <Github className="w-5 h-5" />
                     </Button>
                   )}
                   {student.portfolio?.personalWebsite && (
-                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => window.open(student.portfolio?.personalWebsite, '_blank')}>
+                    <Button variant="outline" size="icon" className="rounded-xl border-slate-200" onClick={() => openExternal(student.portfolio?.personalWebsite)}>
                       <Globe className="w-5 h-5 text-indigo-600" />
                     </Button>
                   )}
                   {student.cvUrl && (
-                    <Button className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-md" onClick={() => window.open(student.cvUrl, '_blank')}>
+                    <Button className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 shadow-md" onClick={() => openExternal(student.cvUrl)}>
                       <FileText className="w-4 h-4 mr-2" /> CV
                     </Button>
                   )}
@@ -240,7 +241,7 @@ export default function PublicPortfolio() {
                           <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{project.role}</p>
                         </div>
                         {project.url && (
-                          <Button variant="outline" size="sm" className="rounded-xl shrink-0" onClick={() => window.open(project.url, '_blank')}>
+                          <Button variant="outline" size="sm" className="rounded-xl shrink-0" onClick={() => openExternal(project.url)}>
                             View Project
                           </Button>
                         )}

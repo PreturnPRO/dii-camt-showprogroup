@@ -1,4 +1,5 @@
 import React from 'react';
+import { openExternal } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -277,7 +278,7 @@ export default function Network() {
                                     <Badge variant="outline" className="mt-2 rounded-lg text-xs">{company.industry}</Badge>
                                 </div>
                             </div>
-                            <Button variant="ghost" size="icon" onClick={() => company.website && window.open(company.website, '_blank', 'noopener,noreferrer')} className="text-slate-300 hover:text-orange-500 rounded-xl dark:text-slate-400">
+                            <Button variant="ghost" size="icon" onClick={() => company.website && openExternal(company.website)} className="text-slate-300 hover:text-orange-500 rounded-xl dark:text-slate-400">
                                 <ExternalLink className="w-4 h-4" />
                             </Button>
                         </div>

@@ -1,4 +1,5 @@
 import React from 'react';
+import { safeInternalPath } from '@/lib/safe-url';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,8 +59,9 @@ export function NotificationCenter({
     if (!notification.isRead && onMarkAsRead) {
       onMarkAsRead(notification.id);
     }
-    if (notification.actionUrl) {
-      window.location.href = notification.actionUrl;
+    const path = safeInternalPath(notification.actionUrl);
+    if (path) {
+      window.location.href = path;
     }
   };
 
