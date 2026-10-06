@@ -11,93 +11,13 @@ import type {
   Student,
 } from "@/types";
 import { asArray, asBoolean, asDate, asNumber, asRecord, asString } from "@/lib/live-data";
+import { createEmptySchedule as emptySchedule, createEmptyCourse as emptyCourse, createEmptyStudent as emptyStudent } from "@/lib/constants/defaults";
 
 type MessageRow = Message & {
   from: string;
   to: string;
   date: Date;
 };
-
-const emptySchedule = (id = "schedule-0"): Schedule => ({
-  id,
-  day: "monday",
-  dayThai: "Monday",
-  startTime: "09:00",
-  endTime: "10:00",
-  room: "",
-  building: "",
-  type: "lecture",
-});
-
-const emptyCourse = (index = 0): Course => ({
-  id: `course-${index}`,
-  code: "",
-  name: "Untitled course",
-  nameThai: "Untitled course",
-  credits: 0,
-  semester: 1,
-  academicYear: "",
-  year: 1,
-  lecturerId: "",
-  lecturerName: "",
-  sections: [],
-  description: "",
-  prerequisites: [],
-  learningOutcomes: [],
-  syllabus: "",
-  schedule: [],
-  enrolledStudents: [],
-  maxStudents: 0,
-  minStudents: 0,
-  materials: [],
-  grades: [],
-});
-
-const emptyStudent = (index = 0): Student => ({
-  id: `student-${index}`,
-  email: "",
-  name: "Student",
-  nameThai: "Student",
-  role: "student",
-  createdAt: new Date(),
-  isActive: true,
-  studentId: "",
-  major: "",
-  program: "bachelor",
-  year: 1,
-  semester: 1,
-  academicYear: "",
-  gpa: 0,
-  gpax: 0,
-  totalCredits: 0,
-  earnedCredits: 0,
-  requiredCredits: 0,
-  academicStatus: "normal",
-  advisorName: "ผศ.ดร. นรินทร์ พิชยกุล",
-  advisorNameThai: "ผศ.ดร. นรินทร์ พิชยกุล",
-  coAdvisorName: "ดร. วิลเลียม สมิธ",
-  coAdvisorNameThai: "ดร. วิลเลียม สมิธ",
-  skills: [],
-  activities: [],
-  totalActivityHours: 0,
-  gamificationPoints: 0,
-  badges: [],
-  dataConsent: {
-    studentId: "",
-    allowDataSharing: false,
-    allowPortfolioSharing: false,
-    sharedWithCompanies: [],
-    emailNotifications: true,
-    smsNotifications: false,
-    inAppNotifications: true,
-    showInLeaderboard: false,
-    profileVisibility: "private",
-    consentDate: new Date(),
-    lastModified: new Date(),
-    history: [],
-  },
-  timeline: [],
-});
 
 const emptyLecturer = (index = 0): Lecturer => ({
   id: `lecturer-${index}`,

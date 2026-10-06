@@ -1,4 +1,5 @@
 import { useAuth } from '@/contexts/AuthContext';
+import { useMediaQuery } from '@/hooks/use-media-query';
 import StudentDashboard from './dashboards/StudentDashboard';
 import LecturerDashboard from './dashboards/LecturerDashboard';
 import StaffDashboard from './dashboards/StaffDashboard';
@@ -8,37 +9,28 @@ import { MobileDashboard } from './dashboards/mobile/MobileDashboard';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const isMobile = useMediaQuery('(max-width: 767px)');
 
   if (!user) return null;
 
-  const renderDesktopDashboard = () => {
-    switch (user.role) {
-      case 'student':
-        return <StudentDashboard />;
-      case 'lecturer':
-        return <LecturerDashboard />;
-      case 'staff':
-        return <StaffDashboard />;
-      case 'company':
-        return <CompanyDashboard />;
-      case 'admin':
-        return <AdminDashboard />;
-      default:
-        return <StudentDashboard />;
-    }
-  };
+  // Render dedicated mobile view on mobile screens (< 768px)
+  if (isMobile) {
+    return <MobileDashboard />;
+  }
 
-  return (
-    <>
-      {/* Mobile UI (< 768px): Dedicated Clean & Organized Mobile View */}
-      <div className="block md:hidden">
-        <MobileDashboard />
-      </div>
-
-      {/* Desktop UI (>= 768px): 100% Untouched Desktop View */}
-      <div className="hidden md:block">
-        {renderDesktopDashboard()}
-      </div>
-    </>
-  );
+  // Render role-specific desktop view on desktop/tablet screens (>= 768px)
+  switch (user.role) {
+    case 'student':
+      return <StudentDashboard />;
+    case 'lecturer':
+      return <LecturerDashboard />;
+    case 'staff':
+      return <StaffDashboard />;
+    case 'company':
+      return <CompanyDashboard />;
+    case 'admin':
+      return <AdminDashboard />;
+    default:
+      return <StudentDashboard />;
+  }
 }

@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 
@@ -62,7 +62,6 @@ type MatchRow = {
 
 export default function SkillsRequirement() {
   const { t, language } = useLanguage();
-  const { toast } = useToast();
   const tr = t.skillsRequirement;
   const [requirements, setRequirements] = useState<RequirementRow[]>([]);
   const [matches, setMatches] = useState<MatchRow[]>([]);
@@ -221,12 +220,12 @@ export default function SkillsRequirement() {
         });
       }
 
-      toast({ title: tr.saveRequirement, description: formData.name });
+      toast.success(tr.saveRequirement, { description: formData.name });
       setShowForm(false);
       setEditingReq(null);
       setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] });
     } catch (error) {
-      toast({ title: tr.saveRequirement, description: error instanceof Error ? error.message : 'Unable to save requirement' });
+      toast.error(tr.saveRequirement, { description: error instanceof Error ? error.message : 'Unable to save requirement' });
     }
   };
 

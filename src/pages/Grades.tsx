@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import type { Course, Grade, Student } from '@/types';
+import { EMPTY_STUDENT as emptyStudent } from '@/lib/constants/defaults';
 
 type StudentRow = Student;
 type GradeRow = Grade;
@@ -35,48 +36,6 @@ type EnrollmentRow = {
   total?: number;
   letterGrade?: string;
   remarks?: string;
-};
-
-const emptyStudent: StudentRow = {
-  id: '',
-  email: '',
-  name: '',
-  nameThai: '',
-  role: 'student',
-  createdAt: new Date(),
-  isActive: true,
-  studentId: '',
-  major: '',
-  program: 'bachelor',
-  year: 1,
-  semester: 1,
-  academicYear: '',
-  gpa: 0,
-  gpax: 0,
-  totalCredits: 0,
-  earnedCredits: 0,
-  requiredCredits: 0,
-  academicStatus: 'normal',
-  skills: [],
-  badges: [],
-  activities: [],
-  totalActivityHours: 0,
-  gamificationPoints: 0,
-  dataConsent: {
-    studentId: '',
-    allowDataSharing: false,
-    allowPortfolioSharing: false,
-    sharedWithCompanies: [],
-    emailNotifications: true,
-    smsNotifications: false,
-    inAppNotifications: true,
-    showInLeaderboard: false,
-    profileVisibility: 'private',
-    consentDate: new Date(),
-    lastModified: new Date(),
-    history: [],
-  },
-  timeline: [],
 };
 
 const gradePoint = (grade?: string) => {

@@ -15,7 +15,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { api, ApiError } from '@/lib/api';
 import type { JobPosting } from '@/types';
 import { mapJob } from '@/lib/live-mappers';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InternshipDiary } from '@/components/internship/InternshipDiary';
 import { BookOpen } from 'lucide-react';
@@ -34,7 +34,6 @@ const itemVariants = {
 export default function Internships() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
-  const { toast } = useToast();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedJobId, setSelectedJobId] = React.useState<string | null>(null);
   const [savedJobs, setSavedJobs] = React.useState<string[]>([]);
@@ -87,15 +86,12 @@ export default function Internships() {
     setIsApplying(true);
     try {
       await api.applications.create({ jobPostingId: selectedJob.id });
-      toast({
-        title: 'ส่งใบสมัครแล้ว',
+      toast.success('ส่งใบสมัครแล้ว', {
         description: selectedJob.title,
       });
     } catch (error) {
-      toast({
-        title: 'ส่งใบสมัครไม่สำเร็จ',
+      toast.error('ส่งใบสมัครไม่สำเร็จ', {
         description: error instanceof ApiError ? error.message : 'ไม่สามารถเชื่อมต่อระบบสมัครงานได้',
-        variant: 'destructive',
       });
     } finally {
       setIsApplying(false);

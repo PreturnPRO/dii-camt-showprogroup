@@ -66,7 +66,7 @@ export function DashboardLayout() {
         />
         {/* Main Content Area: Fixed pl-[72px] padding-left so content NEVER reflows or shifts */}
         <div className="h-full flex flex-col min-h-0 pl-[72px] w-full transition-none">
-          <main className="flex-1 min-h-0 pt-24 sm:pt-28 pb-8 overflow-y-auto overflow-x-hidden w-full">
+          <main className="flex-1 min-h-0 pt-24 sm:pt-28 pb-8 overflow-y-auto w-full">
             <div className="px-4 md:px-6 lg:px-8 w-full animate-in fade-in slide-in-from-bottom-4 duration-500">
               <Outlet />
             </div>

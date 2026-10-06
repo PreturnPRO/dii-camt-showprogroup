@@ -17,7 +17,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 
@@ -208,7 +208,6 @@ type InternRow = typeof internsData[number] & {
 export default function InternTracking() {
   const { t, language } = useLanguage();
   const tr = t.internTracking;
-  const { toast } = useToast();
   const [searchParams, setSearchParams] = useSearchParams();
   const [interns, setInterns] = useState<InternRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -449,8 +448,7 @@ export default function InternTracking() {
     setInterns((prev) => prev.map((item) => (item.id === updatedIntern.id ? updatedIntern : item)));
     setIsStipendModalOpen(false);
 
-    toast({
-      title: language === 'th' ? 'บันทึกสถานะเบี้ยเลี้ยงสำเร็จ' : 'Stipend status updated',
+    toast.success(language === 'th' ? 'บันทึกสถานะเบี้ยเลี้ยงสำเร็จ' : 'Stipend status updated', {
       description: language === 'th'
         ? `อัปเดตสถานะรอบเดือน ${stipendFormMonth}: ${
             stipendFormStatus === 'paid_full' ? 'จ่ายครบถ้วน' :
@@ -482,8 +480,7 @@ export default function InternTracking() {
     setSelectedIntern(updatedIntern);
     setInterns((prev) => prev.map((item) => (item.id === updatedIntern.id ? updatedIntern : item)));
     setIsApprovingId(null);
-    toast({
-      title: language === 'th' ? 'อนุมัติบันทึกเรียบร้อย' : 'Log approved',
+    toast.success(language === 'th' ? 'อนุมัติบันทึกเรียบร้อย' : 'Log approved', {
       description: language === 'th' ? 'บันทึกการทำงานได้รับการอนุมัติแล้ว' : 'Daily log approved successfully',
     });
   };
@@ -517,8 +514,7 @@ export default function InternTracking() {
     setInterns((prev) => prev.map((item) => (item.id === updatedIntern.id ? updatedIntern : item)));
     setIsSavingReview(false);
     setReviewModalLog(null);
-    toast({
-      title: language === 'th' ? 'บันทึกผลการตรวจและข้อคิดเห็นแล้ว' : 'Review & comment saved',
+    toast.success(language === 'th' ? 'บันทึกผลการตรวจและข้อคิดเห็นแล้ว' : 'Review & comment saved', {
       description: reviewStatus === 'approved'
         ? (language === 'th' ? 'สถานะ: อนุมัติแล้ว' : 'Status: Approved')
         : (language === 'th' ? 'สถานะ: ขอให้แก้ไข' : 'Status: Needs Revision'),

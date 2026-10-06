@@ -27,48 +27,7 @@ import { mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import { ProjectImage } from '@/components/portfolio/ProjectImage';
 import type { Student } from '@/types';
-
-const emptyStudent: Student = {
-  id: '',
-  email: '',
-  name: '',
-  nameThai: '',
-  role: 'student',
-  createdAt: new Date(),
-  isActive: true,
-  studentId: '',
-  major: '',
-  program: 'bachelor',
-  year: 1,
-  semester: 1,
-  academicYear: '',
-  gpa: 0,
-  gpax: 0,
-  totalCredits: 0,
-  earnedCredits: 0,
-  requiredCredits: 0,
-  academicStatus: 'normal',
-  skills: [],
-  activities: [],
-  totalActivityHours: 0,
-  gamificationPoints: 0,
-  badges: [],
-  dataConsent: {
-    studentId: '',
-    allowDataSharing: false,
-    allowPortfolioSharing: false,
-    sharedWithCompanies: [],
-    emailNotifications: true,
-    smsNotifications: false,
-    inAppNotifications: true,
-    showInLeaderboard: false,
-    profileVisibility: 'private',
-    consentDate: new Date(),
-    lastModified: new Date(),
-    history: [],
-  },
-  timeline: [],
-};
+import { EMPTY_STUDENT as emptyStudent } from '@/lib/constants/defaults';
 
 const containerVariants = {
   hidden: { opacity: 0 },

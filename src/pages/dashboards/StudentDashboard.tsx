@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,6 +29,7 @@ import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
+import { EMPTY_STUDENT as emptyStudent } from '@/lib/constants/defaults';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -38,52 +39,6 @@ const containerVariants = {
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { type: 'spring' as const, stiffness: 100 } },
-};
-
-const emptyStudent: Student = {
-  id: '',
-  email: '',
-  name: '',
-  nameThai: '',
-  role: 'student',
-  createdAt: new Date(),
-  isActive: true,
-  studentId: '',
-  major: '',
-  program: 'bachelor',
-  year: 1,
-  semester: 1,
-  academicYear: '',
-  gpa: 0,
-  gpax: 0,
-  totalCredits: 0,
-  earnedCredits: 0,
-  requiredCredits: 0,
-  academicStatus: 'normal',
-  advisorName: 'ผศ.ดร. นรินทร์ พิชยกุล',
-  advisorNameThai: 'ผศ.ดร. นรินทร์ พิชยกุล',
-  coAdvisorName: 'ดร. วิลเลียม สมิธ',
-  coAdvisorNameThai: 'ดร. วิลเลียม สมิธ',
-  skills: [],
-  activities: [],
-  totalActivityHours: 0,
-  gamificationPoints: 0,
-  badges: [],
-  dataConsent: {
-    studentId: '',
-    allowDataSharing: false,
-    allowPortfolioSharing: false,
-    sharedWithCompanies: [],
-    emailNotifications: true,
-    smsNotifications: false,
-    inAppNotifications: true,
-    showInLeaderboard: false,
-    profileVisibility: 'private',
-    consentDate: new Date(),
-    lastModified: new Date(),
-    history: [],
-  },
-  timeline: [],
 };
 
 // Transform grades for CourseGradesCard
@@ -288,7 +243,6 @@ const mapCompanyTarget = (value: unknown, index: number): CompanyTarget => {
 
 export default function StudentDashboard() {
   const { t, language } = useLanguage();
-  const { toast } = useToast();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = React.useState('overview');
   const [student, setStudent] = React.useState<Student>(emptyStudent);
@@ -1012,8 +966,7 @@ export default function StudentDashboard() {
                             disabled={Boolean(company.applicationStatus)}
                             onClick={async () => {
                               if (company.applicationStatus) {
-                                toast({
-                                  title: "Already submitted",
+                                toast.info("Already submitted", {
                                   description: `${company.name} already has your application status: ${company.applicationStatus}.`,
                                   duration: 3000,
                                 });
@@ -1025,16 +978,13 @@ export default function StudentDashboard() {
                                   target.jobId === company.jobId ? { ...target, applicationStatus: 'pending' } : target,
                                 ));
                               } catch (error) {
-                                toast({
-                                  title: "Unable to submit interest",
+                                toast.error("Unable to submit interest", {
                                   description: error instanceof Error ? error.message : "Please try again later.",
-                                  variant: "destructive",
                                   duration: 3000,
                                 });
                                 return;
                               }
-                              toast({
-                                title: "Interest Expressed!",
+                              toast.success("Interest Expressed!", {
                                 description: `HR at ${company.name} has been notified of your interest.`,
                                 duration: 3000,
                               });
