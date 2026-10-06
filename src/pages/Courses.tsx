@@ -244,7 +244,7 @@ export default function Courses() {
     return visibleCourses.filter((course) => {
       const section = course.sections?.[0];
       const maxStudents = section?.maxStudents || 60;
-      return course.enrolledStudents.length < maxStudents &&
+      return (course.enrolledCount ?? course.enrolledStudents.length) < maxStudents &&
       (
         course.code?.toLowerCase().includes(q) ||
         course.name?.toLowerCase().includes(q) ||
@@ -979,17 +979,17 @@ export default function Courses() {
                       <div>
                         <div className="flex justify-between items-center mb-4 text-sm text-indigo-100">
                           <span>{course.credits} {t.coursesPage.credits}</span>
-                          <span>{course.enrolledStudents.length}/{course.sections?.[0]?.maxStudents || 60} {language === 'th' ? 'คน' : 'students'}</span>
+                          <span>{(course.enrolledCount ?? course.enrolledStudents.length)}/{course.sections?.[0]?.maxStudents || 60} {language === 'th' ? 'คน' : 'students'}</span>
                         </div>
                         <Button 
                           size="sm" 
                           className="w-full bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" 
                           onClick={(e) => { e.stopPropagation(); enrollCourse(course); }}
-                          disabled={enrolledCourses.some(c => c.id === course.id) || course.enrolledStudents.length >= (course.sections?.[0]?.maxStudents || 60)}
+                          disabled={enrolledCourses.some(c => c.id === course.id) || (course.enrolledCount ?? course.enrolledStudents.length) >= (course.sections?.[0]?.maxStudents || 60)}
                         >
                           {enrolledCourses.some(c => c.id === course.id) 
                             ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered') 
-                            : course.enrolledStudents.length >= (course.sections?.[0]?.maxStudents || 60) 
+                            : (course.enrolledCount ?? course.enrolledStudents.length) >= (course.sections?.[0]?.maxStudents || 60) 
                               ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
                               : t.coursesPage.addCourse}
                         </Button>
@@ -1038,7 +1038,7 @@ export default function Courses() {
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'ที่นั่งว่าง' : 'Available Seats'}</p>
                   <p className="font-medium text-slate-900 dark:text-slate-200">
-                    {viewingCourse && ((viewingCourse.sections?.[0]?.maxStudents || 60) - (viewingCourse.enrolledStudents?.length || 0))} / {viewingCourse?.sections?.[0]?.maxStudents || 60}
+                    {viewingCourse && ((viewingCourse.sections?.[0]?.maxStudents || 60) - (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0))} / {viewingCourse?.sections?.[0]?.maxStudents || 60}
                   </p>
                 </div>
               </div>
@@ -1073,11 +1073,11 @@ export default function Courses() {
                     setViewingCourse(null);
                   }
                 }}
-                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || (viewingCourse.enrolledStudents?.length || 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60)}
+                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60)}
               >
                 {viewingCourse && enrolledCourses.some(c => c.id === viewingCourse.id)
                   ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered')
-                  : viewingCourse && (viewingCourse.enrolledStudents?.length || 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60) 
+                  : viewingCourse && (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60) 
                     ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
                     : t.coursesPage.addCourse}
               </Button>
@@ -1142,7 +1142,7 @@ export default function Courses() {
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{course.nameThai}</p>
               <div className="flex items-center justify-between text-sm py-3 border-t border-slate-100 dark:border-slate-700">
                 <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.studentsRegistered}</span>
-                <span className="font-bold text-slate-900 dark:text-slate-200">{course.enrolledStudents.length} {t.coursesPage.studentsCount}</span>
+                <span className="font-bold text-slate-900 dark:text-slate-200">{(course.enrolledCount ?? course.enrolledStudents.length)} {t.coursesPage.studentsCount}</span>
               </div>
               <div className="flex gap-2 mt-5">
                 <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => openCourseEditor(course)}>

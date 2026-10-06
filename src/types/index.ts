@@ -192,7 +192,8 @@ export interface Course {
   room?: string;
 
   // Enrollment
-  enrolledStudents: string[]; // Student IDs
+  enrolledStudents: string[]; // Student IDs (only the viewer's own row for students)
+  enrolledCount?: number; // total enrolled, also when enrolledStudents is scoped
   maxStudents: number;
   minStudents: number;
 

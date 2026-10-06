@@ -35,7 +35,7 @@ type TalentRow = {
   email: string;
   major: string;
   year: number;
-  gpax: number;
+  gpaBand: string;
   skills: string[];
   matchedSkills: string[];
   missingSkills: string[];
@@ -86,7 +86,7 @@ export default function TalentSearch() {
         noResults: 'ยังไม่มีนักศึกษาเปิดโปรไฟล์ตรงเงื่อนไขนี้',
         clearFilters: 'ลดเงื่อนไข',
         loading: 'กำลังค้นหา...',
-        gpaYearMajor: (gpa: number, year: number, major: string) => `GPA ${gpa.toFixed(2)} · ปี ${year} · ${major}`,
+        gpaYearMajor: (band: string, year: number, major: string) => `GPA ${band === 'not_disclosed' ? 'ไม่เปิดเผย' : band} · ปี ${year} · ${major}`,
         favAdded: 'เพิ่มในรายการที่ถูกใจแล้ว',
         favRemoved: 'ลบออกจากรายการที่ถูกใจแล้ว',
         githubLink: 'GitHub',
@@ -112,7 +112,7 @@ export default function TalentSearch() {
         noResults: 'No students with an open profile match this filter.',
         clearFilters: 'Loosen filters',
         loading: 'Searching...',
-        gpaYearMajor: (gpa: number, year: number, major: string) => `GPA ${gpa.toFixed(2)} · Year ${year} · ${major}`,
+        gpaYearMajor: (band: string, year: number, major: string) => `GPA ${band === 'not_disclosed' ? 'not disclosed' : band} · Year ${year} · ${major}`,
         favAdded: 'Added to favorites.',
         favRemoved: 'Removed from favorites.',
         githubLink: 'GitHub',
@@ -169,7 +169,7 @@ export default function TalentSearch() {
             email: asString(t.email),
             major: asString(t.major),
             year: asNumber(t.year, 1),
-            gpax: asNumber(t.gpax, 0),
+            gpaBand: asString(t.gpaBand, 'not_disclosed'),
             skills: asArray<string>(t.skills),
             matchedSkills: asArray<string>(t.matchedSkills),
             missingSkills: asArray<string>(t.missingSkills),
@@ -219,7 +219,7 @@ export default function TalentSearch() {
     const next = toggleFavorite(companyId, {
       id: student.id,
       nameThai: student.nameThai,
-      meta: copy.gpaYearMajor(student.gpax, student.year, student.major),
+      meta: copy.gpaYearMajor(student.gpaBand, student.year, student.major),
       addedAt: new Date().toISOString(),
     });
     setFavorites(next);
@@ -341,7 +341,7 @@ export default function TalentSearch() {
                   <div className="min-w-0">
                     <div className="font-semibold truncate">{student.nameThai}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                      {copy.gpaYearMajor(student.gpax, student.year, student.major)}
+                      {copy.gpaYearMajor(student.gpaBand, student.year, student.major)}
                     </div>
                   </div>
                 </div>
@@ -393,7 +393,7 @@ export default function TalentSearch() {
             <>
               <DialogHeader>
                 <DialogTitle>{profileStudent.nameThai}</DialogTitle>
-                <DialogDescription>{copy.gpaYearMajor(profileStudent.gpax, profileStudent.year, profileStudent.major)}</DialogDescription>
+                <DialogDescription>{copy.gpaYearMajor(profileStudent.gpaBand, profileStudent.year, profileStudent.major)}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4">
                 <p className="text-sm text-slate-600 dark:text-slate-300">{profileStudent.portfolio?.summary || copy.noSummary}</p>

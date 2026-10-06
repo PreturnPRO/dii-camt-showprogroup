@@ -415,6 +415,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
         return asString(enrollment.studentId, asString(student.studentId, asString(student.id)));
       })
       .filter(Boolean),
+    enrolledCount: asNumber(source.enrollmentCount, enrollments.length),
     maxStudents: asNumber(source.maxStudents, fallback.maxStudents),
     minStudents: asNumber(source.minStudents, fallback.minStudents),
     sections: sections.length

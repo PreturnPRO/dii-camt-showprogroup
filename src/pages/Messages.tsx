@@ -1,4 +1,5 @@
 import React from 'react';
+import { recipientLabel, recipientMeta } from '@/lib/recipient-label';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { CheckCheck, ChevronLeft, Info, MessageCircle, MoreHorizontal, Paperclip, Plus, Search, Send } from 'lucide-react';
@@ -212,7 +213,7 @@ export default function Messages() {
   const selectRecipient = (recipient: DirectoryUser) => {
     setSelectedRecipient(recipient);
     setSelectedPeerId(recipient.id);
-    setRecipientQuery(`${recipient.nameThai || recipient.name} <${recipient.email}>`);
+    setRecipientQuery(recipientLabel(recipient));
     setRecipients([]);
   };
 
@@ -236,7 +237,7 @@ export default function Messages() {
 
     setSelectedRecipient(nextRecipient);
     setSelectedPeerId(nextRecipient.id);
-    setRecipientQuery(`${nextRecipient.nameThai || nextRecipient.name} <${nextRecipient.email}>`);
+    setRecipientQuery(recipientLabel(nextRecipient));
     setSearchQuery('');
     navigate(location.pathname, { replace: true, state: null });
   }, [location.pathname, location.state, navigate]);
@@ -337,7 +338,7 @@ export default function Messages() {
                       </Avatar>
                       <span className="min-w-0">
                         <span className="block truncate text-sm font-bold text-slate-900 dark:text-slate-100">{recipient.nameThai || recipient.name}</span>
-                        <span className="block truncate text-xs text-slate-500">{recipient.email} · {recipient.role}</span>
+                        <span className="block truncate text-xs text-slate-500">{recipientMeta(recipient)}</span>
                       </span>
                     </button>
                   ))}
