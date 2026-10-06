@@ -116,18 +116,34 @@ export const scopeCourseForViewer = <T extends ScopableCourse>(course: T, viewer
   };
 };
 
-type ScopableActivity = { enrollments?: Array<{ student?: ({ id?: string; user?: unknown } & object) | null }> };
+type ScopableActivity = {
+  enrollments?: Array<{
+    studentId?: string;
+    student?: ({ id?: string; user?: unknown; consent?: { showInLeaderboard?: boolean } | null } & object) | null;
+  }>;
+};
 
-/** Staff/lecturers see participants in full; students see names only (leaderboard); companies see none. */
-export const scopeActivityForViewer = <T extends ScopableActivity>(activity: T, viewer: Viewer): T => {
+/** Staff/lecturers see participants in full; students see names only (leaderboard) and not those who opted out
+ *  of the leaderboard (except themselves); companies see none. */
+export const scopeActivityForViewer = <T extends ScopableActivity>(
+  activity: T,
+  viewer: Viewer & { studentProfileId?: string | null },
+): T => {
   if (viewer.role === Role.LECTURER || isStaffOrAdmin(viewer.role)) return activity;
   const all = activity.enrollments ?? [];
   if (viewer.role === Role.STUDENT) {
     return {
       ...activity,
-      enrollments: all.map((e) =>
-        e.student ? { ...e, student: { id: e.student.id, user: publicUser(e.student.user, false) } } : e,
-      ),
+      enrollments: all.map((e, index) => {
+        if (!e.student) return e;
+        const hidden = e.student.consent?.showInLeaderboard === false && e.studentId !== viewer.studentProfileId;
+        if (hidden) {
+          // an anonymous row keeps the participant count but carries no id that a public profile lookup could use
+          const anonymousId = `hidden-${index}`;
+          return { studentId: anonymousId, student: { id: anonymousId, user: null } };
+        }
+        return { ...e, student: { id: e.student.id, user: publicUser(e.student.user, false) } };
+      }),
     };
   }
   return { ...activity, enrollments: [], enrollmentCount: all.length };

@@ -1,8 +1,8 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
-import { scopeActivityForViewer } from "../services/access-policy";
-import { checkInToActivity, grantActivityReward } from "../services/activity.service";
+import { scopeActivityForViewer, viewerContext } from "../services/access-policy";
+import { grantActivityReward } from "../services/activity.service";
 import { getStudentProfileByUserId } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
@@ -12,6 +12,7 @@ import { requireUser } from "../utils/user";
 
 export const getActivities = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
+  const viewer = (await viewerContext(req))!;
   const student =
     currentUser.role === Role.STUDENT && req.query.mine === "true"
       ? await getStudentProfileByUserId(currentUser.id)
@@ -49,6 +50,7 @@ export const getActivities = asyncHandler(async (req, res) => {
           student: {
             include: {
               user: true,
+              consent: { select: { showInLeaderboard: true } },
             },
           },
         },
@@ -59,12 +61,13 @@ export const getActivities = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    activities: activities.map((a) => scopeActivityForViewer(a, currentUser)),
+    activities: activities.map((a) => scopeActivityForViewer(a, viewer)),
   });
 });
 
 export const getUpcomingActivities = asyncHandler(async (req, res) => {
-  const viewer = requireUser(req);
+  requireUser(req);
+  const viewer = (await viewerContext(req))!;
   const activities = await prisma.activity.findMany({
     where: {
       startDate: { gte: new Date() },
@@ -72,7 +75,7 @@ export const getUpcomingActivities = asyncHandler(async (req, res) => {
     include: {
       enrollments: {
         include: {
-          student: { include: { user: true } },
+          student: { include: { user: true, consent: { select: { showInLeaderboard: true } } } },
         },
       },
     },
@@ -169,15 +172,9 @@ export const enrollActivity = asyncHandler(async (req, res) => {
   });
 });
 
-export const checkInActivity = asyncHandler(async (req, res) => {
-  const currentUser = requireUser(req);
-  const student = await getStudentProfileByUserId(currentUser.id);
-  const enrollment = await checkInToActivity(String(req.params.activityId), student.id);
-
-  res.json({
-    success: true,
-    enrollment,
-  });
+// Por 6/10/69: self check-in stays closed until a check-in method (code/QR, time window) is chosen (audit S6/F6)
+export const checkInActivity = asyncHandler(async () => {
+  throw new AppError(403, "Activity self check-in is disabled until a check-in method is chosen");
 });
 
 export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
