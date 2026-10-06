@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import type { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import { env } from "../config/env";
+import { isAccessPayload } from "../utils/auth";
 
 type AuthPayload = {
   sub: string;
@@ -54,7 +55,11 @@ export const attachRealtime = (server: HttpServer) => {
         return next();
       }
 
-      const payload = jwt.verify(token, env.JWT_SECRET) as AuthPayload;
+      const verified = jwt.verify(token, env.JWT_SECRET);
+      if (!isAccessPayload(verified)) {
+        return next(new Error("Unauthorized"));
+      }
+      const payload = verified as unknown as AuthPayload;
       socket.data.user = {
         id: payload.sub,
         role: payload.role,

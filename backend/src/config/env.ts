@@ -22,6 +22,15 @@ const envSchema = z.object({
   PRIVATE_FILE_TTL_MINUTES: z.coerce.number().int().positive().default(30),
   AUTOMATION_POLL_SECONDS: z.coerce.number().int().positive().default(60),
   PDF_FONT_PATH: z.string().optional(),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  EXPOSE_RESET_TOKEN: z
+    .enum(["true", "false"])
+    .default("false")
+    .transform((value) => value === "true"),
 });
 
 export const env = envSchema.parse(process.env);
+
+if (env.NODE_ENV === "production" && env.EXPOSE_RESET_TOKEN) {
+  throw new Error("EXPOSE_RESET_TOKEN must never be true in production");
+}

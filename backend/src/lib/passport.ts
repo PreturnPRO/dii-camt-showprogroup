@@ -4,6 +4,7 @@ import passport from "passport";
 import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { prisma } from "./prisma";
+import { isAccessPayload } from "../utils/auth";
 
 passport.use(
   new JwtStrategy(
@@ -12,6 +13,9 @@ passport.use(
       secretOrKey: env.JWT_SECRET,
     },
     async (payload, done) => {
+      if (!isAccessPayload(payload)) {
+        return done(null, false);
+      }
       try {
         const user = await prisma.user.findUnique({
           where: { id: payload.sub },
@@ -52,9 +56,10 @@ export const optionalAuth = async (req: Request, _res: Response, next: NextFunct
     }
 
     const token = header.slice("Bearer ".length);
-    const payload = jwt.verify(token, env.JWT_SECRET) as {
-      sub: string;
-    };
+    const payload = jwt.verify(token, env.JWT_SECRET);
+    if (!isAccessPayload(payload)) {
+      return next();
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: payload.sub },

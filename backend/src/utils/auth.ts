@@ -1,4 +1,5 @@
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 import jwt from "jsonwebtoken";
 import type { Role } from "@prisma/client";
 import type { SignOptions } from "jsonwebtoken";
@@ -10,6 +11,14 @@ export const comparePassword = async (password: string, hash: string) =>
   bcrypt.compare(password, hash);
 
 export const signToken = (payload: { sub: string; role: Role; email: string }) =>
-  jwt.sign(payload, env.JWT_SECRET, {
+  jwt.sign({ ...payload, typ: "access" }, env.JWT_SECRET, {
     expiresIn: env.JWT_EXPIRES_IN as SignOptions["expiresIn"],
   });
+
+export const isAccessPayload = (payload: unknown): payload is { sub: string; typ: "access" } =>
+  typeof payload === "object" &&
+  payload !== null &&
+  (payload as { typ?: unknown }).typ === "access" &&
+  typeof (payload as { sub?: unknown }).sub === "string";
+
+export const generateTemporaryPassword = () => randomBytes(9).toString("base64url");

@@ -8,7 +8,7 @@ export const userQuerySchema = z.object({
 });
 
 export const userCreateSchema = z.object({
-  email: z.string().email(),
+  email: z.string().trim().toLowerCase().email(),
   name: z.string().min(1),
   nameThai: z.string().optional(),
   role: z.nativeEnum(Role),
@@ -25,7 +25,7 @@ const companyImportRowSchema = z.object({
   companyName: z.string().min(1),
   companyNameThai: z.string().optional(),
   phone: z.string().min(1),
-  email: z.string().email().optional(),
+  email: z.string().trim().toLowerCase().email().optional(),
   password: z.string().min(8).optional(),
   industry: z.string().min(1),
   size: z.string().min(1),
@@ -45,7 +45,7 @@ const studentImportRowSchema = z.object({
   studentId: z.string().min(1),
   name: z.string().min(1),
   nameThai: z.string().optional(),
-  email: z.string().email().optional(),
+  email: z.string().trim().toLowerCase().email().optional(),
   phone: z.string().optional(),
   password: z.string().min(8).optional(),
   major: z.string().min(1),

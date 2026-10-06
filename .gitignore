@@ -35,3 +35,7 @@ guide/*
 .env.test.local
 .env.production
 .env.production.local
+
+# Playwright artifacts
+test-results/
+playwright-report/

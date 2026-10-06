@@ -3,7 +3,8 @@ import { Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { createNotification, createNotificationsForRole } from "../services/notification.service";
 import { asyncHandler } from "../utils/async-handler";
-import { hashPassword } from "../utils/auth";
+import { generateTemporaryPassword, hashPassword } from "../utils/auth";
+import { canChangeRole, canManageRole } from "../services/user-policy";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
 
@@ -30,6 +31,7 @@ type ImportResult = {
   status: "created" | "failed";
   userId?: string;
   identifier?: string;
+  email?: string;
   temporaryPassword?: string;
   message?: string;
 };
@@ -71,7 +73,10 @@ export const getUsersHandler = asyncHandler(async (req, res) => {
 
 export const createUserHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
-  const temporaryPassword = req.body.password ?? "Password123!";
+  if (!canManageRole(currentUser.role, req.body.role)) {
+    throw new AppError(403, "You cannot create accounts with this role");
+  }
+  const temporaryPassword = req.body.password ?? generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
   const profile = req.body.profile ?? {};
 
@@ -86,6 +91,7 @@ export const createUserHandler = asyncHandler(async (req, res) => {
         phone: req.body.phone,
         avatar: req.body.avatar,
         isActive: req.body.isActive ?? true,
+        mustChangePassword: true,
       },
     });
 
@@ -216,7 +222,7 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
 
   for (const [index, row] of req.body.rows.entries()) {
     const rowNumber = Number(row.rowNumber ?? index + 2);
-    const temporaryPassword = row.password ?? "Password123!";
+    const temporaryPassword = row.password ?? generateTemporaryPassword();
     const email =
       row.email ??
       `${safeIdentifier(row.phone || row.companyId, `company${rowNumber}`)}@company.showpro.local`;
@@ -252,6 +258,7 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
           data: {
             email,
             passwordHash: await hashPassword(temporaryPassword),
+            mustChangePassword: true,
             name: row.companyName,
             nameThai: row.companyNameThai || row.companyName,
             role: Role.COMPANY,
@@ -299,6 +306,7 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
         status: "created",
         userId: created.id,
         identifier: row.companyId,
+        email,
         temporaryPassword,
       });
     } catch (error) {
@@ -329,7 +337,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
 
   for (const [index, row] of req.body.rows.entries()) {
     const rowNumber = Number(row.rowNumber ?? index + 2);
-    const temporaryPassword = row.password ?? "Password123!";
+    const temporaryPassword = row.password ?? generateTemporaryPassword();
     const email =
       row.email ??
       `${safeIdentifier(row.studentId, `student${rowNumber}`)}@student.showpro.local`;
@@ -355,6 +363,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
           data: {
             email,
             passwordHash: await hashPassword(temporaryPassword),
+            mustChangePassword: true,
             name: row.name,
             nameThai: row.nameThai || row.name,
             role: Role.STUDENT,
@@ -398,6 +407,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
         status: "created",
         userId: created.id,
         identifier: row.studentId,
+        email,
         temporaryPassword,
       });
     } catch (error) {
@@ -440,9 +450,25 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
     throw new AppError(404, "User not found");
   }
 
-  const roleData = req.body.roleData ?? {};
   const newRole = req.body.role as Role | undefined;
   const roleChanged = Boolean(newRole && newRole !== user.role);
+
+  if (!canManageRole(currentUser.role, user.role)) {
+    throw new AppError(403, "You cannot modify this account");
+  }
+  if (user.id === currentUser.id && req.body.isActive === false) {
+    throw new AppError(400, "You cannot deactivate your own account");
+  }
+  if (roleChanged) {
+    if (!canChangeRole(currentUser.role)) {
+      throw new AppError(403, "Only an admin can change roles");
+    }
+    if (user.id === currentUser.id) {
+      throw new AppError(400, "You cannot change your own role");
+    }
+  }
+
+  const roleData = req.body.roleData ?? {};
   const newPasswordHash = req.body.password ? await hashPassword(req.body.password) : undefined;
 
   const updated = await prisma.$transaction(async (tx) => {
@@ -455,7 +481,7 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
         avatar: req.body.avatar ?? undefined,
         isActive: req.body.isActive,
         ...(roleChanged ? { role: newRole } : {}), // D-14: เปลี่ยน role
-        ...(newPasswordHash ? { passwordHash: newPasswordHash } : {}), // D-15: reset password
+        ...(newPasswordHash ? { passwordHash: newPasswordHash, mustChangePassword: true } : {}), // D-15: reset password
       },
     });
 
@@ -623,7 +649,12 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
         action: "USER_UPDATED",
         resource: "User",
         resourceId: user.id,
-        changes: { name: req.body.name, isActive: req.body.isActive },
+        changes: {
+          name: req.body.name,
+          isActive: req.body.isActive,
+          role: { from: user.role, to: newRole ?? user.role },
+          passwordReset: Boolean(newPasswordHash),
+        },
       },
     });
 
@@ -651,6 +682,14 @@ export const deleteUserHandler = asyncHandler(async (req, res) => {
 
   if (userId === currentUser.id) {
     throw new AppError(400, "You cannot deactivate your own account");
+  }
+
+  const target = await prisma.user.findUnique({ where: { id: userId } });
+  if (!target) {
+    throw new AppError(404, "User not found");
+  }
+  if (!canManageRole(currentUser.role, target.role)) {
+    throw new AppError(403, "You cannot deactivate this account");
   }
 
   const user = await prisma.user.update({

@@ -26,19 +26,6 @@ const requireFields = (profile: Record<string, unknown>, fields: string[]) => {
   }
 };
 
-const normalizePhone = (value: unknown) => {
-  let digits = String(value ?? "").replace(/\D/g, "");
-  if (digits.startsWith("66")) {
-    digits = "0" + digits.slice(2);
-  }
-  if (digits.length > 0 && !digits.startsWith("0")) {
-    if (digits.length === 9 || digits.length === 8) {
-      digits = "0" + digits;
-    }
-  }
-  return digits;
-};
-
 const passwordMarker = (passwordHash: string) =>
   createHash("sha256").update(passwordHash).digest("hex");
 
@@ -95,17 +82,12 @@ const sendPasswordResetEmail = async (payload: {
 };
 
 export const register = asyncHandler(async (req, res) => {
-  const { email, password, name, nameThai, role, avatar, phone, profile } = req.body;
+  const { email, password, name, nameThai, avatar, phone, profile } = req.body;
 
-  // Public self-registration must never be able to mint an ADMIN account —
-  // admin accounts are created only via the authenticated internal Users
-  // management flow (system.controller.ts createUserHandler).
-  if (role === Role.ADMIN) {
-    throw new AppError(403, "Cannot self-register as admin");
-  }
-
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  // Public self-registration creates STUDENT accounts only (the schema rejects any other role).
+  // Lecturer, staff and company accounts are created by staff/admin through Users management.
+  const existingUser = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
   });
 
   if (existingUser) {
@@ -121,132 +103,39 @@ export const register = asyncHandler(async (req, res) => {
         passwordHash,
         name,
         nameThai,
-        role,
+        role: Role.STUDENT,
         avatar,
         phone,
       },
     });
 
-    switch (role) {
-      case Role.STUDENT: {
-        requireFields(profile, [
-          "studentId",
-          "major",
-          "program",
-          "year",
-          "semester",
-          "academicYear",
-        ]);
-        const student = await tx.studentProfile.create({
-          data: {
-            userId: createdUser.id,
-            studentId: String(profile.studentId),
-            major: String(profile.major),
-            program: String(profile.program),
-            year: Number(profile.year),
-            semester: Number(profile.semester),
-            academicYear: String(profile.academicYear),
-            advisorId: profile.advisorId ? String(profile.advisorId) : undefined,
-            cvUrl: profile.cvUrl ? String(profile.cvUrl) : undefined,
-          },
-        });
-        await tx.dataConsent.create({
-          data: {
-            studentId: student.id,
-            allowDataSharing: Boolean(profile.allowDataSharing ?? false),
-            allowPortfolioSharing: Boolean(profile.allowPortfolioSharing ?? false),
-          },
-        });
-        break;
-      }
-      case Role.LECTURER:
-        requireFields(profile, ["lecturerId", "department", "position"]);
-        await tx.lecturerProfile.create({
-          data: {
-            userId: createdUser.id,
-            lecturerId: String(profile.lecturerId),
-            department: String(profile.department),
-            position: String(profile.position),
-            specialization: Array.isArray(profile.specialization)
-              ? profile.specialization.map(String)
-              : [],
-            researchInterests: Array.isArray(profile.researchInterests)
-              ? profile.researchInterests.map(String)
-              : [],
-          },
-        });
-        break;
-      case Role.STAFF:
-        requireFields(profile, ["staffId", "department", "position"]);
-        await tx.staffProfile.create({
-          data: {
-            userId: createdUser.id,
-            staffId: String(profile.staffId),
-            department: String(profile.department),
-            position: String(profile.position),
-            permissions: Array.isArray(profile.permissions)
-              ? profile.permissions.map(String)
-              : [],
-            // Self-registered staff accounts start with zero elevated permissions —
-            // an existing admin must grant these explicitly via Users management.
-            // (The client-supplied profile.canManage* flags are intentionally
-            // ignored here, not just defaulted, so a crafted request body can't
-            // grant itself permissions either.)
-            canManageUsers: false,
-            canManageCourses: false,
-            canManageSchedules: false,
-            canViewReports: false,
-            canManageInternships: false,
-          },
-        });
-        break;
-      case Role.COMPANY:
-        requireFields(profile, [
-          "companyId",
-          "companyName",
-          "companyNameThai",
-          "industry",
-          "size",
-        ]);
-        await tx.companyProfile.create({
-          data: {
-            userId: createdUser.id,
-            companyId: String(profile.companyId),
-            companyName: String(profile.companyName),
-            companyNameThai: String(profile.companyNameThai),
-            industry: String(profile.industry),
-            size: String(profile.size),
-            website: profile.website ? String(profile.website) : undefined,
-            address: profile.address ? String(profile.address) : undefined,
-            locationMapUrl: profile.locationMapUrl ? String(profile.locationMapUrl) : undefined,
-            productsServices: profile.productsServices ? String(profile.productsServices) : undefined,
-            contactPersonName: profile.contactPersonName ? String(profile.contactPersonName) : undefined,
-            contactPersonRole: profile.contactPersonRole ? String(profile.contactPersonRole) : undefined,
-            contactPersonEmail: profile.contactPersonEmail ? String(profile.contactPersonEmail) : undefined,
-            contactPersonPhone: profile.contactPersonPhone ? String(profile.contactPersonPhone) : undefined,
-            socialMedia: profile.socialMedia ? String(profile.socialMedia) : undefined,
-            onboardingStatus: String(profile.onboardingStatus ?? "pending_review"),
-            privacyProtocolAcceptedAt: profile.privacyProtocolAcceptedAt
-              ? new Date(String(profile.privacyProtocolAcceptedAt))
-              : undefined,
-            internshipSlots: Number(profile.internshipSlots ?? 0),
-          },
-        });
-        break;
-      case Role.ADMIN:
-        requireFields(profile, ["adminId"]);
-        await tx.adminProfile.create({
-          data: {
-            userId: createdUser.id,
-            adminId: String(profile.adminId),
-            isSuperAdmin: Boolean(profile.isSuperAdmin ?? false),
-            permissions: Array.isArray(profile.permissions)
-              ? profile.permissions.map(String)
-              : ["*"],
-          },
-        });
-        break;
-    }
+    requireFields(profile, [
+      "studentId",
+      "major",
+      "program",
+      "year",
+      "semester",
+      "academicYear",
+    ]);
+    const student = await tx.studentProfile.create({
+      data: {
+        userId: createdUser.id,
+        studentId: String(profile.studentId),
+        major: String(profile.major),
+        program: String(profile.program),
+        year: Number(profile.year),
+        semester: Number(profile.semester),
+        academicYear: String(profile.academicYear),
+        cvUrl: profile.cvUrl ? String(profile.cvUrl) : undefined,
+      },
+    });
+    await tx.dataConsent.create({
+      data: {
+        studentId: student.id,
+        allowDataSharing: Boolean(profile.allowDataSharing ?? false),
+        allowPortfolioSharing: Boolean(profile.allowPortfolioSharing ?? false),
+      },
+    });
 
     return createdUser;
   });
@@ -273,8 +162,8 @@ export const register = asyncHandler(async (req, res) => {
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
     include: {
       studentProfile: true,
       lecturerProfile: true,
@@ -316,59 +205,10 @@ export const login = asyncHandler(async (req, res) => {
   });
 });
 
-export const companyLogin = asyncHandler(async (req, res) => {
-  const submittedPhone = normalizePhone(req.body.phone);
-
-  const users = await prisma.user.findMany({
-    where: {
-      role: Role.COMPANY,
-      isActive: true,
-    },
-    include: {
-      companyProfile: true,
-    },
-  });
-
-  const user = users.find((item) => {
-    const userPhone = normalizePhone(item.phone);
-    const contactPhone = normalizePhone(item.companyProfile?.contactPersonPhone);
-    return (
-      (userPhone && userPhone === submittedPhone) ||
-      (contactPhone && contactPhone === submittedPhone)
-    );
-  });
-
-  if (!user) {
-    throw new AppError(401, "Invalid company phone number");
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { lastLogin: new Date() },
-  });
-
-  const token = signToken({ sub: user.id, role: user.role, email: user.email });
-
-  await createAuditLog({
-    userId: user.id,
-    action: "COMPANY_PHONE_LOGIN",
-    resource: "User",
-    resourceId: user.id,
-    changes: { phoneLoginAt: new Date().toISOString() },
-  });
-
-  res.json({
-    success: true,
-    token,
-    expiresIn: env.JWT_EXPIRES_IN,
-    user: await getUserWithProfiles(user.id),
-  });
-});
-
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
-  const user = await prisma.user.findUnique({
-    where: { email },
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: email, mode: "insensitive" } },
     omit: { passwordHash: false },
   });
 
@@ -393,7 +233,7 @@ export const forgotPassword = asyncHandler(async (req, res) => {
       console.error("Password reset email delivery failed", error);
     });
 
-    if (env.NODE_ENV !== "production") {
+    if (env.EXPOSE_RESET_TOKEN) {
       response.resetToken = resetToken;
       response.resetUrl = resetUrl;
     }
@@ -424,7 +264,7 @@ export const resetPassword = asyncHandler(async (req, res) => {
     data: payload as any
   };
 
-  if (!tokenPayload.success) {
+  if (!tokenPayload.success || (payload as { purpose?: unknown }).purpose !== "password-reset") {
     throw new AppError(400, "Password reset link is invalid or has expired");
   }
 
@@ -500,6 +340,12 @@ export const updateProfile = asyncHandler(async (req, res) => {
   }
 
   if (email && email !== existingUser.email) {
+    if (!currentPassword) {
+      throw new AppError(400, "currentPassword is required to change the email");
+    }
+    if (!(await comparePassword(currentPassword, existingUser.passwordHash))) {
+      throw new AppError(401, "Current password is incorrect");
+    }
     const duplicateEmail = await prisma.user.findUnique({
       where: { email },
     });
@@ -510,21 +356,13 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   let passwordHash: string | undefined;
   if (newPassword) {
-    const canSetCompanyFirstPassword =
-      currentUser.role === Role.COMPANY &&
-      existingUser.companyProfile?.onboardingStatus !== "completed";
-
-    if (!currentPassword && !canSetCompanyFirstPassword) {
+    if (!currentPassword) {
       throw new AppError(400, "currentPassword is required to set a new password");
     }
-
-    if (currentPassword) {
-      const isPasswordValid = await comparePassword(currentPassword, existingUser.passwordHash);
-      if (!isPasswordValid) {
-        throw new AppError(401, "Current password is incorrect");
-      }
+    const isPasswordValid = await comparePassword(currentPassword, existingUser.passwordHash);
+    if (!isPasswordValid) {
+      throw new AppError(401, "Current password is incorrect");
     }
-
     passwordHash = await hashPassword(newPassword);
   }
 
@@ -537,7 +375,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
         avatar,
         phone,
         email: email || undefined,
-        ...(passwordHash ? { passwordHash } : {}),
+        ...(passwordHash ? { passwordHash, mustChangePassword: false } : {}),
       },
     });
 
@@ -576,9 +414,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
           data: {
             department: roleData.department,
             position: roleData.position,
-            permissions: Array.isArray(roleData.permissions)
-              ? roleData.permissions.map(String)
-              : undefined,
           },
         });
         break;
@@ -607,18 +442,6 @@ export const updateProfile = asyncHandler(async (req, res) => {
         });
         break;
       case Role.ADMIN:
-        await tx.adminProfile.update({
-          where: { userId: currentUser.id },
-          data: {
-            permissions: Array.isArray(roleData.permissions)
-              ? roleData.permissions.map(String)
-              : undefined,
-            isSuperAdmin:
-              typeof roleData.isSuperAdmin === "boolean"
-                ? roleData.isSuperAdmin
-                : undefined,
-          },
-        });
         break;
     }
   });
