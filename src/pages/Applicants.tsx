@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { gpaBandLabel, gpaBandOf, gpaBandRank } from '@/lib/gpa-band';
 import { openExternal } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -38,7 +39,8 @@ type ApplicantRow = Application & {
     nameThai: string;
     name: string;
     email: string;
-    gpa: number;
+    // a band for companies (S-b1 policy); the exact value is never shown on this page
+    gpaBand: string;
     year: number;
     skills: string[];
   };
@@ -99,7 +101,7 @@ export default function Applicants() {
         updateSuccess: 'ปรับสถานะแล้ว',
         errorGeneric: 'ทำรายการไม่สำเร็จ',
         year: 'ชั้นปี',
-        gpaYear: (gpa: number, year: number) => `GPA ${gpa.toFixed(2)} · ชั้นปี ${year}`,
+        gpaYear: (band: string, year: number) => `GPA ${gpaBandLabel(band, 'th')} · ชั้นปี ${year}`,
       }
     : {
         title: 'All Applicants',
@@ -134,7 +136,7 @@ export default function Applicants() {
         updateSuccess: 'Status updated.',
         errorGeneric: 'Action failed.',
         year: 'Year',
-        gpaYear: (gpa: number, year: number) => `GPA ${gpa.toFixed(2)} · Year ${year}`,
+        gpaYear: (band: string, year: number) => `GPA ${gpaBandLabel(band, 'en')} · Year ${year}`,
       };
 
   const statusLabel = (status: Application['status']) =>
@@ -166,7 +168,7 @@ export default function Applicants() {
               nameThai: asString(studentUser.nameThai, asString(studentUser.name, '-')),
               name: asString(studentUser.name, '-'),
               email: asString(studentUser.email),
-              gpa: asNumber(student.gpa, 0),
+              gpaBand: gpaBandOf(student),
               year: asNumber(student.year, 1),
               skills: asArray(student.skills).map((s) => asString(asRecord(asRecord(s).skill).name)).filter(Boolean),
             },
@@ -199,7 +201,7 @@ export default function Applicants() {
   });
   filtered = [...filtered].sort((a, b) => (
     sortBy === 'gpa'
-      ? (b.student?.gpa ?? 0) - (a.student?.gpa ?? 0)
+      ? gpaBandRank(b.student?.gpaBand ?? 'not_disclosed') - gpaBandRank(a.student?.gpaBand ?? 'not_disclosed')
       : b.appliedAt.getTime() - a.appliedAt.getTime()
   ));
 
@@ -268,7 +270,7 @@ export default function Applicants() {
     const lines = rows.map((a) => [
       a.student?.nameThai || '',
       a.jobTitle,
-      String(a.student?.gpa ?? ''),
+      a.student?.gpaBand ?? '',
       String(a.student?.year ?? ''),
       a.status,
       a.appliedAt.toISOString(),
@@ -380,7 +382,7 @@ export default function Applicants() {
                         </div>
                       </td>
                       <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400 truncate max-w-[140px]">{applicant.jobTitle}</td>
-                      <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{applicant.student?.gpa.toFixed(2)}</td>
+                      <td className="px-3 py-2.5 text-slate-600 dark:text-slate-400">{gpaBandLabel(applicant.student?.gpaBand ?? 'not_disclosed', language)}</td>
                       <td className="px-3 py-2.5">{statusBadge(applicant.status)}</td>
                     </tr>
                   ))}
@@ -406,7 +408,7 @@ export default function Applicants() {
                     <div className="min-w-0">
                       <div className="font-semibold truncate">{selected.student?.nameThai}</div>
                       <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                        {selected.jobTitle} · {copy.gpaYear(selected.student?.gpa ?? 0, selected.student?.year ?? 1)}
+                        {selected.jobTitle} · {copy.gpaYear(selected.student?.gpaBand ?? 'not_disclosed', selected.student?.year ?? 1)}
                       </div>
                     </div>
                   </div>

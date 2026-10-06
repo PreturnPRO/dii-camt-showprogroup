@@ -838,8 +838,28 @@ export const mapGrade = (value: unknown, index = 0): Grade => {
     gradedAt: source.gradedAt ? asDate(source.gradedAt) : undefined,
     remarks: asString(source.remarks),
     history: asArray(source.history).length ? (asArray(source.history) as Grade["history"]) : [],
+    scores: asArray(source.scores).map((item) => {
+      const score = asRecord(item);
+      return {
+        id: asString(score.id),
+        enrollmentId: asString(score.enrollmentId),
+        criteriaId: asString(score.criteriaId),
+        score: asNumber(score.score, 0),
+      };
+    }),
   };
 };
+
+/** Term GPAs computed by the server (graded, counted courses only), oldest first. */
+export const mapTermGpaHistory = (stats: unknown) =>
+  asArray(asRecord(stats).termGpa).map((item) => {
+    const term = asRecord(item);
+    return {
+      semester: `${asString(term.semester)}/${asString(term.academicYear)}`,
+      gpa: asNumber(term.gpa, 0),
+      credits: asNumber(term.credits, 0),
+    };
+  });
 
 export const mapStudentStatsToStudent = (student: Student, stats: unknown): Student => {
   const source = asRecord(stats);

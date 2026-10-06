@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { gpaBandLabel, gpaBandOf } from '@/lib/gpa-band';
 import { motion } from 'framer-motion';
 import { Briefcase, UserPlus, GraduationCap, Heart, Send, Building, ClipboardList, TrendingUp } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -20,7 +21,7 @@ type ApplicantRow = Application & {
     id: string;
     nameThai: string;
     name: string;
-    gpa: number;
+    gpaBand: string;
     year: number;
   };
 };
@@ -81,7 +82,7 @@ export default function CompanyDashboard() {
         total: (n: number) => `รวม ${n} คน`,
         noPending: 'ยังไม่มีผู้สมัครรอรีวิว',
         noApplications: 'ยังไม่มีผู้สมัคร',
-        gpaYear: (gpa: number, year: number) => `GPA ${gpa.toFixed(2)} · ชั้นปี ${year}`,
+        gpaYear: (band: string, year: number) => `GPA ${gpaBandLabel(band, 'th')} · ชั้นปี ${year}`,
         favorites: 'รายการที่ถูกใจ',
         favoritesCount: (n: number) => `${n} คน`,
         noFavorites: 'ยังไม่มีนักศึกษาที่ถูกใจ',
@@ -103,7 +104,7 @@ export default function CompanyDashboard() {
         total: (n: number) => `Total ${n}`,
         noPending: 'No applicants pending review yet.',
         noApplications: 'No applicants yet.',
-        gpaYear: (gpa: number, year: number) => `GPA ${gpa.toFixed(2)} · Year ${year}`,
+        gpaYear: (band: string, year: number) => `GPA ${gpaBandLabel(band, 'en')} · Year ${year}`,
         favorites: 'Favorites',
         favoritesCount: (n: number) => `${n}`,
         noFavorites: 'No favorited students yet.',
@@ -166,7 +167,7 @@ export default function CompanyDashboard() {
                 id: asString(student.id),
                 nameThai: asString(studentUser.nameThai, asString(studentUser.name, '-')),
                 name: asString(studentUser.name, '-'),
-                gpa: asNumber(student.gpa, 0),
+                gpaBand: gpaBandOf(student),
                 year: asNumber(student.year, 1),
               },
             };
@@ -379,7 +380,7 @@ export default function CompanyDashboard() {
                         <div className="min-w-0">
                           <div className="font-medium text-sm truncate">{applicant.student?.nameThai}</div>
                           <div className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                            {applicant.jobTitle} · {copy.gpaYear(applicant.student?.gpa ?? 0, applicant.student?.year ?? 1)}
+                            {applicant.jobTitle} · {copy.gpaYear(applicant.student?.gpaBand ?? 'not_disclosed', applicant.student?.year ?? 1)}
                           </div>
                         </div>
                       </div>

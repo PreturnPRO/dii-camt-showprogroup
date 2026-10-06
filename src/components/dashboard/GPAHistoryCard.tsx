@@ -11,7 +11,8 @@ interface SemesterGPA {
 
 interface GPAHistoryProps {
     semesterHistory: SemesterGPA[];
-    currentGPA: number;
+    /** GPA of the current term; null when nothing is graded yet this term */
+    currentGPA: number | null;
     gpax: number;
 }
 
@@ -31,6 +32,8 @@ export function GPAHistoryCard({ semesterHistory, currentGPA, gpax }: GPAHistory
         <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            data-testid="gpa-history"
+            data-points={chartData.length}
             className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50"
         >
             <div className="flex items-center justify-between mb-6">
@@ -71,7 +74,7 @@ export function GPAHistoryCard({ semesterHistory, currentGPA, gpax }: GPAHistory
                         )}
                     </div>
                     <div className="flex items-end gap-2">
-                        <span className="text-3xl font-bold text-slate-900 dark:text-slate-200">{currentGPA.toFixed(2)}</span>
+                        <span className="text-3xl font-bold text-slate-900 dark:text-slate-200" data-testid="gpa-latest">{currentGPA === null ? '-' : currentGPA.toFixed(2)}</span>
                         <span className={`text-sm font-medium ${isPositiveTrend ? 'text-emerald-500' : 'text-red-500'}`}>
                             {isPositiveTrend ? '+' : ''}{trend.toFixed(2)}
                         </span>

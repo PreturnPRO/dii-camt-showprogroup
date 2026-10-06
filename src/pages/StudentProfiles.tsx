@@ -111,7 +111,8 @@ const getGpaBand = (gpa: number) => {
 };
 
 const formatGpa = (student: StudentRow) => {
-    if (student.exactGradeVisible && student.gpa > 0) return student.gpa.toFixed(2);
+    // cumulative GPAX (StudentProfile.gpa is now the current-term GPA)
+    if (student.exactGradeVisible && student.gpax > 0) return student.gpax.toFixed(2);
     if (student.gpaBand && student.gpaBand !== 'not_disclosed') return `ช่วง ${student.gpaBand}`;
     return 'ต้องขออนุญาต';
 };
@@ -340,7 +341,7 @@ export default function StudentProfiles() {
                                             <p className="text-sm text-gray-600 dark:text-slate-300">{student.major}</p>
                                             <div className="flex items-center gap-2 mt-1">
                                                 <Badge variant="outline">{t.studentProfiles.yearPrefix} {student.year}</Badge>
-                                                <Badge className={student.gpa >= 3.5 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}>
+                                                <Badge className={student.gpax >= 3.5 ? 'bg-emerald-100 text-emerald-700' : 'bg-blue-100 text-blue-700'}>
                                                     {t.studentProfiles.gpa} {formatGpa(student)}
                                                 </Badge>
                                             </div>

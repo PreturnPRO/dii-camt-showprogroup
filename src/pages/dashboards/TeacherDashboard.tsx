@@ -70,7 +70,7 @@ export default function TeacherDashboard() {
             id: student.id,
             name: student.nameThai,
             studentId: student.studentId,
-            gpa: student.gpa,
+            gpa: student.gpax,
             issue: student.academicStatus,
           })));
       }

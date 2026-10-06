@@ -19,7 +19,7 @@ import { SoftSkillsCard } from '@/components/dashboard/SoftSkillsCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Course, Grade, Student, UserRole } from '@/types';
 
 const containerVariants = {
@@ -64,7 +64,7 @@ const transformGradesForCard = (
             courseCode: course?.code || '',
             courseName: course?.nameThai || course?.name || '',
             credits: course?.credits || 0,
-            letterGrade: grade.letterGrade || 'I',
+            letterGrade: grade.letterGrade || '-',
             semester: course ? `${course.semester}/${course.academicYear}` : '1/2568',
             total: grade.total,
         };
@@ -348,6 +348,7 @@ export default function PersonalDashboard() {
     const [courses, setCourses] = React.useState<Course[]>([]);
     const [grades, setGrades] = React.useState<Grade[]>([]);
     const [gpaHistory, setGpaHistory] = React.useState<SemesterGPAHistory>([]);
+    const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
     const [isStudentDashboardLoading, setIsStudentDashboardLoading] = React.useState(true);
     const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillDashboardScores>({
         leadership: 0,
@@ -383,21 +384,9 @@ export default function PersonalDashboard() {
                 if (statsResult.status === 'fulfilled' && nextStudent) {
                     const stats = asRecord(statsResult.value.stats);
                     nextStudent = mapStudentStatsToStudent(nextStudent, stats);
-                    const history = asArray(stats.gradeHistory)
-                        .map((item) => {
-                            const row = asRecord(item);
-                            return {
-                                semester: asString(row.semester, '1/2568'),
-                                gpa: asNumber(row.gpa, 0),
-                                credits: asNumber(row.credits, 0),
-                            };
-                        })
-                        .filter((item) => item.gpa > 0);
-                    if (history.length) {
-                        setGpaHistory(history);
-                    } else {
-                        setGpaHistory([]);
-                    }
+                    // gradeHistory rows never had a gpa field; the server now sends termGpa
+                    setGpaHistory(mapTermGpaHistory(stats));
+                    setCurrentTermGpa(typeof stats.currentTermGpa === 'number' ? stats.currentTermGpa : null);
                     const softSummary = asRecord(asRecord(asRecord(stats.skillSummary).soft));
                     setSoftSkillScores({
                         leadership: asNumber(softSummary.openness, 0),
@@ -734,7 +723,7 @@ export default function PersonalDashboard() {
                     <motion.div variants={itemVariants}>
                         <GPAHistoryCard
                             semesterHistory={gpaHistory}
-                            currentGPA={student.gpa}
+                            currentGPA={currentTermGpa}
                             gpax={student.gpax}
                         />
                     </motion.div>

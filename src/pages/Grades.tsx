@@ -14,9 +14,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Course, Grade, Student } from '@/types';
 
 type StudentRow = Student;
@@ -106,6 +106,11 @@ export default function Grades() {
   const { t, language } = useLanguage();
   const [student, setStudent] = React.useState<StudentRow>(emptyStudent);
   const [grades, setGrades] = React.useState<GradeRow[]>([]);
+  // from the server: GPA of the current term (null = nothing graded yet) and one entry per graded term
+  // rows the server rejected on the last save (the whole batch is saved or none of it)
+  const [gradeRowErrors, setGradeRowErrors] = React.useState<Array<{ studentCode: string; message: string }>>([]);
+  const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
+  const [termGpaHistory, setTermGpaHistory] = React.useState<ReturnType<typeof mapTermGpaHistory>>([]);
   const [courses, setCourses] = React.useState<CourseRow[]>([]);
   const [enrollments, setEnrollments] = React.useState<EnrollmentRow[]>([]);
   const [selectedCourseId, setSelectedCourseId] = React.useState<string>('all');
@@ -132,6 +137,9 @@ export default function Grades() {
         }
         if (statsResult.status === 'fulfilled') {
           nextStudent = mapStudentStatsToStudent(nextStudent, statsResult.value.stats);
+          const stats = statsResult.value.stats as Record<string, unknown>;
+          setCurrentTermGpa(typeof stats.currentTermGpa === 'number' ? stats.currentTermGpa : null);
+          setTermGpaHistory(mapTermGpaHistory(stats));
         }
         setStudent(nextStudent);
 
@@ -287,6 +295,7 @@ export default function Grades() {
   const saveLecturerGrades = async () => {
     const rowsToSave = enrollments.filter((item) => selectedCourseId === 'all' || item.courseId === selectedCourseId);
     setIsSaving(true);
+    setGradeRowErrors([]);
     try {
       const response = await api.grades.bulkUpdate({
         grades: rowsToSave.map((item) => ({
@@ -324,7 +333,14 @@ export default function Grades() {
       toast.success(language === 'th' ? `บันทึกคะแนนเรียบร้อย (${response.updatedCount} รายการ)` : `Grades saved successfully (${response.updatedCount} records)`);
     } catch (error) {
       console.warn('Unable to save grades', error);
-      toast.error(language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้' : 'Unable to save grades');
+      // ApiError.details is the whole error payload: { message, details: { rows } }
+      const rows = error instanceof ApiError ? asArray(asRecord(asRecord(error.details).details).rows) : [];
+      setGradeRowErrors(rows.map((item) => {
+        const row = asRecord(item);
+        const sent = rowsToSave[asNumber(row.index, -1)];
+        return { studentCode: sent ? `${sent.studentCode} ${sent.studentName}` : asString(row.studentId), message: asString(row.message) };
+      }));
+      toast.error(language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้ — ไม่มีแถวไหนถูกบันทึก ดูรายการที่ต้องแก้ด้านล่าง' : 'Unable to save grades — nothing was saved, see the rows to fix below');
     } finally {
       setIsSaving(false);
     }
@@ -355,28 +371,14 @@ export default function Grades() {
     const studentGrades = grades.filter(g => g.studentId === student.id || g.studentId === student.studentId);
     const currentTermGrades = studentGrades.filter(g => {
       const course = courses.find(c => c.id === g.courseId);
-      return course?.semester === student.semester;
+      return course?.semester === student.semester && course?.academicYear === student.academicYear;
     });
 
-    const gpa = student.gpa;
     const gpax = student.gpax;
 
-    const semesterSummary = studentGrades.reduce<Record<string, { credits: number; totalPoints: number }>>((summary, grade) => {
-      const course = courses.find(c => c.id === grade.courseId);
-      if (!course) return summary;
-      const key = `${course.semester}/${course.academicYear}`;
-      const current = summary[key] ?? { credits: 0, totalPoints: 0 };
-      current.credits += course.credits;
-      current.totalPoints += gradePoint(grade.letterGrade) * course.credits;
-      summary[key] = current;
-      return summary;
-    }, {});
-
+    // newest term first in the list; ungraded courses never count as 0 (server-side termGpa)
     const semesterGrades = Object.fromEntries(
-      Object.entries(semesterSummary).map(([semester, data]) => [
-        semester,
-        { gpa: data.credits ? data.totalPoints / data.credits : 0, credits: data.credits },
-      ]),
+      [...termGpaHistory].reverse().map((term) => [term.semester, { gpa: term.gpa, credits: term.credits }]),
     );
 
     const gradeDistribution = {
@@ -445,7 +447,7 @@ export default function Grades() {
                 </div>
                 <span className="font-medium text-white/90">{t.grades.gpaxCumulative}</span>
               </div>
-              <div className="text-5xl font-bold tracking-tight">{student.gpax.toFixed(2)}</div>
+              <div className="text-5xl font-bold tracking-tight" data-testid="gpax">{student.gpax.toFixed(2)}</div>
               <div className="mt-3 text-sm text-emerald-100 flex items-center gap-1">
                 {student.gpax >= 3.5 ? <Sparkles className="w-4 h-4" /> : null}
                 {student.gpax >= 3.5 ? t.grades.excellent : t.grades.normalRange}
@@ -465,7 +467,7 @@ export default function Grades() {
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.grades.gpaSemester}</span>
               </div>
-              <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{gpa.toFixed(2)}</div>
+              <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors" data-testid="term-gpa">{currentTermGpa === null ? '-' : currentTermGpa.toFixed(2)}</div>
               <div className="mt-3 text-sm text-slate-400">
                 {t.grades.target}: <span className="text-slate-600 font-semibold dark:text-slate-300">3.80</span>
               </div>
@@ -788,6 +790,16 @@ export default function Grades() {
               {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึกคะแนน' : 'Save grades')}
             </Button>
           </div>
+          {gradeRowErrors.length > 0 && (
+            <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
+              <p className="font-bold mb-2">{language === 'th' ? 'แถวที่ต้องแก้ก่อนบันทึก' : 'Rows to fix before saving'}</p>
+              <ul className="space-y-1 leading-relaxed">
+                {gradeRowErrors.map((item, index) => (
+                  <li key={index}>{item.studentCode}: {item.message}</li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         {!isLoading && (selectedCourseId === 'all' || filteredEnrollments.length === 0) ? (

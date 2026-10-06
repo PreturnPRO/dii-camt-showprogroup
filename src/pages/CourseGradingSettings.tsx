@@ -205,6 +205,7 @@ export default function CourseGradingSettings() {
                   <Label>Weight (%)</Label>
                   <Input 
                     type="number" 
+                    data-testid={`criterion-weight-${idx}`}
                     value={c.weightPercentage} 
                     onChange={(e) => updateCriteria(idx, 'weightPercentage', Number(e.target.value))} 
                   />

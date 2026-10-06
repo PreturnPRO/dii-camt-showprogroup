@@ -153,7 +153,7 @@ export default function Students() {
   });
 
   const atRiskCount = students.filter(s => s.academicStatus === 'probation' || s.academicStatus === 'risk').length;
-  const avgGPA = (students.reduce((sum, s) => sum + s.gpa, 0) / Math.max(students.length, 1)).toFixed(2);
+  const avgGPA = (students.reduce((sum, s) => sum + s.gpax, 0) / Math.max(students.length, 1)).toFixed(2);
 
   const handleMessageStudent = (student: StudentRow) => {
     const recipientId = student.userId || student.id;
@@ -201,7 +201,7 @@ export default function Students() {
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                 <div className="text-slate-500 dark:text-slate-400">GPA</div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpa.toFixed(2)}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpax.toFixed(2)}</div>
               </div>
               <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                 <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.credits}</div>
@@ -408,7 +408,7 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPA {student.gpa.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPAX {student.gpax.toFixed(2)}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}

@@ -41,7 +41,8 @@ const mapReportStudent = (item: unknown): StudentRow => {
     const source = asRecord(item);
     return {
         id: asString(source.id),
-        gpa: asNumber(source.gpa, asNumber(source.gpax, 0)),
+        // cumulative GPAX (StudentProfile.gpa is now the current-term GPA)
+        gpa: asNumber(source.gpax, 0),
         year: asNumber(source.year, 0),
         academicStatus: asString(source.academicStatus, 'normal'),
     };

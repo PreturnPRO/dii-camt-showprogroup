@@ -26,7 +26,7 @@ import { SkillsRadarCard } from '@/components/dashboard/SkillsRadarCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
+import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
 
 const containerVariants = {
@@ -93,7 +93,8 @@ const transformGradesForCard = (
       courseCode: course?.code || '',
       courseName: course?.nameThai || course?.name || '',
       credits: course?.credits || 0,
-      letterGrade: grade.letterGrade || 'I',
+      // an ungraded course is shown as '-', never as an 'I' (incomplete) grade
+      letterGrade: grade.letterGrade || '-',
       semester: course ? `${course.semester}/${course.academicYear}` : '1/2568',
       total: grade.total,
     };
@@ -274,6 +275,7 @@ export default function StudentDashboard() {
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [timeline, setTimeline] = React.useState<Student['timeline']>([]);
   const [grades, setGrades] = React.useState<Grade[]>([]);
+  const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
   const [semesterHistory, setSemesterHistory] = React.useState<{ semester: string; gpa: number; credits: number }[]>([]);
   const [curriculumCourses, setCurriculumCourses] = React.useState<CurriculumCourse[]>([]);
   const [curriculumTotals, setCurriculumTotals] = React.useState({ required: 0, ge: 0, free: 0 });
@@ -302,26 +304,9 @@ export default function StudentDashboard() {
       if (statsResult.status === 'fulfilled') {
         nextStudent = mapStudentStatsToStudent(nextStudent, statsResult.value.stats);
         const stats = asRecord(statsResult.value.stats);
-        const gradeHistory = asArray(stats.gradeHistory);
-        const bySemester = new Map<string, { credits: number; points: number }>();
-        gradeHistory.forEach((item) => {
-          const row = asRecord(item);
-          const key = `${row.semester}/${row.academicYear}`;
-          const current = bySemester.get(key) ?? { credits: 0, points: 0 };
-          const credits = asNumber(row.credits, 3);
-          const letter = String(row.letterGrade ?? '');
-          const point = letter === 'A' ? 4 : letter === 'B+' ? 3.5 : letter === 'B' ? 3 : letter === 'C+' ? 2.5 : letter === 'C' ? 2 : letter === 'D+' ? 1.5 : letter === 'D' ? 1 : 0;
-          current.credits += credits;
-          current.points += point * credits;
-          bySemester.set(key, current);
-        });
-        if (bySemester.size > 0) {
-          setSemesterHistory(Array.from(bySemester.entries()).map(([semester, value]) => ({
-            semester,
-            gpa: value.credits ? value.points / value.credits : 0,
-            credits: value.credits,
-          })));
-        }
+        // one point per graded term, oldest first, computed by the server (ungraded courses never count as 0)
+        setSemesterHistory(mapTermGpaHistory(stats));
+        setCurrentTermGpa(typeof stats.currentTermGpa === 'number' ? stats.currentTermGpa : null);
         const skillSummary = asRecord(stats.skillSummary);
         const technical = asRecord(skillSummary.technical);
         const commentTags = asRecord(technical.commentTags);
@@ -733,7 +718,7 @@ export default function StudentDashboard() {
                 <motion.div variants={itemVariants}>
                   <GPAHistoryCard
                     semesterHistory={semesterHistory}
-                    currentGPA={student.gpa}
+                    currentGPA={currentTermGpa}
                     gpax={student.gpax}
                   />
                 </motion.div>

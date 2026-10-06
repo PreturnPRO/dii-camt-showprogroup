@@ -218,7 +218,8 @@ const mapStudent = (item: unknown): StudentRow => {
     studentId: asString(source.studentId),
     name: asString(source.nameThai, asString(source.name, '-')),
     academicStatus: asString(source.academicStatus, 'normal'),
-    gpa: asNumber(source.gpa, asNumber(source.gpax, 0)),
+    // cumulative GPAX (StudentProfile.gpa is now the current-term GPA)
+    gpa: asNumber(source.gpax, 0),
     year: asNumber(source.year, 0),
     earnedCredits: asNumber(source.earnedCredits, 0),
     requiredCredits: asNumber(source.requiredCredits, 120),
@@ -995,7 +996,7 @@ export default function StaffDashboard() {
                     <div>
                       <div className="font-semibold text-slate-900 dark:text-slate-100">{student.name}</div>
                       <div className="text-sm text-slate-500 dark:text-slate-400">
-                        {student.studentId} · ปี {student.year} · GPA {student.gpa.toFixed(2)}
+                        {student.studentId} · ปี {student.year} · GPAX {student.gpa.toFixed(2)}
                       </div>
                     </div>
                     <Badge variant="outline" className={statusBadge(student.academicStatus)}>
