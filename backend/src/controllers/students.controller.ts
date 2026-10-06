@@ -396,6 +396,9 @@ export const getStudentProfilesHandler = asyncHandler(async (req, res) => {
   });
 });
 
+const STUDENT_EDITABLE = ["cvUrl"] as const;
+const ADMIN_EDITABLE = ["cvUrl", "major", "program", "year", "semester", "academicYear", "academicStatus", "advisorId"] as const;
+
 export const updateStudentProfileHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
 
@@ -410,7 +413,21 @@ export const updateStudentProfileHandler = asyncHandler(async (req, res) => {
     throw new AppError(404, "Student profile not found");
   }
 
-  const { skills, portfolio, consent, ...studentData } = req.body;
+  const { skills, portfolio, consent } = req.body;
+  const editable = currentUser.role === Role.STUDENT ? STUDENT_EDITABLE : ADMIN_EDITABLE;
+  // studentId is the admin's selector for which student to edit; it is never written (audit S6)
+  const studentData = Object.fromEntries(
+    editable.filter((key) => req.body[key] !== undefined).map((key) => [key, req.body[key]]),
+  );
+
+  if (studentData.advisorId) {
+    const advisor = await prisma.lecturerProfile.findUnique({
+      where: { id: String(studentData.advisorId) },
+      select: { id: true },
+    });
+    if (!advisor) throw new AppError(400, "advisorId must be a lecturer profile id");
+  }
+  const canVerifySkills = currentUser.role !== Role.STUDENT;
 
   await prisma.$transaction(async (tx) => {
     await tx.studentProfile.update({
@@ -457,9 +474,10 @@ export const updateStudentProfileHandler = asyncHandler(async (req, res) => {
     if (skills) {
       const skillIds: string[] = [];
       for (const item of skills) {
+        // the skill row is shared by everyone, so a profile edit never changes its category
         const skill = await tx.skill.upsert({
           where: { name: item.name },
-          update: { category: item.category },
+          update: {},
           create: {
             name: item.name,
             category: item.category,
@@ -476,14 +494,14 @@ export const updateStudentProfileHandler = asyncHandler(async (req, res) => {
           },
           update: {
             level: item.level,
-            verifiedBy: item.verifiedBy,
             yearsOfExperience: item.yearsOfExperience ?? 0,
+            ...(canVerifySkills && item.verifiedBy !== undefined ? { verifiedBy: item.verifiedBy } : {}),
           },
           create: {
             studentId: student.id,
             skillId: skill.id,
             level: item.level,
-            verifiedBy: item.verifiedBy,
+            verifiedBy: canVerifySkills ? item.verifiedBy : null,
             yearsOfExperience: item.yearsOfExperience ?? 0,
           },
         });

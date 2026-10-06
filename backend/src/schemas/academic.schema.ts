@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrl } from "./url";
 
 export const courseQuerySchema = z.object({
   q: z.string().optional(),
@@ -38,7 +39,7 @@ export const courseCreateSchema = z.object({
       z.object({
         title: z.string().min(1),
         type: z.string().min(1),
-        url: z.string().url(),
+        url: httpUrl,
         size: z.string().optional(),
       }),
     )

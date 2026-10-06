@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrl } from "./url";
 
 export const jobQuerySchema = z.object({
   type: z.string().optional(),
@@ -32,7 +33,7 @@ export const jobUpdateSchema = jobCreateSchema.partial();
 export const applySchema = z.object({
   jobPostingId: z.string().min(1).optional(),
   coverLetter: z.string().optional(),
-  resumeUrl: z.string().url().optional(),
+  resumeUrl: httpUrl.optional(),
   notes: z.string().optional(),
 });
 
@@ -63,7 +64,7 @@ export const internshipDocumentCreateSchema = z.object({
   studentId: z.string().optional(),
   type: z.string().min(1),
   title: z.string().min(1),
-  url: z.string().url(),
+  url: httpUrl,
 });
 
 export const internshipDocumentStatusSchema = z.object({

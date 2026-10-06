@@ -7,6 +7,7 @@ import { asyncHandler } from "../utils/async-handler";
 import { generateTemporaryPassword, hashPassword } from "../utils/auth";
 import { canChangeRole, canManageRole } from "../services/user-policy";
 import { AppError } from "../utils/errors";
+import { assertHttpUrls } from "../schemas/url";
 import { requireUser } from "../utils/user";
 
 
@@ -80,6 +81,7 @@ export const createUserHandler = asyncHandler(async (req, res) => {
   const temporaryPassword = req.body.password ?? generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
   const profile = req.body.profile ?? {};
+  assertHttpUrls(profile, ["website", "locationMapUrl"]);
 
   const user = await prisma.$transaction(async (tx) => {
     const created = await tx.user.create({
@@ -229,6 +231,7 @@ export const importCompaniesHandler = asyncHandler(async (req, res) => {
       `${safeIdentifier(row.phone || row.companyId, `company${rowNumber}`)}@company.showpro.local`;
 
     try {
+      assertHttpUrls(row, ["website", "locationMapUrl"]);
       const normalizedPhone = normalizePhone(row.phone);
       const companies = await prisma.user.findMany({
         where: { role: Role.COMPANY },
@@ -607,6 +610,7 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
         break;
       case Role.COMPANY:
         if (user.companyProfile) {
+          assertHttpUrls(roleData, ["website", "locationMapUrl"]);
           await tx.companyProfile.update({
             where: { userId: user.id },
             data: {

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { httpUrl } from "./url";
 
 export const requestSchema = z.object({
   type: z.string().min(1),
@@ -55,5 +56,5 @@ export const messageCreateSchema = z.object({
   subject: z.string().min(1),
   body: z.string().min(1),
   category: z.string().default("general"),
-  attachments: z.array(z.object({ name: z.string(), url: z.string().url(), size: z.string() })).optional(),
+  attachments: z.array(z.object({ name: z.string(), url: httpUrl, size: z.string() })).optional(),
 });

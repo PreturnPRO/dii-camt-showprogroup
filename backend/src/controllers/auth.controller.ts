@@ -10,6 +10,7 @@ import { getUserWithProfiles } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
 import { comparePassword, hashPassword, signToken } from "../utils/auth";
 import { AppError } from "../utils/errors";
+import { assertHttpUrls } from "../schemas/url";
 import { requireUser } from "../utils/user";
 
 
@@ -94,6 +95,7 @@ export const register = asyncHandler(async (req, res) => {
     throw new AppError(409, "Email is already registered");
   }
 
+  assertHttpUrls(profile, ["cvUrl"]);
   const passwordHash = await hashPassword(password);
 
   const user = await prisma.$transaction(async (tx) => {
@@ -331,12 +333,17 @@ export const updateProfile = asyncHandler(async (req, res) => {
 
   const existingUser = await prisma.user.findUnique({
     where: { id: currentUser.id },
-    include: { companyProfile: true },
+    include: { companyProfile: true, studentProfile: { select: { cvUrl: true } } },
     omit: { passwordHash: false },
   });
 
   if (!existingUser) {
     throw new AppError(404, "User not found");
+  }
+
+  if (currentUser.role === Role.STUDENT) assertHttpUrls(roleData, ["cvUrl"], existingUser.studentProfile ?? {});
+  if (currentUser.role === Role.COMPANY) {
+    assertHttpUrls(roleData, ["website", "locationMapUrl"], existingUser.companyProfile ?? {});
   }
 
   if (email && email !== existingUser.email) {
@@ -383,12 +390,8 @@ export const updateProfile = asyncHandler(async (req, res) => {
       case Role.STUDENT:
         await tx.studentProfile.update({
           where: { userId: currentUser.id },
+          // academic fields are staff/admin only (audit S6); the UI echoes them, so they are ignored, not rejected
           data: {
-            major: roleData.major,
-            program: roleData.program,
-            year: roleData.year,
-            semester: roleData.semester,
-            academicYear: roleData.academicYear,
             cvUrl: roleData.cvUrl,
           },
         });
@@ -434,7 +437,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
             contactPersonEmail: roleData.contactPersonEmail,
             contactPersonPhone: roleData.contactPersonPhone,
             socialMedia: roleData.socialMedia,
-            onboardingStatus: roleData.onboardingStatus,
+            // onboardingStatus is set by staff only (audit S6)
             privacyProtocolAcceptedAt: roleData.privacyProtocolAcceptedAt
               ? new Date(String(roleData.privacyProtocolAcceptedAt))
               : undefined,

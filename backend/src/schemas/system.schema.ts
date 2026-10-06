@@ -1,5 +1,6 @@
 import { Role } from "@prisma/client";
 import { z } from "zod";
+import { internalPath } from "./url";
 
 export const userQuerySchema = z.object({
   q: z.string().optional(),
@@ -29,6 +30,7 @@ const companyImportRowSchema = z.object({
   password: z.string().min(8).optional(),
   industry: z.string().min(1),
   size: z.string().min(1),
+  // checked per row in the import handler so one bad row does not reject the whole file
   website: z.string().optional(),
   address: z.string().optional(),
   locationMapUrl: z.string().optional(),
@@ -98,7 +100,7 @@ export const notificationBroadcastSchema = z.object({
   channels: z.array(z.string()).default(["in-app"]),
   targetRoles: z.array(z.nativeEnum(Role)).default([]),
   userIds: z.array(z.string()).default([]),
-  actionUrl: z.string().optional(),
+  actionUrl: internalPath.optional(),
   actionLabel: z.string().optional(),
   expiresAt: z.coerce.date().optional(),
 });

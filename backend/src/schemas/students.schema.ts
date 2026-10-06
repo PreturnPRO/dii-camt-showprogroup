@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { optionalHttpUrl } from "./url";
 
 export const studentProfileParamsSchema = z.object({
   id: z.string().min(1),
@@ -12,7 +13,7 @@ export const studentProfileUpdateSchema = z.object({
   semester: z.coerce.number().int().positive().optional(),
   academicYear: z.string().optional(),
   academicStatus: z.string().optional(),
-  cvUrl: z.string().url().optional(),
+  cvUrl: optionalHttpUrl,
   advisorId: z.string().optional(),
   skills: z
     .array(
@@ -29,9 +30,9 @@ export const studentProfileUpdateSchema = z.object({
     .object({
       summary: z.string().optional(),
       summaryThai: z.string().optional(),
-      githubUrl: z.string().url().optional().or(z.literal("")),
-      linkedinUrl: z.string().url().optional().or(z.literal("")),
-      personalWebsite: z.string().url().optional().or(z.literal("")),
+      githubUrl: optionalHttpUrl,
+      linkedinUrl: optionalHttpUrl,
+      personalWebsite: optionalHttpUrl,
       isPublic: z.boolean().optional(),
       sharedWith: z.array(z.string()).optional(),
       projects: z
@@ -43,7 +44,7 @@ export const studentProfileUpdateSchema = z.object({
             role: z.string().min(1),
             startDate: z.coerce.date(),
             endDate: z.coerce.date().optional(),
-            url: z.string().url().optional().or(z.literal("")),
+            url: optionalHttpUrl,
             images: z.array(z.string()).default([]),
             highlights: z.array(z.string()).default([]),
           }),
