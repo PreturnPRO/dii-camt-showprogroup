@@ -1,9 +1,7 @@
 import React from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { readTabularFile } from '@/lib/tabular-file';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Student } from '@/types';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -17,31 +15,8 @@ import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/lib/api';
-import { asNumber, asRecord, asString } from '@/lib/live-data';
-import { mapCourse } from '@/lib/live-mappers';
-import type { Course } from '@/types';
-
-type CourseRow = Course;
-type CourseFormState = {
-  code: string;
-  name: string;
-  nameThai: string;
-  credits: string;
-  semester: string;
-  academicYear: string;
-  year: string;
-  lecturerId: string;
-  maxStudents: string;
-  minStudents: string;
-  description: string;
-  syllabus: string;
-};
-
 import {
   useCoursesList,
   useLecturersList,
@@ -50,53 +25,15 @@ import {
   useBulkImportCourses,
   type LecturerOption,
 } from '@/hooks/queries/useCourseQueries';
+import { CourseFormDialog, type CourseFormState } from '@/components/courses/CourseFormDialog';
+import {
+  parseCourseImportFile,
+  normalizeImportCourse,
+  downloadImportTemplate,
+} from '@/lib/course-import';
+import type { Course } from '@/types';
 
-type ImportCoursePayload = {
-  code: string;
-  name: string;
-  nameThai: string;
-  credits: number;
-  semester: number;
-  academicYear: string;
-  year: number;
-  lecturerId: string;
-  sections: Array<{ number: string; maxStudents: number; minStudents: number; schedule: unknown[] }>;
-  description: string;
-  syllabus: string;
-};
-
-type ImportCourseInput = Omit<ImportCoursePayload, 'sections'> & { maxStudents: number; minStudents: number };
-
-const headerAliases: Record<string, keyof ImportCourseInput> = {
-  code: 'code',
-  coursecode: 'code',
-  name: 'name',
-  englishname: 'name',
-  coursename: 'name',
-  namethai: 'nameThai',
-  thainame: 'nameThai',
-  coursenamethai: 'nameThai',
-  credits: 'credits',
-  credit: 'credits',
-  semester: 'semester',
-  academicyear: 'academicYear',
-  year: 'year',
-  yearlevel: 'year',
-  lecturerid: 'lecturerId',
-  instructorid: 'lecturerId',
-  maxstudents: 'maxStudents',
-  capacity: 'maxStudents',
-  minstudents: 'minStudents',
-  description: 'description',
-  syllabus: 'syllabus',
-};
-
-const normalizeHeader = (value: string) => value.trim().toLowerCase().replace(/[\s_-]+/g, '');
-
-const csvEscape = (value: string | number) => {
-  const text = String(value);
-  return /[",\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
-};
+type CourseRow = Course;
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -263,37 +200,6 @@ export default function Courses() {
     }
   };
 
-  const parseCourseImportFile = async (file: File) => {
-    return readTabularFile(file);
-  };
-
-  const normalizeImportCourse = (row: Record<string, unknown>, fallbackLecturerId: string): ImportCoursePayload => {
-    const normalized: Partial<Record<keyof ImportCourseInput, string>> = {};
-    Object.entries(row).forEach(([header, value]) => {
-      const field = headerAliases[normalizeHeader(header)];
-      if (field) normalized[field] = String(value ?? '').trim();
-    });
-
-    return {
-      code: normalized.code || '',
-      name: normalized.name || '',
-      nameThai: normalized.nameThai || normalized.name || '',
-      credits: asNumber(normalized.credits, 3),
-      semester: asNumber(normalized.semester, 1),
-      academicYear: normalized.academicYear || String(new Date().getFullYear() + 543),
-      year: asNumber(normalized.year, 1),
-      lecturerId: normalized.lecturerId || fallbackLecturerId,
-      sections: [{
-        number: '01',
-        maxStudents: asNumber(normalized.maxStudents, 60),
-        minStudents: asNumber(normalized.minStudents, 0),
-        schedule: [],
-      }],
-      description: normalized.description || '',
-      syllabus: normalized.syllabus || '',
-    };
-  };
-
   const importCoursesFromFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     event.target.value = '';
@@ -334,115 +240,20 @@ export default function Courses() {
     }
   };
 
-  const downloadImportTemplate = () => {
-    const headers = ['code', 'name', 'nameThai', 'credits', 'semester', 'academicYear', 'year', 'lecturerId', 'maxStudents', 'minStudents', 'description', 'syllabus'];
-    const sample = [
-      'DII101',
-      'Digital Industry Fundamentals',
-      'พื้นฐานอุตสาหกรรมดิจิทัล',
-      3,
-      1,
-      new Date().getFullYear() + 543,
-      1,
-      importLecturerId || lecturers[0]?.id || 'paste-lecturer-profile-id-here',
-      60,
-      1,
-      'Introductory course',
-      'Course outline',
-    ];
-    const csv = `${headers.join(',')}\n${sample.map(csvEscape).join(',')}\n`;
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement('a');
-    anchor.href = url;
-    anchor.download = 'course-import-template.csv';
-    anchor.click();
-    URL.revokeObjectURL(url);
-  };
-
   const courseEditorDialog = (
-    <Dialog open={Boolean(courseForm)} onOpenChange={(open) => {
-      if (!open) {
+    <CourseFormDialog
+      isOpen={Boolean(courseForm)}
+      editingCourse={editingCourse}
+      courseForm={courseForm}
+      lecturers={lecturers}
+      isSaving={isSaving}
+      onUpdateForm={updateCourseForm}
+      onClose={() => {
         setEditingCourse(null);
         setCourseForm(null);
-      }
-    }}>
-      <DialogContent className="max-w-2xl dark:border-slate-800">
-        <DialogHeader>
-          <DialogTitle>{editingCourse ? (language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course') : (language === 'th' ? 'เพิ่มรายวิชา' : 'Add course')}</DialogTitle>
-          <DialogDescription>
-            {editingCourse ? `${editingCourse.code} ${editingCourse.name}` : (language === 'th' ? 'กรอกรายละเอียดรายวิชาใหม่' : 'Enter the new course details')}
-          </DialogDescription>
-        </DialogHeader>
-        {courseForm && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="course-code">{language === 'th' ? 'รหัสวิชา' : 'Code'}</Label>
-              <Input id="course-code" value={courseForm.code} onChange={(event) => updateCourseForm('code', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-credits">{language === 'th' ? 'หน่วยกิต' : 'Credits'}</Label>
-              <Input id="course-credits" type="number" min="1" value={courseForm.credits} onChange={(event) => updateCourseForm('credits', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-name">{language === 'th' ? 'ชื่ออังกฤษ' : 'English name'}</Label>
-              <Input id="course-name" value={courseForm.name} onChange={(event) => updateCourseForm('name', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-name-th">{language === 'th' ? 'ชื่อไทย' : 'Thai name'}</Label>
-              <Input id="course-name-th" value={courseForm.nameThai} onChange={(event) => updateCourseForm('nameThai', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-semester">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-              <Input id="course-semester" type="number" min="1" value={courseForm.semester} onChange={(event) => updateCourseForm('semester', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-year">{language === 'th' ? 'ปีการศึกษา' : 'Academic year'}</Label>
-              <Input id="course-year" value={courseForm.academicYear} onChange={(event) => updateCourseForm('academicYear', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-level">{language === 'th' ? 'ชั้นปี' : 'Year level'}</Label>
-              <Input id="course-level" type="number" min="1" value={courseForm.year} onChange={(event) => updateCourseForm('year', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-max">{language === 'th' ? 'จำนวนนักศึกษาสูงสุด' : 'Max students'}</Label>
-              <Input id="course-max" type="number" min="1" value={courseForm.maxStudents} onChange={(event) => updateCourseForm('maxStudents', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-lecturer">{language === 'th' ? 'ผู้สอน' : 'Instructor'}</Label>
-              <Select value={courseForm.lecturerId} onValueChange={(value) => updateCourseForm('lecturerId', value)}>
-                <SelectTrigger id="course-lecturer">
-                  <SelectValue placeholder={language === 'th' ? 'เลือกผู้สอน' : 'Choose instructor'} />
-                </SelectTrigger>
-                <SelectContent>
-                  {lecturers.map((lecturer) => (
-                    <SelectItem key={lecturer.id} value={lecturer.id}>
-                      {lecturer.name} ({lecturer.lecturerId || lecturer.id})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="course-description">{language === 'th' ? 'คำอธิบายรายวิชา' : 'Description'}</Label>
-              <Textarea id="course-description" value={courseForm.description} onChange={(event) => updateCourseForm('description', event.target.value)} />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="course-syllabus">Syllabus</Label>
-              <Textarea id="course-syllabus" value={courseForm.syllabus} onChange={(event) => updateCourseForm('syllabus', event.target.value)} />
-            </div>
-          </div>
-        )}
-        <DialogFooter>
-          <Button variant="outline" onClick={() => { setEditingCourse(null); setCourseForm(null); }} disabled={isSaving}>
-            {language === 'th' ? 'ยกเลิก' : 'Cancel'}
-          </Button>
-          <Button onClick={saveCourse} disabled={isSaving || !courseForm}>
-            {isSaving ? (language === 'th' ? 'กำลังบันทึก...' : 'Saving...') : (language === 'th' ? 'บันทึก' : 'Save')}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      }}
+      onSave={saveCourse}
+    />
   );
 
   if (user?.role === 'student') {
@@ -868,7 +679,7 @@ export default function Courses() {
             <Button
               variant="outline"
               className="h-11 px-5 rounded-2xl"
-              onClick={downloadImportTemplate}
+              onClick={() => downloadImportTemplate(importLecturerId || lecturers[0]?.id)}
             >
               <Download className="w-4 h-4 mr-2" />
               {language === 'th' ? 'Template' : 'Template'}
