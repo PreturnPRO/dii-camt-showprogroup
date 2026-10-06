@@ -7,6 +7,7 @@ import {
   buildInternshipCertificatePdf,
   buildTranscriptPdf,
 } from "../services/pdf.service";
+import { assertCanViewStudentRecord } from "../services/access-policy";
 import { getStudentProfileByAnyId, getStudentProfileByUserId } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
@@ -32,6 +33,7 @@ export const getTranscript = asyncHandler(async (req, res) => {
   if (!student) {
     throw new AppError(400, "studentId query is required for non-student roles");
   }
+  await assertCanViewStudentRecord(currentUser, student);
 
   const transcript = await prisma.enrollment.findMany({
     where: { studentId: student.id },

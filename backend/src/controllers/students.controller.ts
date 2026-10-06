@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
+import { assertCanViewStudentRecord, canViewStudentRecord, gpaBand, isStaffOrAdmin, lecturerProfileIdOf, lecturerStudentsWhere } from "../services/access-policy";
 import { evaluateStudentBadges } from "../services/badge.service";
 import {
   getLecturerProfileByUserId,
@@ -50,6 +51,12 @@ export const serializeStudentProfile = (student: Awaited<ReturnType<typeof getSt
   consent: student.consent,
   timeline: student.timeline,
 });
+
+/** Company view: no exact grades, consent settings, internship or timeline — only a GPA band. */
+export const serializeStudentProfileForCompany = (student: Awaited<ReturnType<typeof getStudentProfileByAnyId>>) => {
+  const { gpa, gpax, consent, internship, timeline, ...rest } = serializeStudentProfile(student);
+  return { ...rest, gpaBand: gpaBand(gpax || gpa) };
+};
 
 const gradePoints: Record<string, number> = {
   A: 4,
@@ -203,9 +210,8 @@ export const getStudentProfileHandler = asyncHandler(async (req, res) => {
 
   const isOwner = currentUser.id === student.userId;
   const isPrivileged =
-    currentUser.role === Role.ADMIN ||
-    currentUser.role === Role.STAFF ||
-    currentUser.role === Role.LECTURER;
+    isStaffOrAdmin(currentUser.role) ||
+    (currentUser.role === Role.LECTURER && (await canViewStudentRecord(currentUser, student)));
   const companyProfile =
     currentUser.role === Role.COMPANY ? await getCompanyProfileByUserId(currentUser.id) : null;
   const canViewCompanyData =
@@ -219,7 +225,10 @@ export const getStudentProfileHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    profile: serializeStudentProfile(student),
+    profile:
+      !isOwner && !isPrivileged && canViewCompanyData
+        ? serializeStudentProfileForCompany(student)
+        : serializeStudentProfile(student),
   });
 });
 
@@ -229,7 +238,8 @@ export const getStudentProfileByIdHandler = asyncHandler(async (req, res) => {
   const viewer = req.user;
   const isOwner = viewer?.id === student.userId;
   const isPrivileged = viewer
-    ? viewer.role === Role.ADMIN || viewer.role === Role.STAFF || viewer.role === Role.LECTURER
+    ? isStaffOrAdmin(viewer.role) ||
+      (viewer.role === Role.LECTURER && (await canViewStudentRecord(viewer, student)))
     : false;
   const canViewPublicPortfolio = student.portfolio?.isPublic && student.consent?.allowPortfolioSharing;
   const canViewCompanyData = viewer?.role === Role.COMPANY && student.consent?.allowDataSharing;
@@ -238,10 +248,17 @@ export const getStudentProfileByIdHandler = asyncHandler(async (req, res) => {
     throw new AppError(403, "This student profile is not available for your access level");
   }
 
-  if (isOwner || isPrivileged || canViewCompanyData) {
+  if (isOwner || isPrivileged) {
     return res.json({
       success: true,
       profile: serializeStudentProfile(student),
+    });
+  }
+
+  if (canViewCompanyData) {
+    return res.json({
+      success: true,
+      profile: serializeStudentProfileForCompany(student),
     });
   }
 
@@ -272,9 +289,14 @@ export const getStudentProfilesHandler = asyncHandler(async (req, res) => {
       ? await getCompanyProfileByUserId(currentUser.id)
       : null;
 
+  const lecturerId =
+    currentUser.role === Role.LECTURER ? await lecturerProfileIdOf(currentUser.id) : null;
+
   const profiles = await prisma.studentProfile.findMany({
     where:
-      currentUser.role === Role.COMPANY
+      currentUser.role === Role.LECTURER
+        ? lecturerStudentsWhere(lecturerId ?? "no-lecturer-profile")
+        : currentUser.role === Role.COMPANY
         ? {
             OR: [
               { consent: { allowDataSharing: true } },
@@ -306,13 +328,6 @@ export const getStudentProfilesHandler = asyncHandler(async (req, res) => {
     orderBy: { createdAt: "desc" },
   });
 
-  const gpaBand = (gpax: number) => {
-    if (gpax >= 3.5) return "3.50+";
-    if (gpax >= 3) return "3.00-3.49";
-    if (gpax >= 2.5) return "2.50-2.99";
-    if (gpax > 0) return "below 2.50";
-    return "not_disclosed";
-  };
   const canSeeExactGrades = currentUser.role !== Role.COMPANY;
 
   res.json({
@@ -564,6 +579,7 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     }
     student = await getStudentProfileByAnyId(String(req.query.studentId));
   }
+  await assertCanViewStudentRecord(currentUser, student);
 
   const enrollments = await prisma.enrollment.findMany({
     where: { studentId: student.id },

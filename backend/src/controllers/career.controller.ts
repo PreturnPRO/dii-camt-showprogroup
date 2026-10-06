@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
+import { isStaffOrAdmin, lecturerProfileIdOf } from "../services/access-policy";
 import { createNotification } from "../services/notification.service";
 import { getCompanyProfileByUserId, getStudentProfileByUserId } from "../services/profile.service";
 import { searchTalent } from "../services/talent.service";
@@ -438,11 +439,16 @@ export const getInternshipsHandler = asyncHandler(async (req, res) => {
     currentUser.role === Role.STUDENT ? await getStudentProfileByUserId(currentUser.id) : null;
   const company =
     currentUser.role === Role.COMPANY ? await getCompanyProfileByUserId(currentUser.id) : null;
+  const lecturerId =
+    currentUser.role === Role.LECTURER ? await lecturerProfileIdOf(currentUser.id) : null;
 
   const internships = await prisma.internshipRecord.findMany({
     where: {
       ...(student ? { studentId: student.id } : {}),
       ...(company ? { companyId: company.id } : {}),
+      ...(currentUser.role === Role.LECTURER
+        ? { student: { advisorId: lecturerId ?? "no-lecturer-profile" } }
+        : {}),
     },
     include: {
       student: { include: { user: true } },
@@ -477,27 +483,32 @@ export const getInternshipLogsHandler = asyncHandler(async (req, res) => {
     throw new AppError(400, "studentId query is required for non-student roles");
   }
 
-  const record =
-    (await prisma.internshipRecord.findUnique({
-      where: { studentId: student.id },
-      include: {
-        company: { include: { user: true } },
-        logs: { orderBy: { date: "desc" } },
-        documents: true,
-        evaluation: true,
-      },
-    })) ??
-    (await prisma.internshipRecord.create({
-      data: {
-        studentId: student.id,
-      },
-      include: {
-        logs: true,
-        documents: true,
-        evaluation: true,
-        company: { include: { user: true } },
-      },
-    }));
+  const record = await prisma.internshipRecord.findUnique({
+    where: { studentId: student.id },
+    include: {
+      company: { include: { user: true } },
+      logs: { orderBy: { date: "desc" } },
+      documents: true,
+      evaluation: true,
+    },
+  });
+
+  const isOwner = student.userId === currentUser.id;
+  if (!record) {
+    if (isOwner) return res.json({ success: true, internship: null });
+    throw new AppError(404, "Internship record not found");
+  }
+
+  const allowed =
+    isOwner ||
+    isStaffOrAdmin(currentUser.role) ||
+    (currentUser.role === Role.COMPANY && record.companyId !== null && record.company?.userId === currentUser.id) ||
+    (currentUser.role === Role.LECTURER &&
+      student.advisorId !== null &&
+      student.advisorId === (await lecturerProfileIdOf(currentUser.id)));
+  if (!allowed) {
+    throw new AppError(403, "You do not have access to this internship record");
+  }
 
   res.json({
     success: true,

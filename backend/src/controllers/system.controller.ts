@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
+import { isStaffOrAdmin, PUBLIC_USER_SELECT } from "../services/access-policy";
 import { createNotification, createNotificationsForRole } from "../services/notification.service";
 import { asyncHandler } from "../utils/async-handler";
 import { generateTemporaryPassword, hashPassword } from "../utils/auth";
@@ -781,16 +782,24 @@ export const getDirectoryUsersHandler = asyncHandler(async (req, res) => {
     orderBy: { name: "asc" },
   });
 
+  // students and companies only get what they need to start a conversation
+  const full = isStaffOrAdmin(currentUser.role);
+  const companyContact = (profile: (typeof users)[number]["companyProfile"]) => {
+    if (!profile || full) return profile;
+    const { contactPersonPhone: _phone, ...rest } = profile;
+    return rest;
+  };
+
   res.json({
     success: true,
     users: users.map((user) => ({
       id: user.id,
-      email: user.email,
+      email: full || currentUser.role === Role.LECTURER || user.role !== Role.STUDENT ? user.email : null,
       name: user.name,
       nameThai: user.nameThai,
       role: user.role,
       avatar: user.avatar,
-      phone: user.phone,
+      phone: full ? user.phone : null,
       studentProfile: user.studentProfile
         ? {
             id: user.studentProfile.id,
@@ -800,12 +809,14 @@ export const getDirectoryUsersHandler = asyncHandler(async (req, res) => {
           }
         : null,
       lecturerProfile: user.lecturerProfile,
-      companyProfile: user.companyProfile,
+      companyProfile: companyContact(user.companyProfile),
     })),
   });
 });
 
 export const getLecturersHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const full = isStaffOrAdmin(currentUser.role);
   const lecturers = await prisma.lecturerProfile.findMany({
     where: req.query.q
       ? {
@@ -817,16 +828,22 @@ export const getLecturersHandler = asyncHandler(async (req, res) => {
           ],
         }
       : undefined,
-    include: {
-      user: true,
-      officeHours: true,
-      courses: true,
-      advisees: {
-        include: {
+    include: full
+      ? {
           user: true,
+          officeHours: true,
+          courses: true,
+          advisees: {
+            include: {
+              user: true,
+            },
+          },
+        }
+      : {
+          user: { select: { ...PUBLIC_USER_SELECT, email: true } },
+          officeHours: true,
+          courses: true,
         },
-      },
-    },
     orderBy: { lecturerId: "asc" },
   });
 
@@ -837,6 +854,8 @@ export const getLecturersHandler = asyncHandler(async (req, res) => {
 });
 
 export const getCompaniesHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const full = isStaffOrAdmin(currentUser.role);
   const companies = await prisma.companyProfile.findMany({
     where: req.query.q
       ? {
@@ -849,7 +868,7 @@ export const getCompaniesHandler = asyncHandler(async (req, res) => {
         }
       : undefined,
     include: {
-      user: true,
+      user: full ? true : { select: { ...PUBLIC_USER_SELECT, email: true } },
       cooperation: true,
       jobPostings: true,
     },
@@ -858,7 +877,7 @@ export const getCompaniesHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    companies,
+    companies: full ? companies : companies.map(({ contactPersonPhone: _phone, ...rest }) => rest),
   });
 });
 

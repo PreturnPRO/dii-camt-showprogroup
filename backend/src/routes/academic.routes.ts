@@ -1,6 +1,6 @@
 import { Role } from "@prisma/client";
 import { Router } from "express";
-import { requireAuth } from "../lib/passport";
+import { optionalAuth, requireAuth } from "../lib/passport";
 import { checkRole } from "../middleware/check-role";
 import { validate } from "../middleware/validate";
 import {
@@ -46,12 +46,14 @@ const router = Router();
 
 router.get(
   "/courses",
+  optionalAuth,
   validate(courseQuerySchema, "query"),
   getCoursesHandler
 );
 
 router.get(
   "/courses/:id",
+  optionalAuth,
   getCourseByIdHandler
 );
 

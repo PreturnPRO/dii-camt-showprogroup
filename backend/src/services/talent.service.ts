@@ -1,5 +1,6 @@
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
+import { gpaBand } from "./access-policy";
 
 export const searchTalent = async (
   companyId: string,
@@ -99,10 +100,9 @@ export const searchTalent = async (
       studentId: student.studentId,
       name: student.user.name,
       nameThai: student.user.nameThai,
-      email: student.user.email,
       major: student.major,
       year: student.year,
-      gpax: student.gpax,
+      gpaBand: gpaBand(student.gpax),
       skills: skillNames,
       matchedSkills,
       missingSkills,
@@ -125,5 +125,9 @@ export const searchTalent = async (
     };
   });
 
-  return results.sort((a, b) => b.matchedSkills.length - a.matchedSkills.length || b.gpax - a.gpax);
+  // order by skill match, then by the exact GPAX that the company itself never receives
+  const gpaxOf = new Map(students.map((student) => [student.id, student.gpax]));
+  return results.sort(
+    (a, b) => b.matchedSkills.length - a.matchedSkills.length || (gpaxOf.get(b.id) ?? 0) - (gpaxOf.get(a.id) ?? 0),
+  );
 };

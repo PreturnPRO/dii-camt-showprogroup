@@ -10,6 +10,8 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
   if (currentUser.role === Role.STUDENT) {
     const student = await getStudentProfileByUserId(currentUser.id);
     where = { studentId: student.id };
+  } else if (currentUser.role === Role.COMPANY) {
+    throw new AppError(403, "Companies cannot list enrollments");
   } else if (currentUser.role === Role.LECTURER) {
     const lecturer = await getLecturerProfileByUserId(currentUser.id);
     where = { 

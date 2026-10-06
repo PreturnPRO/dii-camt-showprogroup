@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
+import { scopeActivityForViewer } from "../services/access-policy";
 import { checkInToActivity, grantActivityReward } from "../services/activity.service";
 import { getStudentProfileByUserId } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
@@ -58,11 +59,12 @@ export const getActivities = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    activities,
+    activities: activities.map((a) => scopeActivityForViewer(a, currentUser)),
   });
 });
 
-export const getUpcomingActivities = asyncHandler(async (_req, res) => {
+export const getUpcomingActivities = asyncHandler(async (req, res) => {
+  const viewer = requireUser(req);
   const activities = await prisma.activity.findMany({
     where: {
       startDate: { gte: new Date() },
@@ -79,7 +81,7 @@ export const getUpcomingActivities = asyncHandler(async (_req, res) => {
 
   res.json({
     success: true,
-    activities,
+    activities: activities.map((a) => scopeActivityForViewer(a, viewer)),
   });
 });
 

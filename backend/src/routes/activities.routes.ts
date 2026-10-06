@@ -31,6 +31,7 @@ router.get(
 
 router.get(
   "/activities/upcoming",
+  requireAuth,
   getUpcomingActivities
 );
 

@@ -7,11 +7,15 @@ import { createNotification, createNotificationsForRole } from "../services/noti
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
+import { isStaffOrAdmin } from "../services/access-policy";
 
 
 
 export const getRequests = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
+  if (currentUser.role !== Role.STUDENT && !isStaffOrAdmin(currentUser.role)) {
+    throw new AppError(403, "You cannot view student requests");
+  }
 
   const requests =
     currentUser.role === Role.STUDENT
@@ -93,6 +97,9 @@ export const createRequestComment = asyncHandler(async (req, res) => {
 
   if (!existingRequest) {
     throw new AppError(404, "Request not found");
+  }
+  if (!isStaffOrAdmin(currentUser.role) && existingRequest.student.userId !== currentUser.id) {
+    throw new AppError(403, "You can only comment on your own requests");
   }
 
   const comment = await prisma.requestComment.create({
@@ -179,6 +186,9 @@ export const updateRequestStatus = asyncHandler(async (req, res) => {
 
 export const getAppointments = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
+  if (currentUser.role === Role.COMPANY) {
+    throw new AppError(403, "You cannot view appointments");
+  }
 
   const appointments =
     currentUser.role === Role.STUDENT
@@ -269,7 +279,18 @@ export const createAppointment = asyncHandler(async (req, res) => {
 });
 
 export const updateAppointmentStatus = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
   const appointmentId = String(req.params.id);
+  const existing = await prisma.appointment.findUnique({
+    where: { id: appointmentId },
+    select: { lecturer: { select: { userId: true } } },
+  });
+  if (!existing) {
+    throw new AppError(404, "Appointment not found");
+  }
+  if (currentUser.role === Role.LECTURER && existing.lecturer.userId !== currentUser.id) {
+    throw new AppError(403, "You can only update your own appointments");
+  }
   const appointment = await prisma.appointment.update({
     where: { id: appointmentId },
     data: {

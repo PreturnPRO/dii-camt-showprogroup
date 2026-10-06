@@ -15,25 +15,27 @@ import { getEnrollments, createEnrollment, dropCourseByStudent } from "../servic
 import { getStudentTranscript } from "../services/academic-core.service";
 import crypto from "crypto";
 import { emitToUser } from "../lib/realtime";
+import { assertCanViewStudentRecord, assertCourseManager, isStaffOrAdmin, lecturerProfileIdOf, scopeCourseForViewer, viewerContext } from "../services/access-policy";
 
 
 
 export const getCoursesHandler = asyncHandler(async (req, res) => {
   const courses = await getCourses(req.query as any);
-  res.json({ success: true, courses });
+  const viewer = await viewerContext(req);
+  res.json({ success: true, courses: courses.map((c) => scopeCourseForViewer(c, viewer)) });
 });
 
 export const getCourseByIdHandler = asyncHandler(async (req, res) => {
   const course = await getCourseById(String(req.params.id));
-  res.json({ success: true, course });
+  res.json({ success: true, course: scopeCourseForViewer(course, await viewerContext(req)) });
 });
 
 export const createCourseHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
-  const courseData = {
-    ...req.body,
-    status: req.body.status || (currentUser.role === Role.LECTURER ? "pending" : "active")
-  };
+  const courseData =
+    currentUser.role === Role.LECTURER
+      ? { ...req.body, lecturerId: await lecturerProfileIdOf(currentUser.id), status: "pending" }
+      : { ...req.body, status: req.body.status || "active" };
   const course = await createCourse(courseData);
   res.status(201).json({ success: true, course });
 });
@@ -41,6 +43,10 @@ export const createCourseHandler = asyncHandler(async (req, res) => {
 export const updateCourseHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const courseId = String(req.params.id);
+  if (currentUser.role === Role.LECTURER) {
+    delete req.body.status;
+    delete req.body.lecturerId;
+  }
   const course = await updateCourse(currentUser, courseId, req.body);
 
   res.json({
@@ -81,10 +87,28 @@ export const scheduleHandler = asyncHandler(async (req, res) => {
       throw new AppError(404, "Lecturer profile not found");
     }
 
+    if (isStaffOrAdmin(currentUser.role)) {
+      return res.json({ success: true, lecturer, schedule: lecturer.courses });
+    }
+
+    const viewer = await viewerContext(req);
+    const schedule = lecturer.courses.map((c) => scopeCourseForViewer(c, viewer));
     return res.json({
       success: true,
-      lecturer,
-      schedule: lecturer.courses,
+      lecturer: {
+        id: lecturer.id,
+        lecturerId: lecturer.lecturerId,
+        department: lecturer.department,
+        position: lecturer.position,
+        user: {
+          name: lecturer.user.name,
+          nameThai: lecturer.user.nameThai,
+          avatar: lecturer.user.avatar,
+          email: lecturer.user.email,
+        },
+        courses: schedule,
+      },
+      schedule,
     });
   }
 
@@ -190,10 +214,7 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
 export const getGradesHistoryHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student = await getStudentProfileByAnyId(String(req.params.studentId));
-
-  if (currentUser.role === Role.STUDENT && student.userId !== currentUser.id) {
-    throw new AppError(403, "Students can only view their own grade history");
-  }
+  await assertCanViewStudentRecord(currentUser, student);
 
   const history = await prisma.enrollment.findMany({
     where: { studentId: student.id },
@@ -228,6 +249,7 @@ export const getStudentTranscriptHandler = asyncHandler(async (req, res) => {
   if (!student) {
     throw new AppError(400, "studentId query is required for non-student roles");
   }
+  await assertCanViewStudentRecord(currentUser, student);
 
   const enrollments = await getStudentTranscript(student.id);
 
@@ -246,22 +268,22 @@ export const getStudentTranscriptHandler = asyncHandler(async (req, res) => {
 });
 
 export const getAttendanceReportHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  if (req.query.courseId) {
+    await assertCourseManager(currentUser, String(req.query.courseId));
+  }
+  const ownCourses =
+    currentUser.role === Role.LECTURER
+      ? { course: { lecturerId: (await lecturerProfileIdOf(currentUser.id)) ?? "no-lecturer-profile" } }
+      : {};
+
   const report = await prisma.attendanceRecord.findMany({
     where: {
-      ...(req.query.courseId
-        ? {
-            enrollment: {
-              courseId: String(req.query.courseId),
-            },
-          }
-        : {}),
-      ...(req.query.studentId
-        ? {
-            enrollment: {
-              studentId: String(req.query.studentId),
-            },
-          }
-        : {}),
+      enrollment: {
+        ...ownCourses,
+        ...(req.query.courseId ? { courseId: String(req.query.courseId) } : {}),
+        ...(req.query.studentId ? { studentId: String(req.query.studentId) } : {}),
+      },
     },
     include: {
       enrollment: {
@@ -281,6 +303,15 @@ export const getAttendanceReportHandler = asyncHandler(async (req, res) => {
 });
 
 export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
+  const enrollment = await prisma.enrollment.findUnique({
+    where: { id: String(req.body.enrollmentId) },
+    select: { courseId: true },
+  });
+  if (!enrollment) {
+    throw new AppError(404, "Enrollment not found");
+  }
+  await assertCourseManager(requireUser(req), enrollment.courseId);
+
   const record = await prisma.attendanceRecord.upsert({
     where: {
       enrollmentId_date: {
@@ -536,6 +567,7 @@ async function checkAttendanceWarning(enrollmentId: string) {
 export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
   const { courseId } = req.params;
   const courseIdStr = String(courseId);
+  await assertCourseManager(requireUser(req), courseIdStr);
 
   const enrollments = await prisma.enrollment.findMany({
     where: { courseId: String(courseId) },
@@ -600,6 +632,8 @@ export const getStudentAttendanceHistoryHandler = asyncHandler(async (req, res) 
     if (student.id !== studentId) {
       throw new AppError(403, "You can only view your own attendance history");
     }
+  } else {
+    await assertCourseManager(currentUser, String(courseId));
   }
 
   const records = await prisma.attendanceRecord.findMany({
