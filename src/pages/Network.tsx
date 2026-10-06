@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
+import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -51,6 +52,7 @@ const emptyCompanyForm = {
 
 export default function Network() {
     const { t } = useLanguage();
+    const [credentials, setCredentials] = React.useState<TemporaryCredential[]>([]);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = React.useState('');
     const [industryFilter, setIndustryFilter] = React.useState('all');
@@ -161,7 +163,7 @@ export default function Network() {
                 });
                 toast.success('อัปเดตบริษัทแล้ว');
             } else {
-                await api.users.create({
+                const created = await api.users.create({
                     name: formData.companyName,
                     nameThai: formData.companyNameThai || formData.companyName,
                     email: formData.email,
@@ -177,6 +179,9 @@ export default function Network() {
                     },
                 });
                 toast.success('เพิ่มบริษัทแล้ว');
+                if (created.temporaryPassword) {
+                    setCredentials([{ label: formData.companyName, email: formData.email, temporaryPassword: created.temporaryPassword }]);
+                }
             }
             await reloadCompanies();
             setIsDialogOpen(false);
@@ -210,6 +215,7 @@ export default function Network() {
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
+            <TemporaryPasswordsDialog items={credentials} onClose={() => setCredentials([])} />
             {/* Header */}
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>

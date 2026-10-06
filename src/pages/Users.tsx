@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, Shield, Plus, Search, Edit, Trash2, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles, Upload } from 'lucide-react';
+import { Users, Shield, Plus, Search, Edit, Trash2, KeyRound, Mail, UserCog, Building, GraduationCap, Save, X, Sparkles, Upload } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +12,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { api } from '@/lib/api';
 import { asRecord, asString, roleToClient } from '@/lib/live-data';
 import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
+import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
+import { credentialsFromImport, generateTemporaryPassword } from '@/lib/temporary-credentials';
 import { buildSafeIdentifier, companyImportFields, type MappedImportRow } from '@/lib/import-mapping';
 
 const containerVariants = {
@@ -29,6 +32,11 @@ const itemVariants = {
 
 export default function UsersPage() {
     const { t } = useLanguage();
+    const { user: currentUser } = useAuth();
+    // Mirrors backend user-policy: staff manage students, lecturers and companies; only admins manage staff/admins or change roles.
+    const isAdmin = currentUser?.role === 'admin';
+    const canManage = (type: string) => isAdmin || ['student', 'lecturer', 'company'].includes(type);
+    const [credentials, setCredentials] = useState<TemporaryCredential[]>([]);
     const [searchQuery, setSearchQuery] = useState('');
     type UserType = 'student' | 'lecturer' | 'staff' | 'company' | 'admin';
     type UserRow = {
@@ -278,6 +286,7 @@ export default function UsersPage() {
         );
 
         await loadUsers();
+        setCredentials(credentialsFromImport(response.results));
         toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
         if (response.failedCount > 0) {
             toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
@@ -324,6 +333,16 @@ export default function UsersPage() {
             socialMedia: user.socialMedia || '',
         });
         setIsDialogOpen(true);
+    };
+
+    const handleResetPassword = async (user: UserRow) => {
+        const temporaryPassword = generateTemporaryPassword();
+        try {
+            await api.users.update(user.id, { password: temporaryPassword });
+            setCredentials([{ label: user.name, email: user.email ?? '', temporaryPassword }]);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'รีเซ็ตรหัสผ่านไม่สำเร็จ');
+        }
     };
 
     const handleDelete = async (id: string) => {
@@ -388,7 +407,7 @@ export default function UsersPage() {
         if (editingUser) {
             try {
                 const selectedRole = formData.role;
-                const isRoleChanging = selectedRole !== editingUser.type && !(editingUser.type === 'admin' && selectedRole === 'student');
+                const isRoleChanging = isAdmin && selectedRole !== editingUser.type && !(editingUser.type === 'admin' && selectedRole === 'student');
                 const response = await api.users.update(editingUser.id, {
                     name: formData.name,
                     nameThai: formData.nameThai || formData.name,
@@ -415,7 +434,10 @@ export default function UsersPage() {
                     profile: buildProfile(formData.role),
                 });
                 setUsers([mapBackendUser(response.user), ...users]);
-                toast.success(response.temporaryPassword ? `${t.users.addSuccess} (${response.temporaryPassword})` : t.users.addSuccess);
+                toast.success(t.users.addSuccess);
+                if (response.temporaryPassword) {
+                    setCredentials([{ label: formData.name, email: formData.email, temporaryPassword: response.temporaryPassword }]);
+                }
             } catch (error) {
                 toast.error(error instanceof Error ? error.message : t.users.addUser);
                 return;
@@ -443,6 +465,7 @@ export default function UsersPage() {
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
+            <TemporaryPasswordsDialog items={credentials} onClose={() => setCredentials([])} />
             {/* Header Section - Bento Grid Style */}
             <div className="flex flex-col md:flex-row justify-between items-end gap-6">
                 <div>
@@ -608,7 +631,11 @@ export default function UsersPage() {
                                                 </div>
                                                 <div className="flex items-center gap-3">
                                                     {getRoleBadge(user.type)}
+                                                    {canManage(user.type) && (
                                                     <div className="flex gap-1">
+                                                        <Button size="sm" variant="ghost" onClick={() => handleResetPassword(user)} aria-label="รีเซ็ตรหัสผ่าน" title="รีเซ็ตรหัสผ่าน">
+                                                            <KeyRound className="w-4 h-4 text-gray-500 dark:text-slate-400" />
+                                                        </Button>
                                                         <Button size="sm" variant="ghost" onClick={() => handleEdit(user)}>
                                                             <Edit className="w-4 h-4 text-gray-500 dark:text-slate-400" />
                                                         </Button>
@@ -616,6 +643,7 @@ export default function UsersPage() {
                                                             <Trash2 className="w-4 h-4" />
                                                         </Button>
                                                     </div>
+                                                    )}
                                                 </div>
                                             </motion.div>
                                         ))}
@@ -678,6 +706,7 @@ export default function UsersPage() {
                             <Select
                                 value={formData.role}
                                 onValueChange={(val) => setFormData({ ...formData, role: val as Exclude<UserType, 'admin'> })}
+                                disabled={Boolean(editingUser) && !isAdmin}
                             >
                                 <SelectTrigger>
                                     <SelectValue />
@@ -685,7 +714,7 @@ export default function UsersPage() {
                                 <SelectContent>
                                     <SelectItem value="student">{t.roles.student}</SelectItem>
                                     <SelectItem value="lecturer">{t.roles.lecturer}</SelectItem>
-                                    <SelectItem value="staff">{t.roles.staff}</SelectItem>
+                                    {isAdmin && <SelectItem value="staff">{t.roles.staff}</SelectItem>}
                                     <SelectItem value="company">{t.roles.company}</SelectItem>
                                 </SelectContent>
                             </Select>

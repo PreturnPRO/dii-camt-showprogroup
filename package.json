@@ -17,7 +17,8 @@
     "backend:generate": "npm run prisma:generate --prefix backend",
     "backend:push": "npm run prisma:push --prefix backend",
     "backend:seed": "npm run prisma:seed --prefix backend",
-    "check": "npm run typecheck && npm run lint && npm run build && npm run backend:validate"
+    "check": "npm run typecheck && npm run lint && npm run build && npm run backend:validate",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans-thai": "^5.2.8",

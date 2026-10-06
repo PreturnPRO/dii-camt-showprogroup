@@ -101,6 +101,7 @@ export const normalizeUser = (user: BackendUser) => ({
   role: normalizeRole(user.role),
   avatar: user.avatar || undefined,
   phone: user.phone || undefined,
+  mustChangePassword: Boolean((user as { mustChangePassword?: boolean }).mustChangePassword),
   raw: user,
 });
 
@@ -194,14 +195,6 @@ export const api = {
         method: "POST",
         body: { email, password },
       }),
-    companyLogin: (phone: string) =>
-      request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
-        "/auth/company-login",
-        {
-          method: "POST",
-          body: { phone },
-        },
-      ),
     register: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
         "/auth/register",

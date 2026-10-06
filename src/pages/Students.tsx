@@ -21,6 +21,8 @@ import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
 import { buildSafeIdentifier, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { Student } from '@/types';
 import { toast } from 'sonner';
+import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
+import { credentialsFromImport } from '@/lib/temporary-credentials';
 
 type StudentRow = Student & { userId?: string };
 
@@ -36,6 +38,7 @@ const itemVariants = {
 
 export default function Students() {
   const { t } = useLanguage();
+  const [credentials, setCredentials] = React.useState<TemporaryCredential[]>([]);
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -130,6 +133,7 @@ export default function Students() {
     );
 
     await loadStudents();
+    setCredentials(credentialsFromImport(response.results));
     toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
     if (response.failedCount > 0) {
       toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
@@ -184,6 +188,7 @@ export default function Students() {
       animate="visible"
       className="space-y-6"
     >
+      <TemporaryPasswordsDialog items={credentials} onClose={() => setCredentials([])} />
       <Dialog open={Boolean(selectedStudent)} onOpenChange={(open) => !open && setSelectedStudent(null)}>
         <DialogContent>
           <DialogHeader>

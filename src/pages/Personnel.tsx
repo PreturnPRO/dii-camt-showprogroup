@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/lib/api';
 import { asBoolean, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
+import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -77,6 +78,7 @@ const roleLabel = (role: PersonnelRole) => {
 
 export default function Personnel() {
     const { t } = useLanguage();
+    const [credentials, setCredentials] = React.useState<TemporaryCredential[]>([]);
     const [allPersonnel, setAllPersonnel] = React.useState<PersonnelRow[]>([]);
     const [searchQuery, setSearchQuery] = React.useState('');
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -185,7 +187,7 @@ export default function Personnel() {
                 });
                 toast.success('อัปเดตบุคลากรแล้ว');
             } else {
-                await api.users.create({
+                const created = await api.users.create({
                     name: formData.name,
                     nameThai: formData.nameThai || formData.name,
                     email: formData.email,
@@ -195,6 +197,9 @@ export default function Personnel() {
                     profile: profilePayload(),
                 });
                 toast.success('เพิ่มบุคลากรแล้ว');
+                if (created.temporaryPassword) {
+                    setCredentials([{ label: formData.name, email: formData.email, temporaryPassword: created.temporaryPassword }]);
+                }
             }
             await reloadPersonnel();
             setIsDialogOpen(false);
@@ -238,6 +243,7 @@ export default function Personnel() {
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
+            <TemporaryPasswordsDialog items={credentials} onClose={() => setCredentials([])} />
             <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
                 <div>
                     <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2">

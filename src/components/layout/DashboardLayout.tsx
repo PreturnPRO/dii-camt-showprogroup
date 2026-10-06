@@ -4,10 +4,11 @@ import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
 import { CompanyOnboardingDialog } from '@/components/common/CompanyOnboardingDialog';
+import { ForcePasswordChangeDialog } from '@/components/common/ForcePasswordChangeDialog';
 
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -35,7 +36,8 @@ export function DashboardLayout() {
               <Outlet />
             </div>
           </main>
-          <CompanyOnboardingDialog />
+          <ForcePasswordChangeDialog />
+          {!user?.mustChangePassword && <CompanyOnboardingDialog />}
         </div>
       </div>
     </div>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GraduationCap, Building2, BookOpen, UserCog, Globe, ArrowLeft, ArrowRight, User, Mail, Lock, CheckCircle, Loader2, Moon, Sun } from 'lucide-react';
+import { Globe, ArrowLeft, User, Mail, Lock, CheckCircle, Loader2, Moon, Sun } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -16,65 +16,21 @@ export default function RegisterPage() {
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const { login, register } = useAuth();
-  const [step, setStep] = useState(1);
-  const [role, setRole] = useState<'student' | 'company' | 'lecturer' | 'staff' | 'enterprise' | null>(null);
+  // Public sign-up is for students only; lecturer, staff and company accounts are created by staff/admin.
   const [formData, setFormData] = useState({ name: '', email: '', password: '', confirmPassword: '' });
-  const [enterpriseData, setEnterpriseData] = useState({ taxId: '', website: '', industry: '', regBlock: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleRoleSelect = (selectedRole: 'student' | 'company' | 'lecturer' | 'staff' | 'enterprise') => {
-    setRole(selectedRole);
-    setStep(2);
-  };
 
   const buildProfile = () => {
     const timestamp = Date.now().toString().slice(-6);
-
-    if (role === 'student') {
-      return {
-        studentId: `STU${timestamp}`,
-        major: 'Digital Industry Integration',
-        program: 'bachelor',
-        year: 1,
-        semester: 1,
-        academicYear: '2569',
-        allowDataSharing: false,
-        allowPortfolioSharing: false,
-      };
-    }
-
-    if (role === 'lecturer') {
-      return {
-        lecturerId: `LEC${timestamp}`,
-        department: 'Digital Industry Integration',
-        position: 'instructor',
-        specialization: [],
-        researchInterests: [],
-      };
-    }
-
-    if (role === 'staff') {
-      // Elevated canManage* permissions are not sent here — the backend always
-      // creates self-registered staff accounts with zero elevated permissions;
-      // an admin must grant them afterward via Users management.
-      return {
-        staffId: `STA${timestamp}`,
-        department: 'DII Office',
-        position: 'Staff',
-        permissions: ['students', 'courses', 'reports'],
-      };
-    }
-
     return {
-      companyId: `COM${timestamp}`,
-      companyName: formData.name,
-      companyNameThai: formData.name,
-      industry: enterpriseData.industry || 'Technology',
-      size: role === 'enterprise' ? 'enterprise' : 'small',
-      website: enterpriseData.website || undefined,
-      address: enterpriseData.regBlock || undefined,
-      taxId: enterpriseData.taxId || undefined,
-      internshipSlots: 0,
+      studentId: `STU${timestamp}`,
+      major: 'Digital Industry Integration',
+      program: 'bachelor',
+      year: 1,
+      semester: 1,
+      academicYear: '2569',
+      allowDataSharing: false,
+      allowPortfolioSharing: false,
     };
   };
 
@@ -82,16 +38,6 @@ export default function RegisterPage() {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
       toast.error(t.register.passwordMismatch);
-      return;
-    }
-    if (role === 'enterprise') {
-      if (!enterpriseData.taxId || !enterpriseData.website || !enterpriseData.industry || !enterpriseData.regBlock) {
-        toast.error('Please fill all enterprise validation fields.');
-        return;
-      }
-    }
-    if (!role) {
-      toast.error(t.register.chooseAccountType);
       return;
     }
 
@@ -102,7 +48,7 @@ export default function RegisterPage() {
         password: formData.password,
         name: formData.name,
         nameThai: formData.name,
-        role: role === 'enterprise' ? 'company' : role,
+        role: 'student',
         profile: buildProfile(),
       });
       toast.success(t.register.registerSuccess);
@@ -123,52 +69,6 @@ export default function RegisterPage() {
     } finally {
       setIsSubmitting(false);
     }
-  };
-
-  const roleOptions = [
-    {
-      id: 'student' as const,
-      icon: GraduationCap,
-      label: t.roles.student,
-      desc: t.register.studentDesc,
-      accent: 'blue',
-    },
-    {
-      id: 'lecturer' as const,
-      icon: BookOpen,
-      label: t.roles.lecturer,
-      desc: t.register.lecturerDesc,
-      accent: 'emerald',
-    },
-    {
-      id: 'staff' as const,
-      icon: UserCog,
-      label: t.roles.staff,
-      desc: t.register.staffDesc,
-      accent: 'purple',
-    },
-    {
-      id: 'company' as const,
-      icon: Building2,
-      label: t.register.companyOrg,
-      desc: t.register.companyDesc,
-      accent: 'amber',
-    },
-    {
-      id: 'enterprise' as const,
-      icon: Building2,
-      label: 'Enterprise Entity',
-      desc: 'Exclusive registration for VIP / Enterprise partners.',
-      accent: 'slate',
-    },
-  ];
-
-  const accentClasses: Record<string, { icon: string; border: string }> = {
-    blue:    { icon: 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400',    border: 'border-blue-500' },
-    emerald: { icon: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400', border: 'border-emerald-500' },
-    purple:  { icon: 'bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400', border: 'border-purple-500' },
-    amber:   { icon: 'bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400',  border: 'border-amber-500' },
-    slate:   { icon: 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400',   border: 'border-slate-500' },
   };
 
   return (
@@ -241,75 +141,19 @@ export default function RegisterPage() {
           </div>
 
           <AnimatePresence mode="wait">
-            {step === 1 ? (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -16 }}
-                transition={{ duration: 0.25 }}
-              >
-                <div className="mb-7">
-                  <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.register.chooseAccountType}</h2>
-                  <p className="text-sm text-slate-500 dark:text-slate-400">{t.register.whatRoleQuestion}</p>
-                </div>
-
-                <div className="space-y-2">
-                  {roleOptions.map((opt) => {
-                    const ac = accentClasses[opt.accent];
-                    return (
-                      <button
-                        key={opt.id}
-                        type="button"
-                        onClick={() => handleRoleSelect(opt.id)}
-                        className={`w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:${ac.border} hover:border-opacity-100 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left group`}
-                      >
-                        <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${ac.icon}`}>
-                          <opt.icon className="w-5 h-5" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-sm font-semibold text-slate-900 dark:text-white">{opt.label}</div>
-                          <div className="text-xs text-slate-400 dark:text-slate-500 truncate">{opt.desc}</div>
-                        </div>
-                        <ArrowRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-slate-500 dark:group-hover:text-slate-400 shrink-0 transition-colors" />
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-                  {t.register.hasAccount}{' '}
-                  <Link to="/login" className="font-medium text-slate-900 dark:text-white hover:underline">
-                    {t.register.loginNow}
-                  </Link>
-                </p>
-              </motion.div>
-            ) : (
-              <motion.div
+            <motion.div
                 key="step2"
                 initial={{ opacity: 0, x: 16 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -16 }}
                 transition={{ duration: 0.25 }}
               >
-                <button
-                  type="button"
-                  onClick={() => setStep(1)}
-                  className="inline-flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors mb-6"
-                >
-                  <ArrowLeft className="w-4 h-4" /> {t.common.back}
-                </button>
-
                 <div className="mb-7">
                   <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.register.personalInfo}</h2>
                   <p className="text-sm text-slate-500 dark:text-slate-400">
                     {t.register.registerAs}{' '}
                     <span className="font-medium text-slate-900 dark:text-white">
-                      {role === 'student'    ? t.roles.student
-                      : role === 'company'   ? t.roles.company
-                      : role === 'lecturer'  ? t.roles.lecturer
-                      : role === 'enterprise'? 'Enterprise'
-                      : t.roles.staff}
+                      {t.roles.student}
                     </span>
                   </p>
                 </div>
@@ -342,27 +186,6 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                                    {role === 'enterprise' && (
-                                        <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                                            <h3 className="font-semibold text-indigo-900 dark:text-indigo-300">Enterprise Entity Details</h3>
-                                            <div className="space-y-2">
-                                                <Label>Company Registration Block</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Block A, 12th Floor..." value={enterpriseData.regBlock} onChange={e => setEnterpriseData({ ...enterpriseData, regBlock: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Tax ID</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="13-digit Tax ID" value={enterpriseData.taxId} onChange={e => setEnterpriseData({ ...enterpriseData, taxId: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Company Website Link</Label>
-                                                <Input type="url" className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="https://www.example.com" value={enterpriseData.website} onChange={e => setEnterpriseData({ ...enterpriseData, website: e.target.value })} />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label>Industry</Label>
-                                                <Input className="h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-indigo-500/20 rounded-xl transition-all" required placeholder="e.g. Technology, Finance, Education..." value={enterpriseData.industry} onChange={e => setEnterpriseData({ ...enterpriseData, industry: e.target.value })} />
-                                            </div>
-                                        </div>
-                                    )}
 
                   <div className="space-y-1.5">
                     <Label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.register.password}</Label>
@@ -402,7 +225,6 @@ export default function RegisterPage() {
                   </Button>
                 </form>
               </motion.div>
-            )}
           </AnimatePresence>
         </div>
       </div>

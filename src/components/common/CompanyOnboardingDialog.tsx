@@ -8,7 +8,6 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { asRecord, asString } from '@/lib/live-data';
 
-const FIRST_ACCESS_KEY = 'showpro_company_first_access';
 
 const validateEmail = (email: string): string | null => {
   const trimmed = email.trim();
@@ -49,10 +48,8 @@ export function CompanyOnboardingDialog() {
   const rawUser = React.useMemo(() => asRecord(user?.raw), [user?.raw]);
   const companyProfile = React.useMemo(() => asRecord(rawUser.companyProfile), [rawUser]);
   const isCompany = user?.role === 'company';
-  const isFirstAccess =
-    typeof sessionStorage !== 'undefined' && sessionStorage.getItem(FIRST_ACCESS_KEY) === 'true';
   const missingRequiredField = requiredCompanyFields.some((field) => !asString(companyProfile[field]));
-  const shouldOpen = Boolean(isCompany && (missingRequiredField || isFirstAccess));
+  const shouldOpen = Boolean(isCompany && missingRequiredField);
   const [open, setOpen] = React.useState(shouldOpen);
   const [isSaving, setIsSaving] = React.useState(false);
 
@@ -74,7 +71,6 @@ export function CompanyOnboardingDialog() {
     contactPersonEmail: getInitialEmail(),
     contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
     socialMedia: asString(companyProfile.socialMedia),
-    newPassword: '',
   });
 
   React.useEffect(() => {
@@ -95,7 +91,6 @@ export function CompanyOnboardingDialog() {
       contactPersonEmail: cleanEmail,
       contactPersonPhone: asString(companyProfile.contactPersonPhone, user?.phone ?? ''),
       socialMedia: asString(companyProfile.socialMedia),
-      newPassword: '',
     });
   }, [companyProfile, shouldOpen, user?.email, user?.phone]);
 
@@ -115,8 +110,8 @@ export function CompanyOnboardingDialog() {
   };
 
   const getInputClassName = (fieldKey: string) => {
-    const isRequired = requiredCompanyFields.includes(fieldKey) || (fieldKey === 'newPassword' && isFirstAccess);
-    const value = fieldKey === 'newPassword' ? formData.newPassword : formData[fieldKey as keyof typeof formData];
+    const isRequired = requiredCompanyFields.includes(fieldKey);
+    const value = formData[fieldKey as keyof typeof formData];
     const isEmpty = !value || !asString(value).trim();
 
     if (isRequired && isEmpty) {
@@ -126,7 +121,7 @@ export function CompanyOnboardingDialog() {
   };
 
   const renderLabel = (label: string, fieldKey: string) => {
-    const isRequired = requiredCompanyFields.includes(fieldKey) || (fieldKey === 'newPassword' && isFirstAccess);
+    const isRequired = requiredCompanyFields.includes(fieldKey);
     return (
       <Label className="flex items-center gap-1">
         {label}
@@ -148,38 +143,12 @@ export function CompanyOnboardingDialog() {
       return;
     }
 
-    if (isFirstAccess) {
-      const pwd = formData.newPassword;
-      if (pwd.length < 8) {
-        toast.error('รหัสผ่านต้องมีความยาวอย่างน้อย 8 ตัวอักษร');
-        return;
-      }
-      if (!/[A-Z]/.test(pwd)) {
-        toast.error('รหัสผ่านต้องมีตัวพิมพ์ใหญ่อย่างน้อย 1 ตัว');
-        return;
-      }
-      if (!/[a-z]/.test(pwd)) {
-        toast.error('รหัสผ่านต้องมีตัวพิมพ์เล็กอย่างน้อย 1 ตัว');
-        return;
-      }
-      if (!/[0-9]/.test(pwd)) {
-        toast.error('รหัสผ่านต้องมีตัวเลขอย่างน้อย 1 ตัว');
-        return;
-      }
-      if (!/[^A-Za-z0-9]/.test(pwd)) {
-        toast.error('รหัสผ่านต้องมีอักขระพิเศษอย่างน้อย 1 ตัว (เช่น !@#$%)');
-        return;
-      }
-    }
-
     setIsSaving(true);
     try {
       await updateProfile({
         name: formData.companyName,
         nameThai: formData.companyNameThai,
         phone: formData.contactPersonPhone || user?.phone,
-        email: formData.contactPersonEmail,
-        newPassword: formData.newPassword || undefined,
         roleData: {
           companyName: formData.companyName,
           companyNameThai: formData.companyNameThai,
@@ -197,7 +166,6 @@ export function CompanyOnboardingDialog() {
           privacyProtocolAcceptedAt: new Date().toISOString(),
         },
       });
-      sessionStorage.removeItem(FIRST_ACCESS_KEY);
       toast.success('บันทึกข้อมูลบริษัทแล้ว');
       setOpen(false);
     } catch (error) {
@@ -302,16 +270,6 @@ export function CompanyOnboardingDialog() {
                 className={getInputClassName('contactPersonRole')}
                 value={formData.contactPersonRole}
                 onChange={(event) => updateField('contactPersonRole', event.target.value)}
-              />
-            </div>
-            <div className="space-y-2 md:col-span-2">
-              {renderLabel('รหัสผ่านใหม่', 'newPassword')}
-              <Input
-                className={getInputClassName('newPassword')}
-                type="password"
-                value={formData.newPassword}
-                onChange={(event) => updateField('newPassword', event.target.value)}
-                placeholder="อย่างน้อย 8 ตัว (พิมพ์ใหญ่, พิมพ์เล็ก, ตัวเลข, อักขระพิเศษ)"
               />
             </div>
           </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Building2, Globe, Loader2, Lock, Mail, Moon, Smartphone, Sun } from 'lucide-react';
+import { ArrowLeft, Globe, Loader2, Lock, Mail, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -13,11 +13,10 @@ import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoginPage() {
   const { t, language, toggleLanguage } = useLanguage();
-  const { login, companyLogin } = useAuth();
+  const { login } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
-  const [loginMode, setLoginMode] = useState<'standard' | 'company'>('standard');
   const [formData, setFormData] = useState({ identifier: '', password: '' });
 
   const handleSubmit = async (event: React.FormEvent) => {
@@ -25,21 +24,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      if (loginMode === 'company') {
-        await companyLogin(formData.identifier);
-        toast.success('เข้าสู่ระบบบริษัทแล้ว', {
-          description: 'กรุณากรอกข้อมูลบริษัทและตั้งรหัสผ่านใหม่',
-        });
-        navigate('/dashboard');
-        return;
-      }
-
       await login(formData.identifier, formData.password);
       toast.success(t.login.loginSuccess, { description: t.login.loginSuccessDesc });
       navigate('/dashboard');
     } catch {
       toast.error(t.login.loginFailed, {
-        description: loginMode === 'company' ? 'ไม่พบเบอร์มือถือบริษัทในระบบ' : t.login.loginFailedDesc,
+        description: t.login.loginFailedDesc,
       });
     } finally {
       setIsLoading(false);
@@ -122,55 +112,24 @@ export default function LoginPage() {
 
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
-              {loginMode === 'company' ? 'เข้าสู่ระบบบริษัท' : t.login.title}
+              {t.login.title}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {loginMode === 'company' ? 'กรอกเบอร์มือถือบริษัทเพื่อเข้าสู่ระบบครั้งแรก' : t.login.enterCredentials}
+              {t.login.enterCredentials}
             </p>
-          </div>
-
-          <div className="mb-5 grid grid-cols-2 gap-2 rounded-lg bg-slate-100 p-1 dark:bg-slate-900">
-            <button
-              type="button"
-              onClick={() => setLoginMode('standard')}
-              className={`flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
-                loginMode === 'standard'
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Mail className="h-4 w-4" />
-              Email
-            </button>
-            <button
-              type="button"
-              onClick={() => setLoginMode('company')}
-              className={`flex h-9 items-center justify-center gap-2 rounded-md text-sm font-medium transition-colors ${
-                loginMode === 'company'
-                  ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-800 dark:text-white'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              <Building2 className="h-4 w-4" />
-              Company
-            </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="identifier" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {loginMode === 'company' ? 'เบอร์มือถือบริษัท' : t.login.email}
+                {t.login.email}
               </Label>
               <div className="relative">
-                {loginMode === 'company' ? (
-                  <Smartphone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                ) : (
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                )}
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   id="identifier"
-                  type={loginMode === 'company' ? 'tel' : 'email'}
-                  placeholder={loginMode === 'company' ? '08x-xxx-xxxx' : 'name@example.com'}
+                  type={'email'}
+                  placeholder={'name@example.com'}
                   className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
                   value={formData.identifier}
                   onChange={(event) => setFormData({ ...formData, identifier: event.target.value })}
@@ -179,39 +138,35 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {loginMode === 'standard' && (
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                    {t.login.password}
-                  </Label>
-                  <Link to="/forgot-password" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                    {t.login.forgotPassword}
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
-                    value={formData.password}
-                    onChange={(event) => setFormData({ ...formData, password: event.target.value })}
-                    required
-                  />
-                </div>
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  {t.login.password}
+                </Label>
+                <Link to="/forgot-password" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
+                  {t.login.forgotPassword}
+                </Link>
               </div>
-            )}
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
+                  value={formData.password}
+                  onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                  required
+                />
+              </div>
+            </div>
 
-            {loginMode === 'standard' && (
-              <div className="flex items-center gap-2">
-                <Checkbox id="remember" className="rounded border-slate-300 dark:border-slate-600" />
-                <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
-                  {t.login.rememberMe}
-                </label>
-              </div>
-            )}
+            <div className="flex items-center gap-2">
+              <Checkbox id="remember" className="rounded border-slate-300 dark:border-slate-600" />
+              <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
+                {t.login.rememberMe}
+              </label>
+            </div>
 
             <Button
               type="submit"
@@ -219,38 +174,36 @@ export default function LoginPage() {
               disabled={isLoading}
             >
               {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {loginMode === 'company' ? 'เข้าสู่ระบบบริษัท' : t.login.loginButton}
+              {t.login.loginButton}
             </Button>
           </form>
 
-          {loginMode === 'standard' && (
-            <>
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-slate-200 dark:border-slate-800" />
-                </div>
-                <div className="relative flex justify-center">
-                  <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">{t.login.orContinueWith}</span>
-                </div>
+          <>
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-200 dark:border-slate-800" />
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
-                  Google
-                </Button>
-                <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
-                  Microsoft
-                </Button>
+              <div className="relative flex justify-center">
+                <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">{t.login.orContinueWith}</span>
               </div>
+            </div>
 
-              <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-                {t.login.noAccount}{' '}
-                <Link to="/register" className="font-medium text-slate-900 dark:text-white hover:underline">
-                  {t.login.registerNow}
-                </Link>
-              </p>
-            </>
-          )}
+            <div className="grid grid-cols-2 gap-3">
+              <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
+                Google
+              </Button>
+              <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
+                Microsoft
+              </Button>
+            </div>
+
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+              {t.login.noAccount}{' '}
+              <Link to="/register" className="font-medium text-slate-900 dark:text-white hover:underline">
+                {t.login.registerNow}
+              </Link>
+            </p>
+          </>
         </motion.div>
       </div>
     </div>
