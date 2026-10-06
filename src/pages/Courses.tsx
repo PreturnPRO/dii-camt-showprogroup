@@ -42,11 +42,14 @@ type CourseFormState = {
   syllabus: string;
 };
 
-type LecturerOption = {
-  id: string;
-  lecturerId: string;
-  name: string;
-};
+import {
+  useCoursesList,
+  useLecturersList,
+  useSaveCourse,
+  useEnrollCourse,
+  useBulkImportCourses,
+  type LecturerOption,
+} from '@/hooks/queries/useCourseQueries';
 
 type ImportCoursePayload = {
   code: string;
@@ -112,70 +115,26 @@ export default function Courses() {
   const currentTab = searchParams.get('tab') === 'registration' ? 'registration' : 'my-courses';
   const [searchQuery, setSearchQuery] = React.useState('');
   const [registrationQuery, setRegistrationQuery] = React.useState('');
-  const [courses, setCourses] = React.useState<CourseRow[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+
+  // TanStack Query Hooks
+  const { data: courses = [], isLoading } = useCoursesList(user?.role);
+  const { data: lecturers = [] } = useLecturersList(user?.role === 'staff' || user?.role === 'admin');
+  const saveCourseMutation = useSaveCourse();
+  const enrollCourseMutation = useEnrollCourse();
+  const bulkImportMutation = useBulkImportCourses();
+
   const [editingCourse, setEditingCourse] = React.useState<CourseRow | null>(null);
   const [courseForm, setCourseForm] = React.useState<CourseFormState | null>(null);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [lecturers, setLecturers] = React.useState<LecturerOption[]>([]);
+  const isSaving = saveCourseMutation.isPending;
+  const isImporting = bulkImportMutation.isPending;
   const [importLecturerId, setImportLecturerId] = React.useState('');
-  const [isImporting, setIsImporting] = React.useState(false);
   const importInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
-    let mounted = true;
-
-    const coursesRequest = user?.role === 'lecturer'
-      ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
-      : api.courses.list();
-
-    coursesRequest
-      .then((response) => {
-        if (!mounted) return;
-        setCourses(response.courses.map(mapCourse));
-      })
-      .catch((error) => {
-        console.warn('Unable to load courses from API', error);
-        setCourses([]);
-      })
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.role]);
-
-  React.useEffect(() => {
-    if (user?.role !== 'staff' && user?.role !== 'admin') return;
-    let mounted = true;
-
-    api.lecturers
-      .list()
-      .then((response) => {
-        if (!mounted) return;
-        const nextLecturers = response.lecturers.map((item) => {
-          const source = asRecord(item);
-          const lecturerUser = asRecord(source.user);
-          return {
-            id: asString(source.id),
-            lecturerId: asString(source.lecturerId),
-            name: asString(lecturerUser.nameThai, asString(lecturerUser.name, asString(source.lecturerId))),
-          };
-        }).filter((lecturer) => lecturer.id);
-        setLecturers(nextLecturers);
-        setImportLecturerId((current) => current || nextLecturers[0]?.id || '');
-      })
-      .catch((error) => {
-        console.warn('Unable to load lecturers for course import', error);
-        setLecturers([]);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [user?.role]);
+    if (lecturers.length && !importLecturerId) {
+      setImportLecturerId(lecturers[0]?.id || '');
+    }
+  }, [lecturers, importLecturerId]);
 
   const filteredCourses = searchQuery
     ? courses.filter(c =>
@@ -254,7 +213,6 @@ export default function Courses() {
       toast.error(language === 'th' ? 'กรุณาเลือกผู้สอนก่อนบันทึกรายวิชา' : 'Please choose an instructor before saving');
       return;
     }
-    setIsSaving(true);
     try {
       const payload = {
         code: courseForm.code.trim(),
@@ -282,34 +240,24 @@ export default function Courses() {
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
       };
-      const response = editingCourse
-        ? await api.courses.update(editingCourse.id, payload)
-        : await api.courses.create(payload);
-      const savedCourse = mapCourse(response.course);
-      setCourses((current) => editingCourse
-        ? current.map((course) => course.id === savedCourse.id ? savedCourse : course)
-        : [savedCourse, ...current]);
+      await saveCourseMutation.mutateAsync({ id: editingCourse?.id, payload });
       toast.success(language === 'th' ? 'บันทึกรายวิชาแล้ว' : 'Course saved');
       setEditingCourse(null);
       setCourseForm(null);
     } catch (error) {
       console.error('Unable to save course', error);
       toast.error(language === 'th' ? 'บันทึกรายวิชาไม่สำเร็จ' : 'Unable to save course');
-    } finally {
-      setIsSaving(false);
     }
   };
 
   const enrollCourse = async (course: CourseRow) => {
     try {
       const sectionId = course.sections[0]?.id;
-      await api.enrollments.create({
+      await enrollCourseMutation.mutateAsync({
         courseId: course.id,
         ...(sectionId ? { sectionId } : {}),
       });
       toast.success(language === 'th' ? 'ลงทะเบียนรายวิชาแล้ว' : 'Course registered');
-      const response = await api.courses.list();
-      setCourses(response.courses.map(mapCourse));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ลงทะเบียนไม่สำเร็จ' : 'Unable to register'));
     }
@@ -357,7 +305,6 @@ export default function Courses() {
       return;
     }
 
-    setIsImporting(true);
     try {
       const rows = await parseCourseImportFile(file);
       if (!rows.length) {
@@ -375,13 +322,7 @@ export default function Courses() {
         return;
       }
 
-      const createdCourses: CourseRow[] = [];
-      for (const payload of validPayloads) {
-        const response = await api.courses.create(payload);
-        createdCourses.push(mapCourse(response.course));
-      }
-
-      setCourses((current) => [...createdCourses, ...current]);
+      const createdCourses = await bulkImportMutation.mutateAsync(validPayloads);
       toast.success(
         language === 'th'
           ? `นำเข้า ${createdCourses.length} รายวิชาแล้ว${skippedCount ? ` (ข้าม ${skippedCount} แถว)` : ''}`
@@ -390,8 +331,6 @@ export default function Courses() {
     } catch (error) {
       console.error('Unable to import courses', error);
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'นำเข้ารายวิชาไม่สำเร็จ' : 'Unable to import courses'));
-    } finally {
-      setIsImporting(false);
     }
   };
 

@@ -30,6 +30,7 @@ import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
 import { EMPTY_STUDENT as emptyStudent } from '@/lib/constants/defaults';
+import { useStudentDashboard } from '@/hooks/queries/useDashboardQueries';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -257,123 +258,94 @@ export default function StudentDashboard() {
   const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillScores>(emptySoftSkillScores);
   const [companyTargets, setCompanyTargets] = React.useState<CompanyTarget[]>([]);
 
+  const { data: dashboardData } = useStudentDashboard();
+
   React.useEffect(() => {
-    let mounted = true;
+    if (!dashboardData) return;
 
-    Promise.allSettled([
-      api.students.profile(),
-      api.students.stats(),
-      api.grades.transcript(),
-      api.enrollments.list(),
-      api.activities.list(),
-      api.careerTargets.list(),
-    ]).then(([profileResult, statsResult, transcriptResult, enrollmentsResult, activitiesResult, targetsResult]) => {
-      if (!mounted) return;
+    setStudent(dashboardData.student);
+    setTimeline(dashboardData.timeline);
+    setGrades(dashboardData.grades);
+    setCourses(dashboardData.courses);
+    setActivities(dashboardData.activities);
 
-      let nextStudent = emptyStudent;
-      if (profileResult.status === 'fulfilled') {
-        nextStudent = mapStudent(profileResult.value.profile);
-        setTimeline(asArray(asRecord(profileResult.value.profile).timeline) as typeof timeline);
-      }
-      if (statsResult.status === 'fulfilled') {
-        nextStudent = mapStudentStatsToStudent(nextStudent, statsResult.value.stats);
-        const stats = asRecord(statsResult.value.stats);
-        const gradeHistory = asArray(stats.gradeHistory);
-        const bySemester = new Map<string, { credits: number; points: number }>();
-        gradeHistory.forEach((item) => {
-          const row = asRecord(item);
-          const key = `${row.semester}/${row.academicYear}`;
-          const current = bySemester.get(key) ?? { credits: 0, points: 0 };
-          const credits = asNumber(row.credits, 3);
-          const letter = String(row.letterGrade ?? '');
-          const point = letter === 'A' ? 4 : letter === 'B+' ? 3.5 : letter === 'B' ? 3 : letter === 'C+' ? 2.5 : letter === 'C' ? 2 : letter === 'D+' ? 1.5 : letter === 'D' ? 1 : 0;
-          current.credits += credits;
-          current.points += point * credits;
-          bySemester.set(key, current);
-        });
-        if (bySemester.size > 0) {
-          setSemesterHistory(Array.from(bySemester.entries()).map(([semester, value]) => ({
-            semester,
-            gpa: value.credits ? value.points / value.credits : 0,
-            credits: value.credits,
-          })));
-        }
-        const skillSummary = asRecord(stats.skillSummary);
-        const technical = asRecord(skillSummary.technical);
-        const commentTags = asRecord(technical.commentTags);
-        setTechnicalSkillScores((current) => ({
-          functionality: asNumber(technical.functionality, current.functionality),
-          readability: asNumber(technical.readability, current.readability),
-          bestPractice: asNumber(technical.bestPractice, current.bestPractice),
-          professorWeight: asNumber(technical.professorWeight, current.professorWeight),
-          peerWeight: asNumber(technical.peerWeight, current.peerWeight),
-          professorScore: asNumber(technical.professorScore, current.professorScore),
-          peerScore: asNumber(technical.peerScore, current.peerScore),
-          commentTags: {
-            bug: asNumber(commentTags.bug, current.commentTags.bug),
-            suggestion: asNumber(commentTags.suggestion, current.commentTags.suggestion),
-            goodJob: asNumber(commentTags.goodJob, current.commentTags.goodJob),
-          },
-        }));
+    if (dashboardData.targets && dashboardData.targets.length > 0) {
+      setCompanyTargets(dashboardData.targets.map(mapCompanyTarget));
+    }
 
-        const soft = asRecord(skillSummary.soft);
-        setSoftSkillScores((current) => ({
-          communication: asNumber(soft.communication, current.communication),
-          openness: asNumber(soft.openness, current.openness),
-          professorWeight: asNumber(soft.professorWeight, current.professorWeight),
-          peerWeight: asNumber(soft.peerWeight, current.peerWeight),
-          professorScore: asNumber(soft.professorScore, current.professorScore),
-          peerScore: asNumber(soft.peerScore, current.peerScore),
-          feedbackHistory: asArray(soft.feedbackHistory).map((item, index) => {
-            const feedback = asRecord(item);
-            return {
-              projectName: asString(feedback.projectName, `Feedback ${index + 1}`),
-              date: feedback.date ? new Date(String(feedback.date)).toLocaleDateString('th-TH') : '',
-              communicationScore: asNumber(feedback.communicationScore, current.communication),
-              opennessScore: asNumber(feedback.opennessScore, current.openness),
-              comments: asNumber(feedback.comments, 0),
-            };
-          }),
-        }));
+    if (dashboardData.stats) {
+      const stats = asRecord(dashboardData.stats);
+      const gradeHistory = asArray(stats.gradeHistory);
+      const bySemester = new Map<string, { credits: number; points: number }>();
+      gradeHistory.forEach((item) => {
+        const row = asRecord(item);
+        const key = `${row.semester}/${row.academicYear}`;
+        const current = bySemester.get(key) ?? { credits: 0, points: 0 };
+        const credits = asNumber(row.credits, 3);
+        const letter = String(row.letterGrade ?? '');
+        const point = letter === 'A' ? 4 : letter === 'B+' ? 3.5 : letter === 'B' ? 3 : letter === 'C+' ? 2.5 : letter === 'C' ? 2 : letter === 'D+' ? 1.5 : letter === 'D' ? 1 : 0;
+        current.credits += credits;
+        current.points += point * credits;
+        bySemester.set(key, current);
+      });
+      if (bySemester.size > 0) {
+        setSemesterHistory(Array.from(bySemester.entries()).map(([semester, value]) => ({
+          semester,
+          gpa: value.credits ? value.points / value.credits : 0,
+          credits: value.credits,
+        })));
+      }
+      const skillSummary = asRecord(stats.skillSummary);
+      const technical = asRecord(skillSummary.technical);
+      const commentTags = asRecord(technical.commentTags);
+      setTechnicalSkillScores((current) => ({
+        functionality: asNumber(technical.functionality, current.functionality),
+        readability: asNumber(technical.readability, current.readability),
+        bestPractice: asNumber(technical.bestPractice, current.bestPractice),
+        professorWeight: asNumber(technical.professorWeight, current.professorWeight),
+        peerWeight: asNumber(technical.peerWeight, current.peerWeight),
+        professorScore: asNumber(technical.professorScore, current.professorScore),
+        peerScore: asNumber(technical.peerScore, current.peerScore),
+        commentTags: {
+          bug: asNumber(commentTags.bug, current.commentTags.bug),
+          suggestion: asNumber(commentTags.suggestion, current.commentTags.suggestion),
+          goodJob: asNumber(commentTags.goodJob, current.commentTags.goodJob),
+        },
+      }));
 
-        const curriculumProgress = asRecord(stats.curriculumProgress);
-        const totals = asRecord(curriculumProgress.categoryTotals);
-        setCurriculumTotals({
-          required: asNumber(totals.required, nextStudent.requiredCredits),
-          ge: asNumber(totals.ge, 0),
-          free: asNumber(totals.free, 0),
-        });
-        const mappedCurriculum = asArray(curriculumProgress.courses).map(mapCurriculumCourse);
-        if (mappedCurriculum.length) {
-          setCurriculumCourses(mappedCurriculum);
-        }
-      }
-      setStudent(nextStudent);
+      const soft = asRecord(skillSummary.soft);
+      setSoftSkillScores((current) => ({
+        communication: asNumber(soft.communication, current.communication),
+        openness: asNumber(soft.openness, current.openness),
+        professorWeight: asNumber(soft.professorWeight, current.professorWeight),
+        peerWeight: asNumber(soft.peerWeight, current.peerWeight),
+        professorScore: asNumber(soft.professorScore, current.professorScore),
+        peerScore: asNumber(soft.peerScore, current.peerScore),
+        feedbackHistory: asArray(soft.feedbackHistory).map((item, index) => {
+          const feedback = asRecord(item);
+          return {
+            projectName: asString(feedback.projectName, `Feedback ${index + 1}`),
+            date: feedback.date ? new Date(String(feedback.date)).toLocaleDateString('th-TH') : '',
+            communicationScore: asNumber(feedback.communicationScore, current.communication),
+            opennessScore: asNumber(feedback.opennessScore, current.openness),
+            comments: asNumber(feedback.comments, 0),
+          };
+        }),
+      }));
 
-      if (transcriptResult.status === 'fulfilled') {
-        setGrades(transcriptResult.value.transcript.map(mapGrade));
+      const curriculumProgress = asRecord(stats.curriculumProgress);
+      const totals = asRecord(curriculumProgress.categoryTotals);
+      setCurriculumTotals({
+        required: asNumber(totals.required, dashboardData.student.requiredCredits),
+        ge: asNumber(totals.ge, 0),
+        free: asNumber(totals.free, 0),
+      });
+      const mappedCurriculum = asArray(curriculumProgress.courses).map(mapCurriculumCourse);
+      if (mappedCurriculum.length) {
+        setCurriculumCourses(mappedCurriculum);
       }
-      if (enrollmentsResult.status === 'fulfilled') {
-        setCourses(enrollmentsResult.value.enrollments.map((item, index) => {
-          const enrollment = asRecord(item);
-          const course = mapCourse(enrollment.course, index);
-          return { ...course, enrolledStudents: [String(enrollment.studentId ?? nextStudent.id)] };
-        }));
-      }
-      if (activitiesResult.status === 'fulfilled') {
-        setActivities(activitiesResult.value.activities.map(mapActivity));
-      }
-      if (targetsResult.status === 'fulfilled') {
-        setCompanyTargets(targetsResult.value.targets.map(mapCompanyTarget));
-      }
-    }).catch((error) => {
-      console.warn('Unable to load student dashboard data from API', error);
-    });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+    }
+  }, [dashboardData]);
 
   const currentCourses = courses.filter(
     course => course.semester === student.semester &&

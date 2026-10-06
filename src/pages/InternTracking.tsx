@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
+import { useInternshipsList } from '@/hooks/queries/useInternshipQueries';
 
 export type DailyLogItem = {
   id: string;
@@ -210,7 +211,7 @@ export default function InternTracking() {
   const tr = t.internTracking;
   const [searchParams, setSearchParams] = useSearchParams();
   const [interns, setInterns] = useState<InternRow[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: rawInternships = [], isLoading } = useInternshipsList();
   const [selectedIntern, setSelectedIntern] = useState<InternRow | null>(null);
   const [detailTab, setDetailTab] = useState<'weekly' | 'daily' | 'stipend'>('daily');
   const [reviewModalLog, setReviewModalLog] = useState<DailyLogItem | null>(null);
@@ -232,13 +233,9 @@ export default function InternTracking() {
   const [stipendFormNotes, setStipendFormNotes] = useState('');
 
   React.useEffect(() => {
-    let isMounted = true;
+    if (!rawInternships.length) return;
 
-    api.internship.list()
-      .then((response) => {
-        if (!isMounted) return;
-
-        const mapped = response.internships.map((item, index) => {
+    const mapped = rawInternships.map((item, index) => {
           const record = asRecord(item);
           const fallback = internsData[index % internsData.length];
           const student = asRecord(record.student);
@@ -363,17 +360,8 @@ export default function InternTracking() {
           };
         });
 
-        setInterns(mapped);
-      })
-      .catch(() => undefined)
-      .finally(() => {
-        if (isMounted) setIsLoading(false);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+    setInterns(mapped);
+  }, [rawInternships]);
 
   React.useEffect(() => {
     const targetInternId = searchParams.get('internId');

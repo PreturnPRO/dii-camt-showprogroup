@@ -30,28 +30,14 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-type RequestRow = {
-  id: string;
-  type: string;
-  title: string;
-  status: string;
-  step: number;
-  totalSteps: number;
-  createdAt: string;
-  updatedAt: string;
-  description: string;
-  documents: string[];
-  studentName?: string;
-  studentId?: string;
-  comments: RequestComment[];
-};
-
-type RequestComment = {
-  id: string;
-  authorId: string;
-  text: string;
-  createdAt: string;
-};
+import {
+  useRequestsList,
+  useCreateRequest,
+  useUpdateRequestStatus,
+  useAddRequestComment,
+  type RequestRow,
+  type RequestComment,
+} from '@/hooks/queries/useRequestQueries';
 
 const MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024;
 const ALLOWED_ATTACHMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
@@ -70,13 +56,23 @@ export default function Requests() {
     { id: 'resign', name: language === 'en' ? 'Resignation' : 'ลาออก', icon: <XCircle className="w-5 h-5" />, color: 'bg-red-50 text-red-600' },
     { id: 'general', name: language === 'en' ? 'General Request' : 'คำร้องทั่วไป', icon: <FileQuestion className="w-5 h-5" />, color: 'bg-slate-50 text-slate-600' },
   ];
+
+  // TanStack Query Hooks
+  const { data: rawRequests = [], isLoading: isLoadingRequests, error: requestError, refetch: refetchRequests } = useRequestsList();
+  const createRequestMutation = useCreateRequest();
+  const updateStatusMutation = useUpdateRequestStatus();
+  const addCommentMutation = useAddRequestComment();
+
+  const [sortOrder, setSortOrder] = React.useState<'default' | 'updated'>('default');
+  const requests = React.useMemo(() => {
+    if (sortOrder === 'updated') {
+      return [...rawRequests].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
+    }
+    return rawRequests;
+  }, [rawRequests, sortOrder]);
+
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [isSubmitting, setIsSubmitting] = React.useState(false);
-  const [isSubmittingComment, setIsSubmittingComment] = React.useState(false);
   const [downloadingAttachment, setDownloadingAttachment] = React.useState<number | null>(null);
-  const [requests, setRequests] = React.useState<RequestRow[]>([]);
-  const [requestLoadError, setRequestLoadError] = React.useState('');
-  const [reloadRequestsKey, setReloadRequestsKey] = React.useState(0);
   const [selectedFiles, setSelectedFiles] = React.useState<File[]>([]);
   const [selectedRequest, setSelectedRequest] = React.useState<RequestRow | null>(null);
   const [commentText, setCommentText] = React.useState('');
@@ -88,56 +84,8 @@ export default function Requests() {
     description: ''
   });
 
-  React.useEffect(() => {
-    let isMounted = true;
-    setRequestLoadError('');
-
-    api.requests.list()
-      .then((response) => {
-        if (!isMounted) return;
-        const mapped = response.requests.map((item, index) => {
-          const request = asRecord(item);
-          const student = asRecord(request.student);
-          const studentUser = asRecord(student.user);
-          const status = asString(request.status, 'pending');
-          const totalSteps = status === 'pending' ? 4 : 3;
-          return {
-            id: asString(request.id, String(index + 1)),
-            type: asString(request.type, '-'),
-            title: asString(request.title, '-'),
-            status,
-            step: status === 'pending' ? 2 : status === 'rejected' ? 1 : totalSteps,
-            totalSteps,
-            createdAt: asDate(request.submittedAt, asDate(request.createdAt)).toISOString().split('T')[0],
-            updatedAt: asDate(request.reviewedAt, asDate(request.updatedAt, asDate(request.submittedAt))).toISOString().split('T')[0],
-            description: asString(request.description, asString(studentUser.nameThai, '')),
-            documents: asArray<string>(request.documents),
-            studentName: asString(studentUser.nameThai, asString(studentUser.name, '-')),
-            studentId: asString(student.studentId),
-            comments: asArray(request.comments).map((commentValue) => {
-              const comment = asRecord(commentValue);
-              return {
-                id: asString(comment.id),
-                authorId: asString(comment.authorId),
-                text: asString(comment.text),
-                createdAt: asDate(comment.createdAt).toISOString(),
-              };
-            }),
-          };
-        });
-        setRequests(mapped);
-      })
-      .catch((error: unknown) => {
-        if (!isMounted) return;
-        const message = error instanceof Error ? error.message : 'Unable to load requests';
-        setRequestLoadError(message);
-        toast.error(language === 'th' ? `โหลดคำร้องไม่สำเร็จ: ${message}` : `Unable to load requests: ${message}`);
-      });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [language, reloadRequestsKey]);
+  const isSubmitting = createRequestMutation.isPending;
+  const isSubmittingComment = addCommentMutation.isPending;
 
   const handleSubmit = async () => {
     if (!formData.type || !formData.title || !formData.description || isSubmitting) {
@@ -145,61 +93,36 @@ export default function Requests() {
       return;
     }
 
-    setIsSubmitting(true);
     try {
       const documents = await Promise.all(selectedFiles.map(async (file) => {
         const upload = await api.files.upload(file, { category: 'student-requests', visibility: 'private' });
         return asString(asRecord(upload.asset).url);
       }));
-      const response = await api.requests.create({
+
+      await createRequestMutation.mutateAsync({
         type: formData.type,
         title: formData.title,
         description: formData.description,
         documents,
       });
-      const request = asRecord(response.request);
-      const createdAt = asDate(request.submittedAt, new Date()).toISOString().split('T')[0];
-      const newRequest = {
-        id: asString(request.id, String(Date.now())),
-        type: asString(request.type, formData.type),
-        title: asString(request.title, formData.title),
-        description: asString(request.description, formData.description),
-        status: asString(request.status, 'pending'),
-        step: asNumber(request.step, 1),
-        totalSteps: 3,
-        createdAt,
-        updatedAt: createdAt,
-        documents: asArray<string>(request.documents),
-        comments: [],
-      };
 
-      setRequests((current) => [newRequest, ...current]);
       setIsDialogOpen(false);
       setFormData({ type: '', title: '', description: '' });
       setSelectedFiles([]);
       toast.success(t.requestsPage.submitSuccess);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t.requestsPage.fillComplete);
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
   const handleUpdateRequestStatus = async (request: RequestRow, status: 'approved' | 'rejected' | 'completed') => {
     try {
-      const response = await api.requests.updateStatus(request.id, { status });
-      const updated = asRecord(response.request);
-      setRequests((current) => current.map((item) => item.id === request.id ? {
-        ...item,
-        status: asString(updated.status, status),
-        step: status === 'rejected' ? 1 : item.totalSteps,
-        updatedAt: asDate(updated.reviewedAt, new Date()).toISOString().split('T')[0],
-      } : item));
+      await updateStatusMutation.mutateAsync({ id: request.id, status });
       setSelectedRequest((current) => current?.id === request.id ? {
         ...current,
-        status: asString(updated.status, status),
+        status,
         step: status === 'rejected' ? 1 : current.totalSteps,
-        updatedAt: asDate(updated.reviewedAt, new Date()).toISOString().split('T')[0],
+        updatedAt: new Date().toISOString().split('T')[0],
       } : current);
       toast.success(status === 'approved' ? 'อนุมัติคำร้องแล้ว' : status === 'completed' ? 'ปิดคำร้องแล้ว' : 'ปฏิเสธคำร้องแล้ว');
     } catch (error) {
@@ -225,19 +148,15 @@ export default function Requests() {
     const text = commentText.trim();
     if (!selectedRequest || !text || isSubmittingComment) return;
 
-    setIsSubmittingComment(true);
     try {
-      const response = await api.requests.addComment(selectedRequest.id, text);
+      const response = await addCommentMutation.mutateAsync({ requestId: selectedRequest.id, message: text });
       const comment = asRecord(response.comment);
-      const nextComment = {
+      const nextComment: RequestComment = {
         id: asString(comment.id, String(Date.now())),
         authorId: asString(comment.authorId, user?.id ?? ''),
         text: asString(comment.text, text),
         createdAt: asDate(comment.createdAt, new Date()).toISOString(),
       };
-      setRequests((current) => current.map((request) => request.id === selectedRequest.id
-        ? { ...request, comments: [...request.comments, nextComment] }
-        : request));
       setSelectedRequest((current) => current?.id === selectedRequest.id
         ? { ...current, comments: [...current.comments, nextComment] }
         : current);
@@ -245,8 +164,6 @@ export default function Requests() {
       toast.success(language === 'th' ? 'เพิ่มข้อความแล้ว' : 'Comment added');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to add comment');
-    } finally {
-      setIsSubmittingComment(false);
     }
   };
 
@@ -640,29 +557,33 @@ export default function Requests() {
               variant="ghost"
               size="sm"
               className="text-slate-500 hover:text-blue-600 text-xs font-semibold h-8"
-              onClick={() => setRequests((current) => [...current].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)))}
+              onClick={() => setSortOrder((current) => current === 'updated' ? 'default' : 'updated')}
             >
               {t.requestsPage.viewHistory} <ArrowRight className="w-3.5 h-3.5 ml-1" />
             </Button>
           </div>
 
           <div className="space-y-3.5">
-            {requestLoadError && (
+            {requestError && (
               <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/30 dark:text-red-300">
-                <p>{language === 'th' ? 'ไม่สามารถโหลดคำร้องได้' : 'Could not load requests'}: {requestLoadError}</p>
-                <Button variant="outline" size="sm" className="mt-2" onClick={() => setReloadRequestsKey((current) => current + 1)}>
+                <p>{language === 'th' ? 'ไม่สามารถโหลดคำร้องได้' : 'Could not load requests'}: {requestError instanceof Error ? requestError.message : 'Error'}</p>
+                <Button variant="outline" size="sm" className="mt-2" onClick={() => refetchRequests()}>
                   {language === 'th' ? 'ลองอีกครั้ง' : 'Retry'}
                 </Button>
               </div>
             )}
-            {requests.length === 0 && (
-              !requestLoadError && (
-                <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
-                  <Inbox className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-50" />
-                  <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">{language === 'th' ? 'ยังไม่มีคำร้อง' : 'No requests yet'}</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{language === 'th' ? 'กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงระบบ' : 'Create a request to get started.'}</p>
-                </div>
-              )
+            {isLoadingRequests && (
+              <div className="flex items-center justify-center p-12 text-slate-500">
+                <Loader2 className="w-6 h-6 animate-spin mr-2" />
+                <span>{language === 'th' ? 'กำลังโหลดรายการคำร้อง...' : 'Loading requests...'}</span>
+              </div>
+            )}
+            {!isLoadingRequests && requests.length === 0 && !requestError && (
+              <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
+                <Inbox className="w-8 h-8 mx-auto text-slate-400 mb-2 opacity-50" />
+                <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">{language === 'th' ? 'ยังไม่มีคำร้อง' : 'No requests yet'}</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{language === 'th' ? 'กดสร้างคำร้องใหม่เพื่อบันทึกข้อมูลลงระบบ' : 'Create a request to get started.'}</p>
+              </div>
             )}
 
             {requests.map((req) => {

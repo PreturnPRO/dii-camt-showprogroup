@@ -18,6 +18,7 @@ import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCompany, mapCourse, mapGrade, mapJob, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import type { Company, Course, Grade, JobPosting, Student } from '@/types';
+import { useStudentDashboard } from '@/hooks/queries/useDashboardQueries';
 import AdminDashboard from '../AdminDashboard';
 import StaffDashboard from '../StaffDashboard';
 
@@ -440,54 +441,10 @@ function MobileStudentDashboard() {
   const { language } = useLanguage();
   const navigate = useNavigate();
 
-  const [student, setStudent] = React.useState<Student | null>(null);
-  const [courses, setCourses] = React.useState<Course[]>([]);
-  const [grades, setGrades] = React.useState<Grade[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
-
-  React.useEffect(() => {
-    let mounted = true;
-    setIsLoading(true);
-
-    Promise.allSettled([
-      api.students.profile(),
-      api.students.stats(),
-      api.grades.transcript(),
-      api.enrollments.list(),
-    ])
-      .then(([profileRes, statsRes, transcriptRes, enrollmentsRes]) => {
-        if (!mounted) return;
-
-        let nextStudent: Student | null = null;
-        if (profileRes.status === 'fulfilled') {
-          nextStudent = mapStudent(profileRes.value.profile);
-        }
-        if (statsRes.status === 'fulfilled' && nextStudent) {
-          nextStudent = mapStudentStatsToStudent(nextStudent, statsRes.value.stats);
-        }
-        if (nextStudent) setStudent(nextStudent);
-
-        if (transcriptRes.status === 'fulfilled') {
-          setGrades(transcriptRes.value.transcript.map(mapGrade));
-        }
-        if (enrollmentsRes.status === 'fulfilled') {
-          setCourses(
-            enrollmentsRes.value.enrollments.map((item: any, i: number) => {
-              const rec = asRecord(item);
-              return mapCourse(rec.course, i);
-            })
-          );
-        }
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (mounted) setIsLoading(false);
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, [user]);
+  const { data: dashboardData, isLoading } = useStudentDashboard(user?.id);
+  const student = dashboardData?.student ?? null;
+  const courses = dashboardData?.courses ?? [];
+  const grades = dashboardData?.grades ?? [];
 
   // ── Determine current day ──
   const dayNames = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
