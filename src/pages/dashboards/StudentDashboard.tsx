@@ -140,17 +140,10 @@ type CompanyTarget = {
   matchedSkills: string[];
   missingSkills: string[];
   applicationStatus?: string | null;
+  // only what the posting actually states; gpa is null when the company gave none
   requirements: {
-    gpa: number;
-    technicalSkills: {
-      functionality: number;
-      readability: number;
-      bestPractice: number;
-    };
-    softSkills: {
-      communication: number;
-      openness: number;
-    };
+    gpa: number | null;
+    skills: string[];
   };
 };
 
@@ -255,8 +248,6 @@ const mapCurriculumCourse = (value: unknown, index: number): CurriculumCourse =>
 const mapCompanyTarget = (value: unknown, index: number): CompanyTarget => {
   const source = asRecord(value);
   const requirements = asRecord(source.requirements);
-  const technical = asRecord(requirements.technicalSkills);
-  const soft = asRecord(requirements.softSkills);
   return {
     id: asString(source.id, `target-${index}`),
     jobId: asString(source.jobId, asString(source.id, `target-${index}`)),
@@ -267,16 +258,8 @@ const mapCompanyTarget = (value: unknown, index: number): CompanyTarget => {
     missingSkills: asArray<string>(source.missingSkills),
     applicationStatus: asString(source.applicationStatus, ''),
     requirements: {
-      gpa: asNumber(requirements.gpa, 3),
-      technicalSkills: {
-        functionality: asNumber(technical.functionality, 3),
-        readability: asNumber(technical.readability, 3),
-        bestPractice: asNumber(technical.bestPractice, 3),
-      },
-      softSkills: {
-        communication: asNumber(soft.communication, 3),
-        openness: asNumber(soft.openness, 3),
-      },
+      gpa: requirements.gpa === null || requirements.gpa === undefined ? null : asNumber(requirements.gpa, 0),
+      skills: asArray<string>(requirements.skills),
     },
   };
 };
@@ -837,17 +820,9 @@ export default function StudentDashboard() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {companyTargets.map((company, idx) => {
-                    const isGpaMet = student.gpa >= company.requirements.gpa;
-                    const isTechMet = (
-                      technicalSkillScores.functionality >= company.requirements.technicalSkills.functionality &&
-                      technicalSkillScores.readability >= company.requirements.technicalSkills.readability &&
-                      technicalSkillScores.bestPractice >= company.requirements.technicalSkills.bestPractice
-                    );
-                    const isSoftMet = (
-                      softSkillScores.communication >= company.requirements.softSkills.communication &&
-                      softSkillScores.openness >= company.requirements.softSkills.openness
-                    );
-                    const isAllMet = isGpaMet && isTechMet && isSoftMet;
+                    const requiredGpa = company.requirements.gpa;
+                    const isGpaMet = requiredGpa === null || student.gpax >= requiredGpa;
+                    const isAllMet = isGpaMet && company.missingSkills.length === 0;
 
                     return (
                       <motion.div
@@ -884,48 +859,27 @@ export default function StudentDashboard() {
                               )}
                             </div>
                             <div className="space-y-4 text-sm mt-6">
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
-                              <div className="flex justify-between items-center mb-1">
-                                <span className="text-slate-600 dark:text-slate-400">GPA Minimum</span>
-                                <span className={`font-semibold ${isGpaMet ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                  {student.gpa.toFixed(2)} / {company.requirements.gpa.toFixed(2)}
-                                </span>
+                            {requiredGpa !== null && (
+                              <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+                                <div className="flex justify-between items-center mb-1">
+                                  <span className="text-slate-600 dark:text-slate-400">GPA Minimum</span>
+                                  <span className={`font-semibold ${isGpaMet ? 'text-emerald-600' : 'text-rose-500'}`}>
+                                    {student.gpax.toFixed(2)} / {requiredGpa.toFixed(2)}
+                                  </span>
+                                </div>
                               </div>
-                            </div>
+                            )}
                             <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
-                              <span className="text-slate-600 dark:text-slate-400 block mb-1">Technical Skills Required</span>
-                              <div className="flex justify-between items-center">
-                                <span>Functionality</span>
-                                <span className={technicalSkillScores.functionality >= company.requirements.technicalSkills.functionality ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.functionality.toFixed(1)} / {company.requirements.technicalSkills.functionality.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Readability</span>
-                                <span className={technicalSkillScores.readability >= company.requirements.technicalSkills.readability ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.readability.toFixed(1)} / {company.requirements.technicalSkills.readability.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Best Practices</span>
-                                <span className={technicalSkillScores.bestPractice >= company.requirements.technicalSkills.bestPractice ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {technicalSkillScores.bestPractice.toFixed(1)} / {company.requirements.technicalSkills.bestPractice.toFixed(1)}
-                                </span>
-                              </div>
-                            </div>
-                            <div className="bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800 space-y-2">
-                              <span className="text-slate-600 dark:text-slate-400 block mb-1">Soft Skills Required</span>
-                              <div className="flex justify-between items-center">
-                                <span>Communication</span>
-                                <span className={softSkillScores.communication >= company.requirements.softSkills.communication ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {softSkillScores.communication.toFixed(1)} / {company.requirements.softSkills.communication.toFixed(1)}
-                                </span>
-                              </div>
-                              <div className="flex justify-between items-center">
-                                <span>Openness to Feedback</span>
-                                <span className={softSkillScores.openness >= company.requirements.softSkills.openness ? 'text-emerald-600' : 'text-rose-500'}>
-                                  {softSkillScores.openness.toFixed(1)} / {company.requirements.softSkills.openness.toFixed(1)}
-                                </span>
+                              <span className="text-slate-600 dark:text-slate-400 block mb-1">
+                                {language === 'th' ? 'ทักษะที่ประกาศต้องการ' : 'Skills in the posting'} ({company.matchedSkills.length}/{company.matchedSkills.length + company.missingSkills.length})
+                              </span>
+                              <div className="flex flex-wrap gap-1.5">
+                                {company.matchedSkills.map((skill) => (
+                                  <span key={`m-${skill}`} className="px-2 py-0.5 rounded-full text-xs bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">✓ {skill}</span>
+                                ))}
+                                {company.missingSkills.map((skill) => (
+                                  <span key={`x-${skill}`} className="px-2 py-0.5 rounded-full text-xs bg-rose-50 text-rose-600 dark:bg-rose-900/30 dark:text-rose-300">{skill}</span>
+                                ))}
                               </div>
                             </div>
                           </div>

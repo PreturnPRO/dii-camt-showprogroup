@@ -21,71 +21,30 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
-const internsData = [
-  {
-    id: '1',
-    name: 'นายณัฐพงษ์ ใจดี', nameEn: 'Nattapong Jaidee',
-    position: 'Backend Developer',
-    company: 'Tech Innovation Co.', companyEn: 'Tech Innovation Co.',
-    progress: 60, weeks: 8, totalWeeks: 12, rating: 4.5, avatar: 'ณ',
-    performance: {
-      technical: 85, communication: 78, teamwork: 90, punctuality: 95, initiative: 72,
-      weeklyReports: [
-        { week: 1, submitted: true, score: 80, summary: 'ทำความเข้าใจ codebase', summaryEn: 'Understanding the codebase' },
-        { week: 2, submitted: true, score: 85, summary: 'สร้าง REST API 3 endpoints', summaryEn: 'Built 3 REST API endpoints' },
-        { week: 3, submitted: true, score: 88, summary: 'เขียน Unit Tests', summaryEn: 'Wrote Unit Tests' },
-        { week: 4, submitted: true, score: 82, summary: 'ปรับปรุง Database Schema', summaryEn: 'Improved Database Schema' },
-        { week: 5, submitted: true, score: 90, summary: 'Integrate third-party API', summaryEn: 'Integrated third-party API' },
-        { week: 6, submitted: true, score: 87, summary: 'Code Review & Refactoring', summaryEn: 'Code Review & Refactoring' },
-        { week: 7, submitted: true, score: 92, summary: 'Deploy to staging', summaryEn: 'Deployed to staging' },
-        { week: 8, submitted: false, score: 0, summary: 'รอส่ง', summaryEn: 'Pending' },
-      ]
-    }
-  },
-  {
-    id: '2',
-    name: 'นางสาววิไลลักษณ์ สวยงาม', nameEn: 'Wilailak Suayngam',
-    position: 'UX/UI Designer',
-    company: 'Design Studio', companyEn: 'Design Studio',
-    progress: 45, weeks: 6, totalWeeks: 12, rating: 4.2, avatar: 'ว',
-    performance: {
-      technical: 80, communication: 92, teamwork: 88, punctuality: 85, initiative: 90,
-      weeklyReports: [
-        { week: 1, submitted: true, score: 78, summary: 'ศึกษา Design System', summaryEn: 'Studied Design System' },
-        { week: 2, submitted: true, score: 82, summary: 'สร้าง Wireframe', summaryEn: 'Created Wireframes' },
-        { week: 3, submitted: true, score: 85, summary: 'User Research & Interview', summaryEn: 'User Research & Interviews' },
-        { week: 4, submitted: true, score: 88, summary: 'Hi-Fi Prototype', summaryEn: 'Created Hi-Fi Prototype' },
-        { week: 5, submitted: true, score: 90, summary: 'Usability Testing', summaryEn: 'Conducted Usability Testing' },
-        { week: 6, submitted: false, score: 0, summary: 'รอส่ง', summaryEn: 'Pending' },
-      ]
-    }
-  },
-  {
-    id: '3',
-    name: 'นายสมชาย ดีมาก', nameEn: 'Somchai Deemak',
-    position: 'Data Analyst',
-    company: 'DataSoft Co.', companyEn: 'DataSoft Co.',
-    progress: 80, weeks: 10, totalWeeks: 12, rating: 4.8, avatar: 'ส',
-    performance: {
-      technical: 95, communication: 82, teamwork: 85, punctuality: 92, initiative: 88,
-      weeklyReports: [
-        { week: 1, submitted: true, score: 85, summary: 'Data Cleaning Pipeline', summaryEn: 'Built Data Cleaning Pipeline' },
-        { week: 2, submitted: true, score: 88, summary: 'EDA & Visualization', summaryEn: 'EDA & Visualization' },
-        { week: 3, submitted: true, score: 90, summary: 'ML Model v1', summaryEn: 'Built ML Model v1' },
-        { week: 4, submitted: true, score: 92, summary: 'Feature Engineering', summaryEn: 'Feature Engineering' },
-        { week: 5, submitted: true, score: 88, summary: 'Model Optimization', summaryEn: 'Model Optimization' },
-        { week: 6, submitted: true, score: 95, summary: 'Dashboard สำหรับ Stakeholder', summaryEn: 'Built Stakeholder Dashboard' },
-        { week: 7, submitted: true, score: 90, summary: 'A/B Testing Framework', summaryEn: 'A/B Testing Framework' },
-        { week: 8, submitted: true, score: 93, summary: 'Automated Reports', summaryEn: 'Created Automated Reports' },
-        { week: 9, submitted: true, score: 91, summary: 'Knowledge Transfer', summaryEn: 'Knowledge Transfer' },
-        { week: 10, submitted: false, score: 0, summary: 'รอส่ง', summaryEn: 'Pending' },
-      ]
-    }
-  },
-];
+type WeeklyReport = { week: number; submitted: boolean; score: number | null; summary: string; summaryEn: string };
 
-type InternRow = typeof internsData[number] & {
+// every value comes from the internship record; nothing is borrowed from sample interns (audit F9)
+type InternRow = {
+  id: string;
   companyId?: string;
+  name: string;
+  nameEn: string;
+  position: string;
+  company: string;
+  companyEn: string;
+  progress: number;
+  weeks: number;
+  totalWeeks: number;
+  rating: number | null;
+  avatar: string;
+  performance: {
+    technical: number | null;
+    communication: number | null;
+    teamwork: number | null;
+    punctuality: number | null;
+    initiative: number | null;
+    weeklyReports: WeeklyReport[];
+  };
 };
 
 export default function InternTracking() {
@@ -105,64 +64,52 @@ export default function InternTracking() {
 
         const mapped = response.internships.map((item, index) => {
           const record = asRecord(item);
-          const fallback = internsData[index % internsData.length];
           const student = asRecord(record.student);
           const studentUser = asRecord(student.user);
           const company = asRecord(record.company);
           const companyUser = asRecord(company.user);
-          const evaluation = asRecord(record.evaluation);
+          const evaluation = record.evaluation ? asRecord(record.evaluation) : null;
           const logs = asArray(record.logs);
-          const totalWeeks = Math.max(asNumber(record.duration, fallback.totalWeeks), 1);
-          const completedWeeks = Math.min(logs.length || fallback.weeks, totalWeeks);
-          const rawScore = asNumber(evaluation.overallScore, fallback.rating * 20);
-          const rating = Number((rawScore > 5 ? rawScore / 20 : rawScore).toFixed(1));
-          const fallbackReports = fallback.performance.weeklyReports;
-          const weeklyReports = logs.length
-            ? [
-                ...logs.map((logItem, logIndex) => {
-                  const log = asRecord(logItem);
-                  return {
-                    week: logIndex + 1,
-                    submitted: true,
-                    score: Math.round(rawScore || 80),
-                    summary: asString(log.activities, fallbackReports[logIndex % fallbackReports.length]?.summary ?? '-'),
-                    summaryEn: asString(log.activities, fallbackReports[logIndex % fallbackReports.length]?.summaryEn ?? '-'),
-                  };
-                }),
-                ...(logs.length < totalWeeks
-                  ? [{
-                      week: logs.length + 1,
-                      submitted: false,
-                      score: 0,
-                      summary: fallbackReports[Math.min(logs.length, fallbackReports.length - 1)]?.summary ?? 'Pending',
-                      summaryEn: 'Pending',
-                    }]
-                  : []),
-              ]
-            : fallbackReports;
+          const totalWeeks = Math.max(asNumber(record.duration, 0), logs.length, 1);
+          const completedWeeks = Math.min(logs.length, totalWeeks);
+          // evaluation scores are stored as-is (0–5 in the seed); round only when displaying
+          const optionalScore = (value: unknown) => (value === null || value === undefined ? null : asNumber(value, 0));
+          const rawScore = evaluation ? optionalScore(evaluation.overallScore) : null;
+          const rating = rawScore === null ? null : Number((rawScore > 5 ? rawScore / 20 : rawScore).toFixed(1));
+          const weeklyReports: WeeklyReport[] = logs.map((logItem, logIndex) => {
+            const log = asRecord(logItem);
+            return {
+              week: logIndex + 1,
+              submitted: true,
+              score: null,
+              summary: asString(log.activities, '-'),
+              summaryEn: asString(log.activities, '-'),
+            };
+          });
+          const name = asString(studentUser.nameThai, asString(studentUser.name, '-'));
 
           return {
-            ...fallback,
-            id: asString(record.id, fallback.id),
-            name: asString(studentUser.nameThai, fallback.name),
-            nameEn: asString(studentUser.name, fallback.nameEn),
-            position: asString(record.position, fallback.position),
-            company: asString(company.companyName, asString(record.companyName, fallback.company)),
-            companyEn: asString(companyUser.name, asString(record.companyName, fallback.companyEn)),
+            id: asString(record.id, `intern-${index}`),
+            name,
+            nameEn: asString(studentUser.name, name),
+            position: asString(record.position, '-'),
+            company: asString(company.companyName, asString(record.companyName, '-')),
+            companyEn: asString(companyUser.name, asString(record.companyName, '-')),
+            companyId: asString(record.companyId, asString(company.id, '')) || undefined,
             progress: Math.round((completedWeeks / totalWeeks) * 100),
             weeks: completedWeeks,
             totalWeeks,
             rating,
-            avatar: asString(studentUser.nameThai, fallback.avatar).charAt(0) || fallback.avatar,
+            avatar: name.charAt(0) || '?',
             performance: {
-              technical: Math.round(asNumber(evaluation.technicalSkills, fallback.performance.technical)),
-              communication: Math.round(asNumber(evaluation.softSkills, fallback.performance.communication)),
-              teamwork: Math.round(asNumber(evaluation.softSkills, fallback.performance.teamwork)),
-              punctuality: Math.round(asNumber(evaluation.workEthic, fallback.performance.punctuality)),
-              initiative: Math.round(asNumber(evaluation.problemSolving, fallback.performance.initiative)),
+              technical: evaluation ? optionalScore(evaluation.technicalSkills) : null,
+              communication: evaluation ? optionalScore(evaluation.softSkills) : null,
+              teamwork: evaluation ? optionalScore(evaluation.softSkills) : null,
+              punctuality: evaluation ? optionalScore(evaluation.workEthic) : null,
+              initiative: evaluation ? optionalScore(evaluation.problemSolving) : null,
               weeklyReports,
             },
-          };
+          } satisfies InternRow;
         });
 
         setInterns(mapped);
@@ -242,10 +189,12 @@ export default function InternTracking() {
             { label: tr.punctuality, value: perf.punctuality, icon: Clock },
             { label: tr.initiative, value: perf.initiative, icon: TrendingUp },
           ].map((metric, i) => (
-            <Card key={i} className={`border ${getScoreBg(metric.value)}`}>
+            <Card key={i} className={`border ${metric.value === null ? 'bg-slate-50 border-slate-100 dark:bg-slate-900 dark:border-slate-800' : getScoreBg(metric.value <= 5 ? metric.value * 20 : metric.value)}`}>
               <CardContent className="p-4 text-center">
-                <metric.icon className={`w-5 h-5 mx-auto mb-2 ${getScoreColor(metric.value)}`} />
-                <div className={`text-2xl font-bold ${getScoreColor(metric.value)}`}>{metric.value}%</div>
+                <metric.icon className={`w-5 h-5 mx-auto mb-2 ${metric.value === null ? 'text-slate-400' : getScoreColor(metric.value <= 5 ? metric.value * 20 : metric.value)}`} />
+                <div className={`text-2xl font-bold ${metric.value === null ? 'text-slate-400' : getScoreColor(metric.value <= 5 ? metric.value * 20 : metric.value)}`}>
+                  {metric.value === null ? '-' : metric.value <= 5 ? `${metric.value.toFixed(1)}/5` : `${Math.round(metric.value)}%`}
+                </div>
                 <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{metric.label}</div>
               </CardContent>
             </Card>
@@ -260,6 +209,11 @@ export default function InternTracking() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
+              {perf.weeklyReports.length === 0 && (
+                <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                  {language === 'th' ? 'ยังไม่มีบันทึกการฝึกงาน' : 'No internship logs yet'}
+                </div>
+              )}
               {perf.weeklyReports.map((report) => (
                 <div key={report.week} className={`flex items-center gap-4 p-4 rounded-xl border transition-colors ${report.submitted ? 'bg-white border-slate-100' : 'bg-slate-50 border-slate-100 dark:border-slate-800 opacity-60'} dark:bg-slate-900/50`}>
                   <div className="w-12 h-12 rounded-xl bg-orange-100 flex items-center justify-center font-bold text-orange-600 dark:text-slate-300">
@@ -274,7 +228,7 @@ export default function InternTracking() {
                   <div className="text-right">
                     {report.submitted ? (
                       <>
-                        <div className={`text-lg font-bold ${getScoreColor(report.score)}`}>{report.score}</div>
+                        {report.score !== null && <div className={`text-lg font-bold ${getScoreColor(report.score)}`}>{report.score}</div>}
                         <Badge variant="outline" className="text-emerald-600 border-emerald-200 text-xs dark:text-slate-300">{tr.submitted}</Badge>
                       </>
                     ) : (
@@ -308,7 +262,7 @@ export default function InternTracking() {
           { icon: Users, label: tr.totalInterns, value: String(interns.length), gradient: 'from-orange-500 to-amber-500', shadow: 'shadow-orange-200' },
           { icon: Briefcase, label: tr.companies, value: String(new Set(interns.map((intern) => intern.company)).size), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
           { icon: Clock, label: tr.avgDuration, value: `${Math.round(interns.reduce((sum, intern) => sum + intern.totalWeeks, 0) / Math.max(interns.length, 1))} ${tr.weeks}`, gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-          { icon: Star, label: tr.avgRating, value: (interns.reduce((sum, intern) => sum + intern.rating, 0) / Math.max(interns.length, 1)).toFixed(1), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
+          { icon: Star, label: tr.avgRating, value: (() => { const rated = interns.filter((intern) => intern.rating !== null); return rated.length ? (rated.reduce((sum, intern) => sum + (intern.rating ?? 0), 0) / rated.length).toFixed(1) : '-'; })(), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
         ].map((stat, i) => (
           <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
             <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
@@ -355,7 +309,9 @@ export default function InternTracking() {
               <span className="text-sm text-amber-700">{tr.rating}</span>
               <div className="flex items-center gap-1">
                 <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
-                <span className="font-bold text-amber-700">{intern.rating}/5.0</span>
+                <span className="font-bold text-amber-700">
+                  {intern.rating === null ? (language === 'th' ? 'ยังไม่มีผลประเมิน' : 'Not evaluated yet') : `${intern.rating}/5.0`}
+                </span>
               </div>
             </div>
 

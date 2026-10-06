@@ -71,9 +71,6 @@ export default function JobPostings() {
   }, [isAdmin, isCompany, user]);
 
   const companyProfile = (user?.raw as any)?.companyProfile;
-  const internshipSlots = companyProfile?.internshipSlots || 0;
-  const currentInterns = companyProfile?.currentInterns || 0;
-  const availableSlots = Math.max(0, internshipSlots - currentInterns);
 
   const [jobs, setJobs] = useState<JobPosting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -87,7 +84,6 @@ export default function JobPostings() {
   const [formData, setFormData] = useState<FormState>(emptyForm());
 
   const isCreateMode = !editingJob;
-  const isExceedingQuota = isCompany && formData.type === 'internship' && formData.positions > availableSlots;
 
   const copy = language === 'th'
     ? {
@@ -133,7 +129,6 @@ export default function JobPostings() {
         addSkill: '+ เพิ่มทักษะ',
         skillPlaceholder: 'ชื่อทักษะ',
         noDeadlineHint: 'ไม่มีวันปิดรับ — รับสมัครต่อเนื่องจนกว่าจะปิดเอง',
-        quotaLabel: (n: number) => `โควตาที่รับได้: ${n} ตำแหน่ง`,
         findMatchingStudents: 'ค้นหานักศึกษาตรงทักษะ →',
         applicantsHint: 'ดูรายละเอียดผู้สมัครทั้งหมดที่หน้าผู้สมัคร',
         viewAllApplicants: 'ดูผู้สมัครทั้งหมด →',
@@ -194,7 +189,6 @@ export default function JobPostings() {
         addSkill: '+ Add skill',
         skillPlaceholder: 'Skill name',
         noDeadlineHint: 'No closing date — stays open until you close it.',
-        quotaLabel: (n: number) => `Available quota: ${n} positions`,
         findMatchingStudents: 'Find matching students →',
         applicantsHint: 'See full applicant details on the Applicants page.',
         viewAllApplicants: 'View all applicants →',
@@ -545,14 +539,9 @@ export default function JobPostings() {
                   <Input
                     type="number"
                     min={1}
-                    max={isCompany && formData.type === 'internship' ? availableSlots : undefined}
                     value={formData.positions}
                     onChange={(e) => setFormData((f) => ({ ...f, positions: parseInt(e.target.value, 10) || 1 }))}
-                    className={isExceedingQuota ? 'border-red-500' : ''}
                   />
-                  {isCompany && formData.type === 'internship' && (
-                    <p className={`text-xs ${isExceedingQuota ? 'text-red-500 font-medium' : 'text-slate-500'}`}>{copy.quotaLabel(availableSlots)}</p>
-                  )}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -627,15 +616,15 @@ export default function JobPostings() {
             <Button variant="outline" onClick={() => setSheetOpen(false)}>{copy.cancel}</Button>
             {isCreateMode ? (
               <>
-                <Button variant="secondary" disabled={isExceedingQuota} onClick={() => handleSave(false)}>
+                <Button variant="secondary" onClick={() => handleSave(false)}>
                   <Save className="w-4 h-4 mr-2" />{copy.saveDraft}
                 </Button>
-                <Button disabled={isExceedingQuota} onClick={() => handleSave(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
+                <Button onClick={() => handleSave(true)} className="bg-orange-500 hover:bg-orange-600 text-white">
                   <Send className="w-4 h-4 mr-2" />{copy.publish}
                 </Button>
               </>
             ) : (
-              <Button disabled={isExceedingQuota} onClick={() => handleSave(false)} className="bg-orange-500 hover:bg-orange-600 text-white">
+              <Button onClick={() => handleSave(false)} className="bg-orange-500 hover:bg-orange-600 text-white">
                 <Save className="w-4 h-4 mr-2" />{copy.save}
               </Button>
             )}

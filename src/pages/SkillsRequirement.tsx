@@ -18,6 +18,7 @@ import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
+import { summarizeMatches } from '@/lib/skill-match';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -48,13 +49,14 @@ type RequirementRow = {
   priority: string;
   matchedStudents: number;
   avgMatch: number;
+  matches: MatchRow[];
   positions: number;
 };
 
 type MatchRow = {
   name: string;
   nameEn: string;
-  gpa: number;
+  gpaBand: string;
   year: number;
   matchScore: number;
   skills: string[];
@@ -65,13 +67,12 @@ export default function SkillsRequirement() {
   const { toast } = useToast();
   const tr = t.skillsRequirement;
   const [requirements, setRequirements] = useState<RequirementRow[]>([]);
-  const [matches, setMatches] = useState<MatchRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [showMatches, setShowMatches] = useState(false);
   const [selectedReq, setSelectedReq] = useState<RequirementRow | null>(null);
   const [editingReq, setEditingReq] = useState<RequirementRow | null>(null);
-  const { user, updateProfile } = useAuth();
+  const { user } = useAuth();
   const rawUser = asRecord(user?.raw);
   const companyProfile = asRecord(rawUser.companyProfile);
   const currentCompanyProfileId = asString(companyProfile.id);
@@ -85,7 +86,6 @@ export default function SkillsRequirement() {
     const job = asRecord(item);
     const preferredSkills = asArray<string>(job.preferredSkills);
     const requirementsList = asArray<string>(job.requirements);
-    const applications = asArray(job.applications);
     const skills = (preferredSkills.length ? preferredSkills : requirementsList).slice(0, 6).map((skill) => ({
       name: String(skill),
       level: 'intermediate',
@@ -99,40 +99,60 @@ export default function SkillsRequirement() {
       descriptionEn: asString(job.description, '-'),
       skills,
       priority: asString(job.status, 'open') === 'open' ? 'high' : 'medium',
-      matchedStudents: applications.length,
-      avgMatch: applications.length ? Math.min(95, 70 + applications.length * 5) : 0,
+      // filled in by withMatches() from talent search — never derived from applicant counts (audit F7)
+      matchedStudents: 0,
+      avgMatch: 0,
+      matches: [],
       positions: asNumber(job.positions, 1),
     };
+  }, []);
+
+  /** Students whose listed skills match this requirement, scored as matched ÷ required skills. */
+  const withMatches = React.useCallback(async (row: RequirementRow): Promise<RequirementRow> => {
+    try {
+      const response = await api.talent.search(`?jobId=${encodeURIComponent(row.id)}`);
+      // the denominator is the skill list the server compared against (matched + missing), not the card's first six
+      const first = asRecord(response.talents[0]);
+      const required = response.talents.length
+        ? asArray(first.matchedSkills).length + asArray(first.missingSkills).length
+        : row.skills.length;
+      const talents = response.talents.map((item, index) => {
+        const talent = asRecord(item);
+        const matchedSkills = asArray<string>(talent.matchedSkills);
+        return {
+          matchedSkills,
+          missingSkills: asArray<string>(talent.missingSkills),
+          row: {
+            name: asString(talent.nameThai, asString(talent.name, `Student ${index + 1}`)),
+            nameEn: asString(talent.name, asString(talent.nameThai, `Student ${index + 1}`)),
+            gpaBand: asString(talent.gpaBand, 'not_disclosed'),
+            year: asNumber(talent.year, 0),
+            matchScore: required ? Math.round((matchedSkills.length / required) * 100) : 0,
+            skills: matchedSkills,
+          } satisfies MatchRow,
+        };
+      });
+      const { matchedStudents, avgMatch } = summarizeMatches(talents, required);
+      const matches = talents
+        .filter((item) => item.matchedSkills.length > 0)
+        .map((item) => item.row)
+        .sort((a, b) => b.matchScore - a.matchScore);
+      return { ...row, matchedStudents, avgMatch, matches };
+    } catch {
+      return row;
+    }
   }, []);
 
   React.useEffect(() => {
     let isMounted = true;
 
-    Promise.allSettled([api.jobs.list(), api.talent.search()])
-      .then(([jobsResponse, talentResponse]) => {
-        if (!isMounted) return;
-
-        if (jobsResponse.status === 'fulfilled') {
-          const mapped = jobsResponse.value.jobs
-            .filter((job: any) => job.companyId === currentCompanyProfileId && job.type === 'skill_requirement')
-            .map((job) => mapJobRequirement(job));
-          setRequirements(mapped);
-        }
-
-        if (talentResponse.status === 'fulfilled') {
-          const mapped = talentResponse.value.talents.map((item, index) => {
-            const talent = asRecord(item);
-            return {
-              name: asString(talent.nameThai, asString(talent.name, `Student ${index + 1}`)),
-              nameEn: asString(talent.name, asString(talent.nameThai, `Student ${index + 1}`)),
-              gpa: asNumber(talent.gpax, asNumber(talent.gpa, 0)),
-              year: asNumber(talent.year, 0),
-              matchScore: asNumber(talent.matchScore, asNumber(talent.score, 0)),
-              skills: asArray<string>(talent.skills),
-            };
-          });
-          setMatches(mapped);
-        }
+    api.jobs.list()
+      .then(async (jobsResponse) => {
+        const mapped = jobsResponse.jobs
+          .filter((job: any) => job.companyId === currentCompanyProfileId && job.type === 'skill_requirement')
+          .map((job) => mapJobRequirement(job));
+        const scored = await Promise.all(mapped.map(withMatches));
+        if (isMounted) setRequirements(scored);
       })
       .catch(() => undefined)
       .finally(() => {
@@ -142,7 +162,7 @@ export default function SkillsRequirement() {
     return () => {
       isMounted = false;
     };
-  }, [mapJobRequirement]);
+  }, [mapJobRequirement, withMatches, currentCompanyProfileId]);
 
   const getPriorityConfig = (p: string) => {
     switch (p) {
@@ -201,24 +221,12 @@ export default function SkillsRequirement() {
     try {
       if (editingReq) {
         const response = await api.jobs.update(editingReq.id, payload);
-        setRequirements((current) => current.map((item) => item.id === editingReq.id ? mapJobRequirement(response.job) : item));
+        const updated = await withMatches(mapJobRequirement(response.job));
+        setRequirements((current) => current.map((item) => item.id === editingReq.id ? updated : item));
       } else {
         const response = await api.jobs.create(payload);
-        setRequirements((current) => [mapJobRequirement(response.job), ...current]);
-      }
-      
-      // Update internshipSlots quota
-      const currentSlots = asNumber(companyProfile.internshipSlots, 0);
-      const addedPositions = editingReq 
-        ? formData.positions - editingReq.positions // if edit, add the difference
-        : formData.positions;
-        
-      if (addedPositions !== 0) {
-        await updateProfile({
-           roleData: {
-             internshipSlots: Math.max(0, currentSlots + addedPositions)
-           }
-        });
+        const created = await withMatches(mapJobRequirement(response.job));
+        setRequirements((current) => [created, ...current]);
       }
 
       toast({ title: tr.saveRequirement, description: formData.name });
@@ -233,8 +241,9 @@ export default function SkillsRequirement() {
   const handleDelete = async (id: string) => {
     try {
       await api.jobs.remove(id);
-    } catch {
-      // Keep local removal available for older seeded rows that do not map to a job id.
+    } catch (error) {
+      toast({ title: tr.deleteRequirement ?? 'Delete', description: error instanceof Error ? error.message : 'Unable to delete requirement' });
+      return;
     }
     setRequirements((current) => current.filter((item) => item.id !== id));
   };
@@ -326,6 +335,9 @@ export default function SkillsRequirement() {
                 <div className="text-right">
                   <div className="text-lg font-bold text-indigo-600 dark:text-slate-300">{req.avgMatch}%</div>
                   <div className="text-xs text-slate-500 dark:text-slate-400">{req.matchedStudents} {t.common.person}</div>
+                  <div className="text-[11px] text-slate-400 dark:text-slate-500 leading-snug">
+                    {language === 'th' ? 'เฉลี่ยสัดส่วนทักษะที่ตรง จากนักศึกษาที่มีอย่างน้อย 1 ทักษะ' : 'Avg share of required skills, among students matching at least one'}
+                  </div>
                 </div>
               </div>
 
@@ -474,14 +486,14 @@ export default function SkillsRequirement() {
           </DialogHeader>
 
           <div className="space-y-3 mt-4">
-            {matches.map((match, i) => (
+            {(selectedReq?.matches ?? []).map((match, i) => (
               <div key={i} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 dark:border-slate-800 hover:bg-slate-50 transition-colors dark:bg-slate-800">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-indigo-400 to-purple-500 flex items-center justify-center text-white font-bold text-sm">
                   {(language === 'th' ? match.name : match.nameEn).charAt(0)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium">{language === 'th' ? match.name : match.nameEn}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpa} • {t.studentsPage?.year || 'Year'} {match.year}</div>
+                  <div className="text-xs text-slate-500 dark:text-slate-400">GPA {match.gpaBand === 'not_disclosed' ? (language === 'th' ? 'ไม่เปิดเผย' : 'not disclosed') : match.gpaBand} • {t.studentsPage?.year || 'Year'} {match.year}</div>
                   <div className="flex gap-1 mt-1">
                     {match.skills.map((s, si) => (
                       <Badge key={si} variant="outline" className="text-[10px] px-1.5 py-0">{s}</Badge>
@@ -494,9 +506,9 @@ export default function SkillsRequirement() {
                 </div>
               </div>
             ))}
-            {matches.length === 0 && (
+            {(selectedReq?.matches ?? []).length === 0 && (
               <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                {language === 'th' ? 'ยังไม่มีผลจับคู่' : 'No match results yet.'}
+                {language === 'th' ? 'ยังไม่มีนักศึกษาที่มีทักษะตรง' : 'No students list these skills yet.'}
               </div>
             )}
           </div>

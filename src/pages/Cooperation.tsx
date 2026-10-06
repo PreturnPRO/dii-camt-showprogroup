@@ -19,7 +19,7 @@ const itemVariants = {
 
 export default function Cooperation() {
     const navigate = useNavigate();
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [records, setRecords] = React.useState<Array<{ id: string; title: string; type: string; details: string; status: string; companyName: string; createdAt: Date; expiryDate?: Date }>>([]);
     const [isLoading, setIsLoading] = React.useState(true);
 
@@ -67,10 +67,12 @@ export default function Cooperation() {
         status: 'none',
         companyName: '-',
         createdAt: new Date(),
-        expiryDate: new Date(),
+        expiryDate: undefined as Date | undefined,
     };
-    const expiryDate = currentMou.expiryDate ?? new Date();
-    const remainingDays = Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
+    // dates come from the cooperation record only; a missing expiry is hidden, never "today" (audit F9)
+    const expiryDate = currentMou.expiryDate;
+    const remainingDays = expiryDate ? Math.max(0, Math.ceil((expiryDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : null;
+    const thaiDate = (date: Date) => date.toLocaleDateString('th-TH', { dateStyle: 'medium' });
     const activityRows = records.slice(0, 3).map((record) => ({
         title: record.title,
         date: record.createdAt.toLocaleDateString('th-TH', { dateStyle: 'medium' as const }),
@@ -123,15 +125,15 @@ export default function Cooperation() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                         {[
                             { label: t.cooperationPage.contractNo, value: currentMou.id },
-                            { label: t.cooperationPage.startDate, value: '1 มกราคม 2567' },
-                            { label: t.cooperationPage.endDate, value: '31 ธันวาคม 2569', sub: `${t.cooperationPage.timeRemaining} 1 ปี 9 เดือน` },
+                            ...(hasMou ? [{ label: t.cooperationPage.startDate, value: thaiDate(currentMou.createdAt) }] : []),
+                            ...(hasMou && expiryDate
+                                ? [{ label: t.cooperationPage.endDate, value: thaiDate(expiryDate), sub: `${t.cooperationPage.timeRemaining} ${remainingDays} วัน` }]
+                                : []),
                         ].map((item, i) => (
                             <div key={i} className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm dark:bg-slate-900/50">
                                 <p className="text-sm text-emerald-200">{item.label}</p>
-                                <p className="font-bold text-lg mt-1">
-                                    {i === 1 ? currentMou.createdAt.toLocaleDateString('th-TH', { dateStyle: 'medium' }) : i === 2 ? expiryDate.toLocaleDateString('th-TH', { dateStyle: 'medium' }) : item.value}
-                                </p>
-                                {i === 2 && <p className="text-xs text-amber-200 mt-1">{t.cooperationPage.timeRemaining} {remainingDays} วัน</p>}
+                                <p className="font-bold text-lg mt-1">{item.value}</p>
+                                {'sub' in item && item.sub && <p className="text-xs text-amber-200 mt-1">{item.sub}</p>}
                             </div>
                         ))}
                     </div>
@@ -179,21 +181,10 @@ export default function Cooperation() {
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <FileText className="w-5 h-5 text-blue-500 dark:text-slate-400" /> {t.cooperationPage.coordinator}
                     </h3>
-                    <div className="p-5 rounded-2xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100 mb-5">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg shadow-blue-200">
-                                อ
-                            </div>
-                            <div>
-                                <p className="font-bold text-lg text-slate-800 dark:text-slate-200">{t.cooperationPage.coordinatorName}</p>
-                                <p className="text-sm text-slate-500 dark:text-slate-400">{t.cooperationPage.coordinatorPosition}</p>
-                            </div>
-                        </div>
-                        <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
-                            <p>📞 053-942-xxx</p>
-                            <p>✉️ somchai@cmu.ac.th</p>
-                        </div>
-                    </div>
+                    {/* the system stores no coordinator for an MOU, so none is shown (audit F9) */}
+                    <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed mb-5">
+                        {language === 'th' ? 'ติดต่อเจ้าหน้าที่ประสานงานความร่วมมือผ่านระบบข้อความ' : 'Contact the cooperation office through messages'}
+                    </p>
                     <Button onClick={() => navigate('/messages')} className="w-full rounded-xl bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-200 h-11">
                         {t.cooperationPage.sendMessage}
                     </Button>
