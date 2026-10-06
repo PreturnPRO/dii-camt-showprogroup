@@ -45,6 +45,7 @@ model User {
   notifications   Notification[]
   auditLogs       AuditLog[]
   uploadedFiles   FileAsset[]
+  activitiesCreated Activity[] @relation("ActivityCreatedBy")
 }
 
 model StudentProfile {
@@ -695,6 +696,8 @@ model Activity {
   registrationStatus     String               @default("open")
   requiresPeerEvaluation Boolean              @default(false)
   evaluations            Json?
+  createdById            String?
+  createdBy              User?                @relation("ActivityCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
   enrollments            ActivityEnrollment[]
   createdAt              DateTime             @default(now())
   updatedAt              DateTime             @updatedAt

@@ -85,9 +85,27 @@ export const getUpcomingActivities = asyncHandler(async (req, res) => {
   });
 });
 
+/** statuses an activity has before staff approve it (audit F1) */
+export const UNAPPROVED = ["pending", "draft"];
+const REWARD_FIELDS = ["gamificationPoints", "activityHours"] as const;
+
+const assertActivityManager = async (user: { id: string; role: Role }, activityId: string) => {
+  const activity = await prisma.activity.findUnique({ where: { id: activityId } });
+  if (!activity) throw new AppError(404, "Activity not found");
+  if (user.role === Role.STAFF || user.role === Role.ADMIN) return activity;
+  if (user.role === Role.LECTURER && activity.createdById === user.id) return activity;
+  throw new AppError(403, "You can only manage activities you created");
+};
+
 export const createActivity = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
   const activity = await prisma.activity.create({
-    data: req.body,
+    // a lecturer's activity waits for staff approval (audit F1)
+    data: {
+      ...req.body,
+      createdById: currentUser.id,
+      ...(currentUser.role === Role.LECTURER ? { status: "pending" } : {}),
+    },
   });
 
   res.status(201).json({
@@ -108,6 +126,10 @@ export const enrollActivity = asyncHandler(async (req, res) => {
 
   if (!activity) {
     throw new AppError(404, "Activity not found");
+  }
+
+  if (UNAPPROVED.includes(activity.status)) {
+    throw new AppError(409, "This activity has not been approved yet");
   }
 
   if (activity.registrationStatus !== "open") {
@@ -160,6 +182,14 @@ export const checkInActivity = asyncHandler(async (req, res) => {
 
 export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
   const enrollmentId = String(req.params.id);
+  const target = await prisma.activityEnrollment.findUnique({
+    where: { id: enrollmentId },
+    select: { activityId: true },
+  });
+  if (!target) {
+    throw new AppError(404, "Activity enrollment not found");
+  }
+  await assertActivityManager(requireUser(req), target.activityId);
   if (req.body.status === "completed") {
     const rewarded = await grantActivityReward(enrollmentId);
     return res.json({
@@ -186,13 +216,19 @@ export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
 });
 
 export const updateActivity = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
   const activityId = String(req.params.id);
-  const existing = await prisma.activity.findUnique({
-    where: { id: activityId },
-  });
-
-  if (!existing) {
-    throw new AppError(404, "Activity not found");
+  const existing = await assertActivityManager(currentUser, activityId);
+  delete req.body.createdById;
+  if (currentUser.role === Role.LECTURER) {
+    delete req.body.status;
+    // changing the reward of an approved activity needs approval again
+    const changesReward = REWARD_FIELDS.some(
+      (field) => req.body[field] !== undefined && Number(req.body[field]) !== existing[field],
+    );
+    if (changesReward && !UNAPPROVED.includes(existing.status)) {
+      req.body.status = "pending";
+    }
   }
 
   const activity = await prisma.activity.update({
@@ -208,6 +244,7 @@ export const updateActivity = asyncHandler(async (req, res) => {
 
 export const deleteActivity = asyncHandler(async (req, res) => {
   const activityId = String(req.params.id);
+  await assertActivityManager(requireUser(req), activityId);
   await prisma.activityEnrollment.deleteMany({
     where: { activityId },
   });

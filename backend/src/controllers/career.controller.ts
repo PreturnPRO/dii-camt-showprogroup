@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { isStaffOrAdmin, lecturerProfileIdOf } from "../services/access-policy";
@@ -11,25 +11,11 @@ import { requireUser } from "../utils/user";
 
 
 
-const scoreFromLevel = (level: string) => {
-  switch (level.toLowerCase()) {
-    case "expert":
-      return 4.8;
-    case "advanced":
-      return 4.2;
-    case "intermediate":
-      return 3.3;
-    case "beginner":
-      return 2.4;
-    default:
-      return 3;
-  }
-};
-
 const parseMinimumGpa = (requirements: string[]) => {
   const text = requirements.join(" ").toLowerCase();
   const match = text.match(/(?:gpa|gpax|เกรด|เกรดเฉลี่ย)[^\d]*(\d(?:\.\d{1,2})?)/i);
-  return match ? Number(match[1]) : 3;
+  // null = the posting states no GPA requirement (never invent one — audit F7)
+  return match ? Number(match[1]) : null;
 };
 
 const matchSkills = (requiredSkills: string[], studentSkills: string[]) => {
@@ -105,10 +91,6 @@ export const getCareerTargetsHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student = await getStudentProfileByUserId(currentUser.id);
   const studentSkills = student.skills.map((item) => item.skill.name);
-  const skillAverage =
-    student.skills.length > 0
-      ? student.skills.reduce((sum, item) => sum + scoreFromLevel(item.level), 0) / student.skills.length
-      : 3;
 
   const jobs = await prisma.jobPosting.findMany({
     where: { status: "open" },
@@ -127,8 +109,6 @@ export const getCareerTargetsHandler = asyncHandler(async (req, res) => {
       const preferredSkills = job.preferredSkills.length ? job.preferredSkills : job.requirements.slice(0, 5);
       const skillMatch = matchSkills(preferredSkills, studentSkills);
       const minimumGpa = parseMinimumGpa(job.requirements);
-      const technicalMinimum = Math.min(4.5, Math.max(3, 3 + preferredSkills.length * 0.12));
-      const softMinimum = job.type === "internship" ? 3.3 : 3.6;
 
       return {
         id: job.id,
@@ -148,19 +128,10 @@ export const getCareerTargetsHandler = asyncHandler(async (req, res) => {
         applicationStatus: job.applications[0]?.status ?? null,
         requirements: {
           gpa: minimumGpa,
-          technicalSkills: {
-            functionality: Number(technicalMinimum.toFixed(1)),
-            readability: Number(Math.max(3, technicalMinimum - 0.2).toFixed(1)),
-            bestPractice: Number(technicalMinimum.toFixed(1)),
-          },
-          softSkills: {
-            communication: Number(softMinimum.toFixed(1)),
-            openness: Number(Math.max(3, softMinimum - 0.1).toFixed(1)),
-          },
+          skills: preferredSkills,
         },
         readiness: {
-          gpaMet: student.gpa >= minimumGpa,
-          skillScore: Number(skillAverage.toFixed(2)),
+          gpaMet: minimumGpa === null ? null : student.gpax >= minimumGpa,
           skillMatch: skillMatch.matchScore,
         },
       };
@@ -287,9 +258,11 @@ export const deleteJobHandler = asyncHandler(async (req, res) => {
     throw new AppError(403, "You can only delete your own job postings");
   }
 
-  await prisma.application.deleteMany({
-    where: { jobPostingId: jobId },
-  });
+  // applications are the students' records; a job with applicants is closed, not deleted (audit F7)
+  const applications = await prisma.application.count({ where: { jobPostingId: jobId } });
+  if (applications > 0) {
+    throw new AppError(409, "This job already has applications; close it instead of deleting");
+  }
 
   const job = await prisma.jobPosting.delete({
     where: { id: jobId },
@@ -310,19 +283,43 @@ export const createApplicationHandler = asyncHandler(async (req, res) => {
     throw new AppError(400, "jobPostingId is required");
   }
 
-  const application = await prisma.application.create({
-    data: {
-      jobPostingId,
-      studentId: student.id,
-      coverLetter: req.body.coverLetter,
-      resumeUrl: req.body.resumeUrl,
-      notes: req.body.notes,
-    },
-    include: {
-      student: { include: { user: true } },
-      jobPosting: { include: { company: { include: { user: true } } } },
-    },
+  const job = await prisma.jobPosting.findUnique({
+    where: { id: jobPostingId },
+    include: { _count: { select: { applications: true } } },
   });
+  if (!job) throw new AppError(404, "Job posting not found");
+  if (job.status !== "open" || !job.isActive || job.deadline.getTime() < Date.now()) {
+    throw new AppError(409, "This job is not accepting applications");
+  }
+  if (job.maxApplicants !== null && job._count.applications >= job.maxApplicants) {
+    throw new AppError(409, "This job has reached its applicant limit");
+  }
+  const already = await prisma.application.findUnique({
+    where: { jobPostingId_studentId: { jobPostingId, studentId: student.id } },
+  });
+  if (already) throw new AppError(409, "You have already applied for this job");
+
+  const application = await prisma.application
+    .create({
+      data: {
+        jobPostingId,
+        studentId: student.id,
+        coverLetter: req.body.coverLetter,
+        resumeUrl: req.body.resumeUrl,
+        notes: req.body.notes,
+      },
+      include: {
+        student: { include: { user: true } },
+        jobPosting: { include: { company: { include: { user: true } } } },
+      },
+    })
+    .catch((error: unknown) => {
+      // a double-click races past the check above; the unique index still answers it
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        throw new AppError(409, "You have already applied for this job");
+      }
+      throw error;
+    });
 
   await createNotification({
     userId: application.jobPosting.company.userId,

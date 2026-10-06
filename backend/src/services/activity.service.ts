@@ -19,6 +19,11 @@ export const grantActivityReward = async (activityEnrollmentId: string) => {
     return activityEnrollment;
   }
 
+  // an activity staff have not approved yet grants nothing (audit F1)
+  if (["pending", "draft"].includes(activityEnrollment.activity.status)) {
+    throw new AppError(409, "This activity has not been approved yet");
+  }
+
   await prisma.$transaction(async (tx) => {
     await tx.activityEnrollment.update({
       where: { id: activityEnrollment.id },

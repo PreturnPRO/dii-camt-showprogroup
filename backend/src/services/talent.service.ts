@@ -39,7 +39,15 @@ export const searchTalent = async (
   // Explicit skills param wins; otherwise fall back to the linked job's
   // requirements — either way this becomes the honest "X/Y skills matched"
   // set, never a fabricated score.
-  const desiredSkills = skills && skills.length ? skills : job ? [...job.requirements, ...job.preferredSkills] : [];
+  const listed = skills && skills.length ? skills : job ? [...job.requirements, ...job.preferredSkills] : [];
+  // a skill listed both as requirement and preferred skill counts once
+  const seen = new Set<string>();
+  const desiredSkills = listed.filter((skill) => {
+    const key = skill.trim().toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 
   const students = await prisma.studentProfile.findMany({
     where: {
