@@ -1,7 +1,7 @@
 import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
-import { computeGpa, termGpas, type GradedRow } from "../services/gpa";
+import { computeGpa, isPassing, termGpas, type GradedRow } from "../services/gpa";
 import { assertCanViewStudentRecord, canViewStudentRecord, gpaBand, isStaffOrAdmin, lecturerProfileIdOf, lecturerStudentsWhere } from "../services/access-policy";
 import { evaluateStudentBadges } from "../services/badge.service";
 import {
@@ -68,35 +68,6 @@ const gradePoints: Record<string, number> = {
   "D+": 1.5,
   D: 1,
   F: 0,
-};
-
-const average = (values: number[], fallback = 0) => {
-  const clean = values.filter((value) => Number.isFinite(value));
-  return clean.length ? clean.reduce((sum, value) => sum + value, 0) / clean.length : fallback;
-};
-
-const roundScore = (value: number) => Number(Math.max(0, Math.min(5, value)).toFixed(2));
-
-const skillLevelScore = (level: string) => {
-  switch (level.toLowerCase()) {
-    case "expert":
-      return 4.8;
-    case "advanced":
-      return 4.2;
-    case "intermediate":
-      return 3.3;
-    case "beginner":
-      return 2.4;
-    default:
-      return 3;
-  }
-};
-
-const courseCategory = (code: string): "required" | "ge" | "free" => {
-  const normalized = code.toUpperCase();
-  if (normalized.startsWith("GE")) return "ge";
-  if (normalized.startsWith("FREE")) return "free";
-  return "required";
 };
 
 export const getStudentsHandler = asyncHandler(async (req, res) => {
@@ -646,76 +617,12 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     history: item.history,
   }));
 
-  const skillRubrics = await prisma.skillRubric.findMany({
-    where: { studentId: student.id },
-    orderBy: { updatedAt: "desc" },
-  });
-
-  const skillScoreFallback = average(
-    student.skills.map((item) => skillLevelScore(item.level)),
-    0,
-  );
-  const technicalRubrics = skillRubrics.filter((item) => item.category.toLowerCase() === "technical");
-  const softRubrics = skillRubrics.filter((item) => item.category.toLowerCase() === "soft");
-  const scoreFor = (rubrics: typeof skillRubrics, terms: string[], fallback: number) => {
-    const matched = rubrics.filter((item) =>
-      terms.some((term) => item.skillName.toLowerCase().includes(term)),
-    );
-    return roundScore(average(matched.map((item) => item.totalScore), fallback));
-  };
-
-  const technicalSummary = {
-    functionality: scoreFor(technicalRubrics, ["function", "react", "web", "code"], skillScoreFallback),
-    readability: scoreFor(technicalRubrics, ["read", "clean", "document"], Math.max(0, skillScoreFallback - 0.2)),
-    bestPractice: scoreFor(technicalRubrics, ["best", "practice", "architecture", "pattern"], skillScoreFallback),
-    professorWeight: 60,
-    peerWeight: 40,
-    professorScore: roundScore(average(technicalRubrics.map((item) => item.professorScore), skillScoreFallback)),
-    peerScore: roundScore(average(technicalRubrics.map((item) => item.peerScore), skillScoreFallback)),
-    commentTags: {
-      bug: 0,
-      suggestion: 0,
-      goodJob: 0,
-    },
-  };
-
-  const softFallback = average(
-    student.skills
-      .filter((item) => item.skill.category.toLowerCase() === "soft_skill")
-      .map((item) => skillLevelScore(item.level)),
-    0,
-  );
-  const softSummary = {
-    communication: scoreFor(softRubrics, ["communication", "document", "presentation"], softFallback),
-    openness: scoreFor(softRubrics, ["open", "feedback", "team", "collaboration"], softFallback),
-    professorWeight: 60,
-    peerWeight: 40,
-    professorScore: roundScore(average(softRubrics.map((item) => item.professorScore), softFallback)),
-    peerScore: roundScore(average(softRubrics.map((item) => item.peerScore), softFallback)),
-    feedbackHistory: softRubrics.slice(0, 5).map((item) => ({
-      projectName: item.skillName,
-      date: item.updatedAt,
-      communicationScore: item.skillName.toLowerCase().includes("communication")
-        ? item.totalScore
-        : softFallback,
-      opennessScore: item.skillName.toLowerCase().includes("open") || item.skillName.toLowerCase().includes("feedback")
-        ? item.totalScore
-        : softFallback,
-      comments: 0,
-    })),
-  };
-
-  const categoryCredits = enrollments.reduce(
-    (result, item) => {
-      result[courseCategory(item.course.code)] += item.course.credits;
-      return result;
-    },
-    { required: 0, ge: 0, free: 0 } as Record<"required" | "ge" | "free", number>,
-  );
-  const categoryTotals = {
-    required: Math.max(student.requiredCredits - 15, categoryCredits.required),
-    ge: Math.max(9, categoryCredits.ge),
-    free: Math.max(6, categoryCredits.free),
+  // owner decision 7/10/69: real course credits, no categories (courses carry none) and never dropped courses
+  const courseStatus = (letterGrade: string | null, status: string) => {
+    if (!letterGrade) return status === "enrolled" ? "inProgress" : "notGraded";
+    if (letterGrade === "W") return "withdrawn";
+    if (letterGrade === "I") return "incomplete";
+    return isPassing(letterGrade) ? "completed" : "failed";
   };
   const curriculumCourses = enrollments.map((item) => ({
     id: item.course.id,
@@ -725,12 +632,13 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
     credits: item.course.credits,
     year: item.course.year,
     semester: item.course.semester,
-    category: courseCategory(item.course.code),
-    status: item.letterGrade ? "completed" : item.status === "enrolled" ? "inProgress" : "remaining",
+    status: courseStatus(item.letterGrade, item.status),
     grade: item.letterGrade,
     prerequisites: item.course.prerequisites,
     description: item.course.description ?? "",
   }));
+  const completedCredits = computeGpa(gradedRows).earnedCredits;
+  const inProgressCredits = curriculumCourses.filter((c) => c.status === "inProgress").reduce((sum, c) => sum + c.credits, 0);
 
   const activitySummary = await prisma.activityEnrollment.aggregate({
     where: { studentId: student.id, rewardGranted: true },
@@ -759,13 +667,10 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
       gradeHistory,
       termGpa,
       currentTermGpa,
-      skillRubrics,
-      skillSummary: {
-        technical: technicalSummary,
-        soft: softSummary,
-      },
       curriculumProgress: {
-        categoryTotals,
+        requiredCredits: student.requiredCredits,
+        completedCredits,
+        inProgressCredits,
         courses: curriculumCourses,
       },
     },

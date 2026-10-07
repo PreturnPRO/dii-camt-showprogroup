@@ -149,7 +149,8 @@ export const getWorkload = asyncHandler(async (req, res) => {
   const workload = await prisma.workloadRecord.findMany({
     where: lecturer ? { lecturerId: lecturer.id } : undefined,
     include: {
-      lecturer: { include: { user: true } },
+      // the real number of advisees, so pages stop turning advising hours into a list (audit M1)
+      lecturer: { include: { user: true, _count: { select: { advisees: true } } } },
     },
     orderBy: [{ academicYear: "desc" }, { semester: "desc" }],
   });
@@ -182,7 +183,7 @@ export const createWorkload = asyncHandler(async (req, res) => {
       serviceHours: req.body.serviceHours,
     },
     include: {
-      lecturer: { include: { user: true } },
+      lecturer: { include: { user: true, _count: { select: { advisees: true } } } },
     },
   });
 
