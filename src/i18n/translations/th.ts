@@ -257,7 +257,6 @@ export const th = {
     usersInSystem: 'คนในระบบ',
     quote: 'แพลตฟอร์มที่ช่วยให้การบริหารจัดการการศึกษาเป็นเรื่องง่ายและมีประสิทธิภาพ',
     enterCredentials: 'กรอกข้อมูลเพื่อเข้าใช้งานบัญชีของคุณ',
-    orContinueWith: 'หรือดำเนินการต่อด้วย',
   },
 
   // Register Page
@@ -582,18 +581,6 @@ export const th = {
     nameEnglish: 'ชื่อ (ภาษาอังกฤษ)',
     emailAddress: 'ที่อยู่อีเมล',
     phoneNumber: 'เบอร์โทรศัพท์ติดต่อ',
-    notificationsTitle: 'การแจ้งเตือน',
-    notificationsDesc: 'ตั้งค่ารูปแบบการรับข้อมูลจากทางคณะและระบบ',
-    application: 'แอปพลิเคชัน',
-    newsAnnouncements: 'ข่าวสารและประกาศ',
-    newsAnnouncementsDesc: 'รับข้อมูลข่าวสารล่าสุดจาก CAMT และมหาวิทยาลัย',
-    newActivities: 'กิจกรรมใหม่',
-    newActivitiesDesc: 'แจ้งเตือนเมื่อมีกิจกรรมสะสมแต้ม/กิจกรรมพัฒนานักศึกษา',
-    requestProgress: 'ความคืบหน้าคำร้อง',
-    requestProgressDesc: 'สถานะการทำงานของคำร้องที่คุณยื่นไว้ในระบบ',
-    emailDirect: 'อีเมลไดเร็กต์',
-    weeklySummary: 'สรุปภาพรวมรายสัปดาห์',
-    weeklySummaryDesc: 'ส่งผลการเรียนล่าสุดและตารางกิจกรรมประจำสัปดาห์ผ่านอีเมล',
     accountStrength: 'ความแข็งแกร่งของบัญชี',
     securityDesc: 'จัดการรหัสผ่านและระดับการรักษาความปลอดภัย',
     changePassword: 'เปลี่ยนรหัสผ่านใหม่',
@@ -1017,7 +1004,6 @@ export const th = {
     weeklySchedule: 'ตารางสอนรายสัปดาห์',
     otherWork: 'ภาระงานอื่นๆ',
     otherWorkDesc: 'งานบริการวิชาการและงานบริหาร',
-    downloadTOR: 'ดาวน์โหลดรายงานภาระงาน (TOR)',
   },
 
   // Budget
@@ -1281,7 +1267,6 @@ export const th = {
     systemAndSettings: 'ระบบและการตั้งค่า',
     generalSettings: 'การตั้งค่าทั่วไป',
     autoNotifications: 'การแจ้งเตือนอัตโนมัติ',
-    backup: 'สำรองข้อมูล',
     systemStatus: 'สถานะระบบ',
   },
 

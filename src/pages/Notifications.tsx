@@ -69,20 +69,28 @@ export default function Notifications() {
         };
     }, [user?.id, user?.role]);
 
-    React.useEffect(() => {
-        let isMounted = true;
+    const [loadError, setLoadError] = useState(false);
+    const markReadFailed = language === 'th' ? 'ทำเครื่องหมายว่าอ่านแล้วไม่สำเร็จ' : 'Could not mark as read';
+
+    const loadNotifications = React.useCallback((isMounted: () => boolean = () => true) => {
+        setLoadError(false);
         api.notifications.list()
             .then((response) => {
-                if (!isMounted) return;
-                const mapped = response.notifications.map(mapNotification);
-                setNotifications(mapped);
+                if (!isMounted()) return;
+                setNotifications(response.notifications.map(mapNotification));
             })
-            .catch(() => undefined);
-
-        return () => {
-            isMounted = false;
-        };
+            .catch(() => {
+                if (isMounted()) setLoadError(true);
+            });
     }, [mapNotification]);
+
+    React.useEffect(() => {
+        let mounted = true;
+        loadNotifications(() => mounted);
+        return () => {
+            mounted = false;
+        };
+    }, [loadNotifications]);
 
     const handleDelete = async (id: string) => {
         if (confirm(t.notificationsPage.deleteConfirm)) {
@@ -100,7 +108,8 @@ export default function Notifications() {
         try {
             await api.notifications.markRead(id);
         } catch {
-            // Keep the UI responsive for legacy/local rows.
+            toast.error(markReadFailed);
+            return;
         }
         const readAt = new Date();
         setNotifications(current => current.map((item) => item.id === id ? { ...item, isRead: true, readAt } : item));
@@ -111,7 +120,8 @@ export default function Notifications() {
         try {
             await api.notifications.markAllRead();
         } catch {
-            // Keep the UI responsive for legacy/local rows.
+            toast.error(markReadFailed);
+            return;
         }
         const readAt = new Date();
         setNotifications(current => current.map((item) => ({ ...item, isRead: true, readAt })));
@@ -229,7 +239,7 @@ export default function Notifications() {
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 mb-1">
                                         <h3 className="font-semibold text-gray-900 dark:text-slate-200">{getTitle(notification)}</h3>
-                                        {!notification.isRead && <div className="w-2 h-2 bg-blue-500 rounded-full" />}
+                                        {!notification.isRead && <div data-testid="unread-dot" className="w-2 h-2 bg-blue-500 rounded-full" />}
                                     </div>
                                     <p className="text-sm text-gray-600 dark:text-slate-400 line-clamp-2">{getMessage(notification)}</p>
                                     <div className="flex flex-wrap items-center gap-2 mt-2">
@@ -291,46 +301,58 @@ export default function Notifications() {
                 </motion.div>
             </div>
 
-            <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                {[
-                    { label: t.notificationsPage.allTab, value: notifications.length, gradient: 'from-blue-500 to-indigo-500', icon: Bell },
-                    { label: t.notificationsPage.unreadTab, value: unreadCount, gradient: 'from-orange-500 to-amber-500', icon: Mail },
-                    { label: t.notificationsPage.urgentTab, value: notifications.filter(n => n.priority === 'urgent' || n.priority === 'high').length, gradient: 'from-red-500 to-rose-500', icon: AlertTriangle },
-                    { label: t.notificationsPage.readTab, value: notifications.filter(n => n.isRead).length, gradient: 'from-emerald-500 to-teal-500', icon: CheckCircle },
-                ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
-                        <div className="relative z-10">
-                            <div className="flex items-center gap-2 mb-3">
-                                <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900/50"><stat.icon className="w-5 h-5" /></div>
-                                <span className="font-medium text-white/90">{stat.label}</span>
+            {loadError ? (
+                <Card data-testid="notifications-load-error">
+                    <CardContent className="pt-6 flex flex-col items-center gap-3 text-center">
+                        <AlertTriangle className="w-6 h-6 text-red-500" />
+                        <p className="text-slate-600 dark:text-slate-300">{language === 'th' ? 'โหลดการแจ้งเตือนไม่สำเร็จ' : 'Could not load notifications'}</p>
+                        <Button variant="outline" size="sm" className="rounded-xl" onClick={() => loadNotifications()}>{language === 'th' ? 'ลองใหม่' : 'Retry'}</Button>
+                    </CardContent>
+                </Card>
+            ) : (
+                <>
+                <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    {[
+                        { label: t.notificationsPage.allTab, value: notifications.length, gradient: 'from-blue-500 to-indigo-500', icon: Bell },
+                        { label: t.notificationsPage.unreadTab, value: unreadCount, gradient: 'from-orange-500 to-amber-500', icon: Mail },
+                        { label: t.notificationsPage.urgentTab, value: notifications.filter(n => n.priority === 'urgent' || n.priority === 'high').length, gradient: 'from-red-500 to-rose-500', icon: AlertTriangle },
+                        { label: t.notificationsPage.readTab, value: notifications.filter(n => n.isRead).length, gradient: 'from-emerald-500 to-teal-500', icon: CheckCircle },
+                    ].map((stat, i) => (
+                        <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl`}>
+                            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+                            <div className="relative z-10">
+                                <div className="flex items-center gap-2 mb-3">
+                                    <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900/50"><stat.icon className="w-5 h-5" /></div>
+                                    <span className="font-medium text-white/90">{stat.label}</span>
+                                </div>
+                                <div className="text-4xl font-bold">{stat.value}</div>
                             </div>
-                            <div className="text-4xl font-bold">{stat.value}</div>
-                        </div>
-                    </motion.div>
-                ))}
-            </motion.div>
+                        </motion.div>
+                    ))}
+                </motion.div>
 
-            <motion.div variants={itemVariants}>
-                <Tabs defaultValue="all" className="space-y-4">
-                    <TabsList className="bg-white/80 backdrop-blur-sm border shadow-sm dark:bg-slate-900/50">
-                        <TabsTrigger value="all">{t.notificationsPage.allTab}</TabsTrigger>
-                        <TabsTrigger value="unread">{t.notificationsPage.unreadTab}</TabsTrigger>
-                        <TabsTrigger value="urgent">{t.notificationsPage.urgentTab}</TabsTrigger>
-                    </TabsList>
+                <motion.div variants={itemVariants}>
+                    <Tabs defaultValue="all" className="space-y-4">
+                        <TabsList className="bg-white/80 backdrop-blur-sm border shadow-sm dark:bg-slate-900/50">
+                            <TabsTrigger value="all">{t.notificationsPage.allTab}</TabsTrigger>
+                            <TabsTrigger value="unread">{t.notificationsPage.unreadTab}</TabsTrigger>
+                            <TabsTrigger value="urgent">{t.notificationsPage.urgentTab}</TabsTrigger>
+                        </TabsList>
 
-                    <TabsContent value="all">
-                        {renderNotificationList(notifications)}
-                    </TabsContent>
+                        <TabsContent value="all">
+                            {renderNotificationList(notifications)}
+                        </TabsContent>
 
-                    <TabsContent value="unread">
-                        {renderNotificationList(unreadNotifications)}
-                    </TabsContent>
-                    <TabsContent value="urgent">
-                        {renderNotificationList(urgentNotifications)}
-                    </TabsContent>
-                </Tabs>
-            </motion.div>
+                        <TabsContent value="unread">
+                            {renderNotificationList(unreadNotifications)}
+                        </TabsContent>
+                        <TabsContent value="urgent">
+                            {renderNotificationList(urgentNotifications)}
+                        </TabsContent>
+                    </Tabs>
+                </motion.div>
+                </>
+            )}
 
             {/* Create Notification Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>

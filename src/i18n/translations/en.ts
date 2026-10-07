@@ -257,7 +257,6 @@ export const en = {
     usersInSystem: 'users in the system',
     quote: 'A platform that makes education management easy and efficient.',
     enterCredentials: 'Enter your credentials to access your account',
-    orContinueWith: 'or continue with',
   },
 
   // Register Page
@@ -582,18 +581,6 @@ export const en = {
     nameEnglish: 'Name (English)',
     emailAddress: 'Email Address',
     phoneNumber: 'Phone Number',
-    notificationsTitle: 'Notifications',
-    notificationsDesc: 'Configure how you receive updates from the faculty and system',
-    application: 'Application',
-    newsAnnouncements: 'News & Announcements',
-    newsAnnouncementsDesc: 'Receive the latest news from CAMT and the university',
-    newActivities: 'New Activities',
-    newActivitiesDesc: 'Get notified when there are new point-earning/student development activities',
-    requestProgress: 'Request Progress',
-    requestProgressDesc: 'Status updates on requests you have submitted in the system',
-    emailDirect: 'Email Direct',
-    weeklySummary: 'Weekly Summary',
-    weeklySummaryDesc: 'Send latest academic results and weekly activity schedule via email',
     accountStrength: 'Account Strength',
     securityDesc: 'Manage your password and security level',
     changePassword: 'Change Password',
@@ -1017,7 +1004,6 @@ export const en = {
     weeklySchedule: 'Weekly Teaching Schedule',
     otherWork: 'Other Workload',
     otherWorkDesc: 'Academic service & administrative work',
-    downloadTOR: 'Download Workload Report (TOR)',
   },
 
   // Budget
@@ -1281,7 +1267,6 @@ export const en = {
     systemAndSettings: 'System & Settings',
     generalSettings: 'General Settings',
     autoNotifications: 'Auto Notifications',
-    backup: 'Data Backup',
     systemStatus: 'System Status',
   },
 

@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import type { Application } from '@/types';
 import { api } from '@/lib/api';
+import { bulkMessage, splitSettled } from '@/lib/bulk-result';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 
 const containerVariants = {
@@ -249,19 +250,32 @@ export default function Applicants() {
     });
   };
 
-  const bulkShortlist = async () => {
-    await Promise.all([...selectedIds].map((id) => api.applications.update(id, { status: 'shortlisted' }).catch(() => undefined)));
-    setApplicants((current) => current.map((a) => (selectedIds.has(a.id) ? { ...a, status: 'shortlisted' } : a)));
-    toast.success(copy.updateSuccess);
-    setSelectedIds(new Set());
+  const [isBulkRunning, setIsBulkRunning] = React.useState(false);
+  const bulkRunning = React.useRef(false);
+
+  const runBulk = async (status: Application['status']) => {
+    // a second click while requests are in flight would update (and notify) every student twice
+    if (bulkRunning.current) return;
+    bulkRunning.current = true;
+    setIsBulkRunning(true);
+    const ids = [...selectedIds];
+    const results = await Promise.allSettled(ids.map((id) => api.applications.update(id, { status })));
+    bulkRunning.current = false;
+    setIsBulkRunning(false);
+    const split = splitSettled(ids, results);
+    const done = new Set(split.succeeded);
+    setApplicants((current) => current.map((a) => (done.has(a.id) ? { ...a, status } : a)));
+    // keep rows ticked meanwhile and the ones that failed; drop only those that saved
+    setSelectedIds((current) => new Set([...current].filter((id) => !done.has(id))));
+    const message = bulkMessage(split, language === 'th' ? 'th' : 'en');
+    toast[message.kind](message.text);
   };
 
-  const bulkReject = async () => {
+  const bulkShortlist = () => runBulk('shortlisted');
+
+  const bulkReject = () => {
     if (!confirm(copy.bulkRejectConfirm(selectedIds.size))) return;
-    await Promise.all([...selectedIds].map((id) => api.applications.update(id, { status: 'rejected' }).catch(() => undefined)));
-    setApplicants((current) => current.map((a) => (selectedIds.has(a.id) ? { ...a, status: 'rejected' } : a)));
-    toast.success(copy.updateSuccess);
-    setSelectedIds(new Set());
+    return runBulk('rejected');
   };
 
   const bulkExport = () => {
@@ -499,8 +513,8 @@ export default function Applicants() {
           className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl shadow-xl px-5 py-3"
         >
           <span className="text-sm font-medium">{copy.selectedCount(selectedIds.size)}</span>
-          <Button size="sm" variant="secondary" onClick={bulkShortlist}>{copy.bulkShortlist}</Button>
-          <Button size="sm" variant="destructive" onClick={bulkReject}>{copy.bulkReject}</Button>
+          <Button size="sm" variant="secondary" onClick={bulkShortlist} disabled={isBulkRunning}>{copy.bulkShortlist}</Button>
+          <Button size="sm" variant="destructive" onClick={bulkReject} disabled={isBulkRunning}>{copy.bulkReject}</Button>
           <Button size="sm" variant="secondary" onClick={bulkExport}>{copy.bulkExport}</Button>
           <Button size="sm" variant="ghost" className="text-white hover:bg-white/10" onClick={() => setSelectedIds(new Set())}>{copy.bulkClear}</Button>
         </motion.div>

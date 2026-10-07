@@ -1,8 +1,7 @@
 import React from 'react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { BarChart3, Clock, Users, BookOpen, Download, Briefcase, FlaskConical, CalendarDays } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { BarChart3, Clock, Users, BookOpen, Briefcase, FlaskConical, CalendarDays } from 'lucide-react';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString, pickLocalized } from '@/lib/live-data';
 import { DAY_KEYS, DAY_LABELS, type DayKey } from '@/lib/timetable';
@@ -254,16 +253,6 @@ export default function Workload() {
                             </div>
                         ))}
                     </div>
-
-                    <motion.div whileHover={{ scale: 1.02 }} className="mt-6">
-                        <Button
-                            variant="outline"
-                            className="w-full rounded-2xl h-12 border-dashed border-2 hover:border-green-300 hover:bg-green-50 transition-all"
-                        >
-                            <Download className="w-4 h-4 mr-2" />
-                            {t.workloadPage.downloadTOR}
-                        </Button>
-                    </motion.div>
                 </motion.div>
             </div>
         </motion.div>

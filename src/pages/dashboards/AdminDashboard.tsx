@@ -1,9 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Shield, Users, BookOpen, Building, Activity, Settings, Database, Bell } from 'lucide-react';
+import { Shield, Users, BookOpen, Building, Activity, Settings, Bell } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +21,7 @@ const itemVariants = {
 };
 
 export default function AdminDashboard() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const [apiOnline, setApiOnline] = React.useState<boolean | null>(null); // D-17: สถานะจริงจาก API
   const [stats, setStats] = React.useState({
@@ -92,7 +91,6 @@ export default function AdminDashboard() {
           <CardContent className="space-y-2">
             <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/settings')}><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.generalSettings}</Button>
             <Button variant="outline" className="w-full justify-start" onClick={() => navigate('/automation')}><Bell className="w-4 h-4 mr-2" />{t.adminDashboard.autoNotifications}</Button>
-            <Button variant="outline" className="w-full justify-start" onClick={() => toast.info(language === 'th' ? 'ระบบสำรองข้อมูลจะเปิดใช้งานเมื่อเชื่อมต่อ backend service แล้ว' : 'Backup will be available once the backend service is connected')}><Database className="w-4 h-4 mr-2" />{t.adminDashboard.backup}</Button>
           </CardContent>
         </Card>
         <Card>
@@ -100,7 +98,6 @@ export default function AdminDashboard() {
           <CardContent className="space-y-3">
             <div className="flex items-center justify-between"><span className="text-sm">Database</span>{apiOnline === null ? <Badge variant="secondary">…</Badge> : <Badge variant={apiOnline ? 'default' : 'destructive'}>{apiOnline ? 'Online' : 'Offline'}</Badge>}</div>
             <div className="flex items-center justify-between"><span className="text-sm">API Server</span>{apiOnline === null ? <Badge variant="secondary">…</Badge> : <Badge variant={apiOnline ? 'default' : 'destructive'}>{apiOnline ? 'Running' : 'Down'}</Badge>}</div>
-            <div className="flex items-center justify-between"><span className="text-sm">Backup</span><Badge variant="secondary">Manual</Badge></div>
           </CardContent>
         </Card>
       </motion.div>

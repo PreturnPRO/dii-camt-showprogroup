@@ -4,8 +4,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  User, Bell, Lock, Palette, LogOut, Settings as SettingsIcon, Shield,
-  Moon, Smartphone, ChevronRight, Sparkles, Save, Mail, ExternalLink,
+  User, Lock, Palette, LogOut, Settings as SettingsIcon, Shield,
+  Moon, Smartphone, ChevronRight, Sparkles, Save, ExternalLink,
   ShieldCheck, Eye, Zap, ArrowUpRight
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -13,7 +13,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
@@ -56,33 +55,6 @@ export default function Settings() {
   const newPasswordTooShortMessage = language === 'th' ? 'รหัสผ่านใหม่ต้องมีอย่างน้อย 8 ตัวอักษร' : 'New password must be at least 8 characters';
   const passwordMismatchMessage = language === 'th' ? 'รหัสผ่านใหม่ไม่ตรงกัน' : 'New passwords do not match';
   const passwordUpdatedMessage = language === 'th' ? 'เปลี่ยนรหัสผ่านเรียบร้อยแล้ว' : 'Password updated successfully';
-
-  const handleSave = () => {
-    if (!nameThai.trim() || !nameEn.trim() || !email.trim()) {
-      toast.error(fillRequiredMessage);
-      return;
-    }
-    toast.success(t.settingsPage.savedSuccess);
-  };
-
-  const handlePasswordChange = () => {
-    if (!currentPwd) {
-      toast.error(currentPasswordRequiredMessage);
-      return;
-    }
-    if (newPwd.length < 8) {
-      toast.error(newPasswordTooShortMessage);
-      return;
-    }
-    if (newPwd !== confirmPwd) {
-      toast.error(passwordMismatchMessage);
-      return;
-    }
-    setCurrentPwd('');
-    setNewPwd('');
-    setConfirmPwd('');
-    toast.success(passwordUpdatedMessage);
-  };
 
   React.useEffect(() => {
     setNameThai(user?.nameThai || '');
@@ -286,7 +258,6 @@ export default function Settings() {
             <nav className="space-y-2 relative z-10 px-2">
               {[
                 { id: 'profile', label: t.settingsPage.profileInfo, icon: User, color: 'text-blue-500', bg: 'bg-blue-50' },
-                { id: 'notifications', label: t.settingsPage.notificationsTitle, icon: Bell, color: 'text-amber-500', bg: 'bg-amber-50' },
                 { id: 'security', label: t.settingsPage.security, icon: Shield, color: 'text-indigo-500', bg: 'bg-indigo-50' },
                 { id: 'preferences', label: t.settingsPage.display, icon: Palette, color: 'text-purple-500', bg: 'bg-purple-50' },
               ].map((item) => (
@@ -442,61 +413,6 @@ export default function Settings() {
                 </motion.div>
               )}
 
-              {activeTab === 'notifications' && (
-                <motion.div
-                  key="notifications"
-                  initial={{ opacity: 0, x: 20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -20 }}
-                  className="p-10 space-y-10"
-                >
-                  <div className="border-b border-slate-100 dark:border-slate-800 pb-8">
-                    <h2 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight mb-2">{t.settingsPage.notificationsTitle}</h2>
-                    <p className="text-slate-500 font-medium dark:text-slate-400">{t.settingsPage.notificationsDesc}</p>
-                  </div>
-
-                  <div className="space-y-10">
-                    <div className="space-y-6">
-                      <h3 className="font-black text-xl text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
-                        <div className="p-2 rounded-xl bg-amber-50 text-amber-500 shadow-sm"><Bell className="w-5 h-5" /></div>
-                        {t.settingsPage.application}
-                      </h3>
-                      <div className="space-y-3">
-                        {[
-                          { label: t.settingsPage.newsAnnouncements, desc: t.settingsPage.newsAnnouncementsDesc },
-                          { label: t.settingsPage.newActivities, desc: t.settingsPage.newActivitiesDesc },
-                          { label: t.settingsPage.requestProgress, desc: t.settingsPage.requestProgressDesc }
-                        ].map((pref, i) => (
-                          <div key={i} className="flex items-center justify-between p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-amber-200 transition-all shadow-sm">
-                            <div className="space-y-1">
-                              <Label className="text-lg font-bold text-slate-800 dark:text-slate-200">{pref.label}</Label>
-                              <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{pref.desc}</p>
-                            </div>
-                            <Switch defaultChecked className="data-[state=checked]:bg-amber-500" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    <Separator className="bg-slate-100 dark:bg-slate-800" />
-
-                    <div className="space-y-6">
-                      <h3 className="font-black text-xl text-slate-900 dark:text-white flex items-center gap-3 tracking-tight">
-                        <div className="p-2 rounded-xl bg-purple-50 text-purple-500 shadow-sm dark:text-slate-400 dark:bg-slate-800"><Mail className="w-5 h-5" /></div>
-                        {t.settingsPage.emailDirect}
-                      </h3>
-                      <div className="flex items-center justify-between p-6 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-purple-200 transition-all shadow-sm">
-                        <div className="space-y-1">
-                          <Label className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.settingsPage.weeklySummary}</Label>
-                          <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">{t.settingsPage.weeklySummaryDesc}</p>
-                        </div>
-                        <Switch className="data-[state=checked]:bg-purple-500" />
-                      </div>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-
               {activeTab === 'security' && (
                 <motion.div
                   key="security"
@@ -547,13 +463,9 @@ export default function Settings() {
                           </div>
                           <p className="text-sm text-slate-500 dark:text-slate-400 font-medium">Password login and JWT session protection are active.</p>
                         </div>
-                        <Button
-                          variant="outline"
-                          className="rounded-xl h-12 border-slate-200 dark:border-slate-700 font-bold px-6"
-                          onClick={() => toast.success('Security settings are active')}
-                        >
+                        <Badge data-testid="security-active" variant="outline" className="rounded-xl h-12 border-slate-200 dark:border-slate-700 font-bold px-6">
                           Active
-                        </Button>
+                        </Badge>
                       </div>
                       <div className="flex items-center justify-between p-8 rounded-[2rem] bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm group hover:border-slate-300 transition-all">
                         <div className="space-y-2">

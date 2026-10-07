@@ -12,7 +12,6 @@ import {
   ChevronDown,
   User,
   Globe,
-  Search,
   Sun,
   Moon,
 } from 'lucide-react';
@@ -33,6 +32,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asBoolean, asDate, asRecord, asString } from '@/lib/live-data';
 import type { Notification, UserRole } from '@/types';
@@ -75,6 +75,8 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
   const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<NotificationRow[]>([]);
+  const [notificationsLoadError, setNotificationsLoadError] = useState(false);
+  const [notificationsReload, setNotificationsReload] = useState(0);
 
   useEffect(() => {
     if (!user) return;
@@ -84,16 +86,18 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
       .list()
       .then((response) => {
         if (!mounted) return;
+        setNotificationsLoadError(false);
         setNotifications(response.notifications.map(mapNotification));
       })
       .catch((error) => {
         console.warn('Unable to load notifications from API', error);
+        if (mounted) setNotificationsLoadError(true);
       });
 
     return () => {
       mounted = false;
     };
-  }, [user]);
+  }, [user, notificationsReload]);
 
   useEffect(() => {
     const onRead = (event: Event) => {
@@ -117,13 +121,17 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
 
   const unreadCount = notifications.filter(n => !n.isRead).length;
 
+  const markReadFailed = language === 'th' ? 'ทำเครื่องหมายว่าอ่านแล้วไม่สำเร็จ' : 'Could not mark as read';
+
   const handleNotificationClick = (notification: NotificationRow) => {
     if (!notification.isRead) {
-      setNotifications(current => current.map(item => item.id === notification.id ? { ...item, isRead: true, readAt: new Date() } : item));
-      api.notifications.markRead(notification.id).catch((error) => {
-        console.warn('Unable to mark notification as read', error);
-      });
-      window.dispatchEvent(new CustomEvent('showpro:notification-read', { detail: { id: notification.id, readAt: new Date() } }));
+      api.notifications.markRead(notification.id)
+        .then(() => {
+          const readAt = new Date();
+          setNotifications(current => current.map(item => item.id === notification.id ? { ...item, isRead: true, readAt } : item));
+          window.dispatchEvent(new CustomEvent('showpro:notification-read', { detail: { id: notification.id, readAt } }));
+        })
+        .catch(() => toast.error(markReadFailed));
     }
     const path = safeInternalPath(notification.actionUrl);
     if (path) {
@@ -133,12 +141,13 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
   };
 
   const handleMarkAllNotifications = () => {
-    const readAt = new Date();
-    setNotifications(current => current.map(item => ({ ...item, isRead: true, readAt })));
-    api.notifications.markAllRead().catch((error) => {
-      console.warn('Unable to mark all notifications as read', error);
-    });
-    window.dispatchEvent(new CustomEvent('showpro:notification-read-all', { detail: { readAt } }));
+    api.notifications.markAllRead()
+      .then(() => {
+        const readAt = new Date();
+        setNotifications(current => current.map(item => ({ ...item, isRead: true, readAt })));
+        window.dispatchEvent(new CustomEvent('showpro:notification-read-all', { detail: { readAt } }));
+      })
+      .catch(() => toast.error(markReadFailed));
   };
 
   const handleLogout = () => {
@@ -175,21 +184,6 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
           </div>
         </div>
 
-        {/* Center: search */}
-        <div className="hidden lg:flex flex-1 max-w-sm mx-auto">
-          <div className="w-full flex items-center gap-2 px-3 h-9 bg-slate-100 dark:bg-slate-800 rounded-md border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-            <Search className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <input
-              type="text"
-              placeholder={language === 'th' ? 'ค้นหา...' : 'Search...'}
-              className="bg-transparent border-none outline-none w-full text-sm text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
-            />
-            <div className="flex items-center gap-0.5 shrink-0">
-              <kbd className="hidden sm:inline-flex items-center justify-center h-4 px-1 rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 text-[10px] text-slate-400 font-mono">⌘K</kbd>
-            </div>
-          </div>
-        </div>
-
         {/* Right: actions */}
         <div className="flex items-center gap-1.5 shrink-0">
 
@@ -215,13 +209,14 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
           <DropdownMenu open={showNotifications} onOpenChange={setShowNotifications}>
             <DropdownMenuTrigger asChild>
               <Button
+                data-testid="notification-bell"
                 variant="ghost"
                 size="icon"
                 className="relative w-8 h-8 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md"
               >
                 <Bell className="h-4 w-4" />
                 {unreadCount > 0 && (
-                  <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-white dark:border-slate-950" />
+                  <span data-testid="unread-indicator" className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500 border border-white dark:border-slate-950" />
                 )}
               </Button>
             </DropdownMenuTrigger>
@@ -243,6 +238,7 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                   <button
                     key={notification.id}
                     type="button"
+                    data-unread={!notification.isRead}
                     onClick={() => handleNotificationClick(notification)}
                     className="w-full flex items-start gap-3 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-colors text-left border-b border-slate-50 dark:border-slate-800 last:border-0"
                   >
@@ -260,7 +256,15 @@ export function Header({ onMenuToggle, isSidebarOpen }: HeaderProps) {
                     </span>
                   </button>
                 ))}
-                {notifications.length === 0 && (
+                {notificationsLoadError && (
+                  <div data-testid="header-notifications-load-error" className="px-4 py-6 text-center text-sm text-slate-500 dark:text-slate-400 space-y-2">
+                    <p>{language === 'th' ? 'โหลดการแจ้งเตือนไม่สำเร็จ' : 'Could not load notifications'}</p>
+                    <button type="button" onClick={() => setNotificationsReload((n) => n + 1)} className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium">
+                      {language === 'th' ? 'ลองใหม่' : 'Retry'}
+                    </button>
+                  </div>
+                )}
+                {!notificationsLoadError && notifications.length === 0 && (
                   <div className="px-4 py-8 text-center text-sm text-slate-400">
                     {language === 'th' ? 'ยังไม่มีแจ้งเตือน' : 'No notifications yet'}
                   </div>
