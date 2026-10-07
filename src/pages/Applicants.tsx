@@ -20,6 +20,7 @@ import type { Application } from '@/types';
 import { api } from '@/lib/api';
 import { bulkMessage, splitSettled } from '@/lib/bulk-result';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
+import { toCsv } from '@/lib/csv';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -281,15 +282,17 @@ export default function Applicants() {
   const bulkExport = () => {
     const rows = applicants.filter((a) => selectedIds.has(a.id));
     const header = ['Name', 'Job', 'GPA', 'Year', 'Status', 'AppliedAt'];
-    const lines = rows.map((a) => [
-      a.student?.nameThai || '',
-      a.jobTitle,
-      a.student?.gpaBand ?? '',
-      String(a.student?.year ?? ''),
-      a.status,
-      a.appliedAt.toISOString(),
-    ].map((v) => `"${String(v).replace(/"/g, '""')}"`).join(','));
-    const csv = [header.join(','), ...lines].join('\n');
+    const csv = toCsv([
+      header,
+      ...rows.map((a) => [
+        a.student?.nameThai || '',
+        a.jobTitle,
+        a.student?.gpaBand ?? '',
+        String(a.student?.year ?? ''),
+        a.status,
+        a.appliedAt.toISOString(),
+      ]),
+    ]);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');

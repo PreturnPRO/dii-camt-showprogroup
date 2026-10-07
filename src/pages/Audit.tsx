@@ -10,6 +10,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asDate, asRecord, asString, roleToClient } from '@/lib/live-data';
 import { toast } from 'sonner';
+import { toCsv } from '@/lib/csv';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -108,9 +109,7 @@ export default function Audit() {
             log.status,
             log.timestamp.toISOString(),
         ]);
-        const csv = [['id', 'userId', 'userName', 'role', 'action', 'resource', 'status', 'timestamp'], ...rows]
-            .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-            .join('\n');
+        const csv = toCsv([['id', 'userId', 'userName', 'role', 'action', 'resource', 'status', 'timestamp'], ...rows]);
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
         const link = document.createElement('a');
         link.href = url;

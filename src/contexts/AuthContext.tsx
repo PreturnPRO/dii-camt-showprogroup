@@ -15,23 +15,11 @@ interface AuthUser {
   raw: unknown;
 }
 
-interface RegisterPayload {
-  email: string;
-  password: string;
-  name: string;
-  nameThai: string;
-  role: UserRole;
-  avatar?: string;
-  phone?: string;
-  profile: Record<string, unknown>;
-}
-
 interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (email: string, password: string, role?: UserRole, remember?: boolean) => Promise<boolean>;
-  register: (payload: RegisterPayload) => Promise<boolean>;
   updateProfile: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
   switchRole: (role: UserRole) => Promise<void>;
@@ -108,19 +96,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [applySessionUser],
   );
 
-  const register = useCallback(
-    async (payload: RegisterPayload): Promise<boolean> => {
-      const response = await api.auth.register({
-        ...payload,
-        role: payload.role.toUpperCase(),
-      });
-      setStoredToken(response.token);
-      await applySessionUser(response.user);
-      return true;
-    },
-    [applySessionUser],
-  );
-
   const updateProfile = useCallback(
     async (payload: Record<string, unknown>): Promise<boolean> => {
       const response = await api.auth.updateProfile(payload);
@@ -159,13 +134,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAuthenticated: Boolean(user),
       isLoading,
       login,
-      register,
       updateProfile,
       logout,
       switchRole,
       refreshSession,
     }),
-    [isLoading, login, logout, refreshSession, register, switchRole, updateProfile, user],
+    [isLoading, login, logout, refreshSession, switchRole, updateProfile, user],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -124,15 +124,9 @@ export default function LandingPage() {
               <span>{language === 'th' ? 'EN' : 'TH'}</span>
             </Button>
 
-            <Link to="/login" className="hidden sm:block">
-              <Button variant="ghost" className="h-9 px-4 rounded-lg font-medium text-xs text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800">
-                {t.landing.login}
-              </Button>
-            </Link>
-
-            <Link to="/register">
+            <Link to="/login">
               <Button className="h-9 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-medium shadow-sm transition-colors">
-                {t.landing.register}
+                {t.landing.login}
               </Button>
             </Link>
 
@@ -249,9 +243,9 @@ export default function LandingPage() {
 
           {/* Call to Actions (Standard rectangular buttons, no pill shapes) */}
           <FadeIn delay={0.2} className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-4">
-            <Link to="/register" className="w-full sm:w-auto">
+            <Link to="/login" className="w-full sm:w-auto">
               <Button className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm transition-colors">
-                {t.landing.getStartedFree}
+                {t.landing.login}
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -435,9 +429,9 @@ export default function LandingPage() {
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
-                <Link to="/register">
+                <Link to="/login">
                   <Button className="w-full sm:w-auto h-11 px-6 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold shadow-sm">
-                    {t.landing.registerNow}
+                    {t.landing.login}
                     <ArrowRight className="w-4 h-4 ml-2" />
                   </Button>
                 </Link>
@@ -550,11 +544,6 @@ export default function LandingPage() {
                 <li>
                   <Link to="/login" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
                     {t.landing.login}
-                  </Link>
-                </li>
-                <li>
-                  <Link to="/register" className="hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                    {t.landing.register}
                   </Link>
                 </li>
                 <li>

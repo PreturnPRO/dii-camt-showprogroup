@@ -7,7 +7,7 @@ export function GlobalPreloader() {
   const location = useLocation();
 
   useEffect(() => {
-    const isPublicRoute = ['/', '/login', '/register'].includes(location.pathname);
+    const isPublicRoute = ['/', '/login'].includes(location.pathname);
     const duration = isPublicRoute ? 900 : 0;
 
     if (duration > 0) {

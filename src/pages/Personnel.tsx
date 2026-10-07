@@ -12,6 +12,7 @@ import { api } from '@/lib/api';
 import { asBoolean, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
 import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
+import { toCsv } from '@/lib/csv';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -230,9 +231,7 @@ export default function Personnel() {
             person.phone,
             person.isActive ? 'active' : 'inactive',
         ]);
-        const csv = [['id', 'name', 'email', 'role', 'department', 'position', 'phone', 'status'], ...rows]
-            .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
-            .join('\n');
+        const csv = toCsv([['id', 'name', 'email', 'role', 'department', 'position', 'phone', 'status'], ...rows]);
         const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
         const link = document.createElement('a');
         link.href = url;

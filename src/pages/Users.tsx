@@ -24,7 +24,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
 import { credentialsFromImport, generateTemporaryPassword } from '@/lib/temporary-credentials';
 import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
-import { buildSafeIdentifier, companyImportFields, type MappedImportRow } from '@/lib/import-mapping';
+import { buildSafeIdentifier, companyImportFields, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { UserRow, UserType } from '@/components/users/types';
 import { mapBackendUser } from '@/components/users/user-mapper';
 import { UserStatsCards } from '@/components/users/UserStatsCards';
@@ -67,6 +67,7 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [users, setUsers] = useState<UserRow[]>([]);
   const [isCompanyImportOpen, setIsCompanyImportOpen] = useState(false);
+  const [isStudentImportOpen, setIsStudentImportOpen] = useState(false);
   const [activeDialog, setActiveDialog] = useState<ActiveDialogState>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -412,6 +413,42 @@ export default function UsersPage() {
     return { successCount: response.createdCount, failureCount: response.failedCount };
   };
 
+  // self-registration is closed, so this import (or "add user") is how students get accounts
+  const handleStudentImport = async (rows: MappedImportRow[]) => {
+    const response = await api.users.importStudents(
+      rows.map((row) => {
+        const values = row.values;
+        const name = values.name;
+        return {
+          rowNumber: row.rowNumber,
+          studentId: values.studentId,
+          major: values.major || 'Digital Industry Integration',
+          program: values.program || 'bachelor',
+          year: Number(values.year || 1),
+          semester: Number(values.semester || 1),
+          academicYear: values.academicYear,
+          academicStatus: values.academicStatus || 'normal',
+          name,
+          nameThai: values.nameThai || name,
+          email:
+            values.email ||
+            `${buildSafeIdentifier(values.studentId, `student${row.rowNumber}`)}@student.showpro.local`,
+          phone: values.phone || undefined,
+          password: values.password || undefined,
+        };
+      }),
+    );
+
+    await loadUsers();
+    setCredentials(credentialsFromImport(response.results));
+    toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
+    if (response.failedCount > 0) {
+      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
+    }
+
+    return { successCount: response.createdCount, failureCount: response.failedCount };
+  };
+
   const getRoleBadge = (role: string) => {
     switch (role) {
       case 'student':
@@ -489,6 +526,10 @@ export default function UsersPage() {
         </div>
 
         <motion.div className="flex gap-3" variants={itemVariants}>
+          <Button variant="outline" onClick={() => setIsStudentImportOpen(true)} className="rounded-xl">
+            <Upload className="w-4 h-4 mr-2" />
+            Import นักศึกษา
+          </Button>
           <Button variant="outline" onClick={() => setIsCompanyImportOpen(true)} className="rounded-xl">
             <Upload className="w-4 h-4 mr-2" />
             Import บริษัท
@@ -533,6 +574,15 @@ export default function UsersPage() {
         description="อัปโหลด Excel/CSV แล้วกำหนดว่าคอลัมน์ใดตรงกับข้อมูลบริษัทก่อนสร้างบัญชี"
         fields={companyImportFields}
         onImport={handleCompanyImport}
+      />
+
+      <ImportMappingDialog
+        open={isStudentImportOpen}
+        onOpenChange={setIsStudentImportOpen}
+        title="Import รายชื่อนักศึกษา"
+        description="อัปโหลด Excel/CSV ของรุ่นนั้น ๆ แล้วกำหนดคอลัมน์ก่อนสร้างบัญชีนักศึกษา"
+        fields={studentImportFields}
+        onImport={handleStudentImport}
       />
 
       {/* Stats Bento Grid */}

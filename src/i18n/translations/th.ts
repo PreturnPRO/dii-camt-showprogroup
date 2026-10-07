@@ -260,37 +260,6 @@ export const th = {
   },
 
   // Register Page
-  register: {
-    title: 'สมัครสมาชิก',
-    subtitle: 'สร้างบัญชีใหม่',
-    fullName: 'ชื่อ-นามสกุล',
-    fullNameOrCompany: 'ชื่อ-นามสกุล / ชื่อบริษัท',
-    email: 'อีเมล',
-    password: 'รหัสผ่าน',
-    confirmPassword: 'ยืนยันรหัสผ่าน',
-    role: 'บทบาท',
-    registerButton: 'สมัครสมาชิก',
-    hasAccount: 'มีบัญชีอยู่แล้ว?',
-    loginNow: 'เข้าสู่ระบบ',
-    passwordMismatch: 'รหัสผ่านไม่ตรงกัน',
-    registerSuccess: 'สมัครสมาชิกสำเร็จ',
-    pleaseLogin: 'กรุณาเข้าสู่ระบบ',
-    startJourney: 'เริ่มต้นการเดินทาง',
-    successWithDII: 'สู่ความสำเร็จกับ DII',
-    journeyDesc: 'ไม่ว่าคุณจะเป็นนักศึกษาที่กำลังมองหาโอกาส หรือบริษัทที่ต้องการคนรุ่นใหม่ไฟแรง ระบบของเราพร้อมสนับสนุนทุกก้าวของคุณให้มั่นคงและยั่งยืน',
-    feature1: 'เข้าถึงแหล่งข้อมูลการเรียนรู้ครบวงจร',
-    feature2: 'เชื่อมต่อกับบริษัทชั้นนำมากมาย',
-    feature3: 'ระบบติดตามผลการเรียนและฝึกงาน',
-    chooseAccountType: 'เลือกประเภทบัญชี',
-    whatRoleQuestion: 'คุณต้องการสมัครสมาชิกในฐานะอะไร?',
-    studentDesc: 'สำหรับนักศึกษาที่ต้องการใช้งานระบบ',
-    companyOrg: 'บริษัท / องค์กร',
-    companyDesc: 'สำหรับบริษัทที่ต้องการรับนักศึกษา',
-    lecturerDesc: 'สำหรับอาจารย์ผู้สอน',
-    staffDesc: 'สำหรับเจ้าหน้าที่คณะ',
-    personalInfo: 'ข้อมูลส่วนตัว',
-    registerAs: 'สมัครสมาชิกในฐานะ',
-  },
 
   // Dashboard - Company
   companyDashboard: {

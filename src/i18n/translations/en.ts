@@ -260,37 +260,6 @@ export const en = {
   },
 
   // Register Page
-  register: {
-    title: 'Sign Up',
-    subtitle: 'Create new account',
-    fullName: 'Full Name',
-    fullNameOrCompany: 'Full Name / Company Name',
-    email: 'Email',
-    password: 'Password',
-    confirmPassword: 'Confirm Password',
-    role: 'Role',
-    registerButton: 'Sign Up',
-    hasAccount: 'Already have an account?',
-    loginNow: 'Sign In',
-    passwordMismatch: 'Passwords do not match',
-    registerSuccess: 'Registration Successful',
-    pleaseLogin: 'Please sign in',
-    startJourney: 'Start Your Journey',
-    successWithDII: 'to Success with DII',
-    journeyDesc: 'Whether you are a student looking for opportunities or a company seeking talented young graduates, our system is ready to support every step of your journey.',
-    feature1: 'Access comprehensive learning resources',
-    feature2: 'Connect with leading companies',
-    feature3: 'Track academic results and internships',
-    chooseAccountType: 'Choose Account Type',
-    whatRoleQuestion: 'What role would you like to register as?',
-    studentDesc: 'For students who want to use the system',
-    companyOrg: 'Company / Organization',
-    companyDesc: 'For companies looking to recruit students',
-    lecturerDesc: 'For lecturers and instructors',
-    staffDesc: 'For faculty staff members',
-    personalInfo: 'Personal Information',
-    registerAs: 'Register as',
-  },
 
   // Dashboard - Company
   companyDashboard: {

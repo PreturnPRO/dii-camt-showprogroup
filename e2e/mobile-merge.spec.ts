@@ -59,7 +59,8 @@ for (const email of [
       await page.goto(href);
       await page.waitForLoadState("networkidle");
       const path = new URL(page.url()).pathname;
-      const notFound = await page.getByText("404").count();
+      // NotFound sets the tab title; matching "404" in the page text also hit ids/numbers in real data
+      const notFound = (await page.title()).startsWith("404") ? 1 : 0;
       if (path !== href || notFound > 0) broken.push(`${href} → ${path}${notFound ? " (404)" : ""}`);
     }
     expect(broken).toEqual([]);

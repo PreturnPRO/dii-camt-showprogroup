@@ -173,9 +173,6 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
-            {t.login.noAccount} <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors dark:text-slate-300">{t.login.registerNow}</Link>
-          </p>
         </motion.div>
       </div>
     </div>

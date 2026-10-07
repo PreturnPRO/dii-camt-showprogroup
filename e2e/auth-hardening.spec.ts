@@ -2,14 +2,7 @@ import { expect, test } from "@playwright/test";
 
 const API = "http://localhost:4000/api";
 
-test("register page offers only the student option", async ({ page }) => {
-  await page.goto("/register");
-  // wait for the real form (the app shows a full-screen preloader first), so the negative checks are not vacuous
-  await expect(page.locator('input[type=email]')).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByRole("button", { name: /สมัคร|register|sign up/i }).last()).toBeVisible();
-  await expect(page.getByText(/staff|เจ้าหน้าที่/i)).toHaveCount(0);
-  await expect(page.getByText(/lecturer|อาจารย์/i)).toHaveCount(0);
-});
+// self-registration is gone entirely (M3) — see no-self-register.spec.ts
 
 test("login page has no company phone mode", async ({ page }) => {
   await page.goto("/login");

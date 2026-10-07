@@ -219,14 +219,6 @@ export const api = {
         method: "POST",
         body: { email, password },
       }),
-    register: (payload: Record<string, unknown>) =>
-      request<ApiEnvelope<{ token: string; expiresIn: string; user: BackendUser }>>(
-        "/auth/register",
-        {
-          method: "POST",
-          body: payload,
-        },
-      ),
     forgotPassword: (email: string) =>
       request<ApiEnvelope<{ resetToken?: string; resetUrl?: string }>>("/auth/forgot-password", {
         method: "POST",
