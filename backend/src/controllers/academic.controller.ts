@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { bulkUpdateGrades } from "../services/grade.service";
@@ -15,6 +15,7 @@ import { getEnrollments, createEnrollment, dropCourseByStudent, getRegistrationS
 import { getStudentTranscript } from "../services/academic-core.service";
 import crypto from "crypto";
 import { emitToUser } from "../lib/realtime";
+import { attendanceRate, ATTENDANCE_WARNING_PERCENT, thaiDay } from "../services/attendance";
 import { assertCanViewStudentRecord, assertCourseManager, isStaffOrAdmin, lecturerProfileIdOf, scopeCourseForViewer, viewerContext } from "../services/access-policy";
 
 
@@ -310,18 +311,26 @@ export const getAttendanceReportHandler = asyncHandler(async (req, res) => {
 export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
   const enrollment = await prisma.enrollment.findUnique({
     where: { id: String(req.body.enrollmentId) },
-    select: { courseId: true },
+    select: { courseId: true, status: true },
   });
   if (!enrollment) {
     throw new AppError(404, "Enrollment not found");
   }
   await assertCourseManager(requireUser(req), enrollment.courseId);
+  if (enrollment.status === "dropped") {
+    throw new AppError(409, "This student has dropped the course");
+  }
+  // owner decision 7/10/69: attendance is recorded up to today (Thai time), never ahead
+  const day = thaiDay(req.body.date);
+  if (day.getTime() > thaiDay(new Date()).getTime()) {
+    throw new AppError(400, "Attendance cannot be recorded for a future date");
+  }
 
   const record = await prisma.attendanceRecord.upsert({
     where: {
       enrollmentId_date: {
         enrollmentId: req.body.enrollmentId,
-        date: req.body.date,
+        date: day,
       },
     },
     update: {
@@ -330,7 +339,7 @@ export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
     },
     create: {
       enrollmentId: req.body.enrollmentId,
-      date: req.body.date,
+      date: day,
       status: req.body.status,
     },
     include: {
@@ -448,54 +457,36 @@ export const qrCheckInHandler = asyncHandler(async (req, res) => {
     },
   });
 
-  if (!enrollment) {
+  if (!enrollment || enrollment.status === "dropped") {
     throw new AppError(403, "You are not enrolled in this course");
   }
 
-  // Get start of day to match the existing unique constraint
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
+  const today = thaiDay(new Date());
   const existingRecord = await prisma.attendanceRecord.findUnique({
-    where: {
-      enrollmentId_date: {
-        enrollmentId: enrollment.id,
-        date: today,
-      },
-    },
+    where: { enrollmentId_date: { enrollmentId: enrollment.id, date: today } },
   });
-
-  if (existingRecord && existingRecord.status === "present") {
-    throw new AppError(400, "You have already checked in for this course today");
+  // owner decision 7/10/69: a status the lecturer already set is never overwritten by a scan
+  if (existingRecord) {
+    throw new AppError(
+      409,
+      existingRecord.status === "present" || existingRecord.status === "late"
+        ? "You have already checked in for this course today"
+        : "Your lecturer has already recorded your attendance today",
+    );
   }
 
-  const record = await prisma.attendanceRecord.upsert({
-    where: {
-      enrollmentId_date: {
-        enrollmentId: enrollment.id,
-        date: today,
-      },
-    },
-    update: {
-      status: "present",
-      checkedInAt: new Date(),
-      sessionId: session.id,
-    },
-    create: {
-      enrollmentId: enrollment.id,
-      date: today,
-      status: "present",
-      sessionId: session.id,
-    },
-    include: {
-      enrollment: {
-        include: {
-          student: { include: { user: true } },
-          course: true,
-        },
-      },
-    },
-  });
+  let record;
+  try {
+    record = await prisma.attendanceRecord.create({
+      data: { enrollmentId: enrollment.id, date: today, status: "present", sessionId: session.id },
+      include: { enrollment: { include: { student: { include: { user: true } }, course: true } } },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new AppError(409, "You have already checked in for this course today");
+    }
+    throw error;
+  }
 
   // Emit real-time event to the lecturer
   emitToUser(session.course.lecturer.userId, "attendance:checked-in", record);
@@ -518,114 +509,66 @@ async function checkAttendanceWarning(enrollmentId: string) {
     },
   });
 
-  if (!enrollment) return;
+  if (!enrollment || enrollment.status === "dropped") return;
 
-  // Calculate unique days for the course up to now
-  const distinctDaysResult = await prisma.attendanceRecord.groupBy({
-    by: ['date'],
+  const records = await prisma.attendanceRecord.findMany({ where: { enrollmentId: enrollment.id }, select: { status: true } });
+  const { percentage } = attendanceRate(records.map((r) => r.status));
+  if (percentage === null || percentage >= ATTENDANCE_WARNING_PERCENT) return;
+
+  const title = `Low Attendance Warning: ${enrollment.course.code}`;
+  // one warning per course per week
+  const recentWarning = await prisma.notification.findFirst({
     where: {
-      enrollment: {
-        courseId: enrollment.courseId,
-      },
-      date: { lte: new Date() },
+      userId: enrollment.student.userId,
+      type: "ATTENDANCE_WARNING",
+      title,
+      createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
     },
   });
-  
-  const totalSessions = distinctDaysResult.length;
-  if (totalSessions === 0) return;
 
-  const records = await prisma.attendanceRecord.findMany({
-    where: { enrollmentId: enrollment.id },
-  });
-
-  const presentCount = records.filter(r => r.status === 'present' || r.status === 'late').length;
-  const percentage = (presentCount / totalSessions) * 100;
-
-  if (percentage < 80) {
-    // Check if we recently sent a warning to avoid spamming
-    const recentWarning = await prisma.notification.findFirst({
-      where: {
+  if (!recentWarning) {
+    await prisma.notification.create({
+      data: {
         userId: enrollment.student.userId,
+        title,
+        titleThai: `เตือนเวลาเรียนต่ำกว่าเกณฑ์: ${enrollment.course.code}`,
+        message: `Your attendance is currently at ${percentage.toFixed(1)}%, which is below the ${ATTENDANCE_WARNING_PERCENT}% requirement.`,
+        messageThai: `เวลาเรียนของคุณในวิชานี้อยู่ที่ ${percentage.toFixed(1)}% ซึ่งต่ำกว่าเกณฑ์ ${ATTENDANCE_WARNING_PERCENT}%`,
         type: 'ATTENDANCE_WARNING',
-        createdAt: {
-          gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // Don't warn more than once a week
-        }
       }
     });
-
-    if (!recentWarning) {
-      await prisma.notification.create({
-        data: {
-          userId: enrollment.student.userId,
-          title: `Low Attendance Warning: ${enrollment.course.code}`,
-          titleThai: `เตือนเวลาเรียนต่ำกว่าเกณฑ์: ${enrollment.course.code}`,
-          message: `Your attendance is currently at ${percentage.toFixed(1)}%, which is below the 80% requirement.`,
-          messageThai: `เวลาเรียนของคุณในวิชานี้อยู่ที่ ${percentage.toFixed(1)}% ซึ่งต่ำกว่าเกณฑ์ 80%`,
-          type: 'ATTENDANCE_WARNING',
-        }
-      });
-      emitToUser(enrollment.student.userId, 'notification:created', { type: 'ATTENDANCE_WARNING' });
-    }
+    emitToUser(enrollment.student.userId, 'notification:created', { type: 'ATTENDANCE_WARNING' });
   }
 }
 
 export const getAttendanceSummaryHandler = asyncHandler(async (req, res) => {
-  const { courseId } = req.params;
-  const courseIdStr = String(courseId);
+  const courseIdStr = String(req.params.courseId);
   await assertCourseManager(requireUser(req), courseIdStr);
 
   const enrollments = await prisma.enrollment.findMany({
-    where: { courseId: String(courseId) },
-    include: {
-      student: { include: { user: true } },
-    },
+    where: { courseId: courseIdStr, status: { not: "dropped" } },
+    include: { student: { include: { user: true } } },
   });
-
   const records = await prisma.attendanceRecord.findMany({
-    where: {
-      enrollment: { courseId: String(courseId) },
-    },
+    where: { enrollmentId: { in: enrollments.map((e) => e.id) } },
+    select: { enrollmentId: true, date: true, status: true },
   });
+  // a session = a Thai day on which at least one current student was marked
+  const sessionDays = new Set(records.map((r) => r.date.toISOString()));
+  const totalSessions = sessionDays.size;
 
-  const distinctDaysResult = await prisma.attendanceRecord.groupBy({
-    by: ['date'],
-    where: {
-      enrollment: { courseId: String(courseId) },
-    },
-  });
-  const totalSessions = distinctDaysResult.length;
-
-  const summary = enrollments.map(enrollment => {
-    const studentRecords = records.filter(r => r.enrollmentId === enrollment.id);
-    const presentCount = studentRecords.filter(r => r.status === 'present').length;
-    const lateCount = studentRecords.filter(r => r.status === 'late').length;
-    const leaveCount = studentRecords.filter(r => r.status === 'leave').length;
-    const absentCount = studentRecords.filter(r => r.status === 'absent').length;
-    
-    // Default logic: late counts as present, leave doesn't penalize. Adjust as needed.
-    // For now, percentage = (present + late) / totalSessions
-    let percentage = 100;
-    if (totalSessions > 0) {
-      percentage = ((presentCount + lateCount) / totalSessions) * 100;
-    }
-
+  const summary = enrollments.map((enrollment) => {
+    const own = records.filter((r) => r.enrollmentId === enrollment.id);
     return {
       studentId: enrollment.studentId,
       studentCode: enrollment.student.studentId,
       name: enrollment.student.user.name,
-      present: presentCount,
-      late: lateCount,
-      leave: leaveCount,
-      absent: absentCount,
-      percentage: Math.round(percentage * 10) / 10,
+      ...attendanceRate(own.map((r) => r.status)),
+      unmarked: totalSessions - own.length,
     };
   });
 
-  res.json({
-    success: true,
-    totalSessions,
-    summary,
-  });
+  res.json({ success: true, totalSessions, summary });
 });
 
 export const getStudentAttendanceHistoryHandler = asyncHandler(async (req, res) => {

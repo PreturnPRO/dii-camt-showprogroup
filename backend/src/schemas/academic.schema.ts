@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { ATTENDANCE_STATUSES } from "../services/attendance";
 import { ALL_GRADES, COUNTED_GRADES } from "../services/gpa";
 import { httpUrl } from "./url";
 
@@ -120,7 +121,7 @@ export const attendanceQuerySchema = z.object({
 export const attendanceCheckInSchema = z.object({
   enrollmentId: z.string().min(1),
   date: z.coerce.date(),
-  status: z.string().default("present"),
+  status: z.enum(ATTENDANCE_STATUSES),
 });
 
 export const startAttendanceSessionSchema = z.object({

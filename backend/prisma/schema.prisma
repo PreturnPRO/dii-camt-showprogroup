@@ -604,6 +604,7 @@ model Appointment {
   status       String           @default("pending")
   meetingNotes String?
   followUp     String?
+  reminderSentAt DateTime?
   createdAt    DateTime         @default(now())
 }
 
