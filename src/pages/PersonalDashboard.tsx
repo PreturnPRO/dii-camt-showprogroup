@@ -16,7 +16,6 @@ import { useWeekMoves } from '@/hooks/use-week-moves';
 import { DegreeProgressCard } from '@/components/dashboard/DegreeProgressCard';
 import { GPAHistoryCard } from '@/components/dashboard/GPAHistoryCard';
 import { TechnicalSkillsCard } from '@/components/dashboard/TechnicalSkillsCard';
-import { SoftSkillsCard } from '@/components/dashboard/SoftSkillsCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
 import { studentEntries, type Term } from '@/lib/timetable';
@@ -39,20 +38,6 @@ type SemesterGPAHistory = {
     gpa: number;
     credits: number;
 }[];
-
-type SoftSkillDashboardScores = {
-    leadership: number;
-    discipline: number;
-    responsibility: number;
-    communication: number;
-};
-
-type PeerFeedbackRow = {
-    projectName: string;
-    teamSize: number;
-    averageScore: number;
-    date: string;
-};
 
 // Transform grades for CourseGradesCard
 const transformGradesForCard = (
@@ -356,13 +341,6 @@ export default function PersonalDashboard() {
     const [timetableTerm, setTimetableTerm] = React.useState<Term | null>(null);
     const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
     const [isStudentDashboardLoading, setIsStudentDashboardLoading] = React.useState(true);
-    const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillDashboardScores>({
-        leadership: 0,
-        discipline: 0,
-        responsibility: 0,
-        communication: 0,
-    });
-    const [peerFeedbacks, setPeerFeedbacks] = React.useState<PeerFeedbackRow[]>([]);
     const [roleMetrics, setRoleMetrics] = React.useState<RoleMetric[]>([]);
     const [isRoleMetricsLoading, setIsRoleMetricsLoading] = React.useState(false);
 
@@ -399,31 +377,8 @@ export default function PersonalDashboard() {
                     // gradeHistory rows never had a gpa field; the server now sends termGpa
                     setGpaHistory(mapTermGpaHistory(stats));
                     setCurrentTermGpa(typeof stats.currentTermGpa === 'number' ? stats.currentTermGpa : null);
-                    const softSummary = asRecord(asRecord(asRecord(stats.skillSummary).soft));
-                    setSoftSkillScores({
-                        leadership: asNumber(softSummary.openness, 0),
-                        discipline: asNumber(softSummary.professorScore, 0),
-                        responsibility: asNumber(softSummary.peerScore, 0),
-                        communication: asNumber(softSummary.communication, 0),
-                    });
-                    setPeerFeedbacks(asArray(softSummary.feedbackHistory).map((item) => {
-                        const row = asRecord(item);
-                        const averageScore = (
-                            asNumber(row.communicationScore, 0) +
-                            asNumber(row.opennessScore, 0)
-                        ) / 2;
-
-                        return {
-                            projectName: asString(row.projectName, 'Feedback'),
-                            teamSize: Math.max(asNumber(row.comments, 0), 1),
-                            averageScore,
-                            date: row.date ? new Date(String(row.date)).toLocaleDateString('th-TH', { day: 'numeric', month: 'short', year: '2-digit' }) : '-',
-                        };
-                    }).filter((item) => item.averageScore > 0));
                 } else {
                     setGpaHistory([]);
-                    setSoftSkillScores({ leadership: 0, discipline: 0, responsibility: 0, communication: 0 });
-                    setPeerFeedbacks([]);
                 }
                 setStudent(nextStudent);
 
@@ -453,8 +408,6 @@ export default function PersonalDashboard() {
                 setCourses([]);
                 setGrades([]);
                 setGpaHistory([]);
-                setSoftSkillScores({ leadership: 0, discipline: 0, responsibility: 0, communication: 0 });
-                setPeerFeedbacks([]);
             } finally {
                 if (mounted) setIsStudentDashboardLoading(false);
             }
@@ -765,16 +718,6 @@ export default function PersonalDashboard() {
                         />
                     </motion.div>
 
-                    {/* Soft Skills */}
-                    <motion.div variants={itemVariants}>
-                        <SoftSkillsCard
-                            leadership={softSkillScores.leadership}
-                            discipline={softSkillScores.discipline}
-                            responsibility={softSkillScores.responsibility}
-                            communication={softSkillScores.communication}
-                            peerFeedbacks={peerFeedbacks}
-                        />
-                    </motion.div>
                 </div>
             </div>
         </motion.div>

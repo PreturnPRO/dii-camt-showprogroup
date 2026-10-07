@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import {
   Briefcase, Award, Code, Download, Share2, Edit, Plus,
   Github, Linkedin, Globe, Mail, Phone, MapPin, Calendar,
-  Trophy, GraduationCap, Target, Zap, ArrowUpRight, Layers, Upload, Trash
+  Trophy, GraduationCap, Zap, ArrowUpRight, Layers, Upload, Trash
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -156,16 +156,15 @@ export default function Portfolio() {
     }))
     : [];
 
-  const skillLevelPercent: Record<string, number> = {
-    beginner: 35,
-    intermediate: 60,
-    advanced: 82,
-    expert: 96,
-  };
-  
+  // the student's own level, shown as a level step (audit M1: the old 35/60/82/96 % were invented)
+  const SKILL_LEVELS = ['beginner', 'intermediate', 'advanced', 'expert'] as const;
+  const SKILL_LEVEL_LABEL: Record<string, string> = isTH
+    ? { beginner: 'เริ่มต้น', intermediate: 'ปานกลาง', advanced: 'สูง', expert: 'เชี่ยวชาญ' }
+    : { beginner: 'Beginner', intermediate: 'Intermediate', advanced: 'Advanced', expert: 'Expert' };
   const skills = student.skills.map((skill) => ({
     name: skill.name,
-    level: skillLevelPercent[skill.level] ?? 60,
+    step: SKILL_LEVELS.indexOf(skill.level as (typeof SKILL_LEVELS)[number]) + 1,
+    label: SKILL_LEVEL_LABEL[skill.level] ?? skill.level,
     icon: skill.category === 'soft_skill' ? <Layers className="w-4 h-4" /> : <Code className="w-4 h-4" />,
   }));
 
@@ -582,7 +581,7 @@ export default function Portfolio() {
       </div>
 
       {/* Dashboard-style Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard
           icon={Code}
           label={t.portfolioPage.totalProjects}
@@ -600,12 +599,6 @@ export default function Portfolio() {
           label={t.portfolioPage.skills}
           value={skills.length}
           gradient="bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600"
-        />
-        <StatCard
-          icon={Target}
-          label={t.portfolioPage.completeness}
-          value="95%"
-          gradient="bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-600"
         />
       </div>
 
@@ -852,7 +845,7 @@ export default function Portfolio() {
                       {skill.icon} {skill.name}
                     </span>
                     <div className="flex items-center gap-2">
-                      <span className="text-slate-500 dark:text-slate-400">{skill.level}%</span>
+                      <span data-testid="skill-level" className="text-slate-500 dark:text-slate-400">{skill.label}</span>
                       <button
                         type="button"
                         onClick={() => handleDeleteSkill(idx)}
@@ -863,13 +856,10 @@ export default function Portfolio() {
                       </button>
                     </div>
                   </div>
-                  <div className="h-2 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <motion.div
-                      initial={{ width: 0 }}
-                      animate={{ width: `${skill.level}%` }}
-                      transition={{ delay: 0.5 + (idx * 0.1), duration: 1 }}
-                      className="h-full bg-slate-900 dark:bg-slate-400 rounded-full"
-                    />
+                  <div className="grid grid-cols-4 gap-1" aria-hidden>
+                    {SKILL_LEVELS.map((level, step) => (
+                      <div key={level} className={`h-2 rounded-full ${step < skill.step ? 'bg-slate-900 dark:bg-slate-400' : 'bg-slate-100 dark:bg-slate-800'}`} />
+                    ))}
                   </div>
                 </div>
               ))}

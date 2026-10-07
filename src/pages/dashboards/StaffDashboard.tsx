@@ -36,6 +36,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { api } from '@/lib/api';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
+import { gpaAverage } from '@/lib/gpa-average';
 import { toast } from 'sonner';
 
 const containerVariants = {
@@ -89,7 +90,6 @@ type WorkloadRow = {
   advisingHours: number;
   serviceHours: number;
   totalHours: number;
-  percentage: number;
 };
 
 type RequestRow = {
@@ -195,8 +195,6 @@ const getNestedUserName = (value: unknown, fallback = '-') => {
 
 const clampPercent = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-const workloadPercent = (hours: number) => clampPercent((hours / 40) * 100);
-
 const statusBadge = (status: string) => {
   const normalized = status.toLowerCase();
   if (['approved', 'active', 'confirmed', 'completed', 'success', 'open'].includes(normalized)) {
@@ -269,7 +267,6 @@ const mapWorkload = (item: unknown, index: number): WorkloadRow => {
     advisingHours,
     serviceHours,
     totalHours,
-    percentage: workloadPercent(totalHours),
   };
 };
 
@@ -615,13 +612,12 @@ export default function StaffDashboard() {
   const remainingBudget = totalIncome - totalExpense;
   const totalEnrollments = courses.reduce((sum, course) => sum + course.enrolled, 0);
   const averageClassSize = courses.length ? Math.round(totalEnrollments / courses.length) : 0;
-  const averageGpa = students.length
-    ? (students.reduce((sum, student) => sum + student.gpa, 0) / students.length).toFixed(2)
-    : '0.00';
-  const overloadedWorkloads = workloads.filter((workload) => workload.percentage >= 90 || workload.totalHours > 36);
-  const averageWorkload = workloads.length
-    ? Math.round(workloads.reduce((sum, workload) => sum + workload.percentage, 0) / workloads.length)
-    : 0;
+  // GPAX of students who have grades; the faculty has no overload threshold yet, so none is shown (audit M1)
+  const gpa = gpaAverage(students.map((student) => ({ gpax: student.gpa })));
+  const averageGpaText = gpa.average === null ? '-' : `${gpa.average.toFixed(2)} (จาก ${gpa.count} คนที่มีเกรด)`;
+  const averageWorkloadHours = workloads.length
+    ? Math.round(workloads.reduce((sum, workload) => sum + workload.totalHours, 0) / workloads.length)
+    : null;
   const unreadMessages = messages.filter((message) => !message.read);
   const unreadNotifications = notifications.filter((notification) => !notification.isRead);
   const urgentNotifications = notifications.filter((notification) => ['high', 'urgent'].includes(notification.priority));
@@ -634,7 +630,7 @@ export default function StaffDashboard() {
   const activeUsers = systemReport?.activeUsers || totalUsers;
 
   const topRiskStudents = atRiskStudents.slice(0, 5);
-  const topWorkloads = [...workloads].sort((a, b) => b.percentage - a.percentage).slice(0, 5);
+  const topWorkloads = [...workloads].sort((a, b) => b.totalHours - a.totalHours).slice(0, 5);
   const recentRequests = pendingRequests.slice(0, 5);
   const recentAudits = auditLogs.slice(0, 5);
 
@@ -663,7 +659,7 @@ export default function StaffDashboard() {
     {
       icon: BarChart3,
       label: 'ติดตาม workload',
-      detail: `${overloadedWorkloads.length} คนเกินเกณฑ์`,
+      detail: `${workloads.length} รายการ`,
       path: '/workload-tracking',
       accent: 'bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300',
     },
@@ -798,7 +794,7 @@ export default function StaffDashboard() {
           icon={Users}
           label="นักศึกษาทั้งหมด"
           value={students.length}
-          detail={`เสี่ยง ${atRiskStudents.length} คน · GPA เฉลี่ย ${averageGpa}`}
+          detail={`เสี่ยง ${atRiskStudents.length} คน · GPAX เฉลี่ย ${averageGpaText}`}
           gradient="bg-gradient-to-br from-purple-500 to-violet-600"
           onClick={() => navigate('/students')}
         />
@@ -813,8 +809,8 @@ export default function StaffDashboard() {
         <MetricCard
           icon={BarChart3}
           label="Workload อาจารย์"
-          value={`${averageWorkload}%`}
-          detail={`เกินเกณฑ์ ${overloadedWorkloads.length} จาก ${workloads.length} รายการ`}
+          value={averageWorkloadHours === null ? '-' : `${averageWorkloadHours} ชม.`}
+          detail={`ชั่วโมงรวมเฉลี่ยต่อรายการ · ${workloads.length} รายการ`}
           gradient="bg-gradient-to-br from-rose-500 to-pink-600"
           onClick={() => navigate('/workload-tracking')}
         />
@@ -931,10 +927,9 @@ export default function StaffDashboard() {
             <CardContent className="space-y-4">
               <div>
                 <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="text-slate-500 dark:text-slate-400">ค่าเฉลี่ยภาพรวม</span>
-                  <span className="font-semibold text-slate-900 dark:text-slate-100">{averageWorkload}%</span>
+                  <span className="text-slate-500 dark:text-slate-400">ชั่วโมงรวมเฉลี่ยต่อรายการ</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{averageWorkloadHours === null ? '-' : `${averageWorkloadHours} ชม.`}</span>
                 </div>
-                <Progress value={averageWorkload} className="h-2" />
               </div>
               <div className="space-y-3">
                 {topWorkloads.length === 0 && (
@@ -951,11 +946,10 @@ export default function StaffDashboard() {
                           {workload.academicYear}/{workload.semester} · {workload.totalHours} ชม.
                         </div>
                       </div>
-                      <Badge variant="outline" className={statusBadge(workload.percentage >= 90 ? 'pending' : 'active')}>
-                        {workload.percentage}%
-                      </Badge>
                     </div>
-                    <Progress value={workload.percentage} className="mt-3 h-2" />
+                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+                      สอน {workload.teachingHours} · วิจัย {workload.researchHours} · ที่ปรึกษา {workload.advisingHours} · บริการ {workload.serviceHours} ชม.
+                    </div>
                   </div>
                 ))}
               </div>

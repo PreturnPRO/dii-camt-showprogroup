@@ -63,8 +63,8 @@ export function DegreeProgressCard({
                     <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
                         {isTH ? 'ความก้าวหน้าของหลักสูตร' : 'Degree Progress'}
                     </h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
-                        {isTH ? `รวม ${requiredCredits} หน่วยกิต` : `${requiredCredits} credits total`}
+                    <p data-testid="degree-source" className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                        {isTH ? `ตามทะเบียน · หลักสูตร ${requiredCredits} หน่วยกิต` : `Registrar record · ${requiredCredits}-credit curriculum`}
                     </p>
                 </div>
             </div>

@@ -21,9 +21,6 @@ import { DegreeProgressCard } from '@/components/dashboard/DegreeProgressCard';
 import { CreditMatrixCard, type CurriculumCourse } from '@/components/dashboard/CreditMatrixCard';
 import { GPAHistoryCard } from '@/components/dashboard/GPAHistoryCard';
 import { CareerGoalCard } from '@/components/dashboard/CareerGoalCard';
-import { TechnicalSkillsRubricCard } from '@/components/dashboard/TechnicalSkillsRubricCard';
-import { SoftSkillsRubricCard } from '@/components/dashboard/SoftSkillsRubricCard';
-import { SkillsRadarCard } from '@/components/dashboard/SkillsRadarCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
 import { studentEntries, type Term } from '@/lib/timetable';
@@ -103,37 +100,6 @@ const transformGradesForCard = (
   });
 };
 
-type TechnicalSkillScores = {
-  functionality: number;
-  readability: number;
-  bestPractice: number;
-  professorWeight: number;
-  peerWeight: number;
-  professorScore: number;
-  peerScore: number;
-  commentTags: {
-    bug: number;
-    suggestion: number;
-    goodJob: number;
-  };
-};
-
-type SoftSkillScores = {
-  communication: number;
-  openness: number;
-  professorWeight: number;
-  peerWeight: number;
-  professorScore: number;
-  peerScore: number;
-  feedbackHistory: {
-    projectName: string;
-    date: string;
-    communicationScore: number;
-    opennessScore: number;
-    comments: number;
-  }[];
-};
-
 type CompanyTarget = {
   id: string;
   jobId: string;
@@ -150,84 +116,11 @@ type CompanyTarget = {
   };
 };
 
-const emptyTechnicalSkillScores: TechnicalSkillScores = {
-  functionality: 0,
-  readability: 0,
-  bestPractice: 0,
-  professorWeight: 60,
-  peerWeight: 40,
-  professorScore: 0,
-  peerScore: 0,
-  commentTags: { bug: 0, suggestion: 0, goodJob: 0 },
-};
 
-const emptySoftSkillScores: SoftSkillScores = {
-  communication: 0,
-  openness: 0,
-  professorWeight: 60,
-  peerWeight: 40,
-  professorScore: 0,
-  peerScore: 0,
-  feedbackHistory: [],
-};
-
-const levelScore = (level: string) => {
-  switch (level) {
-    case 'expert':
-      return 4.8;
-    case 'advanced':
-      return 4.2;
-    case 'intermediate':
-      return 3.3;
-    case 'beginner':
-      return 2.4;
-    default:
-      return 3;
-  }
-};
-
-const averageScore = (values: number[], fallback = 3) => {
-  const clean = values.filter(Number.isFinite);
-  return clean.length ? clean.reduce((sum, value) => sum + value, 0) / clean.length : fallback;
-};
-
-const deriveTechnicalScores = (sourceStudent: Student): TechnicalSkillScores => {
-  const technicalSkills = sourceStudent.skills.filter((skill) => skill.category !== 'soft_skill');
-  const score = averageScore(technicalSkills.map((skill) => levelScore(skill.level)));
-  return {
-    functionality: score,
-    readability: Math.max(0, score - 0.2),
-    bestPractice: score,
-    professorWeight: 60,
-    peerWeight: 40,
-    professorScore: score,
-    peerScore: score,
-    commentTags: { bug: 0, suggestion: 0, goodJob: 0 },
-  };
-};
-
-const deriveSoftScores = (sourceStudent: Student): SoftSkillScores => {
-  const softSkills = sourceStudent.skills.filter((skill) => skill.category === 'soft_skill');
-  const score = averageScore(softSkills.map((skill) => levelScore(skill.level)), 3);
-  return {
-    communication: score,
-    openness: score,
-    professorWeight: 60,
-    peerWeight: 40,
-    professorScore: score,
-    peerScore: score,
-    feedbackHistory: [],
-  };
-};
-
-const normalizeCurriculumCategory = (value: unknown): CurriculumCourse['category'] => {
-  const category = asString(value, 'required');
-  return category === 'ge' || category === 'free' ? category : 'required';
-};
-
+const CURRICULUM_STATUSES: CurriculumCourse['status'][] = ['completed', 'failed', 'withdrawn', 'incomplete', 'inProgress', 'notGraded'];
 const normalizeCurriculumStatus = (value: unknown): CurriculumCourse['status'] => {
-  const status = asString(value, 'remaining');
-  return status === 'completed' || status === 'inProgress' ? status : 'remaining';
+  const status = asString(value, 'notGraded') as CurriculumCourse['status'];
+  return CURRICULUM_STATUSES.includes(status) ? status : 'notGraded';
 };
 
 const mapCurriculumCourse = (value: unknown, index: number): CurriculumCourse => {
@@ -237,14 +130,11 @@ const mapCurriculumCourse = (value: unknown, index: number): CurriculumCourse =>
     code: asString(source.code, `COURSE-${index + 1}`),
     nameTH: asString(source.nameTH, asString(source.nameThai, asString(source.name, 'รายวิชา'))),
     nameEN: asString(source.nameEN, asString(source.name, 'Course')),
-    credits: asNumber(source.credits, 3),
-    year: asNumber(source.year, 1),
-    semester: asNumber(source.semester, 1),
-    category: normalizeCurriculumCategory(source.category),
+    credits: asNumber(source.credits, 0),
+    year: asNumber(source.year, 0),
+    semester: asNumber(source.semester, 0),
     status: normalizeCurriculumStatus(source.status),
     grade: asString(source.grade, ''),
-    prerequisites: asArray<string>(source.prerequisites),
-    description: asString(source.description, ''),
   };
 };
 
@@ -284,9 +174,8 @@ export default function StudentDashboard() {
   const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
   const [semesterHistory, setSemesterHistory] = React.useState<{ semester: string; gpa: number; credits: number }[]>([]);
   const [curriculumCourses, setCurriculumCourses] = React.useState<CurriculumCourse[]>([]);
-  const [curriculumTotals, setCurriculumTotals] = React.useState({ required: 0, ge: 0, free: 0 });
-  const [technicalSkillScores, setTechnicalSkillScores] = React.useState<TechnicalSkillScores>(emptyTechnicalSkillScores);
-  const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillScores>(emptySoftSkillScores);
+  // credits against the whole curriculum; null until stats load (audit M1: no categories)
+  const [curriculumCredits, setCurriculumCredits] = React.useState<{ required: number | null; completed: number | null; inProgress: number | null; registrar: number | null }>({ required: null, completed: null, inProgress: null, registrar: null });
   const [companyTargets, setCompanyTargets] = React.useState<CompanyTarget[]>([]);
 
   React.useEffect(() => {
@@ -319,55 +208,15 @@ export default function StudentDashboard() {
         // one point per graded term, oldest first, computed by the server (ungraded courses never count as 0)
         setSemesterHistory(mapTermGpaHistory(stats));
         setCurrentTermGpa(typeof stats.currentTermGpa === 'number' ? stats.currentTermGpa : null);
-        const skillSummary = asRecord(stats.skillSummary);
-        const technical = asRecord(skillSummary.technical);
-        const commentTags = asRecord(technical.commentTags);
-        setTechnicalSkillScores((current) => ({
-          functionality: asNumber(technical.functionality, current.functionality),
-          readability: asNumber(technical.readability, current.readability),
-          bestPractice: asNumber(technical.bestPractice, current.bestPractice),
-          professorWeight: asNumber(technical.professorWeight, current.professorWeight),
-          peerWeight: asNumber(technical.peerWeight, current.peerWeight),
-          professorScore: asNumber(technical.professorScore, current.professorScore),
-          peerScore: asNumber(technical.peerScore, current.peerScore),
-          commentTags: {
-            bug: asNumber(commentTags.bug, current.commentTags.bug),
-            suggestion: asNumber(commentTags.suggestion, current.commentTags.suggestion),
-            goodJob: asNumber(commentTags.goodJob, current.commentTags.goodJob),
-          },
-        }));
-
-        const soft = asRecord(skillSummary.soft);
-        setSoftSkillScores((current) => ({
-          communication: asNumber(soft.communication, current.communication),
-          openness: asNumber(soft.openness, current.openness),
-          professorWeight: asNumber(soft.professorWeight, current.professorWeight),
-          peerWeight: asNumber(soft.peerWeight, current.peerWeight),
-          professorScore: asNumber(soft.professorScore, current.professorScore),
-          peerScore: asNumber(soft.peerScore, current.peerScore),
-          feedbackHistory: asArray(soft.feedbackHistory).map((item, index) => {
-            const feedback = asRecord(item);
-            return {
-              projectName: asString(feedback.projectName, `Feedback ${index + 1}`),
-              date: feedback.date ? new Date(String(feedback.date)).toLocaleDateString('th-TH') : '',
-              communicationScore: asNumber(feedback.communicationScore, current.communication),
-              opennessScore: asNumber(feedback.opennessScore, current.openness),
-              comments: asNumber(feedback.comments, 0),
-            };
-          }),
-        }));
-
         const curriculumProgress = asRecord(stats.curriculumProgress);
-        const totals = asRecord(curriculumProgress.categoryTotals);
-        setCurriculumTotals({
-          required: asNumber(totals.required, nextStudent.requiredCredits),
-          ge: asNumber(totals.ge, 0),
-          free: asNumber(totals.free, 0),
+        setCurriculumCredits({
+          required: typeof curriculumProgress.requiredCredits === 'number' ? curriculumProgress.requiredCredits : null,
+          completed: typeof curriculumProgress.completedCredits === 'number' ? curriculumProgress.completedCredits : null,
+          inProgress: typeof curriculumProgress.inProgressCredits === 'number' ? curriculumProgress.inProgressCredits : null,
+          registrar: typeof stats.earnedCredits === 'number' ? stats.earnedCredits : null,
         });
         const mappedCurriculum = asArray(curriculumProgress.courses).map(mapCurriculumCourse);
-        if (mappedCurriculum.length) {
-          setCurriculumCourses(mappedCurriculum);
-        }
+        setCurriculumCourses(mappedCurriculum);
       }
       setStudent(nextStudent);
 
@@ -403,27 +252,6 @@ export default function StudentDashboard() {
 
   const studentCourses = courses.filter(c => c.enrolledStudents.includes(student.id) || c.enrolledStudents.includes(student.studentId));
   const courseGrades = transformGradesForCard(grades, courses);
-  const liveCurriculumCourses = curriculumCourses.length
-    ? curriculumCourses
-    : courses.map((course, index) => {
-      const grade = grades.find((item) => item.courseId === course.id);
-      return mapCurriculumCourse({
-        id: course.id,
-        code: course.code,
-        nameTH: course.nameThai,
-        nameEN: course.name,
-        credits: course.credits,
-        year: course.year,
-        semester: course.semester,
-        category: course.code.toUpperCase().startsWith('GE') ? 'ge' : course.code.toUpperCase().startsWith('FREE') ? 'free' : 'required',
-        status: grade?.letterGrade ? 'completed' : 'inProgress',
-        grade: grade?.letterGrade,
-        prerequisites: course.prerequisites,
-        description: course.description,
-      }, index);
-    });
-
-  const creditProgress = (student.earnedCredits / student.totalCredits) * 100;
   
   const today = new Date();
   const nextMonth = new Date();
@@ -545,7 +373,6 @@ export default function StudentDashboard() {
               { id: 'overview', icon: Target, label: t.studentDashboard.overview },
               { id: 'schedule', icon: Calendar, label: t.studentDashboard.schedule },
               { id: 'grades', icon: TrendingUp, label: t.studentDashboard.grades },
-              { id: 'skills', icon: Zap, label: t.studentDashboard.skills },
               { id: 'timeline', icon: ActivityIcon, label: 'Timeline' },
               { id: 'careers', icon: Briefcase, label: 'Company Targets' },
             ].map((tab) => (
@@ -700,8 +527,11 @@ export default function StudentDashboard() {
                 {/* Credit matrix table */}
                 <motion.div variants={itemVariants}>
                   <CreditMatrixCard
-                    courses={liveCurriculumCourses}
-                    categoryTotals={curriculumTotals}
+                    courses={curriculumCourses}
+                    requiredCredits={curriculumCredits.required}
+                    completedCredits={curriculumCredits.completed}
+                    inProgressCredits={curriculumCredits.inProgress}
+                    registrarEarnedCredits={curriculumCredits.registrar}
                     gpax={student.gpax}
                   />
                 </motion.div>
@@ -732,55 +562,6 @@ export default function StudentDashboard() {
                   <CourseGradesCard
                     grades={courseGrades}
                     currentSemester={`${student.semester}/${student.academicYear}`}
-                  />
-                </motion.div>
-              </div>
-            </TabsContent>
-          )}
-
-          {/* Skills Tab */}
-          {activeTab === 'skills' && (
-            <TabsContent value="skills" className="mt-0" key="skills" forceMount>
-              <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-                {/* Technical Skills - Rubric Based */}
-                <motion.div variants={itemVariants}>
-                  <TechnicalSkillsRubricCard
-                    functionality={technicalSkillScores.functionality}
-                    readability={technicalSkillScores.readability}
-                    bestPractice={technicalSkillScores.bestPractice}
-                    professorWeight={technicalSkillScores.professorWeight}
-                    peerWeight={technicalSkillScores.peerWeight}
-                    professorScore={technicalSkillScores.professorScore}
-                    peerScore={technicalSkillScores.peerScore}
-                    commentTags={technicalSkillScores.commentTags}
-                  />
-                </motion.div>
-
-                {/* Soft Skills - AAC&U Value Rubrics Based */}
-                <motion.div variants={itemVariants}>
-                  <SoftSkillsRubricCard
-                    communication={softSkillScores.communication}
-                    openness={softSkillScores.openness}
-                    professorWeight={softSkillScores.professorWeight}
-                    peerWeight={softSkillScores.peerWeight}
-                    professorScore={softSkillScores.professorScore}
-                    peerScore={softSkillScores.peerScore}
-                    feedbackHistory={softSkillScores.feedbackHistory}
-                  />
-                </motion.div>
-
-                {/* Skills Radar Chart */}
-                <motion.div variants={itemVariants}>
-                  <SkillsRadarCard
-                    technicalSkills={{
-                      functionality: technicalSkillScores.functionality,
-                      readability: technicalSkillScores.readability,
-                      bestPractice: technicalSkillScores.bestPractice,
-                    }}
-                    softSkills={{
-                      communication: softSkillScores.communication,
-                      openness: softSkillScores.openness,
-                    }}
                   />
                 </motion.div>
               </div>

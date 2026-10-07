@@ -44,8 +44,6 @@ export default function LandingPage() {
 
           <div className="hidden md:flex items-center gap-6">
             <a href="#features" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navFeatures}</a>
-            <a href="#stats" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navStats}</a>
-            <a href="#partners" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navPartners}</a>
             <a href="#contact" className="text-sm text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">{t.landing.navContact}</a>
           </div>
 
@@ -268,88 +266,6 @@ export default function LandingPage() {
               </FadeIn>
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* Stats */}
-      <section id="stats" className="py-24 bg-slate-900 dark:bg-black border-t border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-white tracking-tight mb-3">
-              {language === 'th' ? 'ตัวเลขที่สะท้อนความจริง' : 'Built for real scale'}
-            </h2>
-            <p className="text-slate-400 text-sm">
-              {language === 'th' ? 'ระบบที่ใช้งานจริงในสาขา DII CAMT มหาวิทยาลัยเชียงใหม่' : 'Used in DII CAMT, Chiang Mai University'}
-            </p>
-          </FadeIn>
-
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { label: language === 'th' ? 'ผู้ใช้งานในระบบ' : 'Users in system', value: '5,000+' },
-              { label: language === 'th' ? 'บริษัทพันธมิตร' : 'Industry partners', value: '200+' },
-              { label: language === 'th' ? 'อัตราความพึงพอใจ' : 'Placement rate', value: '98%' },
-              { label: language === 'th' ? 'คะแนนความพึงพอใจ' : 'System rating', value: '4.9/5' },
-            ].map((stat, i) => (
-              <FadeIn key={i} delay={i * 0.1} className="text-center">
-                <div className="text-4xl md:text-5xl font-bold text-white mb-2 tracking-tight">{stat.value}</div>
-                <div className="text-sm text-slate-400">{stat.label}</div>
-              </FadeIn>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Partners */}
-      <section id="partners" className="py-24 bg-white dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800">
-        <div className="container mx-auto px-6 max-w-5xl">
-          <FadeIn className="text-center mb-14">
-            <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-3">{language === 'th' ? 'พันธมิตรและองค์กรที่ร่วมงาน' : 'Partners & organizations'}</p>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
-              {language === 'th' ? 'เชื่อมต่อกับภาคอุตสาหกรรม' : 'Connected to industry'}
-            </h2>
-          </FadeIn>
-
-          <FadeIn delay={0.1} className="relative overflow-hidden">
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-white dark:from-slate-950 to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-white dark:from-slate-950 to-transparent z-10 pointer-events-none" />
-            <div className="flex overflow-hidden py-4 items-center">
-              <motion.div
-                animate={{ x: ['0%', '-50%'] }}
-                transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}
-                className="flex gap-16 shrink-0 items-center opacity-50"
-              >
-                {[...Array(2)].map((_, setIdx) => (
-                  <React.Fragment key={setIdx}>
-                    {['CLBS', 'AXONS', 'G-ABLE', 'BeNeat', 'TCC', 'MOVE'].map((name, i) => (
-                      <span key={`${setIdx}-${i}`} className="text-xl font-bold text-slate-600 dark:text-slate-400 whitespace-nowrap tracking-tight">
-                        {name}
-                      </span>
-                    ))}
-                  </React.Fragment>
-                ))}
-              </motion.div>
-            </div>
-          </FadeIn>
-
-          {/* Testimonial */}
-          <FadeIn delay={0.2} className="mt-20 max-w-2xl mx-auto">
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl p-8 bg-slate-50 dark:bg-slate-900">
-              <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed mb-6 italic">
-                "{t.landing.testimonialQuote}"
-              </p>
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center">
-                  <span className="text-xs font-bold text-slate-600 dark:text-slate-300">
-                    {t.landing.testimonialName?.charAt(0) || 'A'}
-                  </span>
-                </div>
-                <div>
-                  <div className="font-semibold text-slate-900 dark:text-white text-sm">{t.landing.testimonialName}</div>
-                  <div className="text-xs text-slate-500 dark:text-slate-400">{t.landing.testimonialRole}</div>
-                </div>
-              </div>
-            </div>
-          </FadeIn>
         </div>
       </section>
 

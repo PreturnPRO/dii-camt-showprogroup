@@ -1,9 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { BarChart3, Users, Clock, AlertTriangle, TrendingUp, BookOpen, Plus } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
-import { Badge } from '@/components/ui/badge';
+import { BarChart3, Users, Clock, BookOpen, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -24,14 +22,21 @@ const itemVariants = {
 
 type LecturerWorkloadRow = {
     id: string;
+    lecturerId: string;
     nameThai: string;
+    term: string;
     teachingHours: number;
+    researchHours: number;
+    advisingHours: number;
+    serviceHours: number;
     workload: number;
-    advisees: string[];
+    /** real count of students whose advisor is this lecturer; null when the API did not send it */
+    adviseeCount: number | null;
 };
 
 export default function WorkloadTracking() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const isTH = language !== 'en';
     const [lecturerData, setLecturerData] = React.useState<LecturerWorkloadRow[]>([]);
     const [lecturers, setLecturers] = React.useState<Array<{ id: string; nameThai: string }>>([]);
     const [isLoading, setIsLoading] = React.useState(true);
@@ -50,19 +55,23 @@ export default function WorkloadTracking() {
         const record = asRecord(item);
         const lecturer = asRecord(record.lecturer);
         const lecturerUser = asRecord(lecturer.user);
-        const advisingHours = asNumber(record.advisingHours, 0);
         const teachingHours = asNumber(record.teachingHours, 0);
+        const researchHours = asNumber(record.researchHours, 0);
+        const advisingHours = asNumber(record.advisingHours, 0);
+        const serviceHours = asNumber(record.serviceHours, 0);
+        const count = asRecord(lecturer._count).advisees;
 
         return {
-            id: asString(lecturer.id, asString(record.lecturerId, `lecturer-${index}`)),
+            id: asString(record.id, `workload-${index}`),
+            lecturerId: asString(record.lecturerId, asString(lecturer.id, `lecturer-${index}`)),
             nameThai: asString(lecturerUser.nameThai, asString(lecturerUser.name, asString(lecturer.lecturerId, '-'))),
+            term: `${asNumber(record.semester, 0)}/${asString(record.academicYear, '-')}`,
             teachingHours,
-            workload:
-                teachingHours +
-                asNumber(record.researchHours, 0) +
-                advisingHours +
-                asNumber(record.serviceHours, 0),
-            advisees: Array.from({ length: Math.max(advisingHours, 0) }, (_, adviseeIndex) => `ADV-${adviseeIndex + 1}`),
+            researchHours,
+            advisingHours,
+            serviceHours,
+            workload: teachingHours + researchHours + advisingHours + serviceHours,
+            adviseeCount: typeof count === 'number' ? count : null,
         };
     }, []);
 
@@ -120,8 +129,11 @@ export default function WorkloadTracking() {
         }
     };
 
-    const avgWorkload = (lecturerData.reduce((sum, l) => sum + l.workload, 0) / Math.max(lecturerData.length, 1)).toFixed(1);
-    const overloaded = lecturerData.filter(l => l.workload > 15).length;
+    // the faculty has no overload threshold yet, so nothing is marked as over (audit M1)
+    const avgWorkload = lecturerData.length ? (lecturerData.reduce((sum, l) => sum + l.workload, 0) / lecturerData.length).toFixed(1) : '-';
+    // one lecturer can have a record per term; count people, not rows
+    const lecturerCount = new Set(lecturerData.map((row) => row.lecturerId)).size;
+    const avgTeaching = lecturerData.length ? (lecturerData.reduce((sum, l) => sum + l.teachingHours, 0) / lecturerData.length).toFixed(1) : '-';
 
     return (
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
@@ -142,12 +154,11 @@ export default function WorkloadTracking() {
             </div>
 
             {/* Stats */}
-            <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[
-                    { icon: Users, label: t.workloadTrackingPage.totalLecturers, value: isLoading ? '...' : String(lecturerData.length), gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
+                    { icon: Users, label: t.workloadTrackingPage.totalLecturers, value: isLoading ? '...' : String(lecturerCount), testId: 'workload-lecturers', gradient: 'from-blue-500 to-indigo-500', shadow: 'shadow-blue-200' },
                     { icon: Clock, label: t.workloadTrackingPage.avgWorkload, value: `${avgWorkload} ${t.workloadTrackingPage.hours}`, gradient: 'from-purple-500 to-violet-500', shadow: 'shadow-purple-200' },
-                    { icon: AlertTriangle, label: t.workloadTrackingPage.overLimit, value: String(overloaded), gradient: 'from-red-500 to-rose-500', shadow: 'shadow-red-200' },
-                    { icon: TrendingUp, label: t.workloadTrackingPage.normalStatus, value: String(lecturerData.length - overloaded), gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
+                    { icon: BookOpen, label: isTH ? 'ชั่วโมงสอนเฉลี่ย' : 'Average teaching', value: `${avgTeaching} ${t.workloadTrackingPage.hours}`, gradient: 'from-emerald-500 to-teal-500', shadow: 'shadow-emerald-200' },
                 ].map((stat, i) => (
                     <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow}`}>
                         <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
@@ -156,7 +167,7 @@ export default function WorkloadTracking() {
                                 <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-bold">{stat.value}</div>
+                            <div data-testid={'testId' in stat ? stat.testId : undefined} className="text-3xl font-bold">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
@@ -171,23 +182,15 @@ export default function WorkloadTracking() {
                     </h3>
                     <div className="space-y-5">
                         <div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{t.workloadTrackingPage.avgTeaching}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{isTH ? 'ชั่วโมงรวมเฉลี่ยต่อรายการ (สอน + วิจัย + ที่ปรึกษา + บริการ)' : 'Average total hours per record'}</p>
                             <div className="flex items-end gap-2">
                                 <span className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{avgWorkload}</span>
-                                <span className="text-slate-400 mb-1.5">{t.workloadTrackingPage.hoursPerWeek}</span>
+                                <span className="text-slate-400 mb-1.5">{t.workloadTrackingPage.hours}</span>
                             </div>
                         </div>
-                        <div className="h-3 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                            <motion.div initial={{ width: 0 }} animate={{ width: `${(parseFloat(avgWorkload) / 20) * 100}%` }} transition={{ delay: 0.5, duration: 0.8 }} className="h-full bg-gradient-to-r from-purple-500 to-violet-500 rounded-full" />
-                        </div>
-                        <div className="p-4 rounded-2xl bg-red-50 border border-red-100 dark:bg-slate-800">
-                            <div className="flex items-center gap-2 text-red-600 mb-1 dark:text-slate-300">
-                                <AlertTriangle className="w-5 h-5" />
-                                <span className="font-bold">{t.workloadTrackingPage.overLimitLecturers}</span>
-                            </div>
-                            <span className="text-3xl font-bold text-red-600 dark:text-slate-300">{overloaded} {t.workloadTrackingPage.persons}</span>
-                            <p className="text-sm text-red-400 mt-1">{t.workloadTrackingPage.threshold}</p>
-                        </div>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                            {isTH ? 'ยังไม่มีเกณฑ์ภาระงานเกินจากคณะ จึงไม่ได้ตัดสินว่าใครเกิน' : 'There is no faculty overload threshold yet, so no one is marked as over.'}
+                        </p>
                     </div>
                 </motion.div>
 
@@ -203,31 +206,24 @@ export default function WorkloadTracking() {
                                 {t.common?.noData || 'No workload records found'}
                             </div>
                         )}
-                        {lecturerData.map((lecturer, idx) => {
-                            const percentage = (lecturer.workload / 20) * 100;
-                            const isOver = lecturer.workload > 15;
-                            return (
-                                <motion.div key={idx} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
-                                    className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white transition-all dark:hover:bg-slate-800/70">
-                                    <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg ${isOver ? 'bg-gradient-to-br from-red-400 to-rose-500 shadow-red-200' : 'bg-gradient-to-br from-purple-400 to-violet-500 shadow-purple-200'}`}>
-                                        {lecturer.nameThai.charAt(0)}
+                        {lecturerData.map((lecturer, idx) => (
+                            <motion.div key={lecturer.id} data-testid="workload-row" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: idx * 0.05 }}
+                                className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white transition-all dark:hover:bg-slate-800/70">
+                                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold shadow-lg bg-gradient-to-br from-purple-400 to-violet-500 shadow-purple-200">
+                                    {lecturer.nameThai.charAt(0)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex justify-between gap-2 mb-1">
+                                        <h4 className="font-medium text-slate-800 dark:text-slate-200 truncate">{lecturer.nameThai}</h4>
+                                        <span className="text-sm font-bold text-slate-600 dark:text-slate-300 shrink-0">{lecturer.workload} {t.workloadTrackingPage.hours}</span>
                                     </div>
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex justify-between mb-1.5">
-                                            <h4 className="font-medium text-slate-800 dark:text-slate-200 truncate">{lecturer.nameThai}</h4>
-                                            <div className="flex items-center gap-2">
-                                                <span className={`text-sm font-bold ${isOver ? 'text-red-500' : 'text-slate-600'} dark:text-slate-400`}>{lecturer.workload} {t.workloadTrackingPage.hours}</span>
-                                                {isOver && <Badge className="bg-red-50 text-red-500 text-[10px] border-red-200 dark:text-slate-400 dark:bg-slate-800">{t.workloadTrackingPage.overLimit}</Badge>}
-                                            </div>
-                                        </div>
-                                        <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                            <motion.div initial={{ width: 0 }} animate={{ width: `${Math.min(percentage, 100)}%` }} transition={{ delay: 0.3 + idx * 0.05, duration: 0.5 }}
-                                                className={`h-full rounded-full ${isOver ? 'bg-gradient-to-r from-red-400 to-rose-500' : 'bg-gradient-to-r from-emerald-400 to-teal-500'}`} />
-                                        </div>
-                                    </div>
-                                </motion.div>
-                            );
-                        })}
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                                        {isTH ? 'เทอม' : 'Term'} {lecturer.term} · {isTH ? 'สอน' : 'teaching'} {lecturer.teachingHours} · {isTH ? 'วิจัย' : 'research'} {lecturer.researchHours} · {isTH ? 'ที่ปรึกษา' : 'advising'} {lecturer.advisingHours} · {isTH ? 'บริการ' : 'service'} {lecturer.serviceHours} {t.workloadTrackingPage.hours}
+                                        {' · '}{isTH ? 'นักศึกษาในที่ปรึกษา' : 'advisees'} {lecturer.adviseeCount ?? '-'} {isTH ? 'คน' : ''}
+                                    </p>
+                                </div>
+                            </motion.div>
+                        ))}
                     </div>
                 </motion.div>
             </div>

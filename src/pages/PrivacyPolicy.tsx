@@ -163,20 +163,6 @@ export default function PrivacyPolicy() {
               <p className="text-slate-600 leading-relaxed mb-6 dark:text-slate-300">
                 {t.privacyPolicyPage.summaryDesc}
               </p>
-              <div className="grid sm:grid-cols-3 gap-4">
-                {[
-                  { icon: Lock, label: t.privacyPolicyPage.encryptedAES, color: 'text-purple-600 bg-purple-100 dark:text-purple-400 dark:bg-purple-950/30' },
-                  { icon: UserCheck, label: 'PDPA Compliant', color: 'text-pink-600 bg-pink-100 dark:text-pink-400 dark:bg-pink-950/30' },
-                  { icon: Shield, label: 'ISO 27001', color: 'text-indigo-600 bg-indigo-100 dark:text-indigo-400 dark:bg-indigo-950/30' },
-                ].map((badge, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-100 dark:border-slate-800 shadow-sm">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${badge.color}`}>
-                      <badge.icon className="w-5 h-5" />
-                    </div>
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-300">{badge.label}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </FadeIn>
         </div>

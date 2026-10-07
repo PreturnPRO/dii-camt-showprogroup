@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { api } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
+import { gpaAverage } from '@/lib/gpa-average';
 
 type StudentRow = {
     id: string;
@@ -65,7 +66,7 @@ const mapReportActivity = (item: unknown): ActivityRow => {
 };
 
 export default function Reports() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [students, setStudents] = React.useState<StudentRow[]>([]);
     const [courses, setCourses] = React.useState<CourseRow[]>([]);
     const [activities, setActivities] = React.useState<ActivityRow[]>([]);
@@ -102,8 +103,10 @@ export default function Reports() {
         };
     }, []);
 
+    // GPAX of students who have grades; a 0 is "no grade yet" (audit M1)
     const studentCount = Math.max(students.length, 1);
-    const avgGPA = (students.reduce((sum, s) => sum + s.gpa, 0) / studentCount).toFixed(2);
+    const gpa = gpaAverage(students.map((s) => ({ gpax: s.gpa })));
+    const avgGPA = gpa.average === null ? '-' : gpa.average.toFixed(2);
     const yearDistribution = [
         { year: 1, count: students.filter(s => s.year === 1).length },
         { year: 2, count: students.filter(s => s.year === 2).length },
@@ -197,7 +200,7 @@ export default function Reports() {
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.reports.avgGPA}</span>
                         </div>
                         <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{avgGPA}</div>
-                        <div className="mt-3 text-sm text-slate-400">{t.reports.avgTotal}</div>
+                        <div data-testid="avg-gpa-count" className="mt-3 text-sm text-slate-400">{language === 'en' ? `from ${gpa.count} students with grades` : `จาก ${gpa.count} คนที่มีเกรด`}</div>
                     </div>
                 </motion.div>
 
