@@ -7,6 +7,8 @@ declare global {
       email: string;
       role: Role;
       name: string;
+      /** the Session row of the device this request came from */
+      sessionId: string;
     }
   }
 }

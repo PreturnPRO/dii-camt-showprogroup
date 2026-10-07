@@ -8,6 +8,7 @@ import {
   getStudentProfileByUserId,
 } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
+import { csvRow } from "../utils/csv";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
 import { getCourses, getCourseById, createCourse, updateCourse } from "../services/course.service";
@@ -192,25 +193,21 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
 
   const criteriaList = course.gradingCriteria;
 
-  // CSV Header
-  let csv = "Student ID,Name,";
-  criteriaList.forEach(c => {
-    csv += `"${c.name} (${c.maxScore})",`;
-  });
-  // Dynamic criteria headers are used directly
-  csv += "Total,Grade,Remarks\n";
-
-  // CSV Rows
-  course.enrollments.forEach(enrollment => {
-    csv += `"${enrollment.student.studentId}","${enrollment.student.user.name}",`;
-
-    criteriaList.forEach(c => {
-      const scoreObj = enrollment.scores.find(s => s.criteriaId === c.id);
-      csv += `${scoreObj ? scoreObj.score : ""},`;
-    });
-
-    csv += `${enrollment.total ?? ""},"${enrollment.letterGrade ?? ""}","${enrollment.remarks ?? ""}"\n`;
-  });
+  // every text cell goes through csvCell, so names/remarks starting with = + - @ are exported as text, not formulas
+  const lines = [
+    csvRow(["Student ID", "Name", ...criteriaList.map((c) => `${c.name} (${c.maxScore})`), "Total", "Grade", "Remarks"]),
+    ...course.enrollments.map((enrollment) =>
+      csvRow([
+        enrollment.student.studentId,
+        enrollment.student.user.name,
+        ...criteriaList.map((c) => enrollment.scores.find((s) => s.criteriaId === c.id)?.score ?? null),
+        enrollment.total ?? null,
+        enrollment.letterGrade ?? null,
+        enrollment.remarks ?? null,
+      ]),
+    ),
+  ];
+  const csv = `${lines.join("\n")}\n`;
 
   res.setHeader("Content-Type", "text/csv");
   res.setHeader("Content-Disposition", `attachment; filename="grades_${course.code}.csv"`);

@@ -40,3 +40,6 @@ guide/*
 test-results/
 playwright-report/
 .playwright-mcp
+
+# files users upload at runtime (backend UPLOAD_DIR default) — never commit them
+backend/storage/

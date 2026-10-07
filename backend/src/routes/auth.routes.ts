@@ -4,14 +4,12 @@ import { requireAuth } from "../lib/passport";
 import { checkRole } from "../middleware/check-role";
 import { validate } from "../middleware/validate";
 import {
-  registerSchema,
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateUserProfileSchema,
 } from "../schemas/auth.schema";
 import {
-  register,
   login,
   forgotPassword,
   resetPassword,
@@ -22,12 +20,6 @@ import {
 } from "../controllers/auth.controller";
 
 const router = Router();
-
-router.post(
-  "/auth/register",
-  validate(registerSchema),
-  register
-);
 
 router.post(
   "/auth/login",

@@ -4,12 +4,9 @@ import type { Server as HttpServer } from "http";
 import { Server } from "socket.io";
 import { env } from "../config/env";
 import { isAccessPayload } from "../utils/auth";
+import { prisma } from "./prisma";
 
-type AuthPayload = {
-  sub: string;
-  role: Role;
-  email: string;
-};
+type SocketUser = { id: string; role: Role; email: string; sessionId: string };
 
 let io: Server | null = null;
 
@@ -34,6 +31,33 @@ const extractToken = (authToken?: string, authorizationHeader?: string) => {
   return null;
 };
 
+/**
+ * The user behind a socket token, or null: the token must be an access token whose session is
+ * still live (not logged out, not revoked, not expired) and whose user is active.
+ * (Same rule as requireAuth; the session check is inlined to avoid importing session.service here.)
+ */
+export const authenticateSocketToken = async (token: string): Promise<SocketUser | null> => {
+  let verified: unknown;
+  try {
+    verified = jwt.verify(token, env.JWT_SECRET);
+  } catch {
+    return null;
+  }
+  if (!isAccessPayload(verified)) return null;
+  const session = await prisma.session.findUnique({
+    where: { id: verified.sid },
+    include: { user: { select: { id: true, role: true, email: true, isActive: true } } },
+  });
+  if (!session || session.userId !== verified.sub || session.revokedAt || session.expiresAt <= new Date()) return null;
+  if (!session.user.isActive) return null;
+  return { id: session.user.id, role: session.user.role, email: session.user.email, sessionId: session.id };
+};
+
+/** drops the open sockets of these sessions (after logout / revocation); no-op before the server starts */
+export const disconnectSessions = (sessionIds: string[]) => {
+  for (const id of sessionIds) io?.in(`session:${id}`).disconnectSockets(true);
+};
+
 export const attachRealtime = (server: HttpServer) => {
   io = new Server(server, {
     cors: {
@@ -42,7 +66,7 @@ export const attachRealtime = (server: HttpServer) => {
     },
   });
 
-  io.use((socket, next) => {
+  io.use(async (socket, next) => {
     try {
       const token = extractToken(
         typeof socket.handshake.auth.token === "string" ? socket.handshake.auth.token : undefined,
@@ -55,16 +79,11 @@ export const attachRealtime = (server: HttpServer) => {
         return next();
       }
 
-      const verified = jwt.verify(token, env.JWT_SECRET);
-      if (!isAccessPayload(verified)) {
+      const user = await authenticateSocketToken(token);
+      if (!user) {
         return next(new Error("Unauthorized"));
       }
-      const payload = verified as unknown as AuthPayload;
-      socket.data.user = {
-        id: payload.sub,
-        role: payload.role,
-        email: payload.email,
-      };
+      socket.data.user = user;
       return next();
     } catch (error) {
       return next(error as Error);
@@ -72,13 +91,7 @@ export const attachRealtime = (server: HttpServer) => {
   });
 
   io.on("connection", (socket) => {
-    const user = socket.data.user as
-      | {
-          id: string;
-          role: Role;
-          email: string;
-        }
-      | undefined;
+    const user = socket.data.user as SocketUser | undefined;
 
     if (!user) {
       socket.join("public");
@@ -87,6 +100,7 @@ export const attachRealtime = (server: HttpServer) => {
 
     socket.join(`user:${user.id}`);
     socket.join(`role:${user.role}`);
+    socket.join(`session:${user.sessionId}`);
   });
 
   return io;

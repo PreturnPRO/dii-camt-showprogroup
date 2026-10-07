@@ -45,11 +45,36 @@ const storage = multer.diskStorage({
   },
 });
 
+// extension → MIME types we accept for it; both must match (a renamed .html sent as image/png is refused)
+const ALLOWED_UPLOADS: Record<string, string[]> = {
+  ".pdf": ["application/pdf"],
+  ".jpg": ["image/jpeg"],
+  ".jpeg": ["image/jpeg"],
+  ".png": ["image/png"],
+  ".webp": ["image/webp"],
+  ".gif": ["image/gif"],
+  ".doc": ["application/msword"],
+  ".docx": ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
+  ".xls": ["application/vnd.ms-excel"],
+  ".xlsx": ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
+  ".ppt": ["application/vnd.ms-powerpoint"],
+  ".pptx": ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
+  ".zip": ["application/zip", "application/x-zip-compressed"],
+  ".csv": ["text/csv", "application/vnd.ms-excel"],
+};
+
+export const isAllowedUpload = (originalName: string, mimeType: string) =>
+  ALLOWED_UPLOADS[path.extname(originalName).toLowerCase()]?.includes(mimeType.toLowerCase()) ?? false;
+
 export const uploadMiddleware = multer({
   storage,
   limits: {
     fileSize: MAX_FILE_SIZE,
   },
+  fileFilter: (_req, file, callback) =>
+    isAllowedUpload(file.originalname, file.mimetype)
+      ? callback(null, true)
+      : callback(new AppError(400, "This file type is not allowed (PDF, images, Office documents, ZIP or CSV only)")),
 });
 
 const toManagedAssetUrl = (assetId: string) => `/api/files/assets/${assetId}`;

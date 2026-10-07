@@ -6,26 +6,14 @@ import type { SignOptions } from "jsonwebtoken";
 import { env } from "../config/env";
 import { prisma } from "../lib/prisma";
 import { createAuditLog } from "../services/audit.service";
+import { issueSessionToken, revokeSession, revokeSessions } from "../services/session.service";
+import { disconnectSessions } from "../lib/realtime";
 import { getUserWithProfiles } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
-import { comparePassword, hashPassword, signToken } from "../utils/auth";
+import { comparePassword, hashPassword } from "../utils/auth";
 import { AppError } from "../utils/errors";
 import { assertHttpUrls } from "../schemas/url";
 import { requireUser } from "../utils/user";
-
-
-
-const requireFields = (profile: Record<string, unknown>, fields: string[]) => {
-  for (const field of fields) {
-    if (
-      profile[field] === undefined ||
-      profile[field] === null ||
-      profile[field] === ""
-    ) {
-      throw new AppError(400, `Field "${field}" is required for the selected role`);
-    }
-  }
-};
 
 const passwordMarker = (passwordHash: string) =>
   createHash("sha256").update(passwordHash).digest("hex");
@@ -82,85 +70,6 @@ const sendPasswordResetEmail = async (payload: {
   }
 };
 
-export const register = asyncHandler(async (req, res) => {
-  const { email, password, name, nameThai, avatar, phone, profile } = req.body;
-
-  // Public self-registration creates STUDENT accounts only (the schema rejects any other role).
-  // Lecturer, staff and company accounts are created by staff/admin through Users management.
-  const existingUser = await prisma.user.findFirst({
-    where: { email: { equals: email, mode: "insensitive" } },
-  });
-
-  if (existingUser) {
-    throw new AppError(409, "Email is already registered");
-  }
-
-  assertHttpUrls(profile, ["cvUrl"]);
-  const passwordHash = await hashPassword(password);
-
-  const user = await prisma.$transaction(async (tx) => {
-    const createdUser = await tx.user.create({
-      data: {
-        email,
-        passwordHash,
-        name,
-        nameThai,
-        role: Role.STUDENT,
-        avatar,
-        phone,
-      },
-    });
-
-    requireFields(profile, [
-      "studentId",
-      "major",
-      "program",
-      "year",
-      "semester",
-      "academicYear",
-    ]);
-    const student = await tx.studentProfile.create({
-      data: {
-        userId: createdUser.id,
-        studentId: String(profile.studentId),
-        major: String(profile.major),
-        program: String(profile.program),
-        year: Number(profile.year),
-        semester: Number(profile.semester),
-        academicYear: String(profile.academicYear),
-        cvUrl: profile.cvUrl ? String(profile.cvUrl) : undefined,
-      },
-    });
-    await tx.dataConsent.create({
-      data: {
-        studentId: student.id,
-        allowDataSharing: Boolean(profile.allowDataSharing ?? false),
-        allowPortfolioSharing: Boolean(profile.allowPortfolioSharing ?? false),
-      },
-    });
-
-    return createdUser;
-  });
-
-  const token = signToken({ sub: user.id, role: user.role, email: user.email });
-  const payload = await getUserWithProfiles(user.id);
-
-  await createAuditLog({
-    userId: user.id,
-    action: "USER_REGISTERED",
-    resource: "User",
-    resourceId: user.id,
-    changes: { role: user.role, email: user.email },
-  });
-
-  res.status(201).json({
-    success: true,
-    token,
-    expiresIn: env.JWT_EXPIRES_IN,
-    user: payload,
-  });
-});
-
 export const login = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
 
@@ -189,7 +98,7 @@ export const login = asyncHandler(async (req, res) => {
     data: { lastLogin: new Date() },
   });
 
-  const token = signToken({ sub: user.id, role: user.role, email: user.email });
+  const token = await issueSessionToken(user, req.get("user-agent"));
 
   await createAuditLog({
     userId: user.id,
@@ -287,6 +196,8 @@ export const resetPassword = asyncHandler(async (req, res) => {
       passwordHash: await hashPassword(password),
     },
   });
+  // whoever had the old password may still be signed in somewhere: end every session
+  await revokeSessions(user.id);
 
   await createAuditLog({
     userId: user.id,
@@ -313,6 +224,8 @@ export const getMe = asyncHandler(async (req, res) => {
 
 export const logout = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
+  // ends this device only; the user's other devices stay signed in
+  await revokeSession(currentUser.sessionId);
 
   await createAuditLog({
     userId: currentUser.id,
@@ -323,7 +236,7 @@ export const logout = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    message: "Logout successful. Discard the JWT on the client side.",
+    message: "Logout successful.",
   });
 });
 
@@ -373,7 +286,12 @@ export const updateProfile = asyncHandler(async (req, res) => {
     passwordHash = await hashPassword(newPassword);
   }
 
+  let revokedSessions: string[] = [];
   await prisma.$transaction(async (tx) => {
+    if (passwordHash) {
+      // a new password ends the user's other devices; this one stays signed in
+      revokedSessions = await revokeSessions(currentUser.id, { except: currentUser.sessionId, tx });
+    }
     await tx.user.update({
       where: { id: currentUser.id },
       data: {
@@ -448,6 +366,7 @@ export const updateProfile = asyncHandler(async (req, res) => {
         break;
     }
   });
+  disconnectSessions(revokedSessions);
 
   await createAuditLog({
     userId: currentUser.id,

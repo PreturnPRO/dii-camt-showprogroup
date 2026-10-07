@@ -5,6 +5,7 @@ import jwt from "jsonwebtoken";
 import { env } from "../config/env";
 import { prisma } from "./prisma";
 import { isAccessPayload } from "../utils/auth";
+import { isSessionLive } from "../services/session.service";
 
 passport.use(
   new JwtStrategy(
@@ -28,7 +29,8 @@ passport.use(
           },
         });
 
-        if (!user || !user.isActive) {
+        // a logged-out, revoked or expired device session ends the token even before the JWT expires
+        if (!user || !user.isActive || !(await isSessionLive(payload.sid, user.id))) {
           return done(null, false);
         }
 
@@ -37,6 +39,7 @@ passport.use(
           email: user.email,
           role: user.role,
           name: user.name,
+          sessionId: payload.sid,
         });
       } catch (error) {
         return done(error, false);
@@ -72,12 +75,13 @@ export const optionalAuth = async (req: Request, _res: Response, next: NextFunct
       },
     });
 
-    if (user?.isActive) {
+    if (user?.isActive && (await isSessionLive(payload.sid, user.id))) {
       req.user = {
         id: user.id,
         email: user.email,
         role: user.role,
         name: user.name,
+        sessionId: payload.sid,
       };
     }
 

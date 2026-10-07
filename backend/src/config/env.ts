@@ -23,6 +23,8 @@ const envSchema = z.object({
   AUTOMATION_POLL_SECONDS: z.coerce.number().int().positive().default(60),
   PDF_FONT_PATH: z.string().optional(),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
+  API_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(300),
+  UPLOAD_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(30),
   EXPOSE_RESET_TOKEN: z
     .enum(["true", "false"])
     .default("false")

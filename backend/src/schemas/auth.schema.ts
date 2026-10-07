@@ -3,17 +3,6 @@ import { z } from "zod";
 
 export const roleSchema = z.nativeEnum(Role);
 
-export const registerSchema = z.object({
-  email: z.string().trim().toLowerCase().email(),
-  password: z.string().min(8),
-  name: z.string().min(1),
-  nameThai: z.string().min(1),
-  role: z.literal(Role.STUDENT).default(Role.STUDENT),
-  avatar: z.string().url().optional(),
-  phone: z.string().optional(),
-  profile: z.record(z.any()).default({}),
-});
-
 export const loginSchema = z.object({
   email: z.string().trim().toLowerCase().email(),
   password: z.string().min(8),

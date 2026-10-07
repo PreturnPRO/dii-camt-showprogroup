@@ -27,11 +27,6 @@ export const openApiSpec = {
         summary: "Login and receive a JWT",
       },
     },
-    "/auth/register": {
-      post: {
-        summary: "Create a new user with role-specific profile data",
-      },
-    },
     "/automation-rules": {
       get: {
         summary: "List automation rules",

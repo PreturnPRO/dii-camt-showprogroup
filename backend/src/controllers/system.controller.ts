@@ -4,6 +4,8 @@ import { prisma } from "../lib/prisma";
 import { isStaffOrAdmin, PUBLIC_USER_SELECT } from "../services/access-policy";
 import { createNotification, createNotificationsForRole } from "../services/notification.service";
 import { asyncHandler } from "../utils/async-handler";
+import { revokeSessions } from "../services/session.service";
+import { disconnectSessions } from "../lib/realtime";
 import { generateTemporaryPassword, hashPassword } from "../utils/auth";
 import { canChangeRole, canManageRole } from "../services/user-policy";
 import { AppError } from "../utils/errors";
@@ -475,7 +477,11 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
   const roleData = req.body.roleData ?? {};
   const newPasswordHash = req.body.password ? await hashPassword(req.body.password) : undefined;
 
+  // a reset password, a deactivation or a new role ends every signed-in device of that user
+  const endsSessions = Boolean(newPasswordHash) || req.body.isActive === false || roleChanged;
+  let revokedSessions: string[] = [];
   const updated = await prisma.$transaction(async (tx) => {
+    if (endsSessions) revokedSessions = await revokeSessions(user.id, { tx });
     await tx.user.update({
       where: { id: user.id },
       data: {
@@ -674,6 +680,7 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
       },
     });
   });
+  disconnectSessions(revokedSessions);
 
   res.json({
     success: true,
@@ -697,17 +704,23 @@ export const deleteUserHandler = asyncHandler(async (req, res) => {
     throw new AppError(403, "You cannot deactivate this account");
   }
 
-  const user = await prisma.user.update({
-    where: { id: userId },
-    data: { isActive: false },
-    include: {
-      studentProfile: true,
-      lecturerProfile: true,
-      staffProfile: true,
-      companyProfile: true,
-      adminProfile: true,
-    },
+  // deactivating ends every signed-in device, so a later reactivation cannot revive old tokens
+  let revokedSessions: string[] = [];
+  const user = await prisma.$transaction(async (tx) => {
+    revokedSessions = await revokeSessions(userId, { tx });
+    return tx.user.update({
+      where: { id: userId },
+      data: { isActive: false },
+      include: {
+        studentProfile: true,
+        lecturerProfile: true,
+        staffProfile: true,
+        companyProfile: true,
+        adminProfile: true,
+      },
+    });
   });
+  disconnectSessions(revokedSessions);
 
   await prisma.auditLog.create({
     data: {

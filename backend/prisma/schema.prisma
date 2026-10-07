@@ -46,6 +46,20 @@ model User {
   auditLogs       AuditLog[]
   uploadedFiles   FileAsset[]
   activitiesCreated Activity[] @relation("ActivityCreatedBy")
+  sessions        Session[]
+}
+
+// one row per signed-in device; an access token is valid only while its session is live
+model Session {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+
+  @@index([userId])
 }
 
 model StudentProfile {
