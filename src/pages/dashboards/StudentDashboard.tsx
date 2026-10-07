@@ -25,6 +25,7 @@ import { SoftSkillsRubricCard } from '@/components/dashboard/SoftSkillsRubricCar
 import { SkillsRadarCard } from '@/components/dashboard/SkillsRadarCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
+import { studentEntries, type Term } from '@/lib/timetable';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
@@ -275,6 +276,8 @@ export default function StudentDashboard() {
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [timeline, setTimeline] = React.useState<Student['timeline']>([]);
   const [inProgressCredits, setInProgressCredits] = React.useState<number | null>(null);
+  const [enrollmentRows, setEnrollmentRows] = React.useState<unknown[]>([]);
+  const [timetableTerm, setTimetableTerm] = React.useState<Term | null>(null);
   const [grades, setGrades] = React.useState<Grade[]>([]);
   const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
   const [semesterHistory, setSemesterHistory] = React.useState<{ semester: string; gpa: number; credits: number }[]>([]);
@@ -298,6 +301,10 @@ export default function StudentDashboard() {
     ]).then(([profileResult, statsResult, transcriptResult, enrollmentsResult, activitiesResult, targetsResult, summaryResult]) => {
       if (!mounted) return;
       setInProgressCredits(summaryResult.status === 'fulfilled' ? summaryResult.value.summary.inProgressCredits : null);
+      setTimetableTerm(summaryResult.status === 'fulfilled'
+        ? { semester: summaryResult.value.summary.semester, academicYear: summaryResult.value.summary.academicYear }
+        : null);
+      setEnrollmentRows(enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.enrollments : []);
 
       let nextStudent = emptyStudent;
       if (profileResult.status === 'fulfilled') {
@@ -575,11 +582,7 @@ export default function StudentDashboard() {
                       </Button>
                     </div>
                     <div className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
-                      <Timetable
-                        courses={studentCourses}
-                        semester={student.semester}
-                        academicYear={student.academicYear}
-                      />
+                      <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
                     </div>
                   </motion.div>
 
@@ -703,11 +706,7 @@ export default function StudentDashboard() {
 
                 {/* Weekly timetable */}
                 <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
-                  <Timetable
-                    courses={studentCourses}
-                    semester={student.semester}
-                    academicYear={student.academicYear}
-                  />
+                  <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
                 </motion.div>
               </div>
             </TabsContent>

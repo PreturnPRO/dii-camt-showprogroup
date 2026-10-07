@@ -3,15 +3,15 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import {
-  Calendar, Clock, MapPin, ChevronLeft, ChevronRight,
-  BookOpen, GraduationCap, GripVertical, Info
+  Calendar, Clock, MapPin,
+  BookOpen, GraduationCap, Info
 } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Timetable } from '@/components/common/Timetable';
-import { DraggableSchedule } from '@/components/schedule/DraggableSchedule';
-import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DAY_KEYS, DAY_LABELS, formatHours, formatMinutes, placeSlots, studentEntries, studyDays, teachingEntries, termKey, termsOf, weeklyMinutes, type Term } from '@/lib/timetable';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapStudent } from '@/lib/live-mappers';
@@ -30,49 +30,12 @@ const itemVariants = {
 export default function Schedule() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
-  const [currentWeek, setCurrentWeek] = React.useState(0);
-  const [isEditMode, setIsEditMode] = React.useState(false);
   const [courses, setCourses] = React.useState<Course[]>([]);
+  const [enrollmentRows, setEnrollmentRows] = React.useState<unknown[]>([]);
+  const [studentTerm, setStudentTerm] = React.useState<Term | null>(null);
+  const [termValue, setTermValue] = React.useState('');
   const [student, setStudent] = React.useState<Student | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
-
-  type ScheduleItem = {
-    id: string;
-    courseCode: string;
-    courseName: string;
-    day: number;
-    startTime: string;
-    endTime: string;
-    room: string;
-  };
-
-  // Transform courses to schedule items
-  const scheduleItems: ScheduleItem[] = React.useMemo(() => {
-    const dayIndexByName: Record<string, number> = {
-      mon: 1,
-      monday: 1,
-      tue: 2,
-      tuesday: 2,
-      wed: 3,
-      wednesday: 3,
-      thu: 4,
-      thursday: 4,
-      fri: 5,
-      friday: 5,
-    };
-
-    return courses.flatMap(course =>
-      (course.sections?.[0]?.schedule || []).map((slot, idx) => ({
-        id: `${course.id}-${idx}`,
-        courseCode: course.code,
-        courseName: course.name,
-        day: dayIndexByName[slot.day.toLowerCase()] ?? 0,
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-        room: slot.room || course.sections?.[0]?.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')
-      }))
-    ).filter(item => item.day > 0);
-  }, [courses]);
 
   React.useEffect(() => {
     let mounted = true;
@@ -82,8 +45,13 @@ export default function Schedule() {
       Promise.allSettled([
         api.students.profile(),
         api.enrollments.list(),
-      ]).then(([profileResult, enrollmentsResult]) => {
+        api.enrollments.summary(),
+      ]).then(([profileResult, enrollmentsResult, summaryResult]) => {
         if (!mounted) return;
+        // the student's current term, as the backend enforces it
+        setStudentTerm(summaryResult.status === 'fulfilled'
+          ? { semester: summaryResult.value.summary.semester, academicYear: summaryResult.value.summary.academicYear }
+          : null);
         let nextStudent: Student | null = null;
         if (profileResult.status === 'fulfilled') {
           nextStudent = mapStudent(profileResult.value.profile);
@@ -91,6 +59,7 @@ export default function Schedule() {
         } else {
           setStudent(null);
         }
+        setEnrollmentRows(enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.enrollments : []);
         if (enrollmentsResult.status === 'fulfilled') {
           const enrolledCourses = enrollmentsResult.value.enrollments.map((item, index) => {
             const enrollment = asRecord(item);
@@ -137,23 +106,9 @@ export default function Schedule() {
     };
   }, [user?.role]);
 
-  const handleRequestMove = (item: ScheduleItem, targetDay: number, targetTime: string, mode: 'permanent' | 'one-time') => {
-    toast.success(t.schedulePage.editSuccess, {
-      description: `${t.schedulePage.editSuccessDesc} (${mode === 'permanent' ? t.schedulePage.permanent : t.schedulePage.todayOnly})`
-    });
-    setIsEditMode(false);
-  };
-
-  const currentDate = new Date();
-  currentDate.setDate(currentDate.getDate() + (currentWeek * 7));
-
-  // Format week range
-  const startOfWeek = new Date(currentDate);
-  const day = startOfWeek.getDay();
-  const diff = startOfWeek.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
-  startOfWeek.setDate(diff);
-  const endOfWeek = new Date(startOfWeek);
-  endOfWeek.setDate(startOfWeek.getDate() + 4);
+  const todayKey = DAY_KEYS[(new Date().getDay() + 6) % 7];
+  const dayList = (days: ReturnType<typeof studyDays>) =>
+    days.length ? days.map((d) => (language === 'en' ? DAY_LABELS[d].en.slice(0, 3) : DAY_LABELS[d].short)).join(' ') : '-';
 
   if (user?.role === 'student') {
     if (!student) {
@@ -189,13 +144,12 @@ export default function Schedule() {
       );
     }
 
-    // Correctly filter courses for the student
-    const studentCourses = courses.filter(c =>
-      c.enrolledStudents.includes(student.id) || c.enrolledStudents.includes(student.studentId)
-    );
-
+    const entries = studentEntries(enrollmentRows, studentTerm);
+    const placed = placeSlots(entries);
+    const studentCourses = Array.from(new Map(entries.map((e) => [e.course.id, e.course])).values());
     const totalCredits = studentCourses.reduce((sum, c) => sum + c.credits, 0);
-    const totalHours = studentCourses.length * 3;
+    const totalHours = formatHours(weeklyMinutes(placed));
+    const todaySlots = placed.filter((p) => p.day === todayKey);
 
     return (
       <motion.div
@@ -225,20 +179,6 @@ export default function Schedule() {
             </motion.h1>
           </div>
 
-          <motion.div
-            className="flex items-center gap-2 bg-white dark:bg-slate-900 rounded-2xl p-1.5 shadow-sm border border-slate-200 dark:border-slate-700"
-            whileHover={{ scale: 1.02 }}
-          >
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(currentWeek - 1)} className="rounded-xl hover:bg-slate-100 dark:bg-slate-800">
-              <ChevronLeft className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Button>
-            <div className="px-4 text-sm font-bold text-slate-700 dark:text-slate-300">
-              {startOfWeek.getDate()} {startOfWeek.toLocaleDateString('th-TH', { month: 'short' })} - {endOfWeek.getDate()} {endOfWeek.toLocaleDateString('th-TH', { month: 'short' })}
-            </div>
-            <Button variant="ghost" size="icon" onClick={() => setCurrentWeek(currentWeek + 1)} className="rounded-xl hover:bg-slate-100 dark:bg-slate-800">
-              <ChevronRight className="w-5 h-5 text-slate-600 dark:text-slate-300" />
-            </Button>
-          </motion.div>
         </div>
 
         {/* Stats Row */}
@@ -282,7 +222,7 @@ export default function Schedule() {
               </div>
               <span className="font-medium text-white/90 text-sm">{t.schedulePage.hoursPerWeek}</span>
             </div>
-            <div className="text-3xl font-bold">{totalHours}</div>
+            <div className="text-3xl font-bold">{totalHours} <span className="text-base font-medium">{language === 'th' ? 'ชม.' : 'h'}</span></div>
           </motion.div>
 
           <motion.div
@@ -296,7 +236,7 @@ export default function Schedule() {
               </div>
               <span className="font-medium text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.studyDays}</span>
             </div>
-            <div className="text-3xl font-bold">{t.schedulePage.monFri}</div>
+            <div className="text-3xl font-bold">{dayList(studyDays(placed))}</div>
           </motion.div>
         </div>
 
@@ -311,11 +251,7 @@ export default function Schedule() {
               ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ
             </div>
           ) : (
-            <Timetable
-              courses={studentCourses}
-              semester={student.semester}
-              academicYear={student.academicYear}
-            />
+            <Timetable entries={entries} term={studentTerm} />
           )}
         </motion.div>
 
@@ -326,40 +262,32 @@ export default function Schedule() {
               <Calendar className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.schedulePage.todayClasses}
             </h3>
             <div className="space-y-3">
-              {!isLoading && studentCourses.length === 0 && (
+              {!isLoading && todaySlots.length === 0 && (
                 <div className="rounded-2xl border border-dashed border-slate-200 bg-white/70 p-6 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-900/60 dark:text-slate-400">
-                  ยังไม่มีคาบเรียนวันนี้จากระบบ
+                  {language === 'th' ? 'วันนี้ไม่มีคาบเรียน' : 'No classes today'}
                 </div>
               )}
-              {studentCourses.slice(0, 3).map((course, index) => {
-                const slot = course.sections?.[0]?.schedule?.[0];
-                const location = [slot?.room, slot?.building].filter(Boolean).join(' ');
-
-                return (
+              {todaySlots.map((p, index) => (
                 <motion.div
-                  key={course.id}
+                  key={p.key}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+                  className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
                 >
-                  <div className="flex flex-col items-center justify-center bg-purple-50 text-purple-700 rounded-xl px-4 py-2 min-w-[80px] group-hover:bg-purple-500 group-hover:text-white transition-colors dark:text-slate-300 dark:bg-slate-800">
-                    <div className="text-sm font-bold">{slot?.startTime || '--:--'}</div>
-                    <div className="text-xs opacity-75">{slot?.endTime || '--:--'}</div>
+                  <div className="flex flex-col items-center justify-center bg-purple-50 text-purple-700 rounded-xl px-4 py-2 min-w-[80px] dark:text-slate-300 dark:bg-slate-800">
+                    <div className="text-sm font-bold">{formatMinutes(p.start)}</div>
+                    <div className="text-xs opacity-75">{formatMinutes(p.end)}</div>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-bold text-slate-800 dark:text-slate-200 group-hover:text-purple-600 transition-colors truncate">{course.name}</div>
+                    <div className="font-bold text-slate-800 dark:text-slate-200 truncate">{p.course.code} {language === 'th' ? p.course.nameThai || p.course.name : p.course.name}</div>
                     <div className="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2 mt-1">
                       <MapPin className="w-3 h-3 shrink-0" />
-                      <span className="truncate">{location || '-'}</span>
+                      <span className="truncate">{[p.slot.room || p.section?.room, p.slot.building].filter(Boolean).join(' ') || '-'}</span>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="bg-purple-100 text-purple-600 group-hover:bg-white group-hover:text-purple-600 dark:text-slate-300 dark:bg-slate-800 shrink-0">
-                    {t.schedulePage.inClass}
-                  </Badge>
                 </motion.div>
-                );
-              })}
+              ))}
             </div>
           </div>
 
@@ -393,7 +321,9 @@ export default function Schedule() {
     );
   }
 
-  // Lecturer View
+  // Lecturer View: newest term first, switchable
+  const terms = termsOf(courses);
+  const lecturerTerm = terms.find((term) => termKey(term) === termValue) ?? terms[0] ?? null;
   return (
     <motion.div
       variants={containerVariants}
@@ -411,25 +341,15 @@ export default function Schedule() {
               {t.schedulePage.lecturerTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.lecturerHighlight}</span>
           </motion.h1>
         </div>
-        <Button
-          variant={isEditMode ? "secondary" : "default"}
-          onClick={() => setIsEditMode(!isEditMode)}
-          className="rounded-xl px-6"
-        >
-          {isEditMode ? t.schedulePage.saveChanges : t.schedulePage.editSchedule}
-        </Button>
+        <Select value={lecturerTerm ? termKey(lecturerTerm) : ''} onValueChange={setTermValue}>
+          <SelectTrigger data-testid="term-picker" className="w-48 rounded-xl"><SelectValue placeholder={language === 'th' ? 'เลือกเทอม' : 'Term'} /></SelectTrigger>
+          <SelectContent>
+            {terms.map((term) => (
+              <SelectItem key={termKey(term)} value={termKey(term)}>{language === 'th' ? `เทอม ${term.semester}/${term.academicYear}` : `Term ${term.semester}/${term.academicYear}`}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
-
-      {isEditMode && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-orange-50 border border-orange-200 text-orange-800 p-4 rounded-xl flex items-center gap-3 dark:text-slate-200"
-        >
-          <Clock className="w-5 h-5" />
-          <span className="font-medium">Complete editing mode enabled. Drag and drop slots to reschedule.</span>
-        </motion.div>
-      )}
 
       <motion.div variants={itemVariants} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
         {isLoading ? (
@@ -440,18 +360,8 @@ export default function Schedule() {
           <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
             ไม่พบข้อมูลตารางสอนจากระบบ
           </div>
-        ) : isEditMode ? (
-          <DraggableSchedule
-            initialSchedule={scheduleItems}
-            editable={true}
-            onRequestMove={handleRequestMove}
-          />
         ) : (
-          <Timetable
-            courses={courses}
-            semester={courses[0]?.semester ?? 1}
-            academicYear={courses[0]?.academicYear ?? '2568'}
-          />
+          <Timetable entries={teachingEntries(courses, lecturerTerm)} term={lecturerTerm} />
         )}
       </motion.div>
     </motion.div>

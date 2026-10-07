@@ -1,191 +1,113 @@
-import React, { useEffect, useState } from 'react';
-import { motion, Reorder } from 'framer-motion';
-import { format, startOfWeek, addDays, setHours, setMinutes } from 'date-fns';
-import { th } from 'date-fns/locale';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import React from 'react';
+import { MapPin, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { MapPin, Clock, GripVertical } from 'lucide-react';
-import { RescheduleDialog } from './RescheduleDialog';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { toast } from 'sonner';
-
-export interface ScheduleItem {
-    id: string;
-    courseId?: string;
-    sectionIndex?: number;
-    scheduleIndex?: number;
-    courseCode: string;
-    courseName: string;
-    day: number; // 0-6 (Sun-Sat), but typically 1-5 (Mon-Fri)
-    startTime: string; // "09:00"
-    endTime: string;   // "12:00"
-    room: string;
-    lecturer?: string;
-    isOneTime?: boolean;
-}
+import { RescheduleDialog } from './RescheduleDialog';
+import { DAY_KEYS, DAY_LABELS, formatMinutes, placeSlots, visibleRange, type DayKey, type PlacedSlot, type TimetableEntry } from '@/lib/timetable';
 
 interface DraggableScheduleProps {
-    initialSchedule: ScheduleItem[];
-    editable?: boolean;
-    onRequestMove?: (item: ScheduleItem, targetDay: number, targetTime: string, mode: 'permanent' | 'one-time') => void;
+    entries: TimetableEntry[];
+    editable: boolean;
+    onMove: (slot: PlacedSlot, day: DayKey, start: number) => void;
 }
 
-const TIME_SLOTS = [
-    '08:00', '09:00', '10:00', '11:00', '12:00',
-    '13:00', '14:00', '15:00', '16:00', '17:00'
-];
+const ROW_PX = 28;
 
-export function DraggableSchedule({ initialSchedule, editable = false, onRequestMove }: DraggableScheduleProps) {
-    const { t } = useLanguage();
-    const DAYS = [t.scheduleComponent.monday, t.scheduleComponent.tuesday, t.scheduleComponent.wednesday, t.scheduleComponent.thursday, t.scheduleComponent.friday];
-    const [schedule, setSchedule] = useState(initialSchedule);
-    const [draggedItem, setDraggedItem] = useState<ScheduleItem | null>(null);
-    const [dropTarget, setDropTarget] = useState<{ day: number, time: string } | null>(null);
-    const [dialogOpen, setDialogOpen] = useState(false);
-    const [pendingMove, setPendingMove] = useState<{ item: ScheduleItem, targetDay: number, targetTime: string } | null>(null);
-
-    useEffect(() => {
-        setSchedule(initialSchedule);
-    }, [initialSchedule]);
-
-    const handleDragStart = (e: React.DragEvent, item: ScheduleItem) => {
-        if (!editable) return;
-        setDraggedItem(item);
-        e.dataTransfer.setData('text/plain', item.id);
-        e.dataTransfer.effectAllowed = 'move';
-    };
-
-    const handleDragOver = (e: React.DragEvent, dayIndex: number, time: string) => {
-        e.preventDefault();
-        if (!editable) return;
-        setDropTarget({ day: dayIndex + 1, time }); // +1 because generic DAYS array is 0-indexed but data uses 1-5 for Mon-Fri commonly
-    };
-
-    const handleDrop = (e: React.DragEvent, dayIndex: number, time: string) => {
-        e.preventDefault();
-        if (!editable || !draggedItem) return;
-
-        const targetDay = dayIndex + 1;
-        // Don't trigger if dropped on same slot
-        if (draggedItem.day === targetDay && draggedItem.startTime === time) {
-            setDraggedItem(null);
-            setDropTarget(null);
-            return;
-        }
-
-        setPendingMove({ item: draggedItem, targetDay, targetTime: time });
-        setDialogOpen(true);
-        setDraggedItem(null);
-        setDropTarget(null);
-    };
-
-    const handleConfirmMove = (mode: 'permanent' | 'one-time') => {
-        if (!pendingMove) return;
-
-        if (onRequestMove) {
-            onRequestMove(pendingMove.item, pendingMove.targetDay, pendingMove.targetTime, mode);
-            setDialogOpen(false);
-            setPendingMove(null);
-            return;
-        }
-
-        toast.error('Unable to save schedule change because no backend handler is configured.');
-        setDialogOpen(false);
-        setPendingMove(null);
-    };
-
-    const calculateEndTime = (newStart: string, oldStart: string, oldEnd: string) => {
-        // calculate duration
-        const startH = parseInt(oldStart.split(':')[0]);
-        const endH = parseInt(oldEnd.split(':')[0]);
-        const duration = endH - startH;
-
-        const newStartH = parseInt(newStart.split(':')[0]);
-        const newEndH = newStartH + duration;
-        return `${newEndH.toString().padStart(2, '0')}:00`;
-    };
+export function DraggableSchedule({ entries, editable, onMove }: DraggableScheduleProps) {
+    const { language } = useLanguage();
+    const isTH = language !== 'en';
+    const placed = React.useMemo(() => placeSlots(entries), [entries]);
+    const range = visibleRange(placed);
+    const rows = (range.end - range.start) / 30;
+    const [dragged, setDragged] = React.useState<PlacedSlot | null>(null);
+    // set one frame after dragstart so the browser keeps the drag image; then every block,
+    // the dragged one included, lets the drop zones underneath receive the drop
+    const [dragging, setDragging] = React.useState(false);
+    const endDrag = () => { setDragged(null); setDragging(false); setOver(null); };
+    const [over, setOver] = React.useState<string | null>(null);
+    const [pending, setPending] = React.useState<{ slot: PlacedSlot; day: DayKey; start: number } | null>(null);
+    const label = (day: DayKey, start: number, end?: number) =>
+        `${isTH ? DAY_LABELS[day].th : DAY_LABELS[day].en} ${formatMinutes(start)}${end !== undefined ? `–${formatMinutes(end)}` : ''}`;
 
     return (
         <>
-            <div className="overflow-x-auto pb-4">
-                <div className="min-w-[800px] grid grid-cols-[100px_repeat(5,1fr)] gap-2">
-                    {/* Header Row */}
-                    <div className="font-semibold text-gray-500 dark:text-slate-400 text-center py-2 bg-gray-50 rounded-lg dark:bg-slate-800">เวลา</div>
-                    {DAYS.map((day, i) => (
-                        <div key={day} className="font-semibold text-gray-700 dark:text-slate-300 text-center py-2 bg-blue-50/50 rounded-lg border border-blue-100">
-                            {day}
-                        </div>
+            <div className="overflow-x-auto">
+                <div className="grid min-w-[900px]" style={{ gridTemplateColumns: `56px repeat(7, minmax(0, 1fr))` }}>
+                    <div />
+                    {DAY_KEYS.map((day) => (
+                        <div key={day} className="border-b border-slate-200 p-2 text-center text-sm font-semibold dark:border-slate-700">{isTH ? DAY_LABELS[day].th : DAY_LABELS[day].en}</div>
                     ))}
-
-                    {/* Time Slots */}
-                    {TIME_SLOTS.map((time) => (
-                        <React.Fragment key={time}>
-                            <div className="text-sm text-gray-500 dark:text-slate-400 font-medium py-4 text-center border-t relative">
-                                <span className="-top-3 relative bg-background px-1">{time}</span>
-                            </div>
-
-                            {DAYS.map((_, dayIndex) => {
-                                // Find course starting at this time/day
-                                const item = schedule.find(s => s.day === dayIndex + 1 && s.startTime === time);
-
-                                const isActiveDrop = dropTarget?.day === dayIndex + 1 && dropTarget?.time === time;
-
+                    <div className="relative" style={{ height: rows * ROW_PX }}>
+                        {Array.from({ length: rows / 2 }, (_, i) => range.start + i * 60).map((h) => (
+                            <div key={h} className="absolute right-2 text-xs text-slate-500 dark:text-slate-400" style={{ top: ((h - range.start) / 30) * ROW_PX - 7 }}>{formatMinutes(h)}</div>
+                        ))}
+                    </div>
+                    {DAY_KEYS.map((day) => (
+                        <div key={day} className="relative border-l border-slate-100 dark:border-slate-800" style={{ height: rows * ROW_PX }}>
+                            {editable && Array.from({ length: rows }, (_, i) => range.start + i * 30).map((start) => {
+                                const id = `${day}-${formatMinutes(start)}`;
                                 return (
                                     <div
-                                        key={`${dayIndex}-${time}`}
-                                        onDragOver={(e) => handleDragOver(e, dayIndex, time)}
-                                        onDrop={(e) => handleDrop(e, dayIndex, time)}
-                                        className={cn(
-                                            "min-h-[80px] border border-dashed border-gray-100 rounded-lg p-1 transition-all",
-                                            isActiveDrop ? "bg-blue-100 border-blue-400 scale-105 z-10" : "hover:bg-gray-50/50",
-                                            item ? "border-transparent bg-transparent hover:bg-transparent" : ""
-                                        )}
-                                    >
-                                        {item && (
-                                            <motion.div
-                                                layoutId={item.id}
-                                                draggable={editable}
-                                                onDragStart={((e: React.DragEvent) => handleDragStart(e, item)) as never}
-                                                className={cn(
-                                                    "h-full p-3 rounded-xl shadow-sm border text-left cursor-grab active:cursor-grabbing",
-                                                    // Dynamic colors based on ID or hash
-                                                    "bg-white border-l-4 border-l-blue-500",
-                                                    editable ? "hover:shadow-md hover:scale-[1.02]" : "",
-                                                    item.isOneTime ? "border-l-orange-500 ring-2 ring-orange-200" : ""
-                                                )}
-                                                initial={{ opacity: 0, scale: 0.9 }}
-                                                animate={{ opacity: 1, scale: 1 }}
-                                            >
-                                                <div className="flex justify-between items-start mb-1">
-                                                    <span className="font-bold text-sm text-gray-800 dark:text-slate-200">{item.courseCode}</span>
-                                                    {editable && <GripVertical className="w-4 h-4 text-gray-400" />}
-                                                </div>
-                                                <div className="text-xs text-gray-600 dark:text-slate-400 line-clamp-1">{item.courseName}</div>
-                                                <div className="flex items-center gap-1 mt-2 text-[10px] text-gray-500 dark:text-slate-400">
-                                                    <MapPin className="w-3 h-3" /> {item.room}
-                                                </div>
-                                                {item.isOneTime && (
-                                                    <Badge variant="outline" className="mt-2 text-[10px] bg-orange-50 text-orange-600 border-orange-200 dark:text-slate-300">
-                                                        เปลี่ยนเฉพาะวันนี้
-                                                    </Badge>
-                                                )}
-                                            </motion.div>
-                                        )}
-                                    </div>
+                                        key={id}
+                                        data-testid={`drop-${id}`}
+                                        className={cn('absolute inset-x-0 border-t border-dashed border-slate-100 dark:border-slate-800', over === id && 'bg-blue-100 dark:bg-slate-700')}
+                                        style={{ top: ((start - range.start) / 30) * ROW_PX, height: ROW_PX }}
+                                        onDragOver={(e) => { e.preventDefault(); setOver(id); }}
+                                        onDragLeave={() => setOver((cur) => (cur === id ? null : cur))}
+                                        onDrop={(e) => {
+                                            e.preventDefault();
+                                            setOver(null);
+                                            if (dragged && !(dragged.day === day && dragged.start === start)) setPending({ slot: dragged, day, start });
+                                            endDrag();
+                                        }}
+                                    />
                                 );
                             })}
-                        </React.Fragment>
+                            {placed.filter((p) => p.day === day).map((p) => (
+                                <div
+                                    key={p.key}
+                                    data-testid="timetable-slot"
+                                    data-course={p.course.code}
+                                    data-day={p.day}
+                                    data-start={formatMinutes(p.start)}
+                                    data-lane={p.lane}
+                                    draggable={editable}
+                                    onDragStart={(e) => {
+                                        e.dataTransfer.setData('text/plain', p.key);
+                                        e.dataTransfer.effectAllowed = 'move';
+                                        setDragged(p);
+                                        requestAnimationFrame(() => setDragging(true));
+                                    }}
+                                    onDragEnd={endDrag}
+                                    className={cn('absolute z-10 overflow-hidden rounded-lg border-l-4 border-l-blue-500 bg-white p-1.5 text-xs shadow-sm dark:bg-slate-800', editable && 'cursor-grab')}
+                                    style={{
+                                        top: ((p.start - range.start) / 30) * ROW_PX,
+                                        height: ((p.end - p.start) / 30) * ROW_PX - 2,
+                                        left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
+                                        width: `calc(${100 / p.lanes}% - 4px)`,
+                                        pointerEvents: dragging ? 'none' : undefined,
+                                        opacity: dragged?.key === p.key ? 0.6 : undefined,
+                                    }}
+                                >
+                                    <div className="flex items-start justify-between">
+                                        <span className="font-bold text-slate-800 dark:text-slate-200">{p.course.code}{p.section ? ` ${isTH ? 'ตอน' : 'sec'} ${p.section.sectionNumber}` : ''}</span>
+                                        {editable && <GripVertical className="h-3 w-3 text-slate-400" />}
+                                    </div>
+                                    <div className="text-slate-600 dark:text-slate-300">{formatMinutes(p.start)}–{formatMinutes(p.end)}</div>
+                                    <div className="flex items-center gap-1 text-slate-500 dark:text-slate-400"><MapPin className="h-3 w-3" />{p.slot.room || p.section?.room || '-'}</div>
+                                </div>
+                            ))}
+                        </div>
                     ))}
                 </div>
             </div>
-
             <RescheduleDialog
-                open={dialogOpen}
-                onOpenChange={setDialogOpen}
-                onConfirm={handleConfirmMove}
-                item={pendingMove?.item}
-                targetTime={`${DAYS[pendingMove?.targetDay ? pendingMove.targetDay - 1 : 0]} ${pendingMove?.targetTime}`}
+                open={!!pending}
+                onOpenChange={(open) => { if (!open) setPending(null); }}
+                courseCode={pending?.slot.course.code ?? ''}
+                fromLabel={pending ? label(pending.slot.day, pending.slot.start, pending.slot.end) : ''}
+                toLabel={pending ? label(pending.day, pending.start, pending.start + (pending.slot.end - pending.slot.start)) : ''}
+                onConfirm={() => { if (pending) onMove(pending.slot, pending.day, pending.start); setPending(null); }}
             />
         </>
     );

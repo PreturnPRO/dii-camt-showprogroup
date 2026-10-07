@@ -11,6 +11,7 @@ import { Timetable } from '@/components/common/Timetable';
 import { api } from '@/lib/api';
 import { asArray, asRecord } from '@/lib/live-data';
 import { mapAppointment, mapCourse } from '@/lib/live-mappers';
+import { teachingEntries, termsOf } from '@/lib/timetable';
 
 type LecturerCourse = ReturnType<typeof mapCourse>;
 type LecturerAppointment = ReturnType<typeof mapAppointment>;
@@ -144,11 +145,7 @@ export default function LecturerDashboard() {
             </CardHeader>
             <CardContent>
               {courses.length > 0 ? (
-                <Timetable
-                  courses={courses}
-                  semester={courses[0]?.semester ?? 1}
-                  academicYear={courses[0]?.academicYear ?? '2568'}
-                />
+                <Timetable entries={teachingEntries(courses, termsOf(courses)[0] ?? null)} term={termsOf(courses)[0] ?? null} />
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
                   {copy.noCourses}

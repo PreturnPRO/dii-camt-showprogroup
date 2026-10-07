@@ -18,6 +18,7 @@ import { TechnicalSkillsCard } from '@/components/dashboard/TechnicalSkillsCard'
 import { SoftSkillsCard } from '@/components/dashboard/SoftSkillsCard';
 import { CourseGradesCard } from '@/components/dashboard/CourseGradesCard';
 import { api } from '@/lib/api';
+import { studentEntries, type Term } from '@/lib/timetable';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Course, Grade, Student, UserRole } from '@/types';
@@ -349,6 +350,8 @@ export default function PersonalDashboard() {
     const [grades, setGrades] = React.useState<Grade[]>([]);
     const [gpaHistory, setGpaHistory] = React.useState<SemesterGPAHistory>([]);
     const [inProgressCredits, setInProgressCredits] = React.useState<number | null>(null);
+    const [enrollmentRows, setEnrollmentRows] = React.useState<unknown[]>([]);
+    const [timetableTerm, setTimetableTerm] = React.useState<Term | null>(null);
     const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
     const [isStudentDashboardLoading, setIsStudentDashboardLoading] = React.useState(true);
     const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillDashboardScores>({
@@ -379,6 +382,10 @@ export default function PersonalDashboard() {
 
                 if (!mounted) return;
                 setInProgressCredits(summaryResult.status === 'fulfilled' ? summaryResult.value.summary.inProgressCredits : null);
+                setTimetableTerm(summaryResult.status === 'fulfilled'
+                  ? { semester: summaryResult.value.summary.semester, academicYear: summaryResult.value.summary.academicYear }
+                  : null);
+                setEnrollmentRows(enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.enrollments : []);
 
                 let nextStudent: Student | null = null;
                 if (profileResult.status === 'fulfilled') {
@@ -714,11 +721,7 @@ export default function PersonalDashboard() {
                             </Button>
                         </div>
                         <div className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
-                            <Timetable
-                                courses={studentCourses}
-                                semester={student.semester}
-                                academicYear={student.academicYear}
-                            />
+                            <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
                         </div>
                     </motion.div>
 

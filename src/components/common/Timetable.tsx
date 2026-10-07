@@ -1,205 +1,96 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import type { Schedule, Course } from '@/types';
-import { Clock, MapPin, User } from 'lucide-react';
+import { MapPin, User } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { DAY_LABELS, formatHours, formatMinutes, placeSlots, studyDays, visibleRange, weeklyMinutes, type Term, type TimetableEntry } from '@/lib/timetable';
 
 interface TimetableProps {
-  courses: Course[];
-  semester: number;
-  academicYear: string;
+  entries: TimetableEntry[];
+  term: Term | null;
 }
 
-const DAYS = [
-  { en: 'monday', th: 'จันทร์', short: 'จ.' },
-  { en: 'tuesday', th: 'อังคาร', short: 'อ.' },
-  { en: 'wednesday', th: 'พุธ', short: 'พ.' },
-  { en: 'thursday', th: 'พฤหัสบดี', short: 'พฤ.' },
-  { en: 'friday', th: 'ศุกร์', short: 'ศ.' },
-  { en: 'saturday', th: 'เสาร์', short: 'ส.' },
-  { en: 'sunday', th: 'อาทิตย์', short: 'อา.' },
-];
+const ROW_PX = 28; // one row = 30 minutes
 
-const TIME_SLOTS = [
-  '08:00', '09:00', '10:00', '11:00', '12:00', 
-  '13:00', '14:00', '15:00', '16:00', '17:00', '18:00'
-];
-
-export function Timetable({ courses, semester, academicYear }: TimetableProps) {
-  const { t, language } = useLanguage();
-
-  // Group schedules by day
-  const schedulesByDay = React.useMemo(() => {
-    const byDay: Record<string, Array<{ course: Course; schedule: Schedule }>> = {};
-    
-    DAYS.forEach(day => {
-      byDay[day.en] = [];
-    });
-    
-    courses.forEach(course => {
-      course.sections?.[0]?.schedule?.forEach(schedule => {
-        byDay[schedule.day].push({ course, schedule });
-      });
-    });
-    
-    return byDay;
-  }, [courses]);
-
-  const totalCredits = courses.reduce((sum, course) => sum + course.credits, 0);
+export function Timetable({ entries, term }: TimetableProps) {
+  const { language } = useLanguage();
+  const isTH = language !== 'en';
+  const placed = React.useMemo(() => placeSlots(entries), [entries]);
+  const range = visibleRange(placed);
+  const days = studyDays(placed).length > 0 && studyDays(placed).some((d) => d === 'saturday' || d === 'sunday')
+    ? (['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const)
+    : (['monday', 'tuesday', 'wednesday', 'thursday', 'friday'] as const);
+  const rows = (range.end - range.start) / 30;
+  const hours = Array.from({ length: (range.end - range.start) / 60 }, (_, i) => range.start + i * 60);
+  const uniqueCourses = new Map(entries.map((e) => [e.course.id, e.course]));
+  const credits = Array.from(uniqueCourses.values()).reduce((sum, c) => sum + c.credits, 0);
+  const weeklyHours = formatHours(weeklyMinutes(placed));
 
   return (
     <Card className="w-full">
       <CardHeader>
-        <div className="flex items-center justify-between">
+        <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle className="text-xl font-semibold">
-            {language === 'en' ? `Timetable Semester ${semester}/${academicYear}` : `ตารางเรียน เทอม ${semester}/${academicYear}`}
+            {term ? (isTH ? `ตารางประจำสัปดาห์ เทอม ${term.semester}/${term.academicYear}` : `Weekly timetable, term ${term.semester}/${term.academicYear}`) : (isTH ? 'ตารางประจำสัปดาห์' : 'Weekly timetable')}
           </CardTitle>
-          <Badge variant="secondary" className="text-sm">
-            {totalCredits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}
-          </Badge>
+          <div className="flex gap-2">
+            <Badge variant="secondary">{credits} {isTH ? 'หน่วยกิต' : 'credits'}</Badge>
+            <Badge variant="secondary">{isTH ? `${weeklyHours} ชม./สัปดาห์` : `${weeklyHours} h/week`}</Badge>
+          </div>
         </div>
       </CardHeader>
       <CardContent>
-        {/* Desktop Table View */}
-        <div className="hidden lg:block overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50 dark:bg-slate-800">
-                <th className="border border-gray-200 p-3 text-left font-semibold text-sm w-24 dark:border-slate-700">
-                  {language === 'en' ? 'Time' : 'เวลา'}
-                </th>
-                {DAYS.map(day => (
-                  <th key={day.en} className="border border-gray-200 p-3 text-center font-semibold text-sm dark:border-slate-700">
-                    <div>{language === 'en' ? day.en.charAt(0).toUpperCase() + day.en.slice(1) : day.th}</div>
-                    <div className="text-xs text-gray-500 dark:text-slate-400 font-normal">{day.short}</div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {TIME_SLOTS.map((time, timeIndex) => (
-                <tr key={time}>
-                  <td className="border border-gray-200 p-2 text-sm text-gray-600 dark:text-slate-400 bg-gray-50 dark:bg-slate-800 dark:border-slate-700">
-                    {time}
-                  </td>
-                  {DAYS.map(day => {
-                    const daySchedules = schedulesByDay[day.en];
-                    const classAtThisTime = daySchedules.find(({ schedule }) => {
-                      return schedule.startTime <= time && schedule.endTime > time;
-                    });
-
-                    if (classAtThisTime) {
-                      // Only render if this is the first time slot of the class
-                      const { course, schedule } = classAtThisTime;
-                      const isFirstSlot = schedule.startTime === time;
-                      
-                      if (isFirstSlot) {
-                        const { course, schedule } = classAtThisTime;
-                        const startIndex = TIME_SLOTS.indexOf(schedule.startTime);
-                        const endIndex = TIME_SLOTS.findIndex(t => t >= schedule.endTime);
-                        const rowSpan = endIndex - startIndex;
-
-                        return (
-                          <td
-                            key={day.en}
-                            rowSpan={rowSpan}
-                            className="border border-gray-200 p-3 bg-blue-50 hover:bg-blue-100 transition-colors dark:bg-slate-800 dark:border-slate-700"
-                          >
-                            <div className="space-y-1">
-                              <div className="font-semibold text-sm text-blue-900 dark:text-slate-200">
-                                {course.code}
-                              </div>
-                              <div className="text-xs text-gray-700 dark:text-slate-300 line-clamp-2">
-                                {language === 'en' ? course.name : course.nameThai}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-slate-300">
-                                <MapPin className="w-3 h-3" />
-                                {schedule.room || course.sections?.[0]?.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}
-                              </div>
-                              <div className="flex items-center gap-1 text-xs text-gray-600 dark:text-slate-300">
-                                <User className="w-3 h-3" />
-                                <span className="truncate">{course.lecturerName || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}</span>
-                              </div>
-                            </div>
-                          </td>
-                        );
-                      }
-                      return null;
-                    }
-
-                    return (
-                      <td key={day.en} className="border border-gray-200 p-3 bg-white dark:bg-slate-900 dark:border-slate-700">
-                        {/* Empty cell */}
-                      </td>
-                    );
-                  })}
-                </tr>
+        {placed.length === 0 ? (
+          <p className="py-8 text-center text-sm text-slate-500 dark:text-slate-400">{isTH ? 'ไม่มีคาบเรียนในเทอมนี้' : 'No classes this term'}</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="grid min-w-[720px]" style={{ gridTemplateColumns: `56px repeat(${days.length}, minmax(0, 1fr))` }}>
+              <div />
+              {days.map((day) => (
+                <div key={day} className="border-b border-slate-200 p-2 text-center text-sm font-semibold dark:border-slate-700">
+                  {isTH ? DAY_LABELS[day].th : DAY_LABELS[day].en}
+                </div>
               ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Mobile List View */}
-        <div className="lg:hidden space-y-4">
-          {DAYS.map(day => {
-            const daySchedules = schedulesByDay[day.en];
-            if (daySchedules.length === 0) return null;
-
-            return (
-              <div key={day.en} className="border rounded-lg p-4">
-                <h3 className="font-semibold text-lg mb-3 text-primary">{language === 'en' ? day.en.charAt(0).toUpperCase() + day.en.slice(1) : day.th}</h3>
-                <div className="space-y-3">
-                  {daySchedules.map(({ course, schedule }, index) => (
-                    <div key={index} className="bg-blue-50 rounded-lg p-3 space-y-2 dark:bg-slate-800">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="font-semibold text-blue-900 dark:text-slate-200">
-                            {course.code}
-                          </div>
-                          <div className="text-sm text-gray-700 dark:text-slate-300">
-                            {language === 'en' ? course.name : course.nameThai}
-                          </div>
-                        </div>
-                        <Badge variant="secondary">{course.credits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}</Badge>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
-                        <Clock className="w-4 h-4" />
-                        {schedule.startTime} - {schedule.endTime}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
-                        <MapPin className="w-4 h-4" />
-                        {schedule.room || course.sections?.[0]?.room || (language === 'en' ? 'TBA' : 'ไม่ระบุ')} {schedule.building}
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-slate-300">
-                        <User className="w-4 h-4" />
-                        {course.lecturerName || (language === 'en' ? 'TBA' : 'ไม่ระบุ')}
-                      </div>
+              <div className="relative" style={{ height: rows * ROW_PX }}>
+                {hours.map((h) => (
+                  <div key={h} className="absolute right-2 text-xs text-slate-500 dark:text-slate-400" style={{ top: ((h - range.start) / 30) * ROW_PX - 7 }}>
+                    {formatMinutes(h)}
+                  </div>
+                ))}
+              </div>
+              {days.map((day) => (
+                <div key={day} className="relative border-l border-slate-100 dark:border-slate-800" style={{ height: rows * ROW_PX }}>
+                  {hours.map((h) => (
+                    <div key={h} className="absolute inset-x-0 border-t border-slate-100 dark:border-slate-800" style={{ top: ((h - range.start) / 30) * ROW_PX }} />
+                  ))}
+                  {placed.filter((p) => p.day === day).map((p) => (
+                    <div
+                      key={p.key}
+                      data-testid="timetable-slot"
+                      data-course={p.course.code}
+                      data-day={p.day}
+                      data-start={formatMinutes(p.start)}
+                      data-lane={p.lane}
+                      className="absolute overflow-hidden rounded-lg border border-blue-200 bg-blue-50 p-1.5 text-xs dark:border-slate-700 dark:bg-slate-800"
+                      style={{
+                        top: ((p.start - range.start) / 30) * ROW_PX,
+                        height: ((p.end - p.start) / 30) * ROW_PX - 2,
+                        left: `calc(${(p.lane / p.lanes) * 100}% + 2px)`,
+                        width: `calc(${100 / p.lanes}% - 4px)`,
+                      }}
+                    >
+                      <div className="font-semibold text-blue-900 dark:text-slate-200">{p.course.code}{p.section ? ` (${isTH ? 'ตอน' : 'sec'} ${p.section.sectionNumber})` : ''}</div>
+                      <div className="text-slate-600 dark:text-slate-300">{formatMinutes(p.start)}–{formatMinutes(p.end)}</div>
+                      <div className="line-clamp-1 text-slate-700 dark:text-slate-300">{isTH ? p.course.nameThai || p.course.name : p.course.name}</div>
+                      <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300"><MapPin className="h-3 w-3" />{p.slot.room || p.section?.room || (isTH ? 'ไม่ระบุห้อง' : 'No room')}</div>
+                      {p.course.lecturerName && <div className="flex items-center gap-1 text-slate-600 dark:text-slate-300"><User className="h-3 w-3" /><span className="truncate">{p.course.lecturerName}</span></div>}
                     </div>
                   ))}
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Course List */}
-        <div className="mt-6 space-y-2">
-          <h3 className="font-semibold text-lg">{language === 'en' ? 'All Courses' : 'รายวิชาทั้งหมด'}</h3>
-          <div className="grid gap-2">
-            {courses.map(course => (
-              <div key={course.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg dark:bg-slate-800">
-                <div>
-                  <span className="font-semibold">{course.code}</span>
-                  <span className="ml-2 text-sm text-gray-600 dark:text-slate-300">{language === 'en' ? course.name : course.nameThai}</span>
-                </div>
-                <div className="text-sm text-gray-600 dark:text-slate-300">
-                  {course.credits} {language === 'en' ? 'Credits' : 'หน่วยกิต'}
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </CardContent>
     </Card>
   );

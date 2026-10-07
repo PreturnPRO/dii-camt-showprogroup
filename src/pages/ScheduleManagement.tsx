@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calendar, Search, MapPin, Plus, Clock, Edit3, Save, AlertCircle, CheckCircle, XCircle, Bell } from 'lucide-react';
+import { Calendar, Search, MapPin, Plus, Clock, Edit3, Save, AlertCircle, Bell, ExternalLink } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,12 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { DraggableSchedule, ScheduleItem } from '@/components/schedule/DraggableSchedule';
+import { useNavigate } from 'react-router-dom';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { DraggableSchedule } from '@/components/schedule/DraggableSchedule';
+import { mapCourse } from '@/lib/live-mappers';
+import { formatMinutes, teachingEntries, termKey, termsOf, type DayKey, type PlacedSlot } from '@/lib/timetable';
+import type { Course } from '@/types';
 import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
@@ -23,29 +28,16 @@ const itemVariants = {
     visible: { opacity: 1, y: 0 },
 };
 
-const dayToIndex = (day: unknown) => {
-    const value = asString(day).toLowerCase();
-    const map: Record<string, number> = {
-        monday: 1,
-        mon: 1,
-        tuesday: 2,
-        tue: 2,
-        wednesday: 3,
-        wed: 3,
-        thursday: 4,
-        thu: 4,
-        friday: 5,
-        fri: 5,
-    };
-    return map[value] ?? asNumber(day, 1);
-};
-
 export default function ScheduleManagement() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
+    const navigate = useNavigate();
     const [isEditMode, setIsEditMode] = useState(false);
-    const [schedule, setSchedule] = useState<ScheduleItem[]>([]);
+    const [courses, setCourses] = useState<Course[]>([]);
     const [courseRecords, setCourseRecords] = useState<unknown[]>([]);
-    const [requests, setRequests] = useState<Array<{ id: string; lecturer: string; courseCode: string; courseName: string; oldTime: string; newTime: string; reason: string; type: string; targetDate?: string }>>([]);
+    const [termValue, setTermValue] = useState('');
+    const [requests, setRequests] = useState<Array<{ id: string; submitter: string; title: string; status: string; submittedAt: string }>>([]);
+    const terms = termsOf(courses);
+    const term = terms.find((item) => termKey(item) === termValue) ?? terms[0] ?? null;
     const [rooms, setRooms] = useState<Array<{ id: string; code: string; name: string; building: string; room: string; type: string; capacity: number; status: string }>>([]);
     const [isRoomDialogOpen, setIsRoomDialogOpen] = useState(false);
     const [roomForm, setRoomForm] = useState({
@@ -68,33 +60,7 @@ export default function ScheduleManagement() {
 
                 if (coursesResponse.status === 'fulfilled') {
                     setCourseRecords(coursesResponse.value.courses);
-                    const mappedSchedule = coursesResponse.value.courses.flatMap((item, courseIndex) => {
-                        const course = asRecord(item);
-                        const sections = asArray(course.sections);
-                        const slots = sections.length
-                            ? sections.flatMap((section, sectionIndex) => asArray(asRecord(section).schedule).map((slot, scheduleIndex) => ({ slot, section, sectionIndex, scheduleIndex })))
-                            : asArray(course.sections?.[0]?.schedule).map((slot, scheduleIndex) => ({ slot, section: {}, sectionIndex: undefined, scheduleIndex }));
-
-                        return slots.map(({ slot, section, sectionIndex, scheduleIndex }, slotIndex) => {
-                            const scheduleSlot = asRecord(slot);
-                            const sectionRecord = asRecord(section);
-                            const facility = asRecord(sectionRecord.facility);
-                            const courseId = asString(course.id, `course-${courseIndex}`);
-                            return {
-                                id: `${courseId}-${sectionIndex ?? 'course'}-${scheduleIndex ?? slotIndex}`,
-                                courseId,
-                                sectionIndex,
-                                scheduleIndex,
-                                day: dayToIndex(scheduleSlot.day),
-                                startTime: asString(scheduleSlot.startTime, '09:00'),
-                                endTime: asString(scheduleSlot.endTime, '12:00'),
-                                courseCode: asString(course.code, 'DII'),
-                                courseName: asString(course.nameThai, asString(course.name, '-')),
-                                room: asString(sectionRecord.room, asString(facility.room, asString(scheduleSlot.room, '-'))),
-                            };
-                        });
-                    });
-                    setSchedule(mappedSchedule);
+                    setCourses(coursesResponse.value.courses.map(mapCourse));
                 }
 
                 if (facilitiesResponse.status === 'fulfilled') {
@@ -126,18 +92,13 @@ export default function ScheduleManagement() {
                         })
                         .map((item, index) => {
                             const request = asRecord(item);
-                            const student = asRecord(request.student);
-                            const studentUser = asRecord(student.user);
+                            const studentUser = asRecord(asRecord(request.student).user);
                             return {
                                 id: asString(request.id, String(index + 1)),
-                                lecturer: asString(studentUser.nameThai, asString(studentUser.name, '-')),
-                                courseCode: asString(request.type, '-'),
-                                courseName: asString(request.title, '-'),
-                                oldTime: '-',
-                                newTime: '-',
-                                reason: asString(request.description, '-'),
-                                type: 'one-time',
-                                targetDate: asString(request.submittedAt, ''),
+                                submitter: asString(studentUser.nameThai, asString(studentUser.name, '-')),
+                                title: asString(request.title, '-'),
+                                status: asString(request.status, '-'),
+                                submittedAt: asString(request.submittedAt, asString(request.createdAt, '')),
                             };
                         });
                     setRequests(mappedRequests);
@@ -149,30 +110,6 @@ export default function ScheduleManagement() {
             isMounted = false;
         };
     }, []);
-
-    const handleApprove = async (req: { id: string; lecturer: string }) => {
-        try {
-            await api.requests.updateStatus(String(req.id), { status: 'approved' });
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to approve request');
-            return;
-        }
-        toast.success(`${t.scheduleManagementPage.approveSuccess} - ${req.lecturer}`, {
-            description: t.scheduleManagementPage.approveDesc
-        });
-        setRequests(prev => prev.filter(r => r.id !== req.id));
-    };
-
-    const handleReject = async (id: string) => {
-        try {
-            await api.requests.updateStatus(String(id), { status: 'rejected' });
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to reject request');
-            return;
-        }
-        toast.error(t.scheduleManagementPage.rejectSuccess);
-        setRequests(prev => prev.filter(r => r.id !== id));
-    };
 
     const createRoom = async () => {
         if (!roomForm.code.trim() || !roomForm.name.trim() || !roomForm.building.trim()) {
@@ -211,6 +148,39 @@ export default function ScheduleManagement() {
         }
     };
 
+    const handleScheduleMove = async (p: PlacedSlot, day: DayKey, start: number) => {
+        const record = asRecord(courseRecords.find((r) => asString(asRecord(r).id) === p.course.id));
+        const slotIndex = p.section ? p.section.schedule.indexOf(p.slot) : -1;
+        if (!p.section || slotIndex < 0) {
+            toast.error(language === 'th' ? 'หาคาบนี้ในข้อมูลวิชาไม่เจอ' : 'Could not find this class in the course');
+            return;
+        }
+        const nextSlot = { day, startTime: formatMinutes(start), endTime: formatMinutes(start + (p.end - p.start)) };
+        // send every section by number: the API updates sections in place, so enrollments keep their section
+        const sections = asArray(record.sections).map((item) => {
+            const s = asRecord(item);
+            const schedule = asArray(s.schedule).map((slot, i) =>
+                asString(s.id) === p.section!.id && i === slotIndex ? { ...asRecord(slot), ...nextSlot } : asRecord(slot));
+            return {
+                number: asString(s.number),
+                room: asString(s.room) || undefined,
+                facilityId: asString(s.facilityId) || undefined,
+                maxStudents: asNumber(s.maxStudents, 30),
+                minStudents: asNumber(s.minStudents, 0),
+                schedule,
+            };
+        });
+        try {
+            const response = await api.courses.update(p.course.id, { sections });
+            const updated = asRecord(response.course);
+            setCourseRecords((cur) => cur.map((r) => (asString(asRecord(r).id) === p.course.id ? updated : r)));
+            setCourses((cur) => cur.map((c) => (c.id === p.course.id ? mapCourse(updated) : c)));
+            toast.success(language === 'th' ? 'ย้ายคาบแล้ว (มีผลทุกสัปดาห์)' : 'Class moved (every week)');
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ย้ายคาบไม่สำเร็จ' : 'Could not move the class'));
+        }
+    };
+
     const toggleRoomStatus = async (room: { id: string; status: string }) => {
         try {
             const isActive = room.status === 'maintenance';
@@ -219,72 +189,6 @@ export default function ScheduleManagement() {
             toast.success(isActive ? 'เปิดใช้งานห้องแล้ว' : 'ปิดใช้งานห้องแล้ว');
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to update room');
-        }
-    };
-
-    const calculateEndTime = (newStart: string, oldStart: string, oldEnd: string) => {
-        const startHour = Number(oldStart.split(':')[0]);
-        const endHour = Number(oldEnd.split(':')[0]);
-        const duration = Number.isFinite(startHour) && Number.isFinite(endHour) ? Math.max(endHour - startHour, 1) : 3;
-        const nextHour = Number(newStart.split(':')[0]);
-        return `${String(nextHour + duration).padStart(2, '0')}:00`;
-    };
-
-    const dayNameByIndex = (day: number) => ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'][day - 1] ?? 'monday';
-
-    const handleScheduleMove = async (item: ScheduleItem, targetDay: number, targetTime: string, mode: 'permanent' | 'one-time') => {
-        if (!item.courseId || typeof item.scheduleIndex !== 'number') {
-            toast.error('Unable to identify schedule slot');
-            return;
-        }
-
-        const course = courseRecords.find((record) => asString(asRecord(record).id) === item.courseId);
-        if (!course) {
-            toast.error('Unable to find course record');
-            return;
-        }
-
-        const courseRecord = asRecord(course);
-        const nextSlot = {
-            day: dayNameByIndex(targetDay),
-            startTime: targetTime,
-            endTime: calculateEndTime(targetTime, item.startTime, item.endTime),
-            room: item.room,
-        };
-
-        try {
-            if (typeof item.sectionIndex === 'number') {
-                const nextSections = asArray(courseRecord.sections).map((section, sectionIndex) => {
-                    const sectionRecord = asRecord(section);
-                    const scheduleItems = asArray(sectionRecord.schedule).map((slot, scheduleIndex) =>
-                        sectionIndex === item.sectionIndex && scheduleIndex === item.scheduleIndex
-                            ? { ...asRecord(slot), ...nextSlot }
-                            : asRecord(slot),
-                    );
-                    return {
-                        number: asString(sectionRecord.number, String(sectionIndex + 1)),
-                        room: asString(sectionRecord.room, item.room),
-                        facilityId: asString(sectionRecord.facilityId) || undefined,
-                        maxStudents: asNumber(sectionRecord.maxStudents, 30),
-                        schedule: scheduleItems,
-                    };
-                });
-                await api.courses.update(item.courseId, { sections: nextSections });
-            } else {
-                const nextSchedule = asArray(courseRecord.schedule).map((slot, scheduleIndex) =>
-                    scheduleIndex === item.scheduleIndex ? { ...asRecord(slot), ...nextSlot } : asRecord(slot),
-                );
-                await api.courses.update(item.courseId, { schedule: nextSchedule });
-            }
-
-            setSchedule((current) => current.map((slot) =>
-                slot.id === item.id
-                    ? { ...slot, day: targetDay, startTime: targetTime, endTime: nextSlot.endTime, isOneTime: mode === 'one-time' }
-                    : slot,
-            ));
-            toast.success(mode === 'one-time' ? 'บันทึกการเปลี่ยนเฉพาะครั้งแล้ว' : 'บันทึกตารางเรียนแล้ว');
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to update schedule');
         }
     };
 
@@ -308,44 +212,41 @@ export default function ScheduleManagement() {
                 </motion.div>
             </div>
 
-            {/* Pending Requests */}
-            <AnimatePresence>
-                {requests.length > 0 && (
-                    <motion.div variants={itemVariants} initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                        className="bg-amber-50/80 backdrop-blur-xl border border-amber-200 rounded-3xl p-6 shadow-sm">
-                        <h3 className="text-lg font-bold text-amber-800 mb-4 flex items-center gap-2">
-                            <Bell className="w-5 h-5 animate-pulse" /> {t.scheduleManagementPage.editRequests} ({requests.length})
+            {/* Requests that mention the schedule or rooms: shown as they are, handled on the requests page */}
+            <motion.div variants={itemVariants} data-testid="schedule-requests"
+                className="bg-amber-50/80 backdrop-blur-xl border border-amber-200 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50 dark:border-slate-800">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                    <div>
+                        <h3 className="text-lg font-bold text-amber-800 dark:text-slate-200 flex items-center gap-2">
+                            <Bell className="w-5 h-5" /> {language === 'th' ? `คำร้องที่เกี่ยวกับตาราง/ห้อง (${requests.length})` : `Requests about schedules or rooms (${requests.length})`}
                         </h3>
-                        <div className="space-y-3">
-                            {requests.map(req => (
-                                <motion.div key={req.id} whileHover={{ x: 4 }} className="bg-white p-5 rounded-2xl border border-amber-100 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4 dark:bg-slate-900">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                            <span className="font-bold text-slate-800 dark:text-slate-200">{req.lecturer}</span>
-                                            <Badge variant="outline" className="rounded-lg text-xs">{req.courseCode}</Badge>
-                                            <Badge className={`rounded-lg text-xs ${req.type === 'permanent' ? 'bg-purple-100 text-purple-700 border-purple-200' : 'bg-blue-100 text-blue-700 border-blue-200'}`}>
-                                                {req.type === 'permanent' ? t.scheduleManagementPage.permanentChange : t.scheduleManagementPage.oneTime}
-                                            </Badge>
-                                        </div>
-                                        <p className="text-sm text-slate-600 dark:text-slate-300">
-                                            จาก <span className="text-red-500 font-medium dark:text-slate-400">{req.oldTime}</span> เป็น <span className="text-emerald-600 font-medium dark:text-slate-300">{req.newTime}</span>
-                                        </p>
-                                        <p className="text-sm text-slate-400 mt-1">{t.scheduleManagementPage.reason} {req.reason}</p>
+                        <p className="text-sm text-amber-700/80 dark:text-slate-400">
+                            {language === 'th' ? 'คัดจากคำในหัวข้อและรายละเอียดคำร้อง · พิจารณาและตอบที่หน้าคำร้อง' : 'Picked by words in the request title and text · review and answer them on the requests page'}
+                        </p>
+                    </div>
+                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => navigate('/requests')}>
+                        <ExternalLink className="w-4 h-4 mr-1" /> {language === 'th' ? 'เปิดหน้าคำร้อง' : 'Open requests'}
+                    </Button>
+                </div>
+                {requests.length === 0 ? (
+                    <p className="text-sm text-slate-500 dark:text-slate-400">{language === 'th' ? 'ไม่มีคำร้องที่เกี่ยวกับตารางหรือห้อง' : 'No requests about schedules or rooms'}</p>
+                ) : (
+                    <div className="space-y-3">
+                        {requests.map((req) => (
+                            <div key={req.id} className="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm flex flex-wrap items-center justify-between gap-3 dark:bg-slate-900 dark:border-slate-800">
+                                <div className="min-w-0">
+                                    <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{req.title}</div>
+                                    <div className="text-sm text-slate-500 dark:text-slate-400">
+                                        {language === 'th' ? 'ผู้ยื่น' : 'From'}: {req.submitter}
+                                        {req.submittedAt && ` · ${new Date(req.submittedAt).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-GB')}`}
                                     </div>
-                                    <div className="flex gap-2">
-                                        <Button size="sm" variant="outline" className="text-red-500 hover:bg-red-50 border-red-200 rounded-xl dark:text-slate-400 dark:bg-slate-800" onClick={() => handleReject(req.id)}>
-                                            <XCircle className="w-4 h-4 mr-1" /> {t.scheduleManagementPage.reject}
-                                        </Button>
-                                        <Button size="sm" className="bg-emerald-500 hover:bg-emerald-600 rounded-xl shadow-lg shadow-emerald-200" onClick={() => handleApprove(req)}>
-                                            <CheckCircle className="w-4 h-4 mr-1" /> {t.scheduleManagementPage.approve}
-                                        </Button>
-                                    </div>
-                                </motion.div>
-                            ))}
-                        </div>
-                    </motion.div>
+                                </div>
+                                <Badge variant="outline" className="rounded-lg text-xs">{req.status}</Badge>
+                            </div>
+                        ))}
+                    </div>
                 )}
-            </AnimatePresence>
+            </motion.div>
 
             {/* Room Cards */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -382,6 +283,14 @@ export default function ScheduleManagement() {
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t.scheduleManagementPage.combinedDesc}</p>
                     </div>
                     <div className="flex items-center gap-4">
+                        <Select value={term ? termKey(term) : ''} onValueChange={setTermValue}>
+                            <SelectTrigger data-testid="term-picker" className="w-44 rounded-xl"><SelectValue placeholder={language === 'th' ? 'เลือกเทอม' : 'Term'} /></SelectTrigger>
+                            <SelectContent>
+                                {terms.map((item) => (
+                                    <SelectItem key={termKey(item)} value={termKey(item)}>{language === 'th' ? `เทอม ${item.semester}/${item.academicYear}` : `Term ${item.semester}/${item.academicYear}`}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                         <div className="flex items-center gap-2 bg-white/80 p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 dark:bg-slate-900/50">
                             <Switch id="edit-mode" checked={isEditMode} onCheckedChange={setIsEditMode} />
                             <Label htmlFor="edit-mode" className="cursor-pointer flex items-center gap-2 text-sm">
@@ -395,7 +304,7 @@ export default function ScheduleManagement() {
                         <Edit3 className="w-4 h-4" /> {t.scheduleManagementPage.editModeDesc}
                     </div>
                 )}
-                <DraggableSchedule initialSchedule={schedule} editable={isEditMode} onRequestMove={handleScheduleMove} />
+                <DraggableSchedule entries={teachingEntries(courses, term)} editable={isEditMode} onMove={handleScheduleMove} />
             </motion.div>
 
             <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>
