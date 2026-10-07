@@ -637,7 +637,8 @@ export const mapStudent = (value: unknown, index = 0): Student => {
     activities: asArray(source.activities) as Student["activities"],
     totalActivityHours: asNumber(source.totalActivityHours, fallback.totalActivityHours),
     gamificationPoints: asNumber(source.gamificationPoints, fallback.gamificationPoints),
-    portfolio: portfolio.studentId || portfolio.id
+    // the public share view sends the portfolio without ids, so any portfolio object counts
+    portfolio: Object.keys(portfolio).length > 0
       ? {
           ...(fallback.portfolio ?? {
             studentId: fallback.id,

@@ -77,7 +77,8 @@ const itemVariants = {
 
 export default function Portfolio() {
   const { user, updateProfile } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isTH = language !== 'en';
   const [activeTab, setActiveTab] = React.useState('projects');
   const [student, setStudent] = React.useState<Student>(emptyStudent);
   
@@ -257,6 +258,9 @@ export default function Portfolio() {
   };
 
   // Handlers for Public Toggle
+  // the link works only when both are on (backend rule); a missing portfolio row is private
+  const isShared = student.portfolio?.isPublic === true && student.dataConsent?.allowPortfolioSharing === true;
+
   const handlePublicToggle = async (checked: boolean) => {
     const currentPortfolio = student.portfolio;
     try {
@@ -271,6 +275,8 @@ export default function Portfolio() {
           projects: currentPortfolio?.projects ?? [],
           isPublic: checked,
         },
+        // owner decision 7/10/69: one switch — public mode is also the consent to share by link
+        consent: { allowPortfolioSharing: checked },
       });
       setStudent(mapStudent(response.profile));
       toast.success(checked ? 'เปิดให้ดู Portfolio แบบ Public' : 'ตั้งเป็น Private แล้ว');
@@ -523,25 +529,38 @@ export default function Portfolio() {
         </div>
         <div className="flex flex-col sm:flex-row gap-3 items-center w-full md:w-auto">
           {/* Public Toggle Switch */}
-          <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl w-full sm:w-auto justify-between sm:justify-start">
-            <Switch
-              id="portfolio-public-mode"
-              checked={student.portfolio?.isPublic !== false}
-              onCheckedChange={handlePublicToggle}
-            />
-            <Label htmlFor="portfolio-public-mode" className="text-xs font-semibold cursor-pointer whitespace-nowrap">
-              {student.portfolio?.isPublic !== false ? 'Public Mode' : 'Private Mode'}
-            </Label>
+          <div className="flex flex-col gap-1 w-full sm:w-auto">
+            <div className="flex items-center gap-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-3 py-2 rounded-xl justify-between sm:justify-start">
+              <Switch
+                id="portfolio-public-mode"
+                checked={isShared}
+                onCheckedChange={handlePublicToggle}
+              />
+              <Label htmlFor="portfolio-public-mode" className="text-xs font-semibold cursor-pointer whitespace-nowrap">
+                {isShared ? (isTH ? 'เปิดสาธารณะ' : 'Public Mode') : (isTH ? 'ส่วนตัว' : 'Private Mode')}
+              </Label>
+            </div>
+            {isShared && (
+              <p data-testid="public-note" className="text-xs text-slate-500 dark:text-slate-400">
+                {isTH ? 'ทุกคนที่มีลิงก์ดู portfolio นี้ได้ (ไม่ต้อง login)' : 'Anyone with the link can view this portfolio'}
+              </p>
+            )}
           </div>
           <div className="flex gap-3 w-full sm:w-auto">
             <Button
               variant="outline"
               className="rounded-xl border-slate-200 dark:border-slate-700 flex-1 sm:flex-initial"
-              onClick={() => {
+              data-testid="share-portfolio"
+              disabled={!isShared}
+              onClick={async () => {
                 const shareId = student.studentId || student.id;
                 const url = `${window.location.origin}/portfolio/${encodeURIComponent(shareId)}`;
-                void navigator.clipboard?.writeText(url);
-                toast.success('Portfolio link copied');
+                try {
+                  await navigator.clipboard.writeText(url);
+                  toast.success(isTH ? 'คัดลอกลิงก์แล้ว' : 'Portfolio link copied');
+                } catch {
+                  toast.info(isTH ? 'คัดลอกไม่ได้ คัดลอกลิงก์นี้เอง' : 'Could not copy; copy this link', { description: url, duration: 15000 });
+                }
               }}
             >
               <Share2 className="w-4 h-4 mr-2" /> {t.portfolioPage.shareProfile}
