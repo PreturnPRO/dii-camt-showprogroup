@@ -272,7 +272,18 @@ export const getStudentProfileByIdHandler = asyncHandler(async (req, res) => {
       nameThai: student.user.nameThai,
       major: student.major,
       year: student.year,
-      portfolio: student.portfolio,
+      // only what the student shows on the portfolio; who it is shared with stays private
+      portfolio: student.portfolio
+        ? {
+            summary: student.portfolio.summary,
+            summaryThai: student.portfolio.summaryThai,
+            githubUrl: student.portfolio.githubUrl,
+            linkedinUrl: student.portfolio.linkedinUrl,
+            personalWebsite: student.portfolio.personalWebsite,
+            projects: student.portfolio.projects,
+            isPublic: student.portfolio.isPublic,
+          }
+        : null,
       skills: student.skills.map((item) => ({
         name: item.skill.name,
         category: item.skill.category,
