@@ -11,7 +11,8 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Timetable } from '@/components/common/Timetable';
+import { WeeklyTimetable } from '@/components/common/WeeklyTimetable';
+import { useWeekMoves } from '@/hooks/use-week-moves';
 import { DegreeProgressCard } from '@/components/dashboard/DegreeProgressCard';
 import { GPAHistoryCard } from '@/components/dashboard/GPAHistoryCard';
 import { TechnicalSkillsCard } from '@/components/dashboard/TechnicalSkillsCard';
@@ -345,6 +346,7 @@ export default function PersonalDashboard() {
     const navigate = useNavigate();
     const { t } = useLanguage();
     const { user } = useAuth();
+    const { weekStart: thisWeek, moves: weekMoves } = useWeekMoves();
     const [student, setStudent] = React.useState<Student | null>(null);
     const [courses, setCourses] = React.useState<Course[]>([]);
     const [grades, setGrades] = React.useState<Grade[]>([]);
@@ -721,7 +723,7 @@ export default function PersonalDashboard() {
                             </Button>
                         </div>
                         <div className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
-                            <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
+                            <WeeklyTimetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} weekStart={thisWeek} moves={weekMoves} />
                         </div>
                     </motion.div>
 

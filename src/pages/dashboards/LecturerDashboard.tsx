@@ -7,7 +7,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Timetable } from '@/components/common/Timetable';
+import { WeeklyTimetable } from '@/components/common/WeeklyTimetable';
+import { useWeekMoves } from '@/hooks/use-week-moves';
 import { api } from '@/lib/api';
 import { asArray, asRecord } from '@/lib/live-data';
 import { mapAppointment, mapCourse } from '@/lib/live-mappers';
@@ -31,6 +32,7 @@ export default function LecturerDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
+  const { weekStart: thisWeek, moves: weekMoves } = useWeekMoves();
   const [courses, setCourses] = React.useState<LecturerCourse[]>([]);
   const [appointments, setAppointments] = React.useState<LecturerAppointment[]>([]);
   const [adviseeCount, setAdviseeCount] = React.useState<number | null>(null);
@@ -145,7 +147,7 @@ export default function LecturerDashboard() {
             </CardHeader>
             <CardContent>
               {courses.length > 0 ? (
-                <Timetable entries={teachingEntries(courses, termsOf(courses)[0] ?? null)} term={termsOf(courses)[0] ?? null} />
+                <WeeklyTimetable entries={teachingEntries(courses, termsOf(courses)[0] ?? null)} term={termsOf(courses)[0] ?? null} weekStart={thisWeek} moves={weekMoves} />
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
                   {copy.noCourses}

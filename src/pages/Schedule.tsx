@@ -9,9 +9,14 @@ import {
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Timetable } from '@/components/common/Timetable';
+import { occurrenceKey, WeeklyTimetable } from '@/components/common/WeeklyTimetable';
+import { ClassMoveDialog } from '@/components/schedule/ClassMoveDialog';
+import { toast } from 'sonner';
+import { useSearchParams } from 'react-router-dom';
+import type { ClassMoveView } from '@/lib/api';
+import { thaiToday } from '@/lib/thai-date';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DAY_KEYS, DAY_LABELS, formatHours, formatMinutes, placeSlots, studentEntries, studyDays, teachingEntries, termKey, termsOf, weeklyMinutes, type Term } from '@/lib/timetable';
+import { type Occurrence, addDays, weekOccurrences, weekOf, DAY_LABELS, formatHours, formatMinutes, placeSlots, studentEntries, studyDays, teachingEntries, termKey, termsOf, weeklyMinutes, type Term } from '@/lib/timetable';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapStudent } from '@/lib/live-mappers';
@@ -34,6 +39,20 @@ export default function Schedule() {
   const [enrollmentRows, setEnrollmentRows] = React.useState<unknown[]>([]);
   const [studentTerm, setStudentTerm] = React.useState<Term | null>(null);
   const [termValue, setTermValue] = React.useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const weekParam = searchParams.get('week');
+  const weekStart = weekOf(weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam) ? weekParam : thaiToday());
+  const setWeekStart = (next: string) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set('week', next); return p; });
+  const [moves, setMoves] = React.useState<ClassMoveView[]>([]);
+  const [moveTarget, setMoveTarget] = React.useState<Occurrence | null>(null);
+  const reloadMoves = React.useCallback(() => {
+    api.classMoves.list(weekStart, addDays(weekStart, 6))
+      .then((r) => setMoves(r.moves))
+      .catch(() => setMoves([]));
+  }, [weekStart]);
+  React.useEffect(() => {
+    if (user?.role === 'student' || user?.role === 'lecturer') reloadMoves();
+  }, [reloadMoves, user?.role]);
   const [student, setStudent] = React.useState<Student | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
@@ -106,7 +125,7 @@ export default function Schedule() {
     };
   }, [user?.role]);
 
-  const todayKey = DAY_KEYS[(new Date().getDay() + 6) % 7];
+  const today = thaiToday();
   const dayList = (days: ReturnType<typeof studyDays>) =>
     days.length ? days.map((d) => (language === 'en' ? DAY_LABELS[d].en.slice(0, 3) : DAY_LABELS[d].short)).join(' ') : '-';
 
@@ -149,7 +168,9 @@ export default function Schedule() {
     const studentCourses = Array.from(new Map(entries.map((e) => [e.course.id, e.course])).values());
     const totalCredits = studentCourses.reduce((sum, c) => sum + c.credits, 0);
     const totalHours = formatHours(weeklyMinutes(placed));
-    const todaySlots = placed.filter((p) => p.day === todayKey);
+    // today's classes come from this week's dated classes, so moves in and out are honoured
+    const todaySlots = weekOccurrences(entries, weekOf(today), weekOf(today) === weekStart ? moves : [])
+      .filter((o) => o.date === today && o.kind !== 'moved-out');
 
     return (
       <motion.div
@@ -220,7 +241,7 @@ export default function Schedule() {
               <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
                 <Clock className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.hoursPerWeek}</span>
+              <span className="font-medium text-white/90 text-sm">{t.schedulePage.hoursPerWeek} {language === 'th' ? '(ตามตารางประจำ)' : '(usual week)'}</span>
             </div>
             <div className="text-3xl font-bold">{totalHours} <span className="text-base font-medium">{language === 'th' ? 'ชม.' : 'h'}</span></div>
           </motion.div>
@@ -251,7 +272,7 @@ export default function Schedule() {
               ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ
             </div>
           ) : (
-            <Timetable entries={entries} term={studentTerm} />
+            <WeeklyTimetable entries={entries} term={studentTerm} weekStart={weekStart} moves={moves} showWeekNav onWeekChange={setWeekStart} />
           )}
         </motion.div>
 
@@ -324,6 +345,25 @@ export default function Schedule() {
   // Lecturer View: newest term first, switchable
   const terms = termsOf(courses);
   const lecturerTerm = terms.find((term) => termKey(term) === termValue) ?? terms[0] ?? null;
+  // a class with a waiting request shows it, and the request can be withdrawn there
+  const pendingByKey = Object.fromEntries(moves.filter((m) => m.status === 'pending').map((m) => [`${m.sectionId}|${m.originalDate}|${m.originalStart}`, m]));
+  const withdraw = async (id: string) => {
+    try {
+      await api.classMoves.withdraw(id);
+      toast.success(language === 'th' ? 'ถอนคำขอแล้ว' : 'Request withdrawn');
+      reloadMoves();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not withdraw');
+    }
+  };
+  const badges = Object.fromEntries(Object.entries(pendingByKey).map(([key, m]) => [key, (
+    <div className="mt-1 flex items-center gap-1">
+      <span className="rounded bg-amber-100 px-1 text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+        {language === 'th' ? `รออนุมัติ → ${m.newDate} ${m.newStart}` : `Pending → ${m.newDate} ${m.newStart}`}
+      </span>
+      <button type="button" className="underline" onClick={(e) => { e.stopPropagation(); void withdraw(m.id); }}>{language === 'th' ? 'ถอน' : 'Withdraw'}</button>
+    </div>
+  )]));
   return (
     <motion.div
       variants={containerVariants}
@@ -361,9 +401,14 @@ export default function Schedule() {
             ไม่พบข้อมูลตารางสอนจากระบบ
           </div>
         ) : (
-          <Timetable entries={teachingEntries(courses, lecturerTerm)} term={lecturerTerm} />
+          <WeeklyTimetable
+            entries={teachingEntries(courses, lecturerTerm)} term={lecturerTerm} weekStart={weekStart} moves={moves} showWeekNav onWeekChange={setWeekStart}
+            badges={badges}
+            onSlotClick={(o) => { if (!pendingByKey[occurrenceKey(o)]) setMoveTarget(o); }}
+          />
         )}
       </motion.div>
+      <ClassMoveDialog open={!!moveTarget} onOpenChange={(open) => { if (!open) setMoveTarget(null); }} occurrence={moveTarget} mode="request" onDone={reloadMoves} />
     </motion.div>
   );
 }

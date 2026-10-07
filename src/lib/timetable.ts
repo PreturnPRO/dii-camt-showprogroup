@@ -1,6 +1,7 @@
 import type { Course, Schedule, Section } from '@/types';
 import { asRecord } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
+import type { ClassMoveView } from '@/lib/api';
 
 export const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const;
 export type DayKey = (typeof DAY_KEYS)[number];
@@ -43,10 +44,14 @@ export const placeSlots = (entries: TimetableEntry[]): PlacedSlot[] => {
     });
   });
 
-  // lanes per day: classes that overlap (directly or through a chain) share a group
+  return assignLanes(raw);
+};
+
+/** lanes per day: classes that overlap (directly or through a chain) share a group */
+export const assignLanes = <T extends PlacedSlot>(raw: T[]): T[] => {
   for (const day of DAY_KEYS) {
     const daySlots = raw.filter((p) => p.day === day).sort((a, b) => a.start - b.start || a.end - b.end);
-    let group: PlacedSlot[] = [];
+    let group: T[] = [];
     let groupEnd = -1;
     const close = () => {
       const lanes = Math.max(1, ...group.map((p) => p.lane + 1));
@@ -112,3 +117,40 @@ export const studentEntries = (enrollments: unknown[], term: Term | null): Timet
 
 export const teachingEntries = (courses: Course[], term: Term | null): TimetableEntry[] =>
   courses.filter((c) => inTerm(c, term)).flatMap((course) => course.sections.map((section) => ({ course, section })));
+
+const MS_DAY = 24 * 60 * 60 * 1000;
+const dayToDate = (day: string) => new Date(`${day}T00:00:00.000Z`);
+export const addDays = (day: string, n: number) => new Date(dayToDate(day).getTime() + n * MS_DAY).toISOString().slice(0, 10);
+export const weekOf = (day: string) => addDays(day, -((dayToDate(day).getUTCDay() + 6) % 7));
+
+export type Occurrence = PlacedSlot & { date: string; kind: 'regular' | 'moved-out' | 'moved-in'; move?: ClassMoveView };
+
+/** the class a move starts from: a moved-in block is moved again from its usual day and time */
+export const moveSource = (o: Occurrence) =>
+  o.kind === 'moved-in' && o.move ? { date: o.move.originalDate, start: o.move.originalStart } : { date: o.date, start: formatMinutes(o.start) };
+
+export const weekOccurrences = (entries: TimetableEntry[], weekStart: string, moves: ClassMoveView[]): Occurrence[] => {
+  const approved = moves.filter((m) => m.status === 'approved');
+  const days = DAY_KEYS.map((day, i) => ({ day, date: addDays(weekStart, i) }));
+  const out: Occurrence[] = [];
+  for (const p of placeSlots(entries)) {
+    const date = days.find((d) => d.day === p.day)!.date;
+    const move = approved.find((m) => m.sectionId === p.section?.id && m.originalDate === date && m.originalStart === formatMinutes(p.start));
+    out.push({ ...p, key: `${p.key}-${date}`, date, kind: move ? 'moved-out' : 'regular', move, lane: 0, lanes: 1 });
+  }
+  for (const m of approved) {
+    const target = days.find((d) => d.date === m.newDate);
+    const entry = entries.find((e) => e.section?.id === m.sectionId);
+    const start = toMinutes(m.newStart);
+    const end = toMinutes(m.newEnd);
+    if (!target || !entry || start === null || end === null) continue;
+    out.push({
+      key: `move-${m.id}`, course: entry.course, section: entry.section,
+      slot: { id: `move-${m.id}`, day: target.day, dayThai: '', startTime: m.newStart, endTime: m.newEnd, room: m.room ?? '', type: 'lecture' } as Schedule,
+      day: target.day, start, end, lane: 0, lanes: 1, date: m.newDate, kind: 'moved-in', move: m,
+    });
+  }
+  const laned = assignLanes(out.filter((o) => o.kind !== 'moved-out')) as Occurrence[];
+  return [...out.filter((o) => o.kind === 'moved-out'), ...laned]
+    .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start);
+};

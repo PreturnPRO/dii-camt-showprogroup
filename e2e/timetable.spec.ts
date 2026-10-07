@@ -1,6 +1,8 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 const API = "http://localhost:4000/api";
+// drags need both the class and the drop slot on screen; with force:true Playwright does not scroll the target in
+test.use({ viewport: { width: 1280, height: 1400 } });
 
 async function token(request: APIRequestContext, email: string) {
   return (await (await request.post(`${API}/auth/login`, { data: { email, password: "Password123!" } })).json()).token as string;
@@ -104,14 +106,13 @@ test("staff move keeps minutes, keeps the student's section, and offers no fake 
   }
 });
 
-test("schedule requests panel shows real requests and only links to them", async ({ page }) => {
+test("the schedule page's request panel lists class move requests, not keyword-matched general requests", async ({ page }) => {
   await login(page, "staff@showpro.local");
   await page.goto("/schedule-management");
   const panel = page.getByTestId("schedule-requests");
-  await expect(panel).toBeVisible(); // positive check first, so the zero-counts below mean something
-  await expect(panel.getByRole("button", { name: /เปิดหน้าคำร้อง|Open requests/ })).toBeVisible();
-  await expect(panel.getByRole("button", { name: /อนุมัติ|Approve|ปฏิเสธ|Reject/ })).toHaveCount(0);
-  await expect(panel.getByText(/^-\s*→\s*-$/)).toHaveCount(0);
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText(/คำขอย้ายคาบ|Class move requests/);
+  await expect(panel.getByRole("button", { name: /เปิดหน้าคำร้อง|Open requests/ })).toHaveCount(0);
 });
 
 test("staff can shift a class into time its own block covers", async ({ page, request }) => {

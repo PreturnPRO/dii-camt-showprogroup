@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { Calendar, Search, MapPin, Plus, Clock, Edit3, Save, AlertCircle, Bell, ExternalLink } from 'lucide-react';
+import { Calendar, Search, MapPin, Plus, Clock, Edit3, Save, AlertCircle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,14 +9,17 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useNavigate } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { DraggableSchedule } from '@/components/schedule/DraggableSchedule';
+import { ClassMoveDialog } from '@/components/schedule/ClassMoveDialog';
+import { MoveRequestsPanel } from '@/components/schedule/MoveRequestsPanel';
+import { thaiToday } from '@/lib/thai-date';
 import { mapCourse } from '@/lib/live-mappers';
-import { formatMinutes, teachingEntries, termKey, termsOf, type DayKey, type PlacedSlot } from '@/lib/timetable';
+import { addDays, DAY_KEYS, formatMinutes, teachingEntries, termKey, termsOf, weekOf, type DayKey, type Occurrence, type PlacedSlot } from '@/lib/timetable';
 import type { Course } from '@/types';
 import { toast } from 'sonner';
-import { api } from '@/lib/api';
+import { api, ApiError, type ClassMoveView } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 
 const containerVariants = {
@@ -30,12 +33,34 @@ const itemVariants = {
 
 export default function ScheduleManagement() {
     const { t, language } = useLanguage();
-    const navigate = useNavigate();
     const [isEditMode, setIsEditMode] = useState(false);
     const [courses, setCourses] = useState<Course[]>([]);
     const [courseRecords, setCourseRecords] = useState<unknown[]>([]);
     const [termValue, setTermValue] = useState('');
-    const [requests, setRequests] = useState<Array<{ id: string; submitter: string; title: string; status: string; submittedAt: string }>>([]);
+    const [searchParams, setSearchParams] = useSearchParams();
+    const weekParam = searchParams.get('week');
+    const [mode, setMode] = useState<'recurring' | 'weekly'>(weekParam ? 'weekly' : 'recurring');
+    const weekStart = weekOf(weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam) ? weekParam : thaiToday());
+    const setWeekStart = (next: string) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set('week', next); return p; });
+    const [moves, setMoves] = useState<ClassMoveView[]>([]);
+    const [moveTarget, setMoveTarget] = useState<{ occurrence: Occurrence; date?: string; start?: string } | null>(null);
+    const [movedDetail, setMovedDetail] = useState<ClassMoveView | null>(null);
+    const [blockingMoves, setBlockingMoves] = useState<Array<{ moveId: string; sectionNumber: string; originalDate: string; originalStart: string; newDate: string; newStart: string }>>([]);
+    const reloadMoves = React.useCallback(() => {
+        api.classMoves.list(weekStart, addDays(weekStart, 6)).then((r) => setMoves(r.moves)).catch(() => setMoves([]));
+    }, [weekStart]);
+    React.useEffect(() => { if (mode === 'weekly') reloadMoves(); }, [mode, reloadMoves]);
+    const cancelMove = async (id: string) => {
+        try {
+            await api.classMoves.cancel(id);
+            toast.success(language === 'th' ? 'ยกเลิกการย้ายแล้ว คาบกลับไปเวลาเดิม' : 'Move cancelled');
+            setMovedDetail(null);
+            setBlockingMoves((cur) => cur.filter((m) => m.moveId !== id));
+            reloadMoves();
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Could not cancel');
+        }
+    };
     const terms = termsOf(courses);
     const term = terms.find((item) => termKey(item) === termValue) ?? terms[0] ?? null;
     const [rooms, setRooms] = useState<Array<{ id: string; code: string; name: string; building: string; room: string; type: string; capacity: number; status: string }>>([]);
@@ -54,8 +79,8 @@ export default function ScheduleManagement() {
     React.useEffect(() => {
         let isMounted = true;
 
-        Promise.allSettled([api.courses.list(), api.facilities.list(), api.requests.list()])
-            .then(([coursesResponse, facilitiesResponse, requestsResponse]) => {
+        Promise.allSettled([api.courses.list(), api.facilities.list()])
+            .then(([coursesResponse, facilitiesResponse]) => {
                 if (!isMounted) return;
 
                 if (coursesResponse.status === 'fulfilled') {
@@ -83,26 +108,6 @@ export default function ScheduleManagement() {
                     setRooms(mappedRooms);
                 }
 
-                if (requestsResponse.status === 'fulfilled') {
-                    const mappedRequests = requestsResponse.value.requests
-                        .filter((item) => {
-                            const request = asRecord(item);
-                            const text = `${asString(request.type)} ${asString(request.title)} ${asString(request.description)}`.toLowerCase();
-                            return text.includes('schedule') || text.includes('section') || text.includes('room') || text.includes('ตาราง') || text.includes('ห้อง');
-                        })
-                        .map((item, index) => {
-                            const request = asRecord(item);
-                            const studentUser = asRecord(asRecord(request.student).user);
-                            return {
-                                id: asString(request.id, String(index + 1)),
-                                submitter: asString(studentUser.nameThai, asString(studentUser.name, '-')),
-                                title: asString(request.title, '-'),
-                                status: asString(request.status, '-'),
-                                submittedAt: asString(request.submittedAt, asString(request.createdAt, '')),
-                            };
-                        });
-                    setRequests(mappedRequests);
-                }
             })
             .catch(() => undefined);
 
@@ -177,6 +182,13 @@ export default function ScheduleManagement() {
             setCourses((cur) => cur.map((c) => (c.id === p.course.id ? mapCourse(updated) : c)));
             toast.success(language === 'th' ? 'ย้ายคาบแล้ว (มีผลทุกสัปดาห์)' : 'Class moved (every week)');
         } catch (error) {
+            // a weekly change that would drop a class with a one-time move: list those moves to cancel first
+            // ApiError.details is the whole error payload: { message, details: [moves] }
+            const moves = error instanceof ApiError ? asArray(asRecord(error.details).details) : [];
+            if (moves.length > 0 && moves.every((d) => 'moveId' in asRecord(d))) {
+                setBlockingMoves(moves as typeof blockingMoves);
+                return;
+            }
             toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ย้ายคาบไม่สำเร็จ' : 'Could not move the class'));
         }
     };
@@ -212,40 +224,8 @@ export default function ScheduleManagement() {
                 </motion.div>
             </div>
 
-            {/* Requests that mention the schedule or rooms: shown as they are, handled on the requests page */}
-            <motion.div variants={itemVariants} data-testid="schedule-requests"
-                className="bg-amber-50/80 backdrop-blur-xl border border-amber-200 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50 dark:border-slate-800">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div>
-                        <h3 className="text-lg font-bold text-amber-800 dark:text-slate-200 flex items-center gap-2">
-                            <Bell className="w-5 h-5" /> {language === 'th' ? `คำร้องที่เกี่ยวกับตาราง/ห้อง (${requests.length})` : `Requests about schedules or rooms (${requests.length})`}
-                        </h3>
-                        <p className="text-sm text-amber-700/80 dark:text-slate-400">
-                            {language === 'th' ? 'คัดจากคำในหัวข้อและรายละเอียดคำร้อง · พิจารณาและตอบที่หน้าคำร้อง' : 'Picked by words in the request title and text · review and answer them on the requests page'}
-                        </p>
-                    </div>
-                    <Button size="sm" variant="outline" className="rounded-xl" onClick={() => navigate('/requests')}>
-                        <ExternalLink className="w-4 h-4 mr-1" /> {language === 'th' ? 'เปิดหน้าคำร้อง' : 'Open requests'}
-                    </Button>
-                </div>
-                {requests.length === 0 ? (
-                    <p className="text-sm text-slate-500 dark:text-slate-400">{language === 'th' ? 'ไม่มีคำร้องที่เกี่ยวกับตารางหรือห้อง' : 'No requests about schedules or rooms'}</p>
-                ) : (
-                    <div className="space-y-3">
-                        {requests.map((req) => (
-                            <div key={req.id} className="bg-white p-4 rounded-2xl border border-amber-100 shadow-sm flex flex-wrap items-center justify-between gap-3 dark:bg-slate-900 dark:border-slate-800">
-                                <div className="min-w-0">
-                                    <div className="font-semibold text-slate-800 dark:text-slate-200 truncate">{req.title}</div>
-                                    <div className="text-sm text-slate-500 dark:text-slate-400">
-                                        {language === 'th' ? 'ผู้ยื่น' : 'From'}: {req.submitter}
-                                        {req.submittedAt && ` · ${new Date(req.submittedAt).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-GB')}`}
-                                    </div>
-                                </div>
-                                <Badge variant="outline" className="rounded-lg text-xs">{req.status}</Badge>
-                            </div>
-                        ))}
-                    </div>
-                )}
+            <motion.div variants={itemVariants}>
+                <MoveRequestsPanel onDecided={reloadMoves} />
             </motion.div>
 
             {/* Room Cards */}
@@ -282,7 +262,18 @@ export default function ScheduleManagement() {
                         <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.scheduleManagementPage.combinedSchedule}</h3>
                         <p className="text-sm text-slate-500 dark:text-slate-400">{t.scheduleManagementPage.combinedDesc}</p>
                     </div>
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex rounded-xl border border-slate-200 p-1 dark:border-slate-700">
+                            <Button size="sm" variant={mode === 'recurring' ? 'default' : 'ghost'} data-testid="mode-recurring" onClick={() => setMode('recurring')}>{language === 'th' ? 'ประจำทุกสัปดาห์' : 'Every week'}</Button>
+                            <Button size="sm" variant={mode === 'weekly' ? 'default' : 'ghost'} data-testid="mode-weekly" onClick={() => setMode('weekly')}>{language === 'th' ? 'รายสัปดาห์' : 'One week'}</Button>
+                        </div>
+                        {mode === 'weekly' && (
+                            <div className="flex items-center gap-1">
+                                <Button size="sm" variant="ghost" data-testid="week-prev" onClick={() => setWeekStart(addDays(weekStart, -7))}>‹</Button>
+                                <span className="text-sm font-medium" data-testid="week-range">{weekStart} – {addDays(weekStart, 6)}</span>
+                                <Button size="sm" variant="ghost" data-testid="week-next" onClick={() => setWeekStart(addDays(weekStart, 7))}>›</Button>
+                            </div>
+                        )}
                         <Select value={term ? termKey(term) : ''} onValueChange={setTermValue}>
                             <SelectTrigger data-testid="term-picker" className="w-44 rounded-xl"><SelectValue placeholder={language === 'th' ? 'เลือกเทอม' : 'Term'} /></SelectTrigger>
                             <SelectContent>
@@ -304,7 +295,57 @@ export default function ScheduleManagement() {
                         <Edit3 className="w-4 h-4" /> {t.scheduleManagementPage.editModeDesc}
                     </div>
                 )}
-                <DraggableSchedule entries={teachingEntries(courses, term)} editable={isEditMode} onMove={handleScheduleMove} />
+                {mode === 'recurring' ? (
+                    <DraggableSchedule entries={teachingEntries(courses, term)} editable={isEditMode} onMove={handleScheduleMove} />
+                ) : (
+                    <DraggableSchedule
+                        entries={teachingEntries(courses, term)}
+                        editable={isEditMode}
+                        weekStart={weekStart}
+                        moves={moves}
+                        // dragging inside the week fills the form; clicking opens it empty (any day) or shows a move
+                        onMove={(p, day, start) => setMoveTarget({ occurrence: p as Occurrence, date: addDays(weekStart, DAY_KEYS.indexOf(day)), start: formatMinutes(start) })}
+                        onSlotClick={(o) => (o.kind === 'moved-in' && o.move ? setMovedDetail(o.move) : setMoveTarget({ occurrence: o }))}
+                    />
+                )}
+                <ClassMoveDialog
+                    open={!!moveTarget}
+                    onOpenChange={(open) => { if (!open) setMoveTarget(null); }}
+                    occurrence={moveTarget?.occurrence ?? null}
+                    initialDate={moveTarget?.date}
+                    initialStart={moveTarget?.start}
+                    mode="move"
+                    onDone={reloadMoves}
+                />
+                <Dialog open={!!movedDetail} onOpenChange={(open) => { if (!open) setMovedDetail(null); }}>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>{language === 'th' ? `คาบที่ย้ายแล้ว ${movedDetail?.courseCode ?? ''}` : `Moved class ${movedDetail?.courseCode ?? ''}`}</DialogTitle></DialogHeader>
+                        {movedDetail && (
+                            <p className="text-sm text-slate-600 dark:text-slate-300">
+                                {movedDetail.originalDate} {movedDetail.originalStart}–{movedDetail.originalEnd} → {movedDetail.newDate} {movedDetail.newStart}–{movedDetail.newEnd} · {movedDetail.room ?? '-'} · {movedDetail.reason}
+                            </p>
+                        )}
+                        <DialogFooter>
+                            <Button variant="outline" onClick={() => setMovedDetail(null)}>{language === 'th' ? 'ปิด' : 'Close'}</Button>
+                            {movedDetail && Math.min(Date.parse(movedDetail.originalDate), Date.parse(movedDetail.newDate)) > Date.parse(thaiToday()) && (
+                                <Button data-testid="cancel-move" variant="destructive" onClick={() => void cancelMove(movedDetail.id)}>{language === 'th' ? 'ยกเลิกการย้าย' : 'Cancel move'}</Button>
+                            )}
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+                <Dialog open={blockingMoves.length > 0} onOpenChange={(open) => { if (!open) setBlockingMoves([]); }}>
+                    <DialogContent>
+                        <DialogHeader><DialogTitle>{language === 'th' ? 'ต้องยกเลิกการย้ายเฉพาะครั้งเหล่านี้ก่อน' : 'Cancel these one-time moves first'}</DialogTitle></DialogHeader>
+                        <div className="space-y-2" data-testid="blocking-moves">
+                            {blockingMoves.map((m) => (
+                                <div key={m.moveId} className="flex items-center justify-between gap-3 text-sm">
+                                    <span>{language === 'th' ? 'ตอน' : 'sec'} {m.sectionNumber} · {m.originalDate} {m.originalStart} → {m.newDate} {m.newStart}</span>
+                                    <Button size="sm" variant="outline" onClick={() => void cancelMove(m.moveId)}>{language === 'th' ? 'ยกเลิกการย้าย' : 'Cancel move'}</Button>
+                                </div>
+                            ))}
+                        </div>
+                    </DialogContent>
+                </Dialog>
             </motion.div>
 
             <Dialog open={isRoomDialogOpen} onOpenChange={setIsRoomDialogOpen}>

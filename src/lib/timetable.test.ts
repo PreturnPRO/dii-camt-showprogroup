@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Course, Section } from '@/types';
 import {
-  enrolledSection, formatHours, inTerm, placeSlots, studentEntries, studyDays, teachingEntries, termsOf, toMinutes, visibleRange, weeklyMinutes,
+  addDays, enrolledSection, formatHours, inTerm, moveSource, placeSlots, weekOf, weekOccurrences, studentEntries, studyDays, teachingEntries, termsOf, toMinutes, visibleRange, weeklyMinutes,
 } from './timetable';
 
 const slot = (day: string, startTime: string, endTime: string) => ({ id: `${day}${startTime}`, day, dayThai: '', startTime, endTime, type: 'lecture' }) as never;
@@ -81,5 +81,51 @@ describe('formatHours', () => {
     expect(formatHours(50)).toBe('0.8');
     expect(formatHours(90)).toBe('1.5');
     expect(formatHours(180)).toBe('3');
+  });
+});
+
+describe('weeks', () => {
+  it('starts on Monday and adds days', () => {
+    expect(weekOf('2030-09-18')).toBe('2030-09-16');
+    expect(weekOf('2030-09-22')).toBe('2030-09-16');
+    expect(addDays('2030-09-16', 7)).toBe('2030-09-23');
+  });
+});
+
+describe('weekOccurrences', () => {
+  const A = course('A', [section('s1', [slot('monday', '09:00', '12:00')])]);
+  const entries = [{ course: A, section: A.sections[0] }];
+  const mv = (over: Record<string, unknown>) => ({
+    id: 'm', sectionId: 's1', sectionNumber: '01', courseId: 'A', courseCode: 'A', courseName: 'A', originalDate: '2030-09-16', originalStart: '09:00', originalEnd: '12:00',
+    newDate: '2030-09-18', newStart: '13:00', newEnd: '16:00', facilityId: null, room: 'R2', status: 'approved', reason: '', requestedById: 'u', decisionNote: null, ...over,
+  }) as never;
+
+  it('dates the weekly classes', () => {
+    expect(weekOccurrences(entries, '2030-09-16', []).map((o) => [o.date, o.kind])).toEqual([['2030-09-16', 'regular']]);
+  });
+
+  it('shows a moved class as out on its day and in on the new day', () => {
+    const occ = weekOccurrences(entries, '2030-09-16', [mv({})]);
+    expect(occ.map((o) => [o.date, o.kind, o.start])).toEqual([['2030-09-16', 'moved-out', 540], ['2030-09-18', 'moved-in', 780]]);
+    expect(occ[1].slot.room).toBe('R2');
+  });
+
+  it('handles moves across weeks and ignores requests that are not approved', () => {
+    // moved from the 16th into the next week: that week shows its own Monday class plus the moved-in one
+    expect(weekOccurrences(entries, '2030-09-23', [mv({ newDate: '2030-09-24' })]).map((o) => [o.date, o.kind])).toEqual([['2030-09-23', 'regular'], ['2030-09-24', 'moved-in']]);
+    expect(weekOccurrences(entries, '2030-09-09', [mv({ originalDate: '2030-09-16', newDate: '2030-09-10' })]).map((o) => [o.date, o.kind])).toEqual([['2030-09-09', 'regular'], ['2030-09-10', 'moved-in']]);
+    expect(weekOccurrences(entries, '2030-09-16', [mv({ status: 'pending' })]).map((o) => o.kind)).toEqual(['regular']);
+  });
+
+  it('moving a class again starts from where it normally is', () => {
+    const occ = weekOccurrences(entries, '2030-09-16', [mv({})]);
+    expect(occ.map(moveSource)).toEqual([{ date: '2030-09-16', start: '09:00' }, { date: '2030-09-16', start: '09:00' }]);
+    expect(moveSource(weekOccurrences(entries, '2030-09-16', [])[0])).toEqual({ date: '2030-09-16', start: '09:00' });
+  });
+
+  it('moved-out blocks take no lane', () => {
+    const B = course('B', [section('s2', [slot('monday', '10:00', '11:00')])]);
+    const occ = weekOccurrences([...entries, { course: B, section: B.sections[0] }], '2030-09-16', [mv({})]);
+    expect(occ.find((o) => o.course.code === 'B')!.lanes).toBe(1);
   });
 });

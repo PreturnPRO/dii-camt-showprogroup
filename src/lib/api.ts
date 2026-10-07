@@ -37,6 +37,18 @@ type RequestOptions = {
   token?: string | null;
 };
 
+/** one class moved to another day (GET /class-moves); dates are Thai days "YYYY-MM-DD" */
+export type ClassMoveView = {
+  id: string; sectionId: string; sectionNumber: string; courseId: string; courseCode: string; courseName: string;
+  originalDate: string; originalStart: string; originalEnd: string;
+  newDate: string; newStart: string; newEnd: string;
+  facilityId: string | null; room: string | null;
+  status: 'pending' | 'approved' | 'rejected' | 'withdrawn' | 'cancelled';
+  reason: string; requestedById: string; decisionNote: string | null;
+};
+export type MoveClash = { start: number; end: number; label: string };
+export type MoveCheck = { roomClashes: MoveClash[]; lecturerClashes: MoveClash[]; studentClashes: Array<{ courseCode: string; count: number }>; newEnd: string; room: string };
+
 /** the student's registration load in their current term; maxCredits is the backend's limit */
 export type RegistrationSummary = { semester: number; academicYear: string; termCredits: number; inProgressCredits: number; maxCredits: number };
 
@@ -574,6 +586,17 @@ export const api = {
   },
   talent: {
     search: (query = "") => request<ApiEnvelope<{ talents: unknown[] }>>(`/talent/search${query}`),
+  },
+  classMoves: {
+    list: (from: string, to: string) => request<ApiEnvelope<{ moves: ClassMoveView[] }>>(`/class-moves?from=${from}&to=${to}`),
+    check: (payload: Record<string, unknown>) => request<ApiEnvelope<MoveCheck>>("/class-moves/check", { method: "POST", body: payload }),
+    create: (payload: Record<string, unknown>) =>
+      request<ApiEnvelope<{ move: ClassMoveView; studentClashes: MoveCheck["studentClashes"] }>>("/class-moves", { method: "POST", body: payload }),
+    pending: () => request<ApiEnvelope<{ moves: ClassMoveView[] }>>("/class-moves/pending"),
+    approve: (id: string) => request<ApiEnvelope<{ move: ClassMoveView }>>(`/class-moves/${id}/approve`, { method: "POST", body: {} }),
+    reject: (id: string, note: string) => request<ApiEnvelope<{ move: ClassMoveView }>>(`/class-moves/${id}/reject`, { method: "POST", body: { note } }),
+    withdraw: (id: string) => request<ApiEnvelope<{ move: ClassMoveView }>>(`/class-moves/${id}/withdraw`, { method: "POST", body: {} }),
+    cancel: (id: string) => request<ApiEnvelope<{ move: ClassMoveView }>>(`/class-moves/${id}/cancel`, { method: "POST", body: {} }),
   },
   facilities: {
     list: () => request<ApiEnvelope<{ facilities: unknown[] }>>("/facilities"),

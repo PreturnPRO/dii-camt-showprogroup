@@ -14,7 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
-import { Timetable } from '@/components/common/Timetable';
+import { WeeklyTimetable } from '@/components/common/WeeklyTimetable';
+import { useWeekMoves } from '@/hooks/use-week-moves';
 import { StudentTimeline } from '@/components/common/StudentTimeline';
 import { DegreeProgressCard } from '@/components/dashboard/DegreeProgressCard';
 import { CreditMatrixCard, type CurriculumCourse } from '@/components/dashboard/CreditMatrixCard';
@@ -270,6 +271,7 @@ export default function StudentDashboard() {
   const { t, language } = useLanguage();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { weekStart: thisWeek, moves: weekMoves } = useWeekMoves();
   const [activeTab, setActiveTab] = React.useState('overview');
   const [student, setStudent] = React.useState<Student>(emptyStudent);
   const [courses, setCourses] = React.useState<Course[]>([]);
@@ -582,7 +584,7 @@ export default function StudentDashboard() {
                       </Button>
                     </div>
                     <div className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
-                      <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
+                      <WeeklyTimetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} weekStart={thisWeek} moves={weekMoves} />
                     </div>
                   </motion.div>
 
@@ -706,7 +708,7 @@ export default function StudentDashboard() {
 
                 {/* Weekly timetable */}
                 <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
-                  <Timetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} />
+                  <WeeklyTimetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} weekStart={thisWeek} moves={weekMoves} />
                 </motion.div>
               </div>
             </TabsContent>
