@@ -729,7 +729,6 @@ export const en = {
     registeredCourses: 'Registered Courses',
     regularSemester: 'Regular Semester',
     totalCredits: 'Total Credits',
-    maxCredits: 'Max 22 credits',
     registrationStatus: 'Registration Status',
     confirmed: 'Confirmed',
     paid: 'Paid',

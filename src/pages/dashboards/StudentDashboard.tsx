@@ -274,6 +274,7 @@ export default function StudentDashboard() {
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [timeline, setTimeline] = React.useState<Student['timeline']>([]);
+  const [inProgressCredits, setInProgressCredits] = React.useState<number | null>(null);
   const [grades, setGrades] = React.useState<Grade[]>([]);
   const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
   const [semesterHistory, setSemesterHistory] = React.useState<{ semester: string; gpa: number; credits: number }[]>([]);
@@ -293,8 +294,10 @@ export default function StudentDashboard() {
       api.enrollments.list(),
       api.activities.list(),
       api.careerTargets.list(),
-    ]).then(([profileResult, statsResult, transcriptResult, enrollmentsResult, activitiesResult, targetsResult]) => {
+      api.enrollments.summary(),
+    ]).then(([profileResult, statsResult, transcriptResult, enrollmentsResult, activitiesResult, targetsResult, summaryResult]) => {
       if (!mounted) return;
+      setInProgressCredits(summaryResult.status === 'fulfilled' ? summaryResult.value.summary.inProgressCredits : null);
 
       let nextStudent = emptyStudent;
       if (profileResult.status === 'fulfilled') {
@@ -632,7 +635,7 @@ export default function StudentDashboard() {
                     <DegreeProgressCard
                       totalCredits={student.totalCredits}
                       earnedCredits={student.earnedCredits}
-                      registeredCredits={studentCourses.reduce((sum, c) => sum + c.credits, 0)}
+                      registeredCredits={inProgressCredits}
                       requiredCredits={student.requiredCredits || student.totalCredits}
                     />
                   </motion.div>

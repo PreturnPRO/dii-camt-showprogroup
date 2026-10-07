@@ -729,7 +729,6 @@ export const th = {
     registeredCourses: 'วิชาที่ลงทะเบียน',
     regularSemester: 'ภาคปกติ',
     totalCredits: 'หน่วยกิตรวม',
-    maxCredits: 'สูงสุด 22 หน่วยกิต',
     registrationStatus: 'สถานะลงทะเบียน',
     confirmed: 'ยืนยันเรียบร้อย',
     paid: 'ชำระเงินแล้ว',

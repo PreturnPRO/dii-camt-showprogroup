@@ -37,6 +37,9 @@ type RequestOptions = {
   token?: string | null;
 };
 
+/** the student's registration load in their current term; maxCredits is the backend's limit */
+export type RegistrationSummary = { semester: number; academicYear: string; termCredits: number; inProgressCredits: number; maxCredits: number };
+
 type ApiEnvelope<T> = {
   success: boolean;
   message?: string;
@@ -445,6 +448,7 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    summary: () => request<ApiEnvelope<{ summary: RegistrationSummary }>>("/enrollments/summary"),
     remove: (courseId: string) =>
       request<ApiEnvelope<{ message: string }>>(`/enrollments/course/${courseId}`, {
         method: "DELETE",

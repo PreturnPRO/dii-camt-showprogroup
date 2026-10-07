@@ -6,7 +6,8 @@ import { useLanguage } from '@/contexts/LanguageContext';
 interface DegreeProgressProps {
     totalCredits: number;
     earnedCredits: number;
-    registeredCredits: number;
+    /** ungraded credits across all terms; null when it could not be loaded */
+    registeredCredits: number | null;
     requiredCredits: number;
 }
 
@@ -34,8 +35,9 @@ export function DegreeProgressCard({
         },
         {
             icon: <Clock className="w-4 h-4 text-blue-500 dark:text-slate-400" />,
-            label: isTH ? 'ลงทะเบียน' : 'Registered',
-            value: registeredCredits,
+            label: isTH ? 'กำลังเรียน (ยังไม่มีเกรด)' : 'In progress (ungraded)',
+            value: registeredCredits ?? '-',
+            testId: 'in-progress-credits',
             color: 'text-blue-700',
         },
         {
@@ -114,7 +116,7 @@ export function DegreeProgressCard({
                     {stats.map((s, i) => (
                         <div key={i} className="flex flex-col items-center gap-1 bg-slate-50 dark:bg-slate-950 rounded-2xl p-3">
                             {s.icon}
-                            <span className={`text-lg font-black ${s.color}`}>{s.value}</span>
+                            <span className={`text-lg font-black ${s.color}`} data-testid={'testId' in s ? s.testId : undefined}>{s.value}</span>
                             <span className="text-[10px] text-slate-500 dark:text-slate-400 text-center leading-tight">{s.label}</span>
                         </div>
                     ))}

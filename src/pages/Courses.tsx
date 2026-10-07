@@ -22,10 +22,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/lib/api';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { isCourseFull, openSections, seatsLeft } from '@/lib/course-seats';
+import { api, type RegistrationSummary } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
-import { getRoleProfile } from '@/lib/user-profile';
 import type { Course } from '@/types';
 
 type CourseRow = Course;
@@ -132,6 +134,21 @@ export default function Courses() {
   const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
   const [viewingCourse, setViewingCourse] = React.useState<CourseRow | null>(null);
   const [activeTab, setActiveTab] = React.useState('my-courses'); // D-25: ให้ปุ่มเพิ่มวิชาสลับไปแท็บเลือกวิชา
+  const [summary, setSummary] = React.useState<RegistrationSummary | null>(null);
+  const [pendingEnroll, setPendingEnroll] = React.useState<CourseRow | null>(null);
+  const [pendingSectionId, setPendingSectionId] = React.useState('');
+  const [pendingDrop, setPendingDrop] = React.useState<Course | null>(null);
+
+  const reloadStudentData = React.useCallback(async () => {
+    const [coursesResponse, enrollmentsResponse, summaryResponse] = await Promise.all([
+      api.courses.list(),
+      api.enrollments.list(),
+      api.enrollments.summary(),
+    ]);
+    setCourses(coursesResponse.courses.map(mapCourse));
+    setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => mapCourse(asRecord(item).course, index)));
+    setSummary(summaryResponse.summary);
+  }, []);
 
   React.useEffect(() => {
     let mounted = true;
@@ -139,9 +156,11 @@ export default function Courses() {
     if (user?.role === 'student') {
       Promise.allSettled([
         api.courses.list(),
-        api.enrollments.list()
-      ]).then(([coursesResult, enrollmentsResult]) => {
+        api.enrollments.list(),
+        api.enrollments.summary(),
+      ]).then(([coursesResult, enrollmentsResult, summaryResult]) => {
         if (!mounted) return;
+        setSummary(summaryResult.status === 'fulfilled' ? summaryResult.value.summary : null);
         if (coursesResult.status === 'fulfilled') {
           setCourses(coursesResult.value.courses.map(mapCourse));
         } else {
@@ -216,11 +235,9 @@ export default function Courses() {
     };
   }, [user?.role]);
 
-  const studentProfile = user?.role === 'student' ? getRoleProfile(user) : null;
-  const studentSemester = String(studentProfile?.semester ?? '1');
-
-  const visibleCourses = user?.role === 'student' 
-    ? courses.filter(c => c.status === 'active' && String(c.semester) === studentSemester) 
+  // the term comes from the API summary (the same term the backend enforces), not from the cached login profile
+  const visibleCourses = user?.role === 'student'
+    ? courses.filter(c => !!summary && c.status === 'active' && c.semester === summary.semester && String(c.academicYear) === summary.academicYear)
     : courses;
 
   const filteredEnrolledCourses = searchQuery
@@ -242,9 +259,7 @@ export default function Courses() {
     const q = registrationQuery.trim().toLowerCase();
     if (!q) return [];
     return visibleCourses.filter((course) => {
-      const section = course.sections?.[0];
-      const maxStudents = section?.maxStudents || 60;
-      return (course.enrolledCount ?? course.enrolledStudents.length) < maxStudents &&
+      return !isCourseFull(course) &&
       (
         course.code?.toLowerCase().includes(q) ||
         course.name?.toLowerCase().includes(q) ||
@@ -252,8 +267,8 @@ export default function Courses() {
       )
     });
   }, [visibleCourses, registrationQuery]);
-  const totalCredits = user?.role === 'student' ? enrolledCourses.reduce((sum, course) => sum + course.credits, 0) : visibleCourses.reduce((sum, course) => sum + course.credits, 0);
-  const creditProgress = Math.min((totalCredits / 22) * 100, 100);
+  const totalCredits = visibleCourses.reduce((sum, course) => sum + course.credits, 0);
+  const creditProgress = summary ? Math.min((summary.termCredits / summary.maxCredits) * 100, 100) : 0;
 
   const handleRegistrationSearch = () => {
     const query = registrationQuery.trim();
@@ -397,23 +412,14 @@ export default function Courses() {
     }
   };
 
-  const enrollCourse = async (course: CourseRow) => {
+  const enrollCourse = async (course: CourseRow, sectionId?: string) => {
     try {
-      const sectionId = course.sections[0]?.id;
       await api.enrollments.create({
         courseId: course.id,
         ...(sectionId ? { sectionId } : {}),
       });
       toast.success(language === 'th' ? 'ลงทะเบียนรายวิชาแล้ว' : 'Course registered');
-      const [coursesResponse, enrollmentsResponse] = await Promise.all([
-        api.courses.list(),
-        api.enrollments.list()
-      ]);
-      setCourses(coursesResponse.courses.map(mapCourse));
-      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
-        const enrollment = asRecord(item);
-        return mapCourse(enrollment.course, index);
-      }));
+      await reloadStudentData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ลงทะเบียนไม่สำเร็จ' : 'Unable to register'));
     }
@@ -423,18 +429,23 @@ export default function Courses() {
     try {
       await api.enrollments.remove(courseId);
       toast.success(language === 'th' ? 'ถอนวิชาสำเร็จ' : 'Course dropped successfully');
-      const [coursesResponse, enrollmentsResponse] = await Promise.all([
-        api.courses.list(),
-        api.enrollments.list()
-      ]);
-      setCourses(coursesResponse.courses.map(mapCourse));
-      setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => {
-        const enrollment = asRecord(item);
-        return mapCourse(enrollment.course, index);
-      }));
+      await reloadStudentData();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ถอนวิชาไม่สำเร็จ' : 'Unable to drop course'));
     }
+  };
+
+  const askToEnroll = (course: CourseRow) => {
+    setPendingEnroll(course);
+    setPendingSectionId(openSections(course)[0]?.id ?? '');
+  };
+
+  /** free seats over all sections; a course without sections has no limit */
+  const seatLabel = (course: Course) => {
+    if (course.sections.length === 0) return language === 'th' ? 'ไม่จำกัดที่นั่ง' : 'No seat limit';
+    const free = course.sections.reduce((n, s) => n + seatsLeft(s), 0);
+    const total = course.sections.reduce((n, s) => n + s.maxStudents, 0);
+    return language === 'th' ? `ที่นั่งว่าง ${free}/${total}` : `${free}/${total} seats free`;
   };
 
   const parseCourseImportFile = async (file: File) => {
@@ -808,14 +819,24 @@ export default function Courses() {
                 </div>
                 <span className="font-medium text-white/90">{t.coursesPage.totalCredits}</span>
               </div>
-              <div className="text-4xl font-bold">{totalCredits}</div>
-              <div className="mt-2 text-sm text-purple-100">
-                {t.coursesPage.maxCredits}
-              </div>
-              {/* Mini Progress Bar */}
-              <div className="mt-4 h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
-                <div className="h-full bg-white/90 dark:bg-slate-900/50" style={{ width: `${creditProgress}%` }} />
-              </div>
+              {user?.role === 'student' ? (
+                <>
+                  <div className="text-4xl font-bold" data-testid="term-credits">{summary ? `${summary.termCredits}/${summary.maxCredits}` : '-'}</div>
+                  {summary && (
+                    <div className="mt-2 text-sm text-purple-100">
+                      {language === 'th'
+                        ? `หน่วยกิตเทอม ${summary.semester}/${summary.academicYear} (สูงสุด ${summary.maxCredits})`
+                        : `Credits in term ${summary.semester}/${summary.academicYear} (max ${summary.maxCredits})`}
+                    </div>
+                  )}
+                  {/* Mini Progress Bar */}
+                  <div className="mt-4 h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
+                    <div className="h-full bg-white/90 dark:bg-slate-900/50" style={{ width: `${creditProgress}%` }} />
+                  </div>
+                </>
+              ) : (
+                <div className="text-4xl font-bold">{totalCredits}</div>
+              )}
             </div>
           </motion.div>
 
@@ -902,7 +923,8 @@ export default function Courses() {
                         {(user as unknown as Student).year || 3}
                       </Badge>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); dropCourse(course.id); }}
+                        data-testid={`drop-${course.code}`}
+                        onClick={(e) => { e.stopPropagation(); setPendingDrop(course); }}
                         title={language === 'th' ? 'ถอนวิชา' : 'Drop Course'}
                         className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/30 flex items-center justify-center text-red-400 hover:bg-red-100 hover:text-red-600 transition-colors z-20"
                       >
@@ -925,21 +947,6 @@ export default function Courses() {
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <MapPin className="w-4 h-4 text-slate-400" />
                         <span>{course.sections?.[0]?.room || t.coursesPage.room}</span>
-                      </div>
-                    </div>
-
-                    {/* Progress */}
-                    <div className="pt-4 border-t border-slate-100 dark:border-slate-700">
-                      <div className="flex justify-between text-xs font-medium mb-2">
-                        <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.progress}</span>
-                        <span className="text-blue-600 dark:text-slate-300">0%</span>
-                      </div>
-                      <div className="h-2 w-full bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                        <motion.div
-                          initial={{ width: 0 }}
-                          animate={{ width: '0%' }}
-                          className="h-full bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"
-                        />
                       </div>
                     </div>
                   </div>
@@ -979,17 +986,18 @@ export default function Courses() {
                       <div>
                         <div className="flex justify-between items-center mb-4 text-sm text-indigo-100">
                           <span>{course.credits} {t.coursesPage.credits}</span>
-                          <span>{(course.enrolledCount ?? course.enrolledStudents.length)}/{course.sections?.[0]?.maxStudents || 60} {language === 'th' ? 'คน' : 'students'}</span>
+                          <span>{seatLabel(course)}</span>
                         </div>
                         <Button 
                           size="sm" 
                           className="w-full bg-white dark:bg-slate-900 text-indigo-600 hover:bg-indigo-50 border-0 font-bold dark:text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed" 
-                          onClick={(e) => { e.stopPropagation(); enrollCourse(course); }}
-                          disabled={enrolledCourses.some(c => c.id === course.id) || (course.enrolledCount ?? course.enrolledStudents.length) >= (course.sections?.[0]?.maxStudents || 60)}
+                          data-testid={`enroll-${course.code}`}
+                          onClick={(e) => { e.stopPropagation(); askToEnroll(course); }}
+                          disabled={enrolledCourses.some(c => c.id === course.id) || isCourseFull(course)}
                         >
                           {enrolledCourses.some(c => c.id === course.id) 
                             ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered') 
-                            : (course.enrolledCount ?? course.enrolledStudents.length) >= (course.sections?.[0]?.maxStudents || 60) 
+                            : isCourseFull(course) 
                               ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
                               : t.coursesPage.addCourse}
                         </Button>
@@ -1038,7 +1046,7 @@ export default function Courses() {
                 <div className="space-y-1">
                   <p className="text-xs font-medium text-slate-500 uppercase tracking-wider dark:text-slate-400">{language === 'th' ? 'ที่นั่งว่าง' : 'Available Seats'}</p>
                   <p className="font-medium text-slate-900 dark:text-slate-200">
-                    {viewingCourse && ((viewingCourse.sections?.[0]?.maxStudents || 60) - (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0))} / {viewingCourse?.sections?.[0]?.maxStudents || 60}
+                    {viewingCourse && seatLabel(viewingCourse)}
                   </p>
                 </div>
               </div>
@@ -1069,21 +1077,75 @@ export default function Courses() {
                 className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 rounded-xl"
                 onClick={() => {
                   if (viewingCourse) {
-                    enrollCourse(viewingCourse);
+                    askToEnroll(viewingCourse);
                     setViewingCourse(null);
                   }
                 }}
-                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60)}
+                disabled={!viewingCourse || enrolledCourses.some(c => c.id === viewingCourse.id) || isCourseFull(viewingCourse)}
               >
                 {viewingCourse && enrolledCourses.some(c => c.id === viewingCourse.id)
                   ? (language === 'th' ? 'ลงทะเบียนแล้ว' : 'Registered')
-                  : viewingCourse && (viewingCourse.enrolledCount ?? viewingCourse.enrolledStudents?.length ?? 0) >= (viewingCourse.sections?.[0]?.maxStudents || 60) 
+                  : viewingCourse && isCourseFull(viewingCourse) 
                     ? (language === 'th' ? 'เต็มแล้ว' : 'Full') 
                     : t.coursesPage.addCourse}
               </Button>
             </div>
           </DialogContent>
         </Dialog>
+
+        <Dialog open={!!pendingEnroll} onOpenChange={(open) => { if (!open) setPendingEnroll(null); }}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{language === 'th' ? `ลงทะเบียน ${pendingEnroll?.code}` : `Register ${pendingEnroll?.code}`}</DialogTitle>
+              <DialogDescription>
+                {pendingEnroll && summary && (language === 'th'
+                  ? `${pendingEnroll.credits} หน่วยกิต · หลังลงจะมี ${summary.termCredits + pendingEnroll.credits}/${summary.maxCredits} หน่วยกิตในเทอมนี้`
+                  : `${pendingEnroll.credits} credits · ${summary.termCredits + pendingEnroll.credits}/${summary.maxCredits} credits this term after registering`)}
+              </DialogDescription>
+            </DialogHeader>
+            {pendingEnroll && pendingEnroll.sections.length > 0 && (
+              <RadioGroup value={pendingSectionId} onValueChange={setPendingSectionId}>
+                {pendingEnroll.sections.map((s) => (
+                  <Label key={s.id} data-testid={`section-${s.sectionNumber}`} className="flex items-center gap-3 rounded-xl border p-3">
+                    <RadioGroupItem value={s.id} disabled={seatsLeft(s) === 0} />
+                    <span className="font-medium">{language === 'th' ? `ตอน ${s.sectionNumber}` : `Section ${s.sectionNumber}`}</span>
+                    <span className="text-sm text-slate-500 dark:text-slate-400">{s.schedule.map((slot) => `${(language === 'th' && slot.dayThai) || slot.day} ${slot.startTime}–${slot.endTime}`).join(', ')}</span>
+                    <span className="ml-auto text-sm">{language === 'th' ? `ว่าง ${seatsLeft(s)}/${s.maxStudents}` : `${seatsLeft(s)}/${s.maxStudents} free`}</span>
+                  </Label>
+                ))}
+              </RadioGroup>
+            )}
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setPendingEnroll(null)}>{language === 'th' ? 'ยกเลิก' : 'Cancel'}</Button>
+              <Button
+                data-testid="confirm-enroll"
+                disabled={!pendingEnroll || (pendingEnroll.sections.length > 0 && !pendingSectionId)}
+                onClick={() => { if (pendingEnroll) void enrollCourse(pendingEnroll, pendingSectionId || undefined); setPendingEnroll(null); }}
+              >
+                {language === 'th' ? 'ยืนยันลงทะเบียน' : 'Confirm'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <AlertDialog open={!!pendingDrop} onOpenChange={(open) => { if (!open) setPendingDrop(null); }}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{language === 'th' ? `ถอนวิชา ${pendingDrop?.code}?` : `Drop ${pendingDrop?.code}?`}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'th'
+                  ? `${pendingDrop?.nameThai || pendingDrop?.name} จะถูกเอาออกจากรายวิชาของเทอมนี้ และหน่วยกิตจะคืนมา ${pendingDrop?.credits} หน่วยกิต`
+                  : `${pendingDrop?.name} will be removed from this term and ${pendingDrop?.credits} credits freed.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>{language === 'th' ? 'ยกเลิก' : 'Cancel'}</AlertDialogCancel>
+              <AlertDialogAction data-testid="confirm-drop" onClick={() => { if (pendingDrop) void dropCourse(pendingDrop.id); setPendingDrop(null); }}>
+                {language === 'th' ? 'ถอนวิชา' : 'Drop'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </motion.div>
     );
   }

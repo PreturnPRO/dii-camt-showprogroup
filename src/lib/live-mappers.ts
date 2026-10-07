@@ -432,6 +432,10 @@ export const mapCourse = (value: unknown, index = 0): Course => {
               .filter((enrollment) => asString(asRecord(enrollment).sectionId) === asString(section.id))
               .map((enrollment) => asString(asRecord(enrollment).studentId))
               .filter(Boolean),
+            enrolledCount: asNumber(
+              section.enrolledCount,
+              enrollments.filter((enrollment) => asString(asRecord(enrollment).sectionId) === asString(section.id)).length,
+            ),
             schedule: sectionSchedule.length
               ? sectionSchedule.map((slot, slotIndex) => mapSchedule(slot, slotIndex, fallbackSection?.schedule[slotIndex]))
               : mappedSchedule,

@@ -213,6 +213,8 @@ export interface Section {
   room?: string;
   maxStudents: number;
   enrolledStudents: string[];
+  /** non-dropped enrollments in this section, counted by the server */
+  enrolledCount?: number;
   schedule: Schedule[];
 }
 

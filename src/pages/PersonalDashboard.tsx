@@ -348,6 +348,7 @@ export default function PersonalDashboard() {
     const [courses, setCourses] = React.useState<Course[]>([]);
     const [grades, setGrades] = React.useState<Grade[]>([]);
     const [gpaHistory, setGpaHistory] = React.useState<SemesterGPAHistory>([]);
+    const [inProgressCredits, setInProgressCredits] = React.useState<number | null>(null);
     const [currentTermGpa, setCurrentTermGpa] = React.useState<number | null>(null);
     const [isStudentDashboardLoading, setIsStudentDashboardLoading] = React.useState(true);
     const [softSkillScores, setSoftSkillScores] = React.useState<SoftSkillDashboardScores>({
@@ -368,14 +369,16 @@ export default function PersonalDashboard() {
 
         const loadDashboard = async () => {
             try {
-                const [profileResult, statsResult, transcriptResult, enrollmentsResult] = await Promise.allSettled([
+                const [profileResult, statsResult, transcriptResult, enrollmentsResult, summaryResult] = await Promise.allSettled([
                     api.students.profile(),
                     api.students.stats(),
                     api.grades.transcript(),
                     api.enrollments.list(),
+                    api.enrollments.summary(),
                 ]);
 
                 if (!mounted) return;
+                setInProgressCredits(summaryResult.status === 'fulfilled' ? summaryResult.value.summary.inProgressCredits : null);
 
                 let nextStudent: Student | null = null;
                 if (profileResult.status === 'fulfilled') {
@@ -744,7 +747,7 @@ export default function PersonalDashboard() {
                         <DegreeProgressCard
                             totalCredits={student.totalCredits}
                             earnedCredits={student.earnedCredits}
-                            registeredCredits={studentCourses.reduce((sum, c) => sum + c.credits, 0)}
+                            registeredCredits={inProgressCredits}
                             requiredCredits={student.requiredCredits || student.totalCredits}
                         />
                     </motion.div>

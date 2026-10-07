@@ -12,3 +12,10 @@ describe('mapCourse enrolledCount', () => {
     expect(mapCourse({ id: 'c1', enrollments: [{ studentId: 's1' }, { studentId: 's2' }] }).enrolledCount).toBe(2);
   });
 });
+
+describe('mapCourse section seats', () => {
+  it('keeps the per-section server count', () => {
+    const course = mapCourse({ id: 'c1', sections: [{ id: 's1', number: '01', maxStudents: 30, enrolledCount: 12 }], enrollments: [] });
+    expect(course.sections[0].enrolledCount).toBe(12);
+  });
+});
