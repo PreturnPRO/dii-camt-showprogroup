@@ -38,7 +38,7 @@ export function DegreeProgressCard({
                     <GraduationCap className="w-5 h-5" />
                 </div>
                 <div>
-                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+                    <h3 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100 leading-snug">
                         {isTH ? 'ความก้าวหน้าของหลักสูตร' : 'Degree Progress'}
                     </h3>
                     <p data-testid="degree-source" className="text-sm leading-relaxed text-slate-500 dark:text-slate-400 mt-0.5">

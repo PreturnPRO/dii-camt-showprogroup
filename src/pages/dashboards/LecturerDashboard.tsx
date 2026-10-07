@@ -117,7 +117,7 @@ export default function LecturerDashboard() {
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
-          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
+          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug" variants={itemVariants}>
             {copy.title}
           </motion.h1>
           <motion.p className="mt-2 text-sm text-slate-500 dark:text-slate-400" variants={itemVariants}>
@@ -147,7 +147,7 @@ export default function LecturerDashboard() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <motion.div variants={itemVariants} className="lg:col-span-2">
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export default function LecturerDashboard() {
 
         <div className="space-y-6">
           <motion.div variants={itemVariants}>
-            <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base">
@@ -205,7 +205,7 @@ export default function LecturerDashboard() {
           </motion.div>
 
           <motion.div variants={itemVariants}>
-            <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm">
+            <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="flex items-center gap-2 text-base">

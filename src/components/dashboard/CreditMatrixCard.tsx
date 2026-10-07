@@ -89,7 +89,7 @@ export function CreditMatrixCard({ courses, requiredCredits, completedCredits, i
             >
                 <div className="flex items-center justify-between gap-4 mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">{isTH ? 'ความก้าวหน้าหลักสูตร' : 'Curriculum Progress'}</h2>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-1 leading-snug">{isTH ? 'ความก้าวหน้าหลักสูตร' : 'Curriculum Progress'}</h2>
                         <p data-testid="credits-required" className="text-sm text-slate-500 dark:text-slate-400">
                             {isTH ? `จากหลักสูตร ${show(requiredCredits)} หน่วยกิต` : `Out of a ${show(requiredCredits)}-credit curriculum`}
                         </p>
@@ -131,7 +131,7 @@ export function CreditMatrixCard({ courses, requiredCredits, completedCredits, i
 
                 <div className="pt-4 border-t border-slate-200 dark:border-slate-800">
                     <p className="text-sm font-medium text-slate-600 dark:text-slate-400">GPAX</p>
-                    <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1">
+                    <p className="text-3xl font-bold text-indigo-600 dark:text-indigo-400 mt-1 leading-snug">
                         {/* a stored 0 means no graded course yet, not a real 0.00 */}
                         {gpax === undefined || gpax <= 0 ? '-' : gpax.toFixed(2)}
                         <span className="ml-1 text-xs font-normal text-slate-500 dark:text-slate-400">/ 4.00</span>

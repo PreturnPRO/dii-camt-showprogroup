@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { summarizeMatches } from '@/lib/skill-match';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -256,7 +257,7 @@ export default function SkillsRequirement() {
           <span>{tr.subtitle}</span>
         </motion.div>
         <div className="flex items-end justify-between">
-          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             {tr.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">{tr.titleHighlight}</span>
           </motion.h1>
           <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
@@ -273,14 +274,14 @@ export default function SkillsRequirement() {
           { icon: Users, label: tr.matchedStudents, value: requirements.reduce((s, r) => s + r.matchedStudents, 0).toString(), gradient: '', shadow: '' },
           { icon: Star, label: tr.avgMatch, value: `${requirements.length ? Math.round(requirements.reduce((s, r) => s + r.avgMatch, 0) / requirements.length) : 0}%`, gradient: '', shadow: '' },
         ].map((stat, i) => (
-          <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
+          <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl ${solidBg(stat.gradient)} p-5 text-white shadow-sm ${stat.shadow}`}>
 
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-2">
                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
               </div>
-              <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
+              <div className="text-3xl font-extrabold font-mono tracking-tight text-white">{stat.value}</div>
             </div>
           </motion.div>
         ))}

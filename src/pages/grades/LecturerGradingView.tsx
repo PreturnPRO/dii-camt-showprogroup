@@ -16,6 +16,7 @@ import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import type { Course } from '@/types';
+import { solidBg } from '@/lib/flat-color';
 
 type EnrollmentRow = {
   id: string;
@@ -243,7 +244,7 @@ export function LecturerGradingView() {
           <span>{t.grades.lecturerSubtitle}</span>
         </motion.div>
         <motion.h1
-          className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+          className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -289,17 +290,16 @@ export function LecturerGradingView() {
           <motion.div
             key={i}
             whileHover={{ scale: 1.02 }}
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl ${stat.shadow}`}
+            className={`relative overflow-hidden rounded-2xl ${solidBg(stat.gradient)} p-6 text-white shadow-xl ${stat.shadow}`}
           >
-            <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
             <div className="relative z-10">
               <div className="flex items-center gap-2 mb-3">
-                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900">
                   <stat.icon className="w-5 h-5" />
                 </div>
                 <span className="font-medium text-white/90">{stat.label}</span>
               </div>
-              <div className="text-4xl font-bold">{stat.value}</div>
+              <div className="text-4xl font-bold leading-snug">{stat.value}</div>
             </div>
           </motion.div>
         ))}
@@ -307,7 +307,7 @@ export function LecturerGradingView() {
 
       <motion.div
         variants={itemVariants}
-        className="rounded-3xl border border-white/60 bg-white/60 p-6 shadow-sm backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-900/50"
+        className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800/60 dark:bg-slate-900"
       >
         <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

@@ -209,7 +209,7 @@ export default function StudentProfiles() {
                         <span>{accessibleStudents.length} {t.studentProfiles.allowedView}</span>
                     </motion.div>
                     <motion.h1
-                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -224,17 +224,16 @@ export default function StudentProfiles() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-sm relative overflow-hidden"
+                    className="bg-blue-600 p-6 rounded-3xl text-white shadow-sm relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+                            <div className="p-2.5 rounded-xl bg-white/20">
                                 <GraduationCap className="w-6 h-6" />
                             </div>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentProfiles.totalAccessible}</span>
+                            <span className="text-xs text-white/85">{t.studentProfiles.totalAccessible}</span>
                         </div>
-                        <div className="text-5xl font-bold tracking-tight">{accessibleStudents.length}</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{accessibleStudents.length}</div>
                         <div className="mt-3 text-sm text-blue-100 flex items-center gap-1">
                             <Sparkles className="w-4 h-4" />
                             {t.studentProfiles.inSystem}
@@ -254,7 +253,7 @@ export default function StudentProfiles() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">Grade Access</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{gradeAccessCount}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-snug">{gradeAccessCount}</div>
                         <div className="mt-3 text-sm text-slate-400">ที่เห็นเกรดจริงตามสิทธิ์</div>
                     </div>
                 </motion.div>
@@ -271,7 +270,7 @@ export default function StudentProfiles() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasSkills}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">{accessibleStudents.filter(s => s.skills.length >= 3).length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors leading-snug">{accessibleStudents.filter(s => s.skills.length >= 3).length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.studentProfiles.skills3Plus}</div>
                     </div>
                 </motion.div>
@@ -288,7 +287,7 @@ export default function StudentProfiles() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.studentProfiles.hasBadge}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{accessibleStudents.filter(s => s.badges.length > 0).length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors leading-snug">{accessibleStudents.filter(s => s.badges.length > 0).length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.studentProfiles.outstanding}</div>
                     </div>
                 </motion.div>
@@ -333,7 +332,7 @@ export default function StudentProfiles() {
                             <Card className="h-full hover:shadow-lg transition-all cursor-pointer group bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
                                 <CardContent className="pt-6">
                                     <div className="flex items-start gap-4 mb-4">
-                                        <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-xl shadow-lg">
+                                        <div className="bg-blue-600 w-16 h-16 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg">
                                             {student.nameThai.charAt(0)}
                                         </div>
                                         <div className="flex-1">

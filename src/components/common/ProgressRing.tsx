@@ -66,7 +66,7 @@ export function ProgressRing({
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl font-bold text-foreground">{Math.round(progress)}%</span>
+        <span className="text-2xl font-bold text-foreground leading-snug">{Math.round(progress)}%</span>
         {label && <span className="text-xs text-muted-foreground mt-1">{label}</span>}
         {sublabel && <span className="text-xs text-muted-foreground">{sublabel}</span>}
       </div>

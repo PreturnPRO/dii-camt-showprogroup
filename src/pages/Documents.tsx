@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { api } from '@/lib/api';
 import { asDate, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -197,21 +198,20 @@ export default function Documents() {
                     <Printer className="w-4 h-4 text-blue-500 dark:text-slate-400" />
                     <span>{t.documentsPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.documentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.documentsPage.titleHighlight}</span>
                 </motion.h1>
             </div>
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {docTemplates.map((doc, idx) => (
-                    <motion.div key={idx} whileHover={{ scale: 1.03, y: -4 }} onClick={() => openGenerateDialog(doc.type)} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${doc.color} p-6 text-white shadow-sm cursor-pointer group`}>
-                        <div className="absolute -top-8 -right-8 w-24 h-24 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-500" />
+                    <motion.div key={idx} whileHover={{ scale: 1.03, y: -4 }} onClick={() => openGenerateDialog(doc.type)} className={`relative overflow-hidden rounded-2xl ${solidBg(doc.color)} p-6 text-white shadow-sm cursor-pointer group`}>
                         <div className="relative z-10">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm w-fit mb-4">
+                            <div className="p-2.5 rounded-xl bg-white/20 w-fit mb-4">
                                 <doc.icon className="w-6 h-6" />
                             </div>
                             <h3 className="font-bold text-lg mb-1">{doc.title}</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400">{doc.desc}</p>
+                            <p className="text-sm text-white/85">{doc.desc}</p>
                         </div>
                     </motion.div>
                 ))}
@@ -240,7 +240,7 @@ export default function Documents() {
                         ) : filteredRequests.map((req) => (
                             <motion.div key={req.id} whileHover={{ x: 4 }} className="flex items-center justify-between p-4 rounded-2xl hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-sm transition-all dark:bg-slate-900 dark:border-slate-700">
                                 <div className="flex items-center gap-4">
-                                    <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500">
+                                    <div className="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center text-amber-500 dark:bg-amber-500/10">
                                         <Clock className="w-5 h-5" />
                                     </div>
                                     <div>

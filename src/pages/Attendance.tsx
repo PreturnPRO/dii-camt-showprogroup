@@ -16,6 +16,7 @@ import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import { thaiToday } from '@/lib/thai-date';
+import { solidBg } from '@/lib/flat-color';
 
 type CourseRow = ReturnType<typeof mapCourse>;
 type AttendanceRow = {
@@ -265,7 +266,7 @@ export default function Attendance() {
                     <CalendarCheck className="w-4 h-4 text-emerald-500 dark:text-slate-400" />
                     <span>{t.attendancePage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.attendancePage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">{t.attendancePage.titleHighlight}</span>
                 </motion.h1>
             </div>
@@ -278,14 +279,13 @@ export default function Attendance() {
                     { icon: Clock, label: t.attendancePage.late, value: String(lateCount), gradient: 'from-amber-500 to-orange-500', shadow: 'shadow-amber-200' },
                     { icon: XCircle, label: t.attendancePage.absent, value: String(absentCount), gradient: 'from-red-500 to-rose-500', shadow: 'shadow-red-200' },
                 ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl ${stat.shadow}`}>
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl ${solidBg(stat.gradient)} p-6 text-white shadow-xl ${stat.shadow}`}>
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-3">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50"><stat.icon className="w-5 h-5" /></div>
+                                <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900"><stat.icon className="w-5 h-5" /></div>
                                 <span className="font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-4xl font-bold">{stat.value}</div>
+                            <div className="text-4xl font-bold leading-snug">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
@@ -294,7 +294,7 @@ export default function Attendance() {
             {/* Bento Grid */}
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
                 {/* Settings Panel */}
-                <motion.div variants={itemVariants} className="lg:col-span-1 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm h-fit dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-1 bg-white border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm h-fit dark:bg-slate-900">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-5 flex items-center gap-2">
                         <CalendarCheck className="w-5 h-5 text-emerald-500 dark:text-slate-400" /> {t.attendancePage.settingsLabel}
                     </h3>
@@ -333,7 +333,7 @@ export default function Attendance() {
                 </motion.div>
 
                 {/* Student List */}
-                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+                <motion.div variants={itemVariants} className="lg:col-span-3 bg-white border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900">
                     <div className="flex justify-between items-center mb-5">
                         <div>
                             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.attendancePage.studentList}</h3>
@@ -341,7 +341,7 @@ export default function Attendance() {
                         </div>
                         <div className="flex gap-3 text-sm">
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t.attendancePage.presentShort} <span data-testid="present-count">{presentCount}</span></div>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t.attendancePage.lateShort} <span data-testid="late-count">{lateCount}</span></div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t.attendancePage.lateShort} <span data-testid="late-count">{lateCount}</span></div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> {t.attendancePage.absentShort} <span data-testid="absent-count">{absentCount}</span></div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-slate-500" /> {t.attendancePage.leaveShort} <span data-testid="leave-count">{leaveCount}</span></div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full border border-slate-400" /> {language === 'th' ? 'ยังไม่เช็ค' : 'Unmarked'} <span data-testid="unmarked-count">{unmarkedCount}</span></div>
@@ -380,9 +380,9 @@ export default function Attendance() {
             </div>
 
             <Dialog open={qrModalOpen} onOpenChange={setQrModalOpen}>
-                <DialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 text-center bg-white/90 backdrop-blur-xl rounded-3xl border-slate-100 dark:bg-slate-900/90 dark:border-slate-800">
+                <DialogContent className="sm:max-w-md flex flex-col items-center justify-center p-8 text-center bg-white rounded-3xl border-slate-100 dark:bg-slate-900 dark:border-slate-800">
                     <DialogHeader className="mb-4">
-                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">Scan to Check-in</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white leading-snug">Scan to Check-in</DialogTitle>
                         <DialogDescription className="text-slate-500">
                             {selectedCourseInfo ? `${selectedCourseInfo.code} ${selectedCourseInfo.name}` : ''}
                         </DialogDescription>

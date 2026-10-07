@@ -13,6 +13,7 @@ import { asBoolean, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
 import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
 import { toCsv } from '@/lib/csv';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -249,7 +250,7 @@ export default function Personnel() {
                         <Users className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                         <span>{t.personnelPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.personnelPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.personnelPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -270,20 +271,20 @@ export default function Personnel() {
                     { icon: Users, label: t.personnelPage.allTab, value: String(allPersonnel.length), gradient: '', shadow: '' },
                     { icon: Mail, label: t.personnelPage.online, value: String(allPersonnel.filter((person) => person.isActive).length), gradient: '', shadow: '' },
                 ].map((stat, i) => (
-                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-sm ${stat.shadow}`}>
+                    <motion.div key={i} whileHover={{ scale: 1.02 }} className={`relative overflow-hidden rounded-2xl ${solidBg(stat.gradient)} p-5 text-white shadow-sm ${stat.shadow}`}>
 
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
                                 <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10"><stat.icon className="w-4 h-4" /></div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-white">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
             </motion.div>
 
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
+            <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-2xl p-4 shadow-sm flex flex-col md:flex-row gap-3">
                 <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                     <Input value={searchQuery} onChange={(event) => setSearchQuery(event.target.value)} placeholder={t.personnelPage.searchPlaceholder} className="pl-10 rounded-xl bg-white/80 border-slate-200 dark:border-slate-700" />
@@ -306,7 +307,7 @@ export default function Personnel() {
                     <motion.div key={person.id} variants={itemVariants} whileHover={{ y: -4 }}
                         className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm hover:shadow-lg transition-all group">
                         <div className="flex gap-4 mb-4">
-                            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-400 to-violet-500 flex items-center justify-center text-xl font-bold text-white shadow-lg">
+                            <div className="bg-purple-600 w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-bold text-white shadow-lg">
                                 {(person.nameThai || person.email).charAt(0)}
                             </div>
                             <div className="flex-1 min-w-0">

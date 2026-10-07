@@ -59,7 +59,7 @@ export function MoveRequestsPanel({ onDecided }: Props) {
   const range = (c: { start: number; end: number; label: string }) => `${c.label} ${formatMinutes(c.start)}–${formatMinutes(c.end)}`;
 
   return (
-    <div data-testid="schedule-requests" className="bg-amber-50/80 backdrop-blur-xl border border-amber-200 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50 dark:border-slate-800">
+    <div data-testid="schedule-requests" className="bg-amber-50/80 border border-amber-200 rounded-3xl p-6 shadow-sm dark:bg-slate-900 dark:border-slate-800">
       <h3 className="text-lg font-bold text-amber-800 dark:text-slate-200 flex items-center gap-2 mb-4">
         <Bell className="w-5 h-5" /> {isTH ? `คำขอย้ายคาบจากอาจารย์ (${requests.length})` : `Class move requests (${requests.length})`}
       </h3>

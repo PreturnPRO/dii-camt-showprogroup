@@ -97,7 +97,7 @@ export default function ApplicationHistory() {
         return (
             <div className="flex flex-col items-center justify-center h-[60vh]">
                 <XCircle className="w-16 h-16 text-slate-300 mb-4" />
-                <h2 className="text-2xl font-bold text-slate-700">Access Denied</h2>
+                <h2 className="text-2xl font-bold text-slate-700 leading-snug">Access Denied</h2>
                 <p className="text-slate-500">This page is only accessible to students.</p>
             </div>
         );
@@ -141,7 +141,7 @@ export default function ApplicationHistory() {
                         <span>{language === 'th' ? 'ติดตามสถานะการสมัครงานของคุณ' : 'Track your application status'}</span>
                     </motion.div>
                     <motion.h1 
-                        className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -150,7 +150,7 @@ export default function ApplicationHistory() {
                     </motion.h1>
                 </div>
                 
-                <motion.div variants={itemVariants} className="flex bg-white/60 dark:bg-slate-900/50 backdrop-blur-md p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <motion.div variants={itemVariants} className="flex bg-white dark:bg-slate-900 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger className="w-[160px] border-0 bg-transparent focus:ring-0 font-medium">
                             <SelectValue placeholder="All Statuses" />
@@ -171,7 +171,7 @@ export default function ApplicationHistory() {
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
-                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'รอการพิจารณา' : 'Under Review'}</span>
@@ -179,14 +179,14 @@ export default function ApplicationHistory() {
                                     <Clock className="w-5 h-5" />
                                 </div>
                             </div>
-                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{pendingCount}</div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{pendingCount}</div>
                             <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'ตำแหน่งที่กำลังอยู่ระหว่างการตรวจสอบ' : 'Applications currently being reviewed'}</p>
                         </CardContent>
                     </Card>
                 </motion.div>
 
                 <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
-                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'สัมภาษณ์' : 'Interviews'}</span>
@@ -194,14 +194,14 @@ export default function ApplicationHistory() {
                                     <Calendar className="w-5 h-5" />
                                 </div>
                             </div>
-                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{interviewCount}</div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{interviewCount}</div>
                             <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'นัดหมายเพื่อสัมภาษณ์พูดคุย' : 'Interview appointments scheduled'}</p>
                         </CardContent>
                     </Card>
                 </motion.div>
 
                 <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
-                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
                         <CardContent className="p-6">
                             <div className="flex items-center justify-between mb-4">
                                 <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'ตอบรับแล้ว' : 'Accepted Offers'}</span>
@@ -209,7 +209,7 @@ export default function ApplicationHistory() {
                                     <Sparkles className="w-5 h-5" />
                                 </div>
                             </div>
-                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{acceptedCount}</div>
+                            <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{acceptedCount}</div>
                             <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'บริษัทตอบรับเข้าทำงานหรือฝึกงาน' : 'Job / Internship offers accepted'}</p>
                         </CardContent>
                     </Card>
@@ -218,7 +218,7 @@ export default function ApplicationHistory() {
 
             {/* Applications List */}
             <motion.div variants={itemVariants}>
-                <div className="bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-8 shadow-sm">
                     <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
                         <div className="relative w-full md:w-96">
                             <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
@@ -325,7 +325,7 @@ export default function ApplicationHistory() {
                                             {statusInfo.label}
                                         </div>
                                     </div>
-                                    <DialogTitle className="text-3xl font-bold text-slate-900 dark:text-white mb-2">{selectedApp.jobTitle}</DialogTitle>
+                                    <DialogTitle className="text-3xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">{selectedApp.jobTitle}</DialogTitle>
                                     <DialogDescription className="text-lg text-slate-600 dark:text-slate-400 font-medium flex items-center gap-2">
                                         {selectedApp.companyName}
                                     </DialogDescription>

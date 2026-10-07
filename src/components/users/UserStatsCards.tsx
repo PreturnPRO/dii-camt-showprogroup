@@ -26,17 +26,16 @@ export function UserStatsCards({ users }: UserStatsCardsProps) {
       <motion.div
         variants={itemVariants}
         whileHover={{ y: -5 }}
-        className="p-6 rounded-3xl bg-gradient-to-br from-purple-500 to-violet-600 text-white shadow-sm relative overflow-hidden"
+        className="bg-purple-600 p-6 rounded-3xl text-white shadow-sm relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+            <div className="p-2.5 rounded-xl bg-white/20">
               <GraduationCap className="w-6 h-6" />
             </div>
             <span className="text-xs text-slate-100 font-medium">{t.users.studentsLabel}</span>
           </div>
-          <div className="text-5xl font-bold tracking-tight">{studentCount}</div>
+          <div className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{studentCount}</div>
           <div className="mt-3 text-sm text-purple-100 flex items-center gap-1">
             <Sparkles className="w-4 h-4" />
             {t.users.inSystem}
@@ -58,7 +57,7 @@ export function UserStatsCards({ users }: UserStatsCardsProps) {
               {t.users.lecturersLabel}
             </span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">
+          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-snug">
             {lecturerCount}
           </div>
           <div className="mt-3 text-sm text-slate-400">{t.users.teachingStaff}</div>
@@ -79,7 +78,7 @@ export function UserStatsCards({ users }: UserStatsCardsProps) {
               {t.users.staffLabel}
             </span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors leading-snug">
             {staffCount}
           </div>
           <div className="mt-3 text-sm text-slate-400">{t.users.supportStaff}</div>
@@ -100,7 +99,7 @@ export function UserStatsCards({ users }: UserStatsCardsProps) {
               {t.users.companiesLabel}
             </span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">
+          <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors leading-snug">
             {companyCount}
           </div>
           <div className="mt-3 text-sm text-slate-400">{t.users.businessPartners}</div>

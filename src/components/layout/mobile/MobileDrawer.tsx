@@ -205,7 +205,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
               {/* Top row: Brand + Close */}
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-600/20 p-1 shrink-0">
+                  <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md p-1 shrink-0">
                     <img src="/showpro_logo.png" alt="Xchange" className="w-full h-full object-contain" />
                   </div>
                   <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
@@ -224,7 +224,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
               <div className="flex items-center gap-3">
                 <Avatar className="w-11 h-11 ring-2 ring-blue-500/20 shrink-0">
                   <AvatarImage src={user?.avatar} />
-                  <AvatarFallback className="text-sm font-bold bg-gradient-to-br from-blue-600 to-indigo-600 text-white">
+                  <AvatarFallback className="bg-blue-600 text-sm font-bold text-white">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

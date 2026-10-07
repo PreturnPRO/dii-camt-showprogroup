@@ -323,7 +323,7 @@ export default function Applicants() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 pb-10">
       <div>
-        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
+        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug" variants={itemVariants}>
           <Users className="inline w-7 h-7 mr-2 mb-1 text-blue-500" />
           {copy.title}
         </motion.h1>
@@ -368,7 +368,7 @@ export default function Applicants() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
             <CardContent className="p-0">
               <table className="w-full text-sm">
                 <thead>
@@ -414,7 +414,7 @@ export default function Applicants() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardContent className="pt-6">
               {selected ? (
                 <div className="space-y-5">

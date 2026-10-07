@@ -142,7 +142,7 @@ export default function Internships() {
             <span>{t.internshipsPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 leading-snug"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
@@ -331,13 +331,13 @@ export default function Internships() {
                 {/* Hero Banner Header: 120px height with clean gradient */}
                 <div className="relative h-28 bg-slate-900 overflow-hidden shrink-0">
                   <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80')] bg-cover bg-center opacity-35" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent" />
+                  <div className="bg-slate-950/50 absolute inset-0" />
 
                   <div className="absolute top-3 right-3 flex gap-2 z-10">
                     <Button
                       variant="secondary"
                       size="icon"
-                      className="w-8 h-8 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white border border-slate-700/60 backdrop-blur-sm"
+                      className="w-8 h-8 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white border border-slate-700/60"
                     >
                       <Share2 className="w-3.5 h-3.5" />
                     </Button>
@@ -345,7 +345,7 @@ export default function Internships() {
                       variant="secondary"
                       size="icon"
                       onClick={(e) => toggleSaveJob(e, selectedJob.id)}
-                      className="w-8 h-8 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white border border-slate-700/60 backdrop-blur-sm"
+                      className="w-8 h-8 rounded-lg bg-slate-900/70 hover:bg-slate-900 text-white border border-slate-700/60"
                     >
                       <Bookmark className={`w-3.5 h-3.5 ${isSaved(selectedJob.id) ? 'fill-amber-400 text-amber-400' : ''}`} />
                     </Button>

@@ -69,7 +69,7 @@ export default function LandingPage() {
         <div
           className={`pointer-events-auto mx-auto max-w-6xl flex items-center justify-between transition-all duration-300 ${
             scrolled
-              ? 'h-16 px-5 sm:px-6 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-xl'
+              ? 'h-16 px-5 sm:px-6 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-sm rounded-xl'
               : 'h-18 px-4 bg-transparent border-transparent shadow-none'
           }`}
         >
@@ -217,7 +217,7 @@ export default function LandingPage() {
 
           {/* Main Title - Grounded and Professional */}
           <FadeIn delay={0.1}>
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold tracking-tight text-slate-900 dark:text-white leading-[1.15] mb-6">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-[1.15] mb-6">
               {language === 'th' ? (
                 <>
                   ระบบบริหารจัดการและบูรณาการภาคอุตสาหกรรม <br />
@@ -265,7 +265,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
               System Modules
             </div>
-            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4 leading-snug">
               {t.landing.featuresTitle1} {t.landing.featuresTitle2}
             </h2>
             <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed">
@@ -345,7 +345,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold uppercase tracking-wider mb-4">
               Integrated Architecture
             </div>
-            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight mb-4">
+            <h2 className="text-2xl sm:text-4xl font-bold text-slate-900 dark:text-white mb-4 leading-snug">
               {language === 'th' ? 'เสาหลักโครงสร้างระบบ Xchange' : 'Core Architecture Pillars'}
             </h2>
             <p className="text-slate-600 dark:text-slate-400 text-sm sm:text-base leading-relaxed">
@@ -421,7 +421,7 @@ export default function LandingPage() {
               <div className="inline-flex items-center gap-2 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 text-xs font-semibold uppercase tracking-wider mb-4">
                 {t.landing.getInTouch}
               </div>
-              <h2 className="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white tracking-tight mb-6">
+              <h2 className="text-3xl sm:text-5xl font-bold text-slate-900 dark:text-white mb-6 leading-snug">
                 {language === 'th' ? 'พร้อมเริ่มต้นใช้งานระบบ?' : 'Ready to Get Started?'}
               </h2>
               <p className="text-slate-600 dark:text-slate-400 text-base leading-relaxed mb-8">

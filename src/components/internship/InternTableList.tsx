@@ -81,7 +81,7 @@ export function InternTableList({ interns, onSelectIntern }: InternTableListProp
               <div>
                 {/* Student Header */}
                 <div className="flex items-start gap-4 mb-4">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-orange-400 to-amber-500 flex items-center justify-center text-white text-xl font-bold shadow-lg shrink-0">
+                  <div className="bg-orange-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white text-xl font-bold shadow-lg shrink-0">
                     {intern.avatar}
                   </div>
                   <div className="flex-1 min-w-0">
@@ -136,7 +136,7 @@ export function InternTableList({ interns, onSelectIntern }: InternTableListProp
                       initial={{ width: 0 }}
                       animate={{ width: `${intern.progress}%` }}
                       transition={{ delay: 0.3 + idx * 0.1, duration: 0.6 }}
-                      className="h-full bg-gradient-to-r from-orange-400 to-amber-500 rounded-full"
+                      className="bg-orange-600 h-full rounded-full"
                     />
                   </div>
                 </div>

@@ -22,6 +22,8 @@ import { studentEntries, type Term } from '@/lib/timetable';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Course, Grade, Student, UserRole } from '@/types';
+import { gradesForCard } from '@/lib/grade-cards';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -40,23 +42,6 @@ type SemesterGPAHistory = {
 }[];
 
 // Transform grades for CourseGradesCard
-const transformGradesForCard = (
-    studentGrades: Grade[],
-    courses: Course[],
-) => {
-    return studentGrades.map(grade => {
-        const course = courses.find(c => c.id === grade.courseId);
-        return {
-            courseId: grade.courseId,
-            courseCode: course?.code || '',
-            courseName: course?.nameThai || course?.name || '',
-            credits: course?.credits || 0,
-            letterGrade: grade.letterGrade || '-',
-            semester: course ? `${course.semester}/${course.academicYear}` : '1/2568',
-            total: grade.total,
-        };
-    });
-};
 
 type RoleMetric = {
     label: string;
@@ -218,9 +203,8 @@ function RolePersonalDashboard({
         >
             <motion.div
                 variants={itemVariants}
-                className={`relative overflow-hidden rounded-3xl bg-gradient-to-br ${config.gradient} p-8 text-white shadow-2xl`}
+                className={`relative overflow-hidden rounded-3xl ${solidBg(config.gradient)} p-8 text-white shadow-2xl`}
             >
-                <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.25),transparent_35%)]" />
                 <div className="relative z-10 flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
                     <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
                         <div className="flex h-28 w-28 items-center justify-center overflow-hidden rounded-3xl border border-white/20 bg-white/10 shadow-xl">
@@ -235,7 +219,7 @@ function RolePersonalDashboard({
                                 <Badge className="border-white/20 bg-white/15 text-white hover:bg-white/20">{config.badge}</Badge>
                                 <Badge className="border-white/20 bg-white/15 text-white hover:bg-white/20">ID: {roleIdentifier}</Badge>
                             </div>
-                            <h1 className="text-3xl font-bold tracking-tight lg:text-5xl">{displayName}</h1>
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{displayName}</h1>
                             <p className="mt-2 max-w-2xl text-sm text-white/75 lg:text-base">{config.subtitle}</p>
                         </div>
                     </div>
@@ -261,12 +245,12 @@ function RolePersonalDashboard({
                     <motion.div
                         key={metric.label}
                         variants={itemVariants}
-                        className="rounded-3xl border border-white/60 bg-white/70 p-5 shadow-sm backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-900/60"
+                        className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-sm dark:border-slate-800/60 dark:bg-slate-900"
                     >
-                        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${metric.tone} text-white shadow-lg`}>
+                        <div className={`mb-4 flex h-12 w-12 items-center justify-center rounded-2xl ${solidBg(metric.tone)} text-white shadow-lg`}>
                             <metric.icon className="h-5 w-5" />
                         </div>
-                        <div className="text-3xl font-bold text-slate-900 dark:text-white">{isLoading ? '...' : metric.value}</div>
+                        <div className="text-3xl font-bold text-slate-900 dark:text-white leading-snug">{isLoading ? '...' : metric.value}</div>
                         <div className="mt-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{metric.label}</div>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{metric.description}</p>
                     </motion.div>
@@ -274,7 +258,7 @@ function RolePersonalDashboard({
             </div>
 
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-                <motion.div variants={itemVariants} className="lg:col-span-2 rounded-3xl border border-white/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-900/60">
+                <motion.div variants={itemVariants} className="lg:col-span-2 rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800/60 dark:bg-slate-900">
                     <div className="mb-5 flex items-center justify-between">
                         <div>
                             <h2 className="text-xl font-bold text-slate-900 dark:text-white">{config.title}</h2>
@@ -302,7 +286,7 @@ function RolePersonalDashboard({
                     </div>
                 </motion.div>
 
-                <motion.div variants={itemVariants} className="rounded-3xl border border-white/60 bg-white/70 p-6 shadow-sm backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-900/60">
+                <motion.div variants={itemVariants} className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm dark:border-slate-800/60 dark:bg-slate-900">
                     <div className="mb-5 flex items-center gap-3">
                         <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-950">
                             <ShieldCheck className="h-5 w-5" />
@@ -534,12 +518,12 @@ export default function PersonalDashboard() {
             >
                 <motion.div
                     variants={itemVariants}
-                    className="rounded-3xl border border-white/60 bg-white/70 p-10 text-center shadow-sm backdrop-blur-xl dark:border-slate-800/60 dark:bg-slate-900/60"
+                    className="rounded-3xl border border-slate-200/80 bg-white p-10 text-center shadow-sm dark:border-slate-800/60 dark:bg-slate-900"
                 >
                     <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-300">
                         <User className="h-7 w-7" />
                     </div>
-                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
+                    <h1 className="text-2xl font-bold text-slate-900 dark:text-white leading-snug">
                         {isStudentDashboardLoading ? 'กำลังโหลด Personal Dashboard...' : 'ไม่พบข้อมูลนักศึกษาจากระบบ'}
                     </h1>
                     <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
@@ -552,7 +536,7 @@ export default function PersonalDashboard() {
 
     const enrolledCourses = courses.filter(c => c.enrolledStudents.includes(student.id) || c.enrolledStudents.includes(student.studentId));
     const studentCourses = enrolledCourses.length ? enrolledCourses : courses;
-    const courseGrades = transformGradesForCard(grades, courses);
+    const courseGrades = gradesForCard(grades, courses);
     const technicalActivities = student.activities.slice(0, 5).map((activity) => ({
         name: activity.titleThai || activity.title,
         type: activity.type,
@@ -577,8 +561,6 @@ export default function PersonalDashboard() {
                 variants={itemVariants}
                 className="relative overflow-hidden rounded-2xl bg-white dark:bg-[#0c1222] p-6 sm:p-7 border border-slate-200/80 dark:border-slate-800 shadow-xs text-slate-900 dark:text-white"
             >
-                <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-500/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none" />
 
                 <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-6">
                     {/* Avatar */}
@@ -601,7 +583,7 @@ export default function PersonalDashboard() {
                             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                             <span>{greeting}</span>
                         </div>
-                        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50 mb-1">{student.nameThai}</h1>
+                        <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-50 mb-1 leading-snug">{student.nameThai}</h1>
                         <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono mb-3">{student.name}</p>
 
                         <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 sm:gap-4 text-xs text-slate-600 dark:text-slate-300">

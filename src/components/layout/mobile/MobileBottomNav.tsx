@@ -62,7 +62,7 @@ export function MobileBottomNav() {
   const primaryTabs = getTabsForRole(role);
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#070d19]/95 backdrop-blur-xl border-t border-slate-200/80 dark:border-slate-800/80 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom,0px)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white dark:bg-[#070d19] border-t border-slate-200/80 dark:border-slate-800/80 select-none shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom,0px)]">
       <div className="flex items-center justify-around h-14 px-1">
         {primaryTabs.map((tab) => {
           const isActive = location.pathname === tab.href;

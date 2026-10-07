@@ -27,6 +27,7 @@ import { studentEntries, type Term } from '@/lib/timetable';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
+import { gradesForCard } from '@/lib/grade-cards';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -81,24 +82,6 @@ const emptyStudent: Student = {
 };
 
 // Transform grades for CourseGradesCard
-const transformGradesForCard = (
-  studentGrades: Grade[],
-  courses: Course[],
-) => {
-  return studentGrades.map(grade => {
-    const course = courses.find(c => c.id === grade.courseId);
-    return {
-      courseId: grade.courseId,
-      courseCode: course?.code || '',
-      courseName: course?.nameThai || course?.name || '',
-      credits: course?.credits || 0,
-      // an ungraded course is shown as '-', never as an 'I' (incomplete) grade
-      letterGrade: grade.letterGrade || '-',
-      semester: course ? `${course.semester}/${course.academicYear}` : '1/2568',
-      total: grade.total,
-    };
-  });
-};
 
 type CompanyTarget = {
   id: string;
@@ -251,7 +234,7 @@ export default function StudentDashboard() {
   );
 
   const studentCourses = courses.filter(c => c.enrolledStudents.includes(student.id) || c.enrolledStudents.includes(student.studentId));
-  const courseGrades = transformGradesForCard(grades, courses);
+  const courseGrades = gradesForCard(grades, courses);
   
   const today = new Date();
   const nextMonth = new Date();
@@ -280,10 +263,8 @@ export default function StudentDashboard() {
       {/* Profile Header with Year */}
       <motion.div
         variants={itemVariants}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 p-8 text-white shadow-2xl"
+        className="bg-slate-900 relative overflow-hidden rounded-3xl p-8 text-white shadow-2xl"
       >
-        <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-blue-500/20 to-purple-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-gradient-to-tr from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
 
         <div className="relative z-10 flex flex-col lg:flex-row items-center gap-8">
           {/* Avatar */}
@@ -291,7 +272,7 @@ export default function StudentDashboard() {
             whileHover={{ scale: 1.05 }}
             className="relative"
           >
-            <div className="w-28 h-28 lg:w-32 lg:h-32 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-xl shadow-blue-500/30">
+            <div className="bg-blue-600 w-28 h-28 lg:w-32 lg:h-32 rounded-3xl p-1 shadow-xl">
               <div className="w-full h-full rounded-[22px] bg-slate-800 flex items-center justify-center overflow-hidden">
                 {student.avatar ? (
                   <img src={student.avatar} alt={student.name} className="w-full h-full object-cover" />
@@ -311,7 +292,7 @@ export default function StudentDashboard() {
               <Sparkles className="w-4 h-4 text-yellow-500" />
               <span>{greeting}</span>
             </div>
-            <h1 className="text-3xl lg:text-4xl font-bold mb-2">{student.nameThai}</h1>
+            <h1 className="text-3xl lg:text-4xl font-bold mb-2 leading-snug">{student.nameThai}</h1>
             <p className="text-slate-400 mb-4">{student.name}</p>
 
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 text-sm text-slate-300">
@@ -330,14 +311,14 @@ export default function StudentDashboard() {
             </div>
 
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-2 mt-4">
-              <Badge className="bg-blue-500/20 text-blue-300 border-blue-500/30">
+              <Badge className="bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-500/20 dark:text-blue-300 dark:border-blue-500/30">
                 {t.studentDashboard.studentId} {student.studentId}
               </Badge>
-              <Badge className="bg-emerald-500/20 text-emerald-300 border-emerald-500/30">
+              <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                 GPAX: {student.gpax.toFixed(2)}
               </Badge>
               {student.academicStatus === 'normal' && (
-                <Badge className="bg-green-500/20 text-green-300 border-green-500/30">
+                <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30">
                   {t.studentDashboard.statusNormal}
                 </Badge>
               )}
@@ -349,7 +330,7 @@ export default function StudentDashboard() {
             <CareerGoalCard />
             <Button
               onClick={() => navigate('/portfolio')}
-              className="bg-white dark:bg-slate-900/10 hover:bg-white dark:bg-slate-900/20 text-white border border-white/20 rounded-xl"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 rounded-xl"
             >
               <Trophy className="w-4 h-4 mr-2 text-yellow-500" />
               {t.studentDashboard.viewPortfolio}
@@ -357,7 +338,7 @@ export default function StudentDashboard() {
             <Button
               onClick={() => navigate('/settings')}
               variant="ghost"
-              className="text-slate-300 hover:text-white hover:bg-white dark:bg-slate-900/10 rounded-xl"
+              className="text-slate-300 hover:text-white hover:bg-white/10 rounded-xl"
             >
               {t.studentDashboard.editProfile}
             </Button>
@@ -368,7 +349,7 @@ export default function StudentDashboard() {
       {/* Main Content Tabs */}
       <Tabs defaultValue="overview" className="space-y-8" onValueChange={setActiveTab}>
         <div className="flex justify-center md:justify-start">
-          <TabsList className="bg-white dark:bg-slate-900/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm flex-wrap">
+          <TabsList className="bg-white dark:bg-slate-900 border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm flex-wrap">
             {[
               { id: 'overview', icon: Target, label: t.studentDashboard.overview },
               { id: 'schedule', icon: Calendar, label: t.studentDashboard.schedule },
@@ -379,7 +360,7 @@ export default function StudentDashboard() {
               <TabsTrigger
                 key={tab.id}
                 value={tab.id}
-                className="rounded-xl px-4 lg:px-6 py-2.5 data-[state=active]:bg-white dark:bg-slate-900 data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-400"
+                className="rounded-xl px-4 lg:px-6 py-2.5 data-[state=active]:bg-white dark:bg-slate-900 data-[state=active]:text-blue-600 data-[state=active]:shadow-lg transition-all duration-300 font-medium text-slate-600 dark:text-slate-400"
               >
                 <tab.icon className="w-4 h-4 mr-2" />
                 {tab.label}
@@ -410,7 +391,7 @@ export default function StudentDashboard() {
                         {t.studentDashboard.fullscreen} <ChevronRight className="w-4 h-4 ml-1" />
                       </Button>
                     </div>
-                    <div className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+                    <div className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
                       <WeeklyTimetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} weekStart={thisWeek} moves={weekMoves} />
                     </div>
                   </motion.div>
@@ -431,9 +412,9 @@ export default function StudentDashboard() {
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="group relative bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-5 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                          className="group relative bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 p-5 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 to-blue-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          <div className="bg-purple-50 dark:bg-purple-500/10 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <div className="relative flex items-center justify-between">
                             <div className="flex items-center gap-5">
                               <div className="w-14 h-14 rounded-2xl bg-white dark:bg-slate-900 shadow-md flex items-center justify-center text-lg font-bold text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-800 group-hover:scale-110 transition-transform">
@@ -473,7 +454,7 @@ export default function StudentDashboard() {
                   </motion.div>
 
                   {/* Upcoming Events */}
-                  <motion.div variants={itemVariants} className="bg-white/6 dark:bg-slate-900/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+                  <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
                     <div className="flex items-center justify-between mb-5">
                       <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                         <Calendar className="w-5 h-5 text-orange-500 dark:text-slate-400" /> {t.studentDashboard.upcomingActivities}
@@ -537,7 +518,7 @@ export default function StudentDashboard() {
                 </motion.div>
 
                 {/* Weekly timetable */}
-                <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+                <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
                   <WeeklyTimetable entries={studentEntries(enrollmentRows, timetableTerm)} term={timetableTerm} weekStart={thisWeek} moves={weekMoves} />
                 </motion.div>
               </div>
@@ -571,7 +552,7 @@ export default function StudentDashboard() {
           {/* Timeline Tab */}
           {activeTab === 'timeline' && (
             <TabsContent value="timeline" className="mt-0" key="timeline" forceMount>
-              <motion.div variants={itemVariants} className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
+              <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm">
                 <StudentTimeline events={timeline} showFilters />
               </motion.div>
             </TabsContent>
@@ -583,7 +564,7 @@ export default function StudentDashboard() {
               <div className="grid gap-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100">Company Targets & Requirements</h2>
+                    <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 leading-snug">Company Targets & Requirements</h2>
                     <p className="text-slate-500 dark:text-slate-400">See what skills you need to develop to meet recruiter expectations.</p>
                   </div>
                 </div>
@@ -600,13 +581,13 @@ export default function StudentDashboard() {
                           initial={{ opacity: 0, y: 20 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: idx * 0.1 }}
-                          className="group relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-2xl border border-white/60 dark:border-slate-700/50 rounded-3xl p-8 shadow-xl shadow-slate-200/20 dark:shadow-black/40 flex flex-col justify-between overflow-hidden"
+                          className="group relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/50 rounded-3xl p-8 shadow-xl shadow-slate-200/20 dark:shadow-black/40 flex flex-col justify-between overflow-hidden"
                         >
-                          <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-900/10 dark:to-purple-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
+                          <div className="bg-blue-50 dark:bg-blue-500/10 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
                           <div className="relative z-10">
                             <div className="flex items-start justify-between mb-6">
                               <div className="flex gap-4 items-center">
-                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/30">
+                                <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg">
                                   <Briefcase className="w-6 h-6" />
                                 </div>
                                 <div>
@@ -617,7 +598,7 @@ export default function StudentDashboard() {
                                 </div>
                               </div>
                               {isAllMet ? (
-                                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-400 to-green-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20">
+                                <div className="bg-emerald-600 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-white text-xs font-bold shadow-md">
                                   <CheckCircle2 className="w-4 h-4" />
                                   <span>Ready</span>
                                 </div>
@@ -697,7 +678,7 @@ export default function StudentDashboard() {
                     );
                   })}
                   {companyTargets.length === 0 && (
-                    <Card className="md:col-span-2 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-700/50 rounded-3xl">
+                    <Card className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-700/50 rounded-3xl">
                       <CardContent className="p-8 text-center">
                         <Briefcase className="w-10 h-10 mx-auto text-slate-400 mb-3" />
                         <h3 className="font-bold text-slate-800 dark:text-slate-100">ยังไม่มี Company Targets</h3>

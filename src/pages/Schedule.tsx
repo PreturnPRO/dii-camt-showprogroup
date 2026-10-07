@@ -148,7 +148,7 @@ export default function Schedule() {
               <span>{t.schedulePage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -191,7 +191,7 @@ export default function Schedule() {
               <span>{t.schedulePage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -207,43 +207,43 @@ export default function Schedule() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
+            className="bg-blue-600 p-5 rounded-3xl text-white shadow-lg"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <BookOpen className="w-5 h-5" />
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.totalCourses}</span>
+              <span className="text-xs text-white/85 text-sm">{t.schedulePage.totalCourses}</span>
             </div>
-            <div className="text-3xl font-bold">{studentCourses.length}</div>
+            <div className="text-3xl font-bold leading-snug">{studentCourses.length}</div>
           </motion.div>
 
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20"
+            className="bg-purple-600 p-5 rounded-3xl text-white shadow-lg"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.totalCredits}</span>
+              <span className="text-xs text-white/85 text-sm">{t.schedulePage.totalCredits}</span>
             </div>
-            <div className="text-3xl font-bold">{totalCredits}</div>
+            <div className="text-3xl font-bold leading-snug">{totalCredits}</div>
           </motion.div>
 
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
+            className="bg-emerald-600 p-5 rounded-3xl text-white shadow-lg"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <Clock className="w-5 h-5" />
               </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.hoursPerWeek} {language === 'th' ? '(ตามตารางประจำ)' : '(usual week)'}</span>
+              <span className="text-xs text-white/85 text-sm">{t.schedulePage.hoursPerWeek} {language === 'th' ? '(ตามตารางประจำ)' : '(usual week)'}</span>
             </div>
-            <div className="text-3xl font-bold">{totalHours} <span className="text-base font-medium">{language === 'th' ? 'ชม.' : 'h'}</span></div>
+            <div className="text-3xl font-bold leading-snug">{totalHours} <span className="text-base font-medium">{language === 'th' ? 'ชม.' : 'h'}</span></div>
           </motion.div>
 
           <motion.div
@@ -257,7 +257,7 @@ export default function Schedule() {
               </div>
               <span className="font-medium text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.studyDays}</span>
             </div>
-            <div className="text-3xl font-bold">{dayList(studyDays(placed))}</div>
+            <div className="text-3xl font-bold leading-snug">{dayList(studyDays(placed))}</div>
           </motion.div>
         </div>
 
@@ -312,8 +312,7 @@ export default function Schedule() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-3xl p-8 text-white relative overflow-hidden">
-            <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px]" />
+          <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden">
             <div className="relative z-10">
               <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
                 <Info className="w-5 h-5 text-purple-400" /> {t.schedulePage.warnings}
@@ -377,7 +376,7 @@ export default function Schedule() {
             <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
             <span>{t.schedulePage.lecturerSubtitle}</span>
           </motion.div>
-          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.schedulePage.lecturerTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.lecturerHighlight}</span>
           </motion.h1>
         </div>

@@ -294,7 +294,7 @@ export default function Messages() {
             <div className="mb-4 flex items-center justify-between">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest text-indigo-600">{t.messagesPage.subtitle}</p>
-                <h1 className="text-2xl font-black text-slate-950 dark:text-white">{t.messagesPage.title}</h1>
+                <h1 className="text-2xl font-black text-slate-950 dark:text-white leading-snug">{t.messagesPage.title}</h1>
               </div>
               <Button
                 size="icon"
@@ -367,7 +367,7 @@ export default function Messages() {
                   onClick={() => selectConversation(conversation)}
                   className={`mb-2 flex w-full items-center gap-3 rounded-2xl p-3 text-left transition ${
                     selected
-                      ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
+                      ? 'bg-indigo-600 text-white shadow-lg'
                       : 'bg-white text-slate-900 hover:bg-slate-100 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
@@ -436,7 +436,7 @@ export default function Messages() {
                   </div>
                 </header>
 
-                <main className="min-h-0 flex-1 overflow-y-auto bg-gradient-to-b from-slate-50 to-white p-4 dark:from-slate-950 dark:to-slate-950 md:p-6">
+                <main className="bg-slate-50 min-h-0 flex-1 overflow-y-auto p-4 md:p-6 dark:bg-slate-950">
                   <div className="mx-auto flex max-w-3xl flex-col gap-3">
                     {(selectedConversation?.messages ?? []).map((message) => {
                       const mine = message.fromId === currentUserId;
@@ -511,7 +511,7 @@ export default function Messages() {
               <div className="mb-5 grid h-20 w-20 place-items-center rounded-full bg-indigo-50 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
                 <MessageCircle className="h-10 w-10" />
               </div>
-              <h2 className="text-2xl font-black text-slate-950 dark:text-white">{t.messagesPage.emptyInbox}</h2>
+              <h2 className="text-2xl font-black text-slate-950 dark:text-white leading-snug">{t.messagesPage.emptyInbox}</h2>
               <p className="mt-2 max-w-sm text-sm text-slate-500">{copy.noConversation}</p>
             </div>
           )}

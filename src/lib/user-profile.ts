@@ -1,5 +1,6 @@
 import type { BackendUser } from "@/lib/api";
 import type { UserRole } from "@/types";
+import { asArray, asNumber, asString } from "./live-data";
 
 export type AuthLikeUser = {
   id: string;
@@ -25,16 +26,8 @@ const profileKeyByRole: Record<UserRole, keyof BackendUser> = {
 export const asRecord = (value: unknown): BackendProfile =>
   value && typeof value === "object" && !Array.isArray(value) ? (value as BackendProfile) : {};
 
-export const asArray = <T = BackendProfile>(value: unknown): T[] =>
-  Array.isArray(value) ? (value as T[]) : [];
-
-export const asNumber = (value: unknown, fallback = 0) => {
-  const numberValue = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(numberValue) ? numberValue : fallback;
-};
-
-export const asString = (value: unknown, fallback = "") =>
-  typeof value === "string" && value.trim().length > 0 ? value : fallback;
+// same behaviour as live-data's helpers — one implementation (asRecord above differs: arrays → {})
+export { asArray, asNumber, asString };
 
 export const getBackendUser = (user: AuthLikeUser | null | undefined) => asRecord(user?.raw) as BackendUser;
 

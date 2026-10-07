@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 p-6">
       <motion.div variants={itemVariants} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-200">{t.adminDashboard.title}</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-200 leading-snug">{t.adminDashboard.title}</h1>
           <p className="text-gray-600 mt-1 dark:text-slate-300">{t.adminDashboard.subtitle}</p>
         </div>
         <Button onClick={() => navigate('/settings')}><Settings className="w-4 h-4 mr-2" />{t.adminDashboard.systemSettings}</Button>

@@ -244,7 +244,7 @@ export default function TalentSearch() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6 pb-10">
       <div>
-        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
+        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug" variants={itemVariants}>
           {copy.title}
         </motion.h1>
         <motion.p className="mt-2 text-sm text-slate-500 dark:text-slate-400" variants={itemVariants}>
@@ -326,7 +326,7 @@ export default function TalentSearch() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {results.map((student) => (
           <motion.div key={student.id} variants={itemVariants}>
-            <Card className="relative bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+            <Card className="relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
               <button
                 onClick={() => handleToggleFavorite(student)}
                 className="absolute top-3 right-3 w-8 h-8 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-center text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30"

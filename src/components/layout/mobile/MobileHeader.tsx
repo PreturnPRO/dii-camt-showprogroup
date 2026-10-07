@@ -62,7 +62,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
     : 'Student';
 
   return (
-    <header className="fixed top-0 left-0 right-0 h-14 z-40 bg-white/95 dark:bg-[#070d19]/95 backdrop-blur-xl border-b border-slate-200/80 dark:border-slate-800/80 px-2.5 flex items-center justify-between shadow-xs select-none">
+    <header className="fixed top-0 left-0 right-0 h-14 z-40 bg-white dark:bg-[#070d19] border-b border-slate-200/80 dark:border-slate-800/80 px-2.5 flex items-center justify-between shadow-xs select-none">
       {/* Left: Burger Button + Logo */}
       <div className="flex items-center gap-1.5">
         <Button
@@ -76,7 +76,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
         </Button>
 
         <Link to="/dashboard" className="flex items-center gap-2 active:scale-95 transition-transform">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-500/20 p-1 shrink-0">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md p-1 shrink-0">
             <img src="/showpro_logo.png" alt="Xchange" className="w-full h-full object-contain" />
           </div>
           <div className="flex flex-col">
@@ -134,7 +134,7 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
         >
           <Avatar className="w-7 h-7 ring-1 ring-slate-200 dark:ring-slate-700">
             <AvatarImage src={user?.avatar} />
-            <AvatarFallback className="text-[10px] font-bold bg-gradient-to-tr from-blue-600 to-indigo-600 text-white">
+            <AvatarFallback className="bg-blue-600 text-[10px] font-bold text-white">
               {initials}
             </AvatarFallback>
           </Avatar>

@@ -30,17 +30,17 @@ export function StatsCard({
   const getVariantStyles = () => {
     switch (variant) {
       case 'student':
-        return 'bg-gradient-to-br from-blue-50 to-blue-100 dark:from-slate-800 dark:to-slate-800 border-blue-200 dark:border-slate-700';
+        return 'bg-blue-50 dark:bg-blue-500/10 border-blue-200 dark:border-slate-700';
       case 'teacher':
-        return 'bg-gradient-to-br from-purple-50 to-purple-100 dark:from-slate-800 dark:to-slate-800 border-purple-200 dark:border-slate-700';
+        return 'bg-purple-50 dark:bg-purple-500/10 border-purple-200 dark:border-slate-700';
       case 'staff':
-        return 'bg-gradient-to-br from-green-50 to-green-100 dark:from-slate-800 dark:to-slate-800 border-green-200 dark:border-slate-700';
+        return 'bg-green-50 dark:bg-green-500/10 border-green-200 dark:border-slate-700';
       case 'company':
-        return 'bg-gradient-to-br from-orange-50 to-orange-100 dark:from-slate-800 dark:to-slate-800 border-orange-200 dark:border-slate-700';
+        return 'bg-orange-50 dark:bg-orange-500/10 border-orange-200 dark:border-slate-700';
       case 'success':
-        return 'bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-slate-800 dark:to-slate-800 border-emerald-200 dark:border-slate-700';
+        return 'bg-emerald-50 dark:bg-emerald-500/10 border-emerald-200 dark:border-slate-700';
       case 'warning':
-        return 'bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-slate-800 dark:to-slate-800 border-yellow-200 dark:border-slate-700';
+        return 'bg-yellow-50 dark:bg-yellow-500/10 border-yellow-200 dark:border-slate-700';
       default:
         return 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 shadow-sm';
     }
@@ -71,8 +71,8 @@ export function StatsCard({
     >
       <div className="flex items-start justify-between">
         <div className="space-y-1.5 flex-1">
-          <p className="text-xs font-bold text-slate-600 dark:text-slate-400 tracking-tight">{title}</p>
-          <p className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{value}</p>
+          <p className="text-xs font-bold text-slate-600 dark:text-slate-400">{title}</p>
+          <p className="text-3xl font-black text-slate-900 dark:text-white leading-snug">{value}</p>
           {subtitle && (
             <p className="text-xs font-medium text-slate-500 dark:text-slate-400">{subtitle}</p>
           )}

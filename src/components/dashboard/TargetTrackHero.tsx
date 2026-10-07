@@ -151,7 +151,7 @@ export function TargetTrackHero() {
   }
 
   return (
-    <div className="rounded-3xl border-2 border-amber-400/60 dark:border-amber-600/40 p-6 shadow-sm bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
+    <div className="rounded-3xl border-2 border-amber-400/60 dark:border-amber-600/40 p-6 shadow-sm bg-white dark:bg-slate-900">
       <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-100 flex items-center gap-2">
           <Target className="w-5 h-5 text-amber-500" />

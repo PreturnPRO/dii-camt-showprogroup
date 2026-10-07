@@ -40,7 +40,7 @@ export function ProjectImage({ src, alt, className, title }: ProjectImageProps) 
 
       {/* High-Fidelity UI Mockup Fallback (Never looks like an empty void) */}
       {shouldShowFallback && (
-        <div className="absolute inset-0 w-full h-full select-none bg-gradient-to-br from-slate-900 via-[#0f172a] to-[#1e1b4b] flex flex-col justify-between p-3.5 sm:p-4">
+        <div className="bg-slate-900 absolute inset-0 w-full h-full select-none flex flex-col justify-between p-3.5 sm:p-4">
           {/* Mockup Window Titlebar */}
           <div className="flex items-center justify-between border-b border-white/10 pb-2.5">
             <div className="flex items-center gap-1.5">
@@ -137,8 +137,8 @@ export function ProjectImage({ src, alt, className, title }: ProjectImageProps) 
       )}
 
       {/* Hover Overlay: Centered 'View Project' with Glassmorphic Button */}
-      <div className="absolute inset-0 bg-black/50 backdrop-blur-[2px] opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
-        <div className="px-4 py-2 rounded-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-xs font-semibold text-slate-900 dark:text-white border border-white/20 shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
+      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center pointer-events-none">
+        <div className="px-4 py-2 rounded-xl bg-white/90 dark:bg-slate-900 text-xs font-semibold text-slate-900 dark:text-white border border-white/20 shadow-xl flex items-center gap-2 transform translate-y-2 group-hover:translate-y-0 transition-transform duration-200">
           <span>View Project</span>
           <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
         </div>

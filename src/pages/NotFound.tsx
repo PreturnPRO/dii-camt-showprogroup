@@ -21,11 +21,11 @@ const NotFound = () => {
           <FileQuestion className="w-8 h-8" />
         </div>
 
-        <div className="text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight mb-2">
+        <div className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 dark:text-white mb-2 leading-snug">
           404
         </div>
 
-        <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3 tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold text-slate-800 dark:text-slate-200 mb-3 leading-snug">
           {t?.notFound?.title || 'ไม่พบหน้าที่คุณต้องการ'}
         </h1>
 

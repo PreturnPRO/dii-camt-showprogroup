@@ -88,17 +88,17 @@ export function InternDetailView({
       {/* Top Student & Company Banner */}
       <motion.div
         variants={itemVariants}
-        className="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 text-white relative overflow-hidden shadow-lg"
+        className="bg-orange-600 p-6 sm:p-7 rounded-3xl text-white relative overflow-hidden shadow-lg"
       >
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff08_1px,transparent_1px),linear-gradient(to_bottom,#ffffff08_1px,transparent_1px)] bg-[size:20px_20px]" />
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-start md:items-center gap-5">
-            <div className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center text-3xl font-bold border border-white/20 shadow-md shrink-0">
+            <div className="w-20 h-20 rounded-2xl bg-white/20 flex items-center justify-center text-3xl font-bold border border-white/20 shadow-md shrink-0 leading-snug">
               {intern.avatar}
             </div>
             <div className="space-y-2">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl sm:text-3xl font-bold text-white">
+                <h1 className="text-2xl sm:text-3xl font-bold text-white leading-snug">
                   {language === 'th' ? intern.name : intern.nameEn}
                 </h1>
                 <Badge className="bg-white/25 hover:bg-white/30 text-white border-white/30 text-xs px-2.5 py-0.5">
@@ -173,7 +173,7 @@ export function InternDetailView({
           <Card key={i} className={`border ${getScoreBg(pct(metric.value))}`}>
             <CardContent className="p-4 text-center">
               <metric.icon className={`w-5 h-5 mx-auto mb-2 ${getScoreColor(pct(metric.value))}`} />
-              <div className={`text-2xl font-bold ${getScoreColor(pct(metric.value))}`}>{metric.value === null ? '-' : `${metric.value.toFixed(1)}/5`}</div>
+              <div className={`text-2xl font-bold ${getScoreColor(pct(metric.value))} leading-snug`}>{metric.value === null ? '-' : `${metric.value.toFixed(1)}/5`}</div>
               <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{metric.label}</div>
             </CardContent>
           </Card>

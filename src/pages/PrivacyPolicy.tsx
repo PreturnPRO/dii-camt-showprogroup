@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900 font-sans text-slate-900 dark:text-slate-200">
       {/* Navbar */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-700 dark:bg-slate-900/50">
+      <nav className="fixed top-0 w-full z-50 bg-white border-b border-slate-100 dark:border-slate-700 dark:bg-slate-900">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-blue-200">
@@ -115,21 +115,20 @@ export default function PrivacyPolicy() {
       </nav>
 
       {/* Hero */}
-      <section className="relative pt-32 pb-20 overflow-hidden bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950">
+      <section className="bg-slate-950 relative pt-32 pb-20 overflow-hidden">
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
         </div>
 
         <div className="container mx-auto px-6 relative z-10 text-center max-w-4xl">
           <FadeIn>
-            <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 bg-blue-500/10 backdrop-blur-md rounded-md border border-blue-500/20">
+            <div className="inline-flex items-center gap-2 mb-8 px-4 py-1.5 bg-blue-500/10 rounded-md border border-blue-500/20">
               <Shield className="w-4 h-4 text-blue-400" />
               <span className="text-sm font-medium text-blue-300">Privacy & Security</span>
             </div>
           </FadeIn>
           <FadeIn delay={0.1}>
-            <h1 className="text-4xl lg:text-7xl font-bold text-white mb-6 tracking-tight leading-[1.1]">
+            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-6 leading-snug">
               {t.privacyPolicyPage.heroTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-400 to-teal-400">{t.privacyPolicyPage.heroTitleHighlight}</span>
             </h1>
           </FadeIn>
@@ -151,7 +150,6 @@ export default function PrivacyPolicy() {
             </div>
           </FadeIn>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-white to-transparent pointer-events-none" />
       </section>
 
       {/* Quick Summary */}
@@ -159,7 +157,7 @@ export default function PrivacyPolicy() {
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="max-w-4xl mx-auto bg-slate-50 dark:bg-slate-800/80 rounded-2xl p-8 lg:p-12 border border-slate-200 dark:border-slate-700">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">{t.privacyPolicyPage.summaryTitle}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4 leading-snug">{t.privacyPolicyPage.summaryTitle}</h2>
               <p className="text-slate-600 leading-relaxed mb-6 dark:text-slate-300">
                 {t.privacyPolicyPage.summaryDesc}
               </p>
@@ -207,12 +205,11 @@ export default function PrivacyPolicy() {
         <div className="container mx-auto px-6">
           <FadeIn>
             <div className="max-w-4xl mx-auto text-center">
-              <div className="bg-gradient-to-br from-slate-900 via-slate-900 to-blue-950 rounded-2xl p-12 lg:p-16 text-white relative overflow-hidden">
+              <div className="bg-slate-900 rounded-2xl p-12 lg:p-16 text-white relative overflow-hidden">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808008_1px,transparent_1px),linear-gradient(to_bottom,#80808008_1px,transparent_1px)] bg-[size:32px_32px]" />
-                <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-blue-600/10 rounded-full blur-[120px]" />
                 <div className="relative z-10 space-y-6">
                   <Mail className="w-12 h-12 text-blue-400 mx-auto" />
-                  <h2 className="text-3xl lg:text-4xl font-bold">{t.privacyPolicyPage.contactTitle}</h2>
+                  <h2 className="text-3xl lg:text-4xl font-bold leading-snug">{t.privacyPolicyPage.contactTitle}</h2>
                   <p className="text-slate-300 text-lg max-w-xl mx-auto">
                     {t.privacyPolicyPage.contactDesc}
                   </p>

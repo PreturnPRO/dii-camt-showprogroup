@@ -481,10 +481,9 @@ export default function Portfolio() {
       whileHover={{ y: -5, scale: 1.02 }}
       className={`relative overflow-hidden rounded-3xl p-6 shadow-lg border border-white/20 ${gradient}`}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10">
+          <div className="p-3 rounded-2xl bg-white/20 shadow-sm border border-white/10">
             <Icon className="w-6 h-6 text-white" />
           </div>
           <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
@@ -493,7 +492,7 @@ export default function Portfolio() {
         </div>
         <div>
           <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{label}</p>
-          <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
+          <h3 className="text-3xl font-bold text-white leading-snug">{value}</h3>
         </div>
       </div>
     </motion.div>
@@ -518,7 +517,7 @@ export default function Portfolio() {
             <span>{t.portfolioPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -586,35 +585,35 @@ export default function Portfolio() {
           icon={Code}
           label={t.portfolioPage.totalProjects}
           value={projects.length}
-          gradient="bg-gradient-to-br from-indigo-500 via-indigo-600 to-purple-600"
+          gradient="bg-indigo-600"
         />
         <StatCard
           icon={Award}
           label={t.portfolioPage.achievements}
           value={achievements.length}
-          gradient="bg-gradient-to-br from-amber-400 via-orange-500 to-red-500"
+          gradient="bg-amber-600"
         />
         <StatCard
           icon={Zap}
           label={t.portfolioPage.skills}
           value={skills.length}
-          gradient="bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600"
+          gradient="bg-emerald-600"
         />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <Tabs defaultValue="projects" className="w-full">
-            <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm mb-6 w-full md:w-auto inline-flex">
+            <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-xs w-full md:w-auto mb-6 inline-flex overflow-x-auto">
               <TabsTrigger
                 value="projects"
-                className="rounded-xl px-6 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-white"
+                className="rounded-xl px-6 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-white"
               >
                 {t.portfolioPage.works} ({projects.length})
               </TabsTrigger>
               <TabsTrigger
                 value="achievements"
-                className="rounded-xl px-6 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-white"
+                className="rounded-xl px-6 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-white"
               >
                 {t.portfolioPage.awards}
               </TabsTrigger>
@@ -632,7 +631,7 @@ export default function Portfolio() {
                     className="group bg-white dark:bg-slate-900 rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm cursor-pointer hover:shadow-xl transition-all relative"
                   >
                     <div className="h-48 overflow-hidden relative">
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-black/50 z-10 opacity-0 group-hover:opacity-100 transition-opacity" />
                       <img
                         src={project.images?.[0] || `https://placehold.co/600x400/indigo/white?text=${encodeURIComponent(project.title)}`}
                         alt={project.title}
@@ -730,9 +729,9 @@ export default function Portfolio() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex gap-4 items-center group hover:border-amber-200 transition-all"
+                    className="bg-white dark:bg-[#0c1222] rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex gap-4 items-center group hover:border-amber-200 transition-all"
                   >
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-110 transition-transform">
+                    <div className="bg-amber-50 dark:bg-amber-500/10 w-16 h-16 rounded-2xl flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-110 transition-transform">
                       <Trophy className="w-8 h-8" />
                     </div>
                     <div className="flex-1">
@@ -763,7 +762,7 @@ export default function Portfolio() {
             variants={itemVariants}
             className="bg-white rounded-3xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm relative overflow-hidden dark:bg-slate-900"
           >
-            <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-600 absolute top-0 left-0 right-0" />
+            <div className="bg-blue-600 h-24 absolute top-0 left-0 right-0" />
             <div className="relative pt-10 text-center">
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl rounded-2xl mx-auto mb-4">
                 <AvatarImage src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} />
@@ -941,7 +940,7 @@ export default function Portfolio() {
       <Dialog open={isProfileDialogOpen} onOpenChange={setIsProfileDialogOpen}>
         <DialogContent className="sm:max-w-2xl rounded-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-black tracking-tight">แก้ไขข้อมูลโปรไฟล์และลิงก์</DialogTitle>
+            <DialogTitle className="text-2xl font-black leading-snug">แก้ไขข้อมูลโปรไฟล์และลิงก์</DialogTitle>
             <DialogDescription className="font-medium text-slate-500">ข้อมูลส่วนตัวและลิงก์เชื่อมโยงสำหรับแสดงบนหน้า Portfolio สาธารณะของคุณ</DialogDescription>
           </DialogHeader>
           
@@ -950,7 +949,7 @@ export default function Portfolio() {
             <div className="flex flex-col md:flex-row items-center gap-6 p-4 rounded-2xl bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800">
               <Avatar className="w-20 h-20 border-2 border-white dark:border-slate-800 shadow-md rounded-2xl">
                 <AvatarImage src={profileForm.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${profileForm.name}`} />
-                <AvatarFallback className="text-xl bg-indigo-100 text-indigo-600 font-bold rounded-2xl">{profileForm.nameThai?.[0] || 'U'}</AvatarFallback>
+                <AvatarFallback className="text-xl bg-indigo-100 text-indigo-600 font-bold rounded-2xl dark:bg-indigo-500/10 dark:text-indigo-300">{profileForm.nameThai?.[0] || 'U'}</AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center md:text-left space-y-2">
                 <h4 className="font-bold text-slate-800 dark:text-slate-200">รูปโปรไฟล์</h4>

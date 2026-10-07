@@ -75,12 +75,12 @@ export default function ForgotPasswordPage() {
             alt="Campus"
             className="w-full h-full object-cover opacity-20 mix-blend-overlay"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
+          <div className="bg-slate-950/70 absolute inset-0" />
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20" />
         </div>
 
         <div className="relative z-10 w-full max-w-lg mx-auto">
-          <Link to="/login" className="inline-block p-3 bg-white/10 rounded-2xl mb-8 backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors">
+          <Link to="/login" className="inline-block p-3 bg-white/10 rounded-2xl mb-8 border border-white/10 hover:bg-white/25 transition-colors">
             <ArrowLeft className="w-6 h-6 text-white" />
           </Link>
           <motion.h1
@@ -124,7 +124,7 @@ export default function ForgotPasswordPage() {
             <div className="w-14 h-14 mx-auto rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300 flex items-center justify-center mb-4">
               {isResetMode ? <KeyRound className="w-7 h-7" /> : <Mail className="w-7 h-7" />}
             </div>
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white leading-snug">
               {isResetMode ? (isTH ? 'ตั้งรหัสผ่านใหม่' : 'Set New Password') : (isTH ? 'ลืมรหัสผ่าน' : 'Forgot Password')}
             </h2>
             <p className="text-slate-500 mt-2 font-medium dark:text-slate-400">
@@ -153,7 +153,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 rounded-xl" disabled={isLoading}>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full h-12 text-base font-semibold text-white shadow-lg rounded-xl" disabled={isLoading}>
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {isTH ? 'ส่งลิงก์รีเซ็ต' : 'Send Reset Link'}
               </Button>
@@ -190,7 +190,7 @@ export default function ForgotPasswordPage() {
                   />
                 </div>
               </div>
-              <Button type="submit" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 rounded-xl" disabled={isLoading}>
+              <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full h-12 text-base font-semibold text-white shadow-lg rounded-xl" disabled={isLoading}>
                 {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : null}
                 {isTH ? 'เปลี่ยนรหัสผ่าน' : 'Reset Password'}
               </Button>

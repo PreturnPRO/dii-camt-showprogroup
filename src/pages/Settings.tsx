@@ -220,7 +220,7 @@ export default function Settings() {
           <SettingsIcon className="w-4 h-4 text-blue-600 dark:text-blue-400" />
           <span>{t.settingsPage.systemSettings}</span>
         </motion.div>
-        <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
           {t.settingsPage.settingsTitle}<span className="text-blue-600 dark:text-blue-400">{t.settingsPage.system}</span>
         </motion.h1>
         <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -258,7 +258,7 @@ export default function Settings() {
                   key={item.id}
                   onClick={() => setActiveTab(item.id)}
                   className={`w-full flex items-center gap-3.5 px-4 py-3 sm:py-3.5 rounded-xl text-sm font-semibold transition-all duration-150 cursor-pointer ${activeTab === item.id
-                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20 font-bold'
+                    ? 'bg-blue-600 text-white shadow-sm font-bold'
                     : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100/80 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
                     }`}
                 >
@@ -317,7 +317,7 @@ export default function Settings() {
                 >
                   <div className="flex flex-col md:flex-row justify-between items-start gap-4 border-b border-slate-100 dark:border-slate-800 pb-6">
                     <div>
-                      <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.settingsPage.personalInfo}</h2>
+                      <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-snug">{t.settingsPage.personalInfo}</h2>
                       <p className="text-slate-500 font-medium dark:text-slate-400 text-sm">{t.settingsPage.personalInfoDesc}</p>
                     </div>
                     <Button onClick={handleSaveProfile} disabled={isSaving} className="rounded-xl h-11 px-6 bg-blue-600 text-white hover:bg-blue-700 shadow-sm font-semibold transition-all disabled:opacity-70">
@@ -329,7 +329,7 @@ export default function Settings() {
                     <div className="relative group/avatar cursor-pointer shrink-0">
                       <Avatar className="w-24 h-24 sm:w-28 sm:h-28 border-2 border-white dark:border-slate-700 shadow-md rounded-2xl">
                         <AvatarImage src={avatarSrc} />
-                        <AvatarFallback className="text-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-bold">{user?.nameThai?.[0]}</AvatarFallback>
+                        <AvatarFallback className="text-2xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 font-bold leading-snug">{user?.nameThai?.[0]}</AvatarFallback>
                       </Avatar>
                       <div className="absolute inset-0 bg-slate-900/60 rounded-2xl opacity-0 group-hover/avatar:opacity-100 flex items-center justify-center transition-all duration-200">
                         <Smartphone className="w-6 h-6 text-white" />
@@ -395,7 +395,7 @@ export default function Settings() {
                   className="p-6 sm:p-10 space-y-8"
                 >
                   <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.settingsPage.accountStrength}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-snug">{t.settingsPage.accountStrength}</h2>
                     <p className="text-slate-500 font-medium dark:text-slate-400 text-sm">{t.settingsPage.securityDesc}</p>
                   </div>
 
@@ -497,7 +497,7 @@ export default function Settings() {
                   className="p-6 sm:p-10 space-y-10"
                 >
                   <div className="border-b border-slate-100 dark:border-slate-800 pb-6">
-                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">{t.settingsPage.displayUI}</h2>
+                    <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-1 leading-snug">{t.settingsPage.displayUI}</h2>
                     <p className="text-slate-500 font-medium dark:text-slate-400 text-sm">{t.settingsPage.displayDesc}</p>
                   </div>
 
@@ -527,7 +527,7 @@ export default function Settings() {
                             {/* Mockup Body */}
                             <div className="flex gap-1.5 flex-1">
                               {/* Sidebar */}
-                              <div className="w-1/4 rounded bg-slate-50 border border-slate-100 p-1 flex flex-col gap-1">
+                              <div className="w-1/4 rounded bg-slate-50 border border-slate-100 p-1 flex flex-col gap-1 dark:bg-slate-800">
                                 <div className="w-full h-1.5 rounded bg-blue-500/40" />
                                 <div className="w-3/4 h-1 rounded bg-slate-200" />
                                 <div className="w-4/5 h-1 rounded bg-slate-200" />
@@ -536,8 +536,8 @@ export default function Settings() {
                               <div className="flex-1 flex flex-col gap-1.5">
                                 <div className="w-1/2 h-2 rounded bg-slate-800" />
                                 <div className="grid grid-cols-2 gap-1 flex-1">
-                                  <div className="rounded bg-slate-50 border border-slate-100" />
-                                  <div className="rounded bg-slate-50 border border-slate-100" />
+                                  <div className="rounded bg-slate-50 border border-slate-100 dark:bg-slate-800" />
+                                  <div className="rounded bg-slate-50 border border-slate-100 dark:bg-slate-800" />
                                 </div>
                               </div>
                             </div>

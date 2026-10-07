@@ -210,7 +210,7 @@ export function ImportMappingDialog({
               </div>
 
               {validation.issues.length > 0 && (
-                <div className="max-h-24 overflow-y-auto rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+                <div className="max-h-24 overflow-y-auto rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
                   {validation.issues.slice(0, 8).map((issue) => (
                     <div key={`${issue.rowNumber}-${issue.fieldKey}`}>
                       แถว {issue.rowNumber}: {issue.message}
@@ -249,14 +249,14 @@ export function ImportMappingDialog({
           )}
 
           {error && (
-            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
               <AlertCircle className="h-4 w-4 flex-shrink-0" />
               {error}
             </div>
           )}
 
           {result && (
-            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+            <div className="flex items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300">
               <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
               Import สำเร็จ {result.successCount} รายการ, ไม่สำเร็จ {result.failureCount} รายการ
             </div>

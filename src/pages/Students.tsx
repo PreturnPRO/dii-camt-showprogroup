@@ -164,7 +164,7 @@ export default function Students() {
             <Users className="w-4 h-4 text-blue-500" />
             <span>ข้อมูลอาจารย์ที่ปรึกษาประจําปีการศึกษา 2567</span>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+          <h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug">
             อาจารย์<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">ที่ปรึกษา</span>
           </h1>
         </div>
@@ -192,7 +192,7 @@ export default function Students() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {/* PFP Box */}
                 <div className="sm:col-span-1 bg-gray-50 dark:bg-slate-800 rounded-xl p-4 flex flex-col items-center justify-center text-center border border-gray-100 dark:border-slate-700">
-                  <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 p-1 shadow-md mb-3">
+                  <div className="bg-blue-600 w-20 h-20 rounded-2xl p-1 shadow-md mb-3">
                     <div className="w-full h-full rounded-[14px] bg-slate-800 flex items-center justify-center overflow-hidden">
                       <Users className="w-10 h-10 text-slate-300" />
                     </div>
@@ -328,7 +328,7 @@ export default function Students() {
               <Users className="w-4 h-4 text-blue-500 dark:text-slate-400" />
               <span>{`${t.studentsPage.totalStudents} ${students.length} • ${t.studentsPage.atRisk} ${atRiskCount}`}</span>
           </motion.div>
-          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.studentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.studentsPage.titleHighlight}</span>
           </motion.h1>
       </div>
@@ -465,11 +465,11 @@ export default function Students() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.05 }}
                   whileHover={{ scale: 1.01, x: 4 }}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white dark:from-slate-900 dark:to-slate-950 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
+                  className="bg-gray-50 dark:bg-slate-900 flex items-center justify-between p-4 rounded-xl border border-gray-100 dark:border-slate-800 hover:border-primary/30 dark:hover:border-primary/50 hover:shadow-md transition-all cursor-pointer group"
                   onClick={() => setSelectedStudent(student)}
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                    <div className="bg-blue-600 w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
                       {student.nameThai.charAt(0)}
                     </div>
                     <div>

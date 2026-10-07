@@ -237,7 +237,7 @@ export default function CompanyDashboard() {
             <span>{copy.today}</span>
           </motion.div>
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -262,7 +262,7 @@ export default function CompanyDashboard() {
 
       {/* Favorites strip */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm">
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Heart className="w-5 h-5 text-rose-500 fill-rose-500/20" />
@@ -302,17 +302,16 @@ export default function CompanyDashboard() {
           variants={itemVariants}
           whileHover={{ y: -5 }}
           onClick={() => navigate('/applicants')}
-          className="p-6 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-xl shadow-orange-500/20 relative overflow-hidden cursor-pointer"
+          className="bg-orange-600 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden cursor-pointer"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white dark:bg-slate-900/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-white dark:bg-slate-900/20 backdrop-blur-sm">
+              <div className="p-2.5 rounded-xl bg-white/20">
                 <UserPlus className="w-6 h-6" />
               </div>
               <span className="font-medium text-white/90">{copy.newApplicantsToday}</span>
             </div>
-            <div className="text-5xl font-bold tracking-tight">{newApplicantsToday}</div>
+            <div className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{newApplicantsToday}</div>
             <div className="mt-3 text-sm text-orange-100">{copy.clickToApplicants}</div>
           </div>
         </motion.div>
@@ -330,7 +329,7 @@ export default function CompanyDashboard() {
               </div>
               <span className="font-medium text-slate-600 dark:text-slate-400">{copy.openPositions}</span>
             </div>
-            <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{openJobs.length}</div>
+            <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors leading-snug">{openJobs.length}</div>
             <div className="mt-3 text-sm text-slate-400">{copy.fromPostings(companyJobPostings.length)}</div>
           </div>
         </motion.div>
@@ -348,7 +347,7 @@ export default function CompanyDashboard() {
               </div>
               <span className="font-medium text-slate-600 dark:text-slate-400">{copy.internshipSeats}</span>
             </div>
-            <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{internshipSeatsFilled}</div>
+            <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-snug">{internshipSeatsFilled}</div>
             <div className="mt-3 text-sm text-slate-400">{copy.seatsRemaining(internshipSeatsRemaining, internshipSeatsTotal)}</div>
           </div>
         </motion.div>
@@ -357,7 +356,7 @@ export default function CompanyDashboard() {
       {/* Awaiting action + pipeline */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <ClipboardList className="w-5 h-5 text-orange-500" />
@@ -399,7 +398,7 @@ export default function CompanyDashboard() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardHeader>
               <div className="flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-orange-500" />
@@ -418,7 +417,7 @@ export default function CompanyDashboard() {
                   </div>
                   <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
                     <div
-                      className="h-full rounded-full bg-gradient-to-r from-orange-500 to-amber-500"
+                      className="bg-orange-600 h-full rounded-full"
                       style={{ width: `${(row.count / pipelineMax) * 100}%` }}
                     />
                   </div>

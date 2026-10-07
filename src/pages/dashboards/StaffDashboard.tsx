@@ -433,7 +433,7 @@ function MetricCard({
           </div>
           <span className="text-sm font-medium text-white/90">{label}</span>
         </div>
-        <div className="mt-4 text-3xl font-bold">{value}</div>
+        <div className="mt-4 text-3xl font-bold leading-snug">{value}</div>
         <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{detail}</div>
       </div>
     </motion.button>
@@ -728,7 +728,7 @@ export default function StaffDashboard() {
             </div>
             <span>Staff Dashboard · {staffDepartment}</span>
           </div>
-          <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-slate-950 dark:text-white md:text-5xl">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold leading-snug text-slate-950 dark:text-white">
             สวัสดี, <span className="bg-gradient-to-r from-purple-500 to-violet-500 bg-clip-text text-transparent">{staffName}</span>
           </h1>
           <p className="mt-2 text-sm font-medium text-slate-500 dark:text-slate-400">
@@ -810,7 +810,7 @@ export default function StaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400">ผู้ใช้ที่ใช้งานอยู่</p>
-                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{activeUsers}</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-snug">{activeUsers}</p>
               </div>
               <UserCog className="h-8 w-8 text-purple-500" />
             </div>
@@ -822,7 +822,7 @@ export default function StaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400">ฝึกงานกำลังดำเนินการ</p>
-                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{activeInternships.length}</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-snug">{activeInternships.length}</p>
               </div>
               <Briefcase className="h-8 w-8 text-emerald-500" />
             </div>
@@ -834,7 +834,7 @@ export default function StaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400">ข้อความยังไม่อ่าน</p>
-                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{unreadMessages.length}</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-snug">{unreadMessages.length}</p>
               </div>
               <MessageSquare className="h-8 w-8 text-blue-500" />
             </div>
@@ -846,7 +846,7 @@ export default function StaffDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-slate-500 dark:text-slate-400">บริษัทคู่ความร่วมมือ</p>
-                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white">{companies.length}</p>
+                <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-snug">{companies.length}</p>
               </div>
               <Network className="h-8 w-8 text-orange-500" />
             </div>
@@ -888,7 +888,7 @@ export default function StaffDashboard() {
                       <div className="text-sm text-slate-500 dark:text-slate-400">{item.detail}</div>
                     </div>
                   </div>
-                  <div className="text-2xl font-bold text-slate-950 dark:text-white">{item.value}</div>
+                  <div className="text-2xl font-bold text-slate-950 dark:text-white leading-snug">{item.value}</div>
                 </button>
               ))}
             </CardContent>

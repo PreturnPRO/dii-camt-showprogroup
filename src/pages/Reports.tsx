@@ -148,7 +148,7 @@ export default function Reports() {
                         <span>{t.reports.description}</span>
                     </motion.div>
                     <motion.h1
-                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -169,17 +169,16 @@ export default function Reports() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-sm relative overflow-hidden"
+                    className="bg-emerald-600 p-6 rounded-3xl text-white shadow-sm relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+                            <div className="p-2.5 rounded-xl bg-white/20">
                                 <Users className="w-6 h-6" />
                             </div>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.reports.totalStudents}</span>
+                            <span className="text-xs text-white/85">{t.reports.totalStudents}</span>
                         </div>
-                        <div className="text-5xl font-bold tracking-tight">{students.length}</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{students.length}</div>
                         <div className="mt-3 text-sm text-emerald-100 flex items-center gap-1">
                             <Sparkles className="w-4 h-4" />
                             {t.reports.inSystemAll}
@@ -199,7 +198,7 @@ export default function Reports() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.reports.avgGPA}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{avgGPA}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors leading-snug">{avgGPA}</div>
                         <div data-testid="avg-gpa-count" className="mt-3 text-sm text-slate-400">{language === 'en' ? `from ${gpa.count} students with grades` : `จาก ${gpa.count} คนที่มีเกรด`}</div>
                     </div>
                 </motion.div>
@@ -216,7 +215,7 @@ export default function Reports() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.reports.coursesLabel}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors">{courses.length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-purple-600 transition-colors leading-snug">{courses.length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.reports.coursesInSystem}</div>
                     </div>
                 </motion.div>
@@ -233,7 +232,7 @@ export default function Reports() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.reports.activitiesLabel}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors">{activities.length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-orange-600 transition-colors leading-snug">{activities.length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.reports.allActivities}</div>
                     </div>
                 </motion.div>
@@ -305,7 +304,7 @@ export default function Reports() {
                                     {yearDistribution.map((item) => (
                                         <div key={item.year} className="text-center p-6 border rounded-xl">
                                             <div className="text-sm text-gray-600 dark:text-slate-400 mb-2">{t.reports.yearLabel} {item.year}</div>
-                                            <div className="text-4xl font-bold text-primary">{item.count}</div>
+                                            <div className="text-4xl font-bold text-primary leading-snug">{item.count}</div>
                                             <div className="text-xs text-gray-500 dark:text-slate-400 mt-1">{t.common.person}</div>
                                         </div>
                                     ))}
@@ -327,7 +326,7 @@ export default function Reports() {
                                     ].map((item) => (
                                         <div key={item.label} className="text-center p-4 bg-gray-50 rounded-xl dark:bg-slate-800">
                                             <div className="text-sm text-gray-600 dark:text-slate-400 mb-1">{item.label}</div>
-                                            <div className="text-2xl font-bold">{item.value}</div>
+                                            <div className="text-2xl font-bold leading-snug">{item.value}</div>
                                         </div>
                                     ))}
                                 </div>

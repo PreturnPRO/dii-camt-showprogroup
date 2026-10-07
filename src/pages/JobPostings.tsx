@@ -374,7 +374,7 @@ export default function JobPostings() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-end gap-6">
         <div>
-          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
+          <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug" variants={itemVariants}>
             <Briefcase className="inline w-7 h-7 mr-2 mb-1 text-orange-500" />
             {copy.titleAll}
           </motion.h1>
@@ -421,7 +421,7 @@ export default function JobPostings() {
 
       {/* Table */}
       <motion.div variants={itemVariants}>
-        <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
+        <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
           <CardContent className="p-0">
             <table className="w-full text-sm">
               <thead>

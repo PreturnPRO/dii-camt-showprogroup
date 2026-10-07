@@ -96,23 +96,21 @@ export default function Cooperation() {
                     <Handshake className="w-4 h-4 text-orange-500 dark:text-slate-400" />
                     <span>{t.cooperationPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.cooperationPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">{t.cooperationPage.titleHighlight}</span>
                 </motion.h1>
             </div>
 
             {/* MOU Status Card - Full Width */}
             <motion.div variants={itemVariants} whileHover={{ scale: 1.005 }}
-                className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 text-white shadow-sm">
-                <div className="absolute -top-20 -right-20 w-60 h-60 bg-white/10 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 w-40 h-40 bg-white/5 rounded-full blur-2xl" />
+                className="bg-emerald-600 relative overflow-hidden rounded-3xl p-8 text-white shadow-sm">
                 <div className="relative z-10">
                     <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-6">
                         <div>
                             <div className="flex items-center gap-3 mb-3">
-                                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm"><Shield className="w-6 h-6" /></div>
+                                <div className="p-2.5 rounded-xl bg-white/20"><Shield className="w-6 h-6" /></div>
                                 <div>
-                                    <h2 className="text-2xl font-bold">{t.cooperationPage.mouStatus}</h2>
+                                    <h2 className="text-2xl font-bold leading-snug">{t.cooperationPage.mouStatus}</h2>
                                     <p className="text-emerald-100 text-sm mt-0.5">{currentMou.title}</p>
                                 </div>
                             </div>
@@ -120,7 +118,7 @@ export default function Cooperation() {
                                 {currentMou.details}
                             </p>
                         </div>
-                        <Badge className="bg-white/20 text-white border-white/30 text-base px-4 py-1.5 backdrop-blur-sm self-start">{currentMou.status}</Badge>
+                        <Badge className="bg-white/20 text-white border-white/30 text-base px-4 py-1.5 self-start">{currentMou.status}</Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                         {[
@@ -130,7 +128,7 @@ export default function Cooperation() {
                                 ? [{ label: t.cooperationPage.endDate, value: thaiDate(expiryDate), sub: `${t.cooperationPage.timeRemaining} ${remainingDays} วัน` }]
                                 : []),
                         ].map((item, i) => (
-                            <div key={i} className="p-4 rounded-2xl bg-white/10 backdrop-blur-sm">
+                            <div key={i} className="p-4 rounded-2xl bg-white/10">
                                 <p className="text-sm text-emerald-200">{item.label}</p>
                                 <p className="font-bold text-lg mt-1">{item.value}</p>
                                 {'sub' in item && item.sub && <p className="text-xs text-amber-200 mt-1">{item.sub}</p>}
@@ -138,7 +136,7 @@ export default function Cooperation() {
                         ))}
                     </div>
                     <div className="flex gap-3 mt-6">
-                        <Button disabled={!hasMou || isLoading} onClick={handleDownload} className="bg-white/20 hover:bg-white/30 text-white backdrop-blur-sm rounded-xl border border-white/20">
+                        <Button disabled={!hasMou || isLoading} onClick={handleDownload} className="bg-white/20 hover:bg-white/25 text-white rounded-xl border border-white/20">
                             <Download className="w-4 h-4 mr-2" /> {t.cooperationPage.downloadMOU}
                         </Button>
                         <Button onClick={() => navigate('/messages')} className="bg-white text-emerald-700 hover:bg-emerald-50 rounded-xl shadow-lg dark:text-slate-300 dark:bg-slate-900 dark:bg-slate-800">

@@ -164,7 +164,7 @@ export function StudentGradesView() {
             <span>{t.grades.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 leading-snug"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
@@ -303,7 +303,7 @@ export function StudentGradesView() {
                 <Target className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-snug">
               {t.grades.normal}
             </div>
           </div>
@@ -459,7 +459,7 @@ export function StudentGradesView() {
                 className="group flex items-center justify-between p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm hover:shadow-xl transition-all cursor-pointer"
               >
                 <div className="flex items-center gap-6">
-                  <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-500/20 group-hover:scale-110 transition-transform">
+                  <div className="bg-emerald-600 w-16 h-16 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg group-hover:scale-110 transition-transform">
                     {data.gpa.toFixed(2)}
                   </div>
                   <div>
@@ -528,7 +528,7 @@ export function StudentGradesView() {
               <div className="w-32 h-32 rounded-full bg-emerald-50 flex items-center justify-center mb-6 dark:bg-slate-800">
                 <TrendingUp className="w-12 h-12 text-emerald-600 dark:text-slate-300" />
               </div>
-              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">{t.grades.excellentTrend}</h3>
+              <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">{t.grades.excellentTrend}</h3>
               <p className="text-slate-500 max-w-xs mx-auto dark:text-slate-400">{t.grades.trendDescription}</p>
             </motion.div>
           </div>
@@ -540,10 +540,10 @@ export function StudentGradesView() {
             className="bg-white rounded-3xl p-10 shadow-lg border border-slate-100 dark:border-slate-800 max-w-4xl mx-auto dark:bg-slate-900"
           >
             <div className="text-center mb-10 border-b border-slate-100 dark:border-slate-800 pb-8">
-              <div className="w-20 h-20 bg-purple-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-xl shadow-purple-500/30">
+              <div className="w-20 h-20 bg-purple-600 rounded-2xl mx-auto flex items-center justify-center text-white text-2xl font-bold mb-4 shadow-xl leading-snug">
                 CMU
               </div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-200">{t.grades.universityName}</h2>
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-200 leading-snug">{t.grades.universityName}</h2>
               <p className="text-slate-500 dark:text-slate-400">{t.grades.officialTranscript}</p>
             </div>
 

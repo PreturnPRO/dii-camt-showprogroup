@@ -5,6 +5,7 @@ import { BarChart3, Clock, Users, BookOpen, Briefcase, FlaskConical, CalendarDay
 import { api } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString, pickLocalized } from '@/lib/live-data';
 import { DAY_KEYS, DAY_LABELS, type DayKey } from '@/lib/timetable';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -93,7 +94,7 @@ export default function Workload() {
                     <BarChart3 className="w-4 h-4 text-emerald-500 dark:text-slate-400" />
                     <span data-testid="workload-term">{t.workloadPage.subtitle} {workloadStats.term ?? '-'}</span>
                 </motion.div>
-                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.workloadPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">{t.workloadPage.titleHighlight}</span>
                 </motion.h1>
             </div>
@@ -178,7 +179,7 @@ export default function Workload() {
                     className="lg:col-span-3 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 transition-all"
                 >
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg">
+                        <div className="bg-green-600 p-2.5 rounded-xl text-white shadow-lg">
                             <CalendarDays className="w-5 h-5" />
                         </div>
                         <div>
@@ -198,7 +199,7 @@ export default function Workload() {
                                 initial={{ opacity: 0, x: -20 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: idx * 0.05 }}
-                                className="flex justify-between items-center p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100 dark:from-slate-900 dark:to-slate-950 dark:border-slate-700"
+                                className="bg-gray-50 dark:bg-slate-900 flex justify-between items-center p-4 rounded-2xl border border-gray-100 dark:border-slate-700"
                             >
                                 <div className="flex items-center gap-4">
                                     <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center text-white font-bold text-sm shadow-lg">
@@ -225,7 +226,7 @@ export default function Workload() {
                     className="lg:col-span-2 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 transition-all"
                 >
                     <div className="flex items-center gap-3 mb-6">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">
+                        <div className="bg-purple-600 p-2.5 rounded-xl text-white shadow-lg">
                             <Briefcase className="w-5 h-5" />
                         </div>
                         <div>
@@ -244,8 +245,8 @@ export default function Workload() {
                             { title: isTH ? 'ให้คำปรึกษา' : 'Advising', hours: workloadStats.advisingHours, color: 'from-purple-500 to-pink-500' },
                             { title: isTH ? 'บริการวิชาการ' : 'Service', hours: workloadStats.serviceHours, color: 'from-orange-500 to-amber-500' },
                         ].map((task) => (
-                            <div key={task.title} className="flex items-start gap-3 p-4 bg-gradient-to-r from-gray-50 to-white rounded-2xl border border-gray-100 dark:from-slate-900 dark:to-slate-950 dark:border-slate-700">
-                                <div className={`w-2 h-full min-h-[40px] rounded-full bg-gradient-to-b ${task.color}`} />
+                            <div key={task.title} className="bg-gray-50 dark:bg-slate-900 flex items-start gap-3 p-4 rounded-2xl border border-gray-100 dark:border-slate-700">
+                                <div className={`w-2 h-full min-h-[40px] rounded-full ${solidBg(task.color)}`} />
                                 <div>
                                     <p className="font-semibold text-gray-900 dark:text-slate-200">{task.title}</p>
                                     <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{show(task.hours)} {isTH ? 'ชั่วโมง' : 'hours'}</p>

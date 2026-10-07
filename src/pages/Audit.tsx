@@ -132,7 +132,7 @@ export default function Audit() {
                         <span>{t.audit.subtitle}</span>
                     </motion.div>
                     <motion.h1
-                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+                        className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 }}
@@ -153,17 +153,16 @@ export default function Audit() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="p-6 rounded-3xl bg-gradient-to-br from-indigo-500 to-purple-600 text-white shadow-sm relative overflow-hidden"
+                    className="bg-indigo-600 p-6 rounded-3xl text-white shadow-sm relative overflow-hidden"
                 >
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                     <div className="relative z-10">
                         <div className="flex items-center gap-3 mb-4">
-                            <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm">
+                            <div className="p-2.5 rounded-xl bg-white/20">
                                 <Activity className="w-6 h-6" />
                             </div>
-                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.audit.totalLabel}</span>
+                            <span className="text-xs text-white/85">{t.audit.totalLabel}</span>
                         </div>
-                        <div className="text-5xl font-bold tracking-tight">{auditLogs.length}</div>
+                        <div className="text-2xl sm:text-3xl lg:text-4xl font-bold leading-snug">{auditLogs.length}</div>
                         <div className="mt-3 text-sm text-indigo-100 flex items-center gap-1">
                             <Sparkles className="w-4 h-4" />
                             {t.audit.logEntries}
@@ -183,7 +182,7 @@ export default function Audit() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.audit.success}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors">{auditLogs.filter(l => l.status === 'success').length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-emerald-600 transition-colors leading-snug">{auditLogs.filter(l => l.status === 'success').length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.audit.successDesc}</div>
                     </div>
                 </motion.div>
@@ -200,7 +199,7 @@ export default function Audit() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.audit.failed}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-red-600 transition-colors">{auditLogs.filter(l => l.status === 'failed').length}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-red-600 transition-colors leading-snug">{auditLogs.filter(l => l.status === 'failed').length}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.audit.failedDesc}</div>
                     </div>
                 </motion.div>
@@ -217,7 +216,7 @@ export default function Audit() {
                             </div>
                             <span className="font-medium text-slate-600 dark:text-slate-300">{t.audit.todayLabel}</span>
                         </div>
-                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">{todayLogCount}</div>
+                        <div className="text-4xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors leading-snug">{todayLogCount}</div>
                         <div className="mt-3 text-sm text-slate-400">{t.audit.todayDesc}</div>
                     </div>
                 </motion.div>

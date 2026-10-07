@@ -64,7 +64,7 @@ export default function PublicPortfolio() {
     return (
       <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col items-center justify-center p-4 text-center">
         <Briefcase className="w-16 h-16 text-slate-300 mb-4" />
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Portfolio Not Found</h1>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-2 leading-snug">Portfolio Not Found</h1>
         <p className="text-slate-500 mb-6 max-w-md">The portfolio you are looking for does not exist or is set to private.</p>
         <Button asChild><Link to="/">Return to Home</Link></Button>
       </div>
@@ -87,8 +87,6 @@ export default function PublicPortfolio() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 py-12 px-4 sm:px-6 lg:px-8 overflow-hidden relative">
-      <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-purple-500/10 rounded-full blur-[120px] pointer-events-none" />
       
       <div className="max-w-5xl mx-auto space-y-8 relative z-10">
         <div className="flex items-center justify-between mb-4">
@@ -107,7 +105,7 @@ export default function PublicPortfolio() {
         <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8">
           
           {/* Header Profile */}
-          <motion.div variants={itemVariants} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[3rem] p-8 md:p-12 border border-slate-200 dark:border-slate-800 shadow-xl relative overflow-hidden">
+          <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-[3rem] p-8 md:p-12 border border-slate-200 dark:border-slate-800 shadow-xl relative overflow-hidden">
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
               <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-white shadow-xl rounded-3xl shrink-0">
                 <AvatarImage src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} />
@@ -116,7 +114,7 @@ export default function PublicPortfolio() {
                 </AvatarFallback>
               </Avatar>
               <div className="flex-1 text-center md:text-left">
-                <h1 className="text-4xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tight mb-2">
+                <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-slate-900 dark:text-white mb-2 leading-snug">
                   {student.nameThai}
                 </h1>
                 <p className="text-xl text-slate-500 dark:text-slate-400 mb-4 font-medium">{student.name}</p>
@@ -162,9 +160,9 @@ export default function PublicPortfolio() {
             
             {/* Skills & Badges Column */}
             <div className="space-y-8">
-              <motion.div variants={itemVariants} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 className="font-bold text-xl mb-6 flex items-center gap-3 tracking-tight">
-                  <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500"><Code className="w-5 h-5" /></div>
+                  <div className="p-2 rounded-xl bg-indigo-50 text-indigo-500 dark:bg-indigo-500/10"><Code className="w-5 h-5" /></div>
                   Skills
                 </h3>
                 {skills.length > 0 ? (
@@ -180,16 +178,16 @@ export default function PublicPortfolio() {
                 )}
               </motion.div>
 
-              <motion.div variants={itemVariants} className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-sm">
                 <h3 className="font-bold text-xl mb-6 flex items-center gap-3 tracking-tight">
-                  <div className="p-2 rounded-xl bg-amber-50 text-amber-500"><Trophy className="w-5 h-5" /></div>
+                  <div className="p-2 rounded-xl bg-amber-50 text-amber-500 dark:bg-amber-500/10"><Trophy className="w-5 h-5" /></div>
                   Achievements
                 </h3>
                 <div className="space-y-4">
                   {achievements.length > 0 ? (
                     achievements.map((ach) => (
                       <div key={ach.id} className="flex gap-3 items-start">
-                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
+                        <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0 dark:bg-amber-500/10">
                           <Award className="w-5 h-5 text-amber-600" />
                         </div>
                         <div>
@@ -211,8 +209,8 @@ export default function PublicPortfolio() {
 
             {/* Projects Column */}
             <div className="lg:col-span-2 space-y-6">
-              <motion.h3 variants={itemVariants} className="text-2xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-3 mb-6">
-                <div className="p-2 rounded-xl bg-purple-50 text-purple-500"><Briefcase className="w-6 h-6" /></div>
+              <motion.h3 variants={itemVariants} className="text-2xl font-black text-slate-900 dark:text-white flex items-center gap-3 mb-6 leading-snug">
+                <div className="p-2 rounded-xl bg-purple-50 text-purple-500 dark:bg-purple-500/10"><Briefcase className="w-6 h-6" /></div>
                 Projects & Works
               </motion.h3>
 
@@ -221,7 +219,7 @@ export default function PublicPortfolio() {
                   <motion.div 
                     key={project.id} 
                     variants={itemVariants} 
-                    className="bg-white/70 dark:bg-slate-900/70 backdrop-blur-xl rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group hover:shadow-xl transition-all"
+                    className="bg-white dark:bg-slate-900 rounded-[2rem] overflow-hidden border border-slate-200 dark:border-slate-800 shadow-sm group hover:shadow-xl transition-all"
                   >
                     {project.images?.[0] && (
                       <div className="h-48 overflow-hidden w-full relative bg-slate-100 dark:bg-slate-800">
@@ -235,7 +233,7 @@ export default function PublicPortfolio() {
                     <div className="p-8">
                       <div className="flex justify-between items-start mb-4">
                         <div>
-                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 transition-colors">
+                          <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-1 group-hover:text-indigo-600 transition-colors leading-snug">
                             {project.title}
                           </h3>
                           <p className="text-sm text-indigo-600 dark:text-indigo-400 font-medium">{project.role}</p>
@@ -262,7 +260,7 @@ export default function PublicPortfolio() {
                   </motion.div>
                 ))
               ) : (
-                <motion.div variants={itemVariants} className="bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
+                <motion.div variants={itemVariants} className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-dashed border-slate-200 dark:border-slate-800 p-12 text-center">
                   <Briefcase className="w-12 h-12 mx-auto text-slate-300 mb-4" />
                   <p className="text-slate-500 font-medium">No projects have been added yet.</p>
                 </motion.div>

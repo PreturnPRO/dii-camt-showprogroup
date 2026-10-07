@@ -44,13 +44,13 @@ export default function LoginPage() {
             alt="Background"
             className="w-full h-full object-cover opacity-20 mix-blend-overlay"
           />
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
+          <div className="bg-slate-950/70 absolute inset-0" />
           {/* Animated particles */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
         </div>
 
         <div className="relative z-10 w-full max-w-lg mx-auto">
-          <Link to="/" className="inline-block p-3 bg-white/10 rounded-2xl mb-8 backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors dark:bg-slate-900/50">
+          <Link to="/" className="inline-block p-3 bg-white/10 rounded-2xl mb-8 border border-white/10 hover:bg-white/25 transition-colors dark:bg-slate-900">
             <ArrowLeft className="w-6 h-6 text-white" />
           </Link>
           <motion.h1
@@ -71,30 +71,9 @@ export default function LoginPage() {
             {t.login.systemDescription}
           </motion.p>
 
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/5 dark:bg-slate-900/50"
-          >
-            <div className="flex items-center gap-4 mb-3">
-              <div className="flex -space-x-3">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-700 shadow-sm" />
-                ))}
-              </div>
-              <div className="text-sm font-medium">
-                <div className="text-white">Active Users</div>
-                <div className="text-blue-300">5,000+ {t.login.usersInSystem}</div>
-              </div>
-            </div>
-            <p className="text-xs text-slate-400 font-light">
-              "{t.login.quote}"
-            </p>
-          </motion.div>
         </div>
 
-        <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
+        <div className="relative z-10 text-center text-slate-400 text-sm mt-12">
             © 2026 Xchange. All rights reserved.
         </div>
       </div>
@@ -111,10 +90,7 @@ export default function LoginPage() {
           <Globe className="h-4 w-4" />
           {language === 'th' ? 'EN' : 'TH'}
         </Button>
-        <div className="absolute inset-0 bg-white/40 backdrop-blur-3xl z-0 dark:bg-slate-900/50"></div>
-        {/* Background blobs */}
-        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-purple-100 dark:bg-purple-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+        <div className="absolute inset-0 bg-white z-0 dark:bg-slate-900"></div>
 
         <motion.div
           initial={{ opacity: 0, x: 20 }}
@@ -123,7 +99,7 @@ export default function LoginPage() {
           className="w-full max-w-md space-y-8 relative z-10 bg-white/80 dark:bg-slate-900/80 p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-white dark:border-slate-800"
         >
           <div className="text-center">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.login.title}</h2>
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white leading-snug">{t.login.title}</h2>
             <p className="text-slate-500 mt-2 font-medium dark:text-slate-400">{t.login.enterCredentials}</p>
           </div>
 
@@ -168,7 +144,7 @@ export default function LoginPage() {
               <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer font-medium">{t.login.rememberMe}</label>
             </div>
 
-            <Button type="submit" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 rounded-xl transition-all hover:scale-[1.01]" disabled={isLoading}>
+            <Button type="submit" className="bg-blue-600 hover:bg-blue-700 w-full h-12 text-base font-semibold text-white shadow-lg rounded-xl transition-all hover:scale-[1.01]" disabled={isLoading}>
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : t.login.loginButton}
             </Button>
           </form>

@@ -144,7 +144,7 @@ export default function WorkloadTracking() {
                     <BarChart3 className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                     <span>{t.workloadTrackingPage.subtitle}</span>
                 </motion.div>
-                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.workloadTrackingPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.workloadTrackingPage.titleHighlight}</span>
                 </motion.h1>
                 </div>
@@ -184,7 +184,7 @@ export default function WorkloadTracking() {
                         <div>
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">{isTH ? 'ชั่วโมงรวมเฉลี่ยต่อรายการ (สอน + วิจัย + ที่ปรึกษา + บริการ)' : 'Average total hours per record'}</p>
                             <div className="flex items-end gap-2">
-                                <span className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{avgWorkload}</span>
+                                <span className="text-2xl sm:text-3xl lg:text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600 leading-snug">{avgWorkload}</span>
                                 <span className="text-slate-400 mb-1.5">{t.workloadTrackingPage.hours}</span>
                             </div>
                         </div>

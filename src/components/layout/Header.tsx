@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { safeInternalPath } from '@/lib/safe-url';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bell,
@@ -74,7 +74,6 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
   const { language, toggleLanguage, t } = useLanguage();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
-  const location = useLocation();
   const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
   const [showNotifications, setShowNotifications] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -172,19 +171,11 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
     navigate('/');
   };
 
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path.includes('dashboard')) return t.header?.dashboard || 'Dashboard';
-    if (path.includes('profile')) return t.header?.profile || 'Profile';
-    if (path.includes('settings')) return t.header?.systemSettings || 'Settings';
-    return t.header?.dashboard || 'Workspace';
-  };
-
   return (
     <header className={`fixed top-0 left-0 right-0 z-40 pointer-events-none transition-all duration-300 ease-out px-4 sm:px-6 pt-4 sm:pt-6 ${scrolled ? 'pt-2 sm:pt-4' : ''}`}>
       <div className={`pointer-events-auto mx-auto max-w-6xl flex items-center justify-between transition-all duration-500 ${
         scrolled
-          ? 'h-16 px-6 bg-white/85 dark:bg-slate-800/85 backdrop-blur-3xl border border-slate-200/60 dark:border-slate-700/60 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] rounded-full'
+          ? 'h-16 px-6 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700/60 shadow-[0_10px_40px_rgba(15,23,42,0.08)] dark:shadow-[0_10px_40px_rgba(0,0,0,0.4)] rounded-full'
           : 'h-20 px-4 bg-transparent border-transparent shadow-none'
       }`}>
 
@@ -200,7 +191,7 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
           </Button>
 
           <Link to="/dashboard" className="flex items-center gap-3 group">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-400 dark:to-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg shadow-blue-600/20 dark:shadow-blue-400/20 group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-700 dark:from-blue-400 dark:to-blue-600 rounded-xl flex items-center justify-center text-white font-black shadow-lg group-hover:rotate-6 group-hover:scale-105 transition-all duration-300">
               <img src="/showpro_logo.png" alt="ShowPro" className="w-7 h-7 object-contain" />
             </div>
             <div className={`flex flex-col transition-all duration-300 ${scrolled ? 'scale-90 origin-left' : ''}`}>

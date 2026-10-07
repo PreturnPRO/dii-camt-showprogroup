@@ -54,7 +54,7 @@ export default function StudentQRCheckIn() {
                             {status === 'success' && <CheckCircle2 className="w-16 h-16 text-emerald-500" />}
                             {status === 'error' && <XCircle className="w-16 h-16 text-red-500" />}
                         </div>
-                        <CardTitle className="text-2xl font-bold">
+                        <CardTitle className="text-2xl font-bold leading-snug">
                             {status === 'loading' && 'Checking in...'}
                             {status === 'success' && 'Check-in Successful'}
                             {status === 'error' && 'Check-in Failed'}

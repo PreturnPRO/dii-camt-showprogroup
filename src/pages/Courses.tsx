@@ -566,11 +566,10 @@ export default function Courses() {
         setCourseForm(null);
       }
     }}>
-      <DialogContent className="max-w-3xl bg-white/90 backdrop-blur-2xl p-0 overflow-hidden gap-0 rounded-[2.5rem] border-white/50 shadow-2xl dark:bg-slate-900/50 dark:border-slate-800">
+      <DialogContent className="max-w-3xl bg-white p-0 overflow-hidden gap-0 rounded-[2.5rem] border-slate-200/80 shadow-2xl dark:bg-slate-900 dark:border-slate-800">
         <div className="p-6 md:p-8 bg-slate-900 text-white relative overflow-hidden shrink-0">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold tracking-tight text-white">{editingCourse ? (language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course') : (language === 'th' ? 'เพิ่มรายวิชา' : 'Add course')}</DialogTitle>
+            <DialogTitle className="text-2xl font-bold text-white leading-snug">{editingCourse ? (language === 'th' ? 'แก้ไขรายวิชา' : 'Edit course') : (language === 'th' ? 'เพิ่มรายวิชา' : 'Add course')}</DialogTitle>
             <DialogDescription className="text-slate-400">
               {editingCourse ? `${editingCourse.code} ${editingCourse.name}` : (language === 'th' ? 'กรอกรายละเอียดรายวิชาใหม่' : 'Enter the new course details')}
             </DialogDescription>
@@ -664,7 +663,7 @@ export default function Courses() {
                       }}
                       className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border ${
                         isSelected
-                          ? 'bg-indigo-500 border-indigo-500 text-white shadow-md shadow-indigo-500/20'
+                          ? 'bg-indigo-500 border-indigo-500 text-white shadow-md'
                           : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
                       }`}
                     >
@@ -765,7 +764,7 @@ export default function Courses() {
               <span>{t.coursesPage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -789,17 +788,16 @@ export default function Courses() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden"
+            className="bg-blue-600 p-6 rounded-3xl text-white shadow-lg relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                   <BookMarked className="w-6 h-6" />
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{t.coursesPage.registeredCourses}</span>
+                <span className="text-xs text-white/85">{t.coursesPage.registeredCourses}</span>
               </div>
-              <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{enrolledCourses.length}</div>{/* D-24: นับวิชาที่ลงทะเบียนจริง */}
+              <div className="text-3xl font-extrabold font-mono tracking-tight text-white">{enrolledCourses.length}</div>{/* D-24: นับวิชาที่ลงทะเบียนจริง */}
               <div className="mt-2 text-sm text-blue-100 flex items-center gap-1">
                 <Sparkles className="w-4 h-4" /> {t.coursesPage.regularSemester}
               </div>
@@ -809,19 +807,18 @@ export default function Courses() {
           <motion.div
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="p-6 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden"
+            className="bg-purple-600 p-6 rounded-3xl text-white shadow-lg relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                   <GraduationCap className="w-6 h-6" />
                 </div>
-                <span className="text-xs text-slate-500 dark:text-slate-400">{t.coursesPage.totalCredits}</span>
+                <span className="text-xs text-white/85">{t.coursesPage.totalCredits}</span>
               </div>
               {user?.role === 'student' ? (
                 <>
-                  <div className="text-4xl font-bold" data-testid="term-credits">{summary ? `${summary.termCredits}/${summary.maxCredits}` : '-'}</div>
+                  <div className="text-4xl font-bold leading-snug" data-testid="term-credits">{summary ? `${summary.termCredits}/${summary.maxCredits}` : '-'}</div>
                   {summary && (
                     <div className="mt-2 text-sm text-purple-100">
                       {language === 'th'
@@ -835,7 +832,7 @@ export default function Courses() {
                   </div>
                 </>
               ) : (
-                <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{totalCredits}</div>
+                <div className="text-3xl font-extrabold font-mono tracking-tight text-white">{totalCredits}</div>
               )}
             </div>
           </motion.div>
@@ -852,7 +849,7 @@ export default function Courses() {
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.coursesPage.registrationStatus}</span>
               </div>
-              <div className="text-2xl font-bold text-slate-800 dark:text-slate-200">{t.coursesPage.confirmed}</div>
+              <div className="text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">{t.coursesPage.confirmed}</div>
               <div className="mt-2 text-sm text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-950/30 dark:text-green-400 w-fit px-2 py-1 rounded-lg">
                 <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
                 {t.coursesPage.paid}
@@ -863,7 +860,7 @@ export default function Courses() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm w-full md:w-auto flex overflow-x-auto">
+          <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-xs w-full md:w-auto flex overflow-x-auto">
             <TabsTrigger value="my-courses" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
               {t.coursesPage.myCourses}
             </TabsTrigger>
@@ -873,7 +870,7 @@ export default function Courses() {
           </TabsList>
 
           <TabsContent value="my-courses" className="space-y-6">
-            <motion.div variants={itemVariants} className="flex justify-between items-center bg-white/60 dark:bg-slate-900/50 backdrop-blur-md border border-slate-200 dark:border-slate-800 p-4 rounded-2xl">
+            <motion.div variants={itemVariants} className="flex justify-between items-center bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl">
               <div>
                 <h3 className="font-semibold text-slate-800 dark:text-slate-200">
                   {language === 'th' ? 'ความคืบหน้าการลงทะเบียน' : 'Registration Progress'}
@@ -883,7 +880,7 @@ export default function Courses() {
                 </p>
               </div>
               <div className="text-right">
-                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">{enrolledCourses.length}/{visibleCourses.length}</span>
+                <span className="text-2xl font-bold text-blue-600 dark:text-blue-400 leading-snug">{enrolledCourses.length}/{visibleCourses.length}</span>
                 <span className="text-sm text-slate-500 dark:text-slate-400 block">{language === 'th' ? 'วิชา' : 'Courses'}</span>
               </div>
             </motion.div>
@@ -912,14 +909,14 @@ export default function Courses() {
                   key={course.id}
                   variants={itemVariants}
                   whileHover={{ y: -8, scale: 1.01 }}
-                  className="group relative bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl hover:shadow-blue-500/10 transition-all duration-300 overflow-hidden dark:bg-slate-900/50 cursor-pointer"
+                  className="group relative bg-white border border-slate-200/80 dark:border-slate-800/60 p-6 rounded-3xl shadow-sm hover:shadow-2xl transition-all duration-300 overflow-hidden dark:bg-slate-900 cursor-pointer"
                   onClick={() => setViewingCourse(course as unknown as CourseRow)}
                 >
-                  <div className="absolute inset-0 bg-gradient-to-br from-white via-white to-blue-50/50 dark:from-slate-900 dark:via-slate-900 dark:to-blue-950/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="bg-white dark:bg-slate-900 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors">
+                      <Badge variant="outline" className="bg-white dark:bg-[#0c1222] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors">
                         {(user as unknown as Student).year || 3}
                       </Badge>
                       <button 
@@ -961,10 +958,9 @@ export default function Courses() {
           </TabsContent>
 
           <TabsContent value="registration" className="space-y-6">
-            <motion.div variants={itemVariants} className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
+            <motion.div variants={itemVariants} className="bg-indigo-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
               <div className="relative z-10">
-                <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
+                <h2 className="text-2xl font-bold mb-2 flex items-center gap-3 leading-snug">
                   <BookMarked className="w-6 h-6 text-yellow-300" />
                   {language === 'th' ? 'วิชาที่ต้องเรียนในภาคเรียนนี้' : 'Required courses this semester'}
                 </h2>
@@ -974,10 +970,10 @@ export default function Courses() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {visibleCourses.map((course) => (
-                    <div key={course.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50 flex flex-col justify-between" onClick={() => setViewingCourse(course)}>
+                    <div key={course.id} className="bg-white/10 border border-white/20 p-5 rounded-2xl hover:bg-white/25 transition-colors cursor-pointer dark:bg-slate-900 flex flex-col justify-between" onClick={() => setViewingCourse(course)}>
                       <div>
                         <div className="flex justify-between items-start mb-3">
-                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur">{course.code}</Badge>
+                          <Badge className="bg-white/20 hover:bg-white/25 text-white border-0">{course.code}</Badge>
                           <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{course.lecturerName || t.coursesPage.instructorTBA}</span>
                         </div>
                         <h3 className="font-bold text-lg mb-1">{course.name}</h3>
@@ -1164,12 +1160,12 @@ export default function Courses() {
               <BookOpen className="w-4 h-4 text-blue-500 dark:text-slate-400" />
               <span>{t.coursesPage.semesterLabel}</span>
             </motion.div>
-            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.coursesPage.manageCourses}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.coursesPage.manageCoursesHighlight}</span>
             </motion.h1>
           </div>
           <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.2 }}>
-            <Button onClick={openNewCourseEditor} size="lg" className="rounded-2xl px-8 bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-500/20 h-12 font-bold transform active:scale-95 transition-all">
+            <Button onClick={openNewCourseEditor} size="lg" className="rounded-2xl px-8 bg-blue-600 hover:bg-blue-700 text-white shadow-xl h-12 font-bold transform active:scale-95 transition-all">
               <Plus className="w-5 h-5 mr-2" /> {language === 'th' ? 'เสนอรายวิชาใหม่' : 'New Course Request'}
             </Button>
           </motion.div>
@@ -1241,7 +1237,7 @@ export default function Courses() {
               <BookOpen className="w-4 h-4 text-purple-500 dark:text-slate-400" />
               <span>{t.coursesPage.semesterLabel}</span>
             </motion.div>
-            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.coursesPage.manageCourses}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-fuchsia-600">
                 {t.coursesPage.manageCoursesHighlight}
@@ -1352,7 +1348,7 @@ export default function Courses() {
             <motion.div
               variants={itemVariants}
               key={course.id}
-              className="group bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all overflow-hidden"
+              className="group bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm hover:shadow-xl transition-all overflow-hidden"
             >
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -1426,7 +1422,7 @@ export default function Courses() {
   // Company/Other roles: show a friendly "not applicable" screen
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-      <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm p-10 text-center">
+      <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm p-10 text-center">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
           <AlertCircle className="w-7 h-7 text-slate-500 dark:text-slate-400" />
         </div>

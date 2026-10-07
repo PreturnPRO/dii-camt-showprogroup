@@ -153,7 +153,7 @@ export default function CourseGradingSettings() {
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Grading Settings</h1>
+          <h1 className="text-2xl font-bold leading-snug">Grading Settings</h1>
           <p className="text-muted-foreground">{course.code} - {course.name}</p>
         </div>
       </div>

@@ -274,7 +274,7 @@ export default function Requests() {
             <span>{t.requestsPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-slate-50 leading-snug"
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
@@ -293,7 +293,6 @@ export default function Requests() {
           )}
           <DialogContent className="sm:max-w-[560px] bg-white dark:bg-[#0c1222] p-0 overflow-hidden gap-0 rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xl">
             <div className="p-6 bg-slate-900 text-white relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
               <DialogTitle className="text-xl font-bold tracking-tight">{t.requestsPage.newRequest}</DialogTitle>
               <DialogDescription className="mt-1 text-xs text-slate-400">{t.requestsPage.formDesc}</DialogDescription>
             </div>

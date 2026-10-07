@@ -222,7 +222,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
             onClick={onClose}
             className="flex items-center gap-3.5 group min-w-0"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 group-hover:scale-105 transition-transform duration-200">
               D
             </div>
             {!isCollapsed && (
@@ -294,7 +294,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
                     {isActive && (
                       <motion.div
                         layoutId="activeNavIndicator"
-                        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.9)]"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-blue-500"
                         transition={{ type: "spring", stiffness: 350, damping: 30 }}
                       />
                     )}
@@ -357,7 +357,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
                 >
                   <Avatar className="h-10 w-10 shrink-0 border-2 border-slate-700/80 shadow-md">
                     <AvatarImage src={user.avatar} />
-                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+                    <AvatarFallback className="bg-blue-600 text-white text-sm font-bold">
                       {user.name.charAt(0)}
                     </AvatarFallback>
                   </Avatar>
@@ -382,7 +382,7 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
                   <div className="flex items-center gap-3">
                     <Avatar className="h-11 w-11 border border-slate-700">
                       <AvatarImage src={user.avatar} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-base">{user.name.charAt(0)}</AvatarFallback>
+                      <AvatarFallback className="bg-blue-600 text-white font-bold text-base">{user.name.charAt(0)}</AvatarFallback>
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <span className="text-base font-bold text-slate-100 block truncate">{user.name}</span>

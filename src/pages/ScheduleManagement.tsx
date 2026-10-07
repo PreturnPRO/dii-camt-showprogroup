@@ -213,7 +213,7 @@ export default function ScheduleManagement() {
                         <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
                         <span>{t.scheduleManagementPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.scheduleManagementPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.scheduleManagementPage.titleHighlight}</span>
                     </motion.h1>
                 </div>

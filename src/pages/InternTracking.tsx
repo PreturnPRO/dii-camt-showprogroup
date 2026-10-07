@@ -162,7 +162,7 @@ export default function InternTracking() {
           <Briefcase className="w-4 h-4 text-orange-500 dark:text-slate-400" />
           <span>{tr.subtitle}</span>
         </div>
-        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight">
+        <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug">
           {tr.title}
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-500 to-amber-500">
             {tr.titleHighlight}

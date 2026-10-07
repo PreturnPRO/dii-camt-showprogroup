@@ -147,12 +147,11 @@ export function InternshipDiary() {
   return (
     <div className="space-y-6">
       {/* Top Banner: Internship Status & Action */}
-      <div className="rounded-3xl p-6 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 text-white shadow-lg relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+      <div className="bg-blue-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
 
         <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">
+            <h2 className="text-2xl sm:text-3xl font-bold leading-snug">
               {language === 'th' ? 'ไดอารี่บันทึกการฝึกงาน' : 'Internship Daily Diary'}
             </h2>
             <div className="flex flex-wrap items-center gap-4 text-xs sm:text-sm text-blue-100">

@@ -145,7 +145,7 @@ export default function Appointments() {
                         <Calendar className="w-4 h-4 text-blue-500 dark:text-slate-400" />
                         <span>{`${appointments.length} ${t.appointmentsPage.titleHighlight} • ${pendingCount} ${t.appointmentsPage.subtitle}`}</span>
                     </motion.div>
-                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.appointmentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.appointmentsPage.titleHighlight}</span>
                     </motion.h1>
                 </div>
@@ -197,7 +197,7 @@ export default function Appointments() {
                                 {!isLoading && lecturers.map((lecturer) => (
                                     <div key={lecturer.id} className="p-4 border rounded-xl hover:shadow-md transition-all">
                                         <div className="flex items-start gap-4">
-                                            <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-lg">{lecturer.nameThai.charAt(0)}</div>
+                                            <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg">{lecturer.nameThai.charAt(0)}</div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{lecturer.nameThai}</h3>
                                                 <p className="text-sm text-gray-600 dark:text-slate-300">{lecturer.department}</p>
@@ -239,8 +239,8 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'confirmed').map((apt) => (
-                                    <div key={apt.id} className="flex items-start gap-4 p-4 border dark:border-slate-700 rounded-xl bg-gradient-to-r from-blue-50 to-white dark:from-slate-800 dark:to-slate-800/60">
-                                        <div className="bg-gradient-to-br from-blue-500 to-cyan-500 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
+                                    <div key={apt.id} className="bg-blue-50 dark:bg-blue-500/10 flex items-start gap-4 p-4 border dark:border-slate-700 rounded-xl">
+                                        <div className="bg-blue-600 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                             <div className="text-xs">{new Date(apt.date).toLocaleDateString('th-TH', { month: 'short' })}</div>
                                         </div>
@@ -274,7 +274,7 @@ export default function Appointments() {
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'pending').map((apt) => (
                                     <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900/30">
-                                        <div className="bg-gradient-to-br from-orange-500 to-amber-500 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
+                                        <div className="bg-orange-600 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                         </div>
                                         <div className="flex-1">

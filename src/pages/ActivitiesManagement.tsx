@@ -44,6 +44,7 @@ import {
 import { api } from '@/lib/api';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -365,7 +366,7 @@ export default function ActivitiesManagement() {
                         <Activity className="w-4 h-4 text-purple-500" />
                         <span>{t.activitiesManagementPage.subtitle}</span>
                     </motion.div>
-                    <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                    <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                         {t.activitiesManagementPage.title} <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-violet-600">{t.activitiesManagementPage.titleHighlight}</span>
                     </motion.h1>
                     <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-slate-500 mt-2 dark:text-slate-400">
@@ -385,7 +386,7 @@ export default function ActivitiesManagement() {
                     </div>
                     <Button
                         onClick={handleOpenCreate}
-                        className="rounded-2xl bg-gradient-to-r from-purple-600 to-violet-600 hover:from-purple-700 hover:to-violet-700 text-white shadow-lg shadow-purple-500/20"
+                        className="bg-purple-600 hover:bg-purple-700 rounded-2xl text-white shadow-lg"
                     >
                         <Plus className="w-4 h-4 mr-2" />
                         {t.activitiesManagementPage.createBtn}
@@ -406,19 +407,18 @@ export default function ActivitiesManagement() {
                         key={stat.key}
                         whileHover={{ scale: 1.02 }}
                         onClick={() => setSelectedTab(stat.key)}
-                        className={`cursor-pointer relative overflow-hidden rounded-3xl bg-gradient-to-br ${stat.gradient} p-5 text-white shadow-xl ${stat.shadow} ${
+                        className={`cursor-pointer relative overflow-hidden rounded-3xl ${solidBg(stat.gradient)} p-5 text-white shadow-xl ${stat.shadow} ${
                             selectedTab === stat.key ? 'ring-4 ring-purple-400 ring-offset-2 dark:ring-offset-slate-950' : ''
                         }`}
                     >
-                        <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
                         <div className="relative z-10">
                             <div className="flex items-center gap-2 mb-2">
-                                <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                                <div className="p-2 rounded-xl bg-white/20 dark:bg-slate-900">
                                     <stat.icon className="w-4 h-4" />
                                 </div>
                                 <span className="text-sm font-medium text-white/90">{stat.label}</span>
                             </div>
-                            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
+                            <div className="text-3xl font-extrabold font-mono tracking-tight text-white">{stat.value}</div>
                         </div>
                     </motion.div>
                 ))}
@@ -440,7 +440,7 @@ export default function ActivitiesManagement() {
                         onClick={() => setSelectedTab(tab.id)}
                         className={`rounded-2xl px-5 text-sm transition-all ${
                             selectedTab === tab.id
-                                ? 'bg-purple-600 text-white shadow-md shadow-purple-500/20'
+                                ? 'bg-purple-600 text-white shadow-md'
                                 : 'bg-white/70 dark:bg-slate-900/50 dark:border-slate-800'
                         }`}
                     >
@@ -450,7 +450,7 @@ export default function ActivitiesManagement() {
             </div>
 
             {/* Activities Main List */}
-            <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50 space-y-4">
+            <motion.div variants={itemVariants} className="bg-white border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900 space-y-4">
                 <div className="flex items-center justify-between">
                     <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
                         <Activity className="w-5 h-5 text-purple-600" />
@@ -474,7 +474,7 @@ export default function ActivitiesManagement() {
                             >
                                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
                                     <div className="flex items-start gap-4">
-                                        <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-500/20 shrink-0 mt-1">
+                                        <div className="bg-purple-600 w-14 h-14 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 mt-1">
                                             <Activity className="w-7 h-7" />
                                         </div>
                                         <div className="space-y-1.5">
@@ -525,7 +525,7 @@ export default function ActivitiesManagement() {
                                         {(act.status === 'pending' || act.status === 'draft') && (
                                             <Button
                                                 size="sm"
-                                                className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-md shadow-emerald-500/20"
+                                                className="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl shadow-md"
                                                 onClick={() => handleActivityStatus(act.id, 'upcoming')}
                                             >
                                                 <CheckCircle className="w-4 h-4 mr-1.5" />
@@ -536,7 +536,7 @@ export default function ActivitiesManagement() {
                                         {act.status === 'upcoming' && (
                                             <Button
                                                 size="sm"
-                                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md shadow-blue-500/20"
+                                                className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl shadow-md"
                                                 onClick={() => handleActivityStatus(act.id, 'active')}
                                             >
                                                 <PlayCircle className="w-4 h-4 mr-1.5" />
@@ -600,7 +600,7 @@ export default function ActivitiesManagement() {
             <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
                 <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                     <DialogHeader>
-                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2 leading-snug">
                             <Activity className="w-6 h-6 text-purple-600" />
                             {editingId ? t.activitiesManagementPage.editModalTitle : t.activitiesManagementPage.createModalTitle}
                         </DialogTitle>
@@ -827,7 +827,7 @@ export default function ActivitiesManagement() {
                                         {viewingActivity.type}
                                     </Badge>
                                 </div>
-                                <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white">
+                                <DialogTitle className="text-2xl font-bold text-slate-900 dark:text-white leading-snug">
                                     {viewingActivity.titleThai}
                                 </DialogTitle>
                                 <DialogDescription className="text-slate-500 font-medium">

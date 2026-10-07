@@ -141,7 +141,7 @@ export default function Advisees() {
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
       <div>
-        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" variants={itemVariants}>
+        <motion.h1 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-white leading-snug" variants={itemVariants}>
           <Users className="inline w-7 h-7 mr-2 mb-1 text-emerald-500" />
           {copy.title}
         </motion.h1>
@@ -151,13 +151,13 @@ export default function Advisees() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <motion.div variants={itemVariants} className="p-6 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden">
+        <motion.div variants={itemVariants} className="bg-emerald-600 p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
           <div className="relative z-10">
             <div className="flex items-center gap-3 mb-4">
-              <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm"><Users className="w-6 h-6" /></div>
+              <div className="p-2.5 rounded-xl bg-white/20"><Users className="w-6 h-6" /></div>
               <span className="font-medium text-white/90">{copy.totalAdvisee}</span>
             </div>
-            <div className="text-4xl font-bold">{isLoading ? '...' : advisees.length}</div>
+            <div className="text-4xl font-bold leading-snug">{isLoading ? '...' : advisees.length}</div>
           </div>
         </motion.div>
 
@@ -166,7 +166,7 @@ export default function Advisees() {
             <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-blue-600"><GraduationCap className="w-6 h-6" /></div>
             <span className="font-medium text-slate-600 dark:text-slate-400">{copy.classAdvisee}</span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white">{isLoading ? '...' : classAdvisees.length}</div>
+          <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{isLoading ? '...' : classAdvisees.length}</div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50">
@@ -174,7 +174,7 @@ export default function Advisees() {
             <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-purple-600"><Briefcase className="w-6 h-6" /></div>
             <span className="font-medium text-slate-600 dark:text-slate-400">{copy.internAdvisee}</span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white">{isLoading ? '...' : internAdvisees.length}</div>
+          <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{isLoading ? '...' : internAdvisees.length}</div>
         </motion.div>
 
         <motion.div variants={itemVariants} className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-xl shadow-slate-100/50">
@@ -182,13 +182,13 @@ export default function Advisees() {
             <div className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-red-600"><AlertCircle className="w-6 h-6" /></div>
             <span className="font-medium text-slate-600 dark:text-slate-400">{copy.atRisk}</span>
           </div>
-          <div className="text-4xl font-bold text-slate-900 dark:text-white">{isLoading ? '...' : atRiskAdvisees.length}</div>
+          <div className="text-4xl font-bold text-slate-900 dark:text-white leading-snug">{isLoading ? '...' : atRiskAdvisees.length}</div>
         </motion.div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardHeader>
               <CardTitle>{copy.classListTitle}</CardTitle>
             </CardHeader>
@@ -229,7 +229,7 @@ export default function Advisees() {
         </motion.div>
 
         <motion.div variants={itemVariants}>
-          <Card className="bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
+          <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm h-full">
             <CardHeader>
               <CardTitle>{copy.internListTitle}</CardTitle>
             </CardHeader>

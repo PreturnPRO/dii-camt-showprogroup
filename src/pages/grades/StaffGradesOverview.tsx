@@ -20,6 +20,7 @@ import { toast } from 'sonner';
 import { asArray, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import type { Course } from '@/types';
+import { solidBg } from '@/lib/flat-color';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -117,7 +118,7 @@ export function StaffGradesOverview() {
           <span>{language === 'th' ? 'ภาพรวมการตัดเกรดประจำหลักสูตร' : 'Curriculum Grading Overview'}</span>
         </motion.div>
         <motion.h1
-          className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
+          className="text-3xl sm:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.1 }}
@@ -164,10 +165,10 @@ export function StaffGradesOverview() {
           <motion.div
             key={i}
             whileHover={{ scale: 1.02 }}
-            className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${stat.gradient} p-6 text-white shadow-xl`}
+            className={`relative overflow-hidden rounded-2xl ${solidBg(stat.gradient)} p-6 text-white shadow-xl`}
           >
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm">
+              <div className="p-2 rounded-xl bg-white/20">
                 <stat.icon className="w-5 h-5" />
               </div>
               <span className="font-medium text-white/90 text-xs">{stat.label}</span>
