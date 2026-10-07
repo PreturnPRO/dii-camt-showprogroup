@@ -1,82 +1,58 @@
-# ShowPro Backend
+# ShowPro IQ Backend
 
-Express + Prisma + PostgreSQL backend for the DII-CAMT ShowPro system.
+The IQ backend uses the Biw Express API, PostgreSQL schema, and Prisma migration history. Configure and start PostgreSQL before running migrations or seed data.
 
-## Stack
+## Setup from the IQ folder
 
-- Node.js + Express
-- Prisma ORM
-- PostgreSQL
-- Passport JWT
-- Zod validation
+1. Create the backend environment file. Its database URL must match the PostgreSQL server you start:
 
-## Quick Start
+   ```sh
+   cp backend/.env.example backend/.env
+   ```
 
-1. Copy env
+   The included Docker Compose service uses user `postgres`, password `postgres`, database `showpro`, and host port `5433` (container port `5432`). The example `DATABASE_URL` is set for those values. Port `5433` avoids conflicts with a local PostgreSQL server already using `5432`. If you use another PostgreSQL instance, update the URL to its credentials.
 
-```powershell
-Copy-Item .env.example .env
-```
+2. Start Docker Desktop, then confirm its daemon is available and start PostgreSQL:
 
-2. Start PostgreSQL
+   ```sh
+   docker info
+   docker compose -f backend/docker-compose.yml up -d
+   docker compose -f backend/docker-compose.yml ps
+   ```
 
-```powershell
-docker compose up -d
-```
+3. Install, generate the Prisma client, migrate, and seed:
 
-3. Install dependencies
+   ```sh
+   npm ci
+   npm ci --prefix backend
+   npm run backend:generate
+   npm run backend:migrate
+   npm run backend:seed
+   ```
 
-```powershell
-npm install
-```
+   **Seeding clears existing application tables. Run it only against a fresh development database.**
 
-4. Generate Prisma client and push schema
+4. Start the API:
 
-```powershell
-npm run prisma:generate
-npm run prisma:push
-```
+   ```sh
+   npm run backend:dev
+   ```
 
-5. Seed demo data
+   API base URL: `http://localhost:4000/api`. Health check: `http://localhost:4000/health`.
 
-```powershell
-npm run prisma:seed
-```
+## Troubleshooting
 
-6. Run the API
-
-```powershell
-npm run dev
-```
-
-API base URL: `http://localhost:4000/api`
-
-## Demo Accounts
-
-All demo users use the same password: `Password123!`
-
-- `admin@showpro.local`
-- `staff@showpro.local`
-- `narin@showpro.local`
-- `mali@showpro.local`
-- `talent@northernsoft.local`
-- `careers@creativelabs.local`
-- `alice@student.showpro.local`
-- `bob@student.showpro.local`
-- `chompoo@student.showpro.local`
+- `DATABASE_URL is missing`: make sure `backend/.env` exists and contains a non-empty `DATABASE_URL`. This file is separate from the root `.env`.
+- `P1000` authentication failed: the PostgreSQL server responded, but its user/password do not match `DATABASE_URL`. Match the URL to the server credentials. The included Compose service uses `postgres:postgres`. Changing Compose credentials does not update an already initialized data volume; preserve the volume and use the actual database password, or explicitly select a new empty volume if you intend to start fresh.
+- `P1001` or connection refused: PostgreSQL is not reachable at the host and port in `DATABASE_URL`. Start Docker Desktop and the Compose service, or correct the URL for your database.
+- `docker info` cannot connect: Docker Desktop is not installed or its daemon is not running.
 
 ## Included Modules
 
-- Auth and role-based access control
-- Student profiles, skills, portfolio, transcript, stats, PDPA consent
-- Courses, enrollments, attendance, grading, grade audit trail
-- Quests, XP, coins, badges, timeline updates
-- Activities with reward grants and check-in workflow
-- Jobs, applications, internship logs, internship documents, talent search
-- Budget, personnel, cooperation, workload, subscriptions, payment lifecycle
-- Requests, comments, appointments, office hours, internal messages
-- Notifications, audit logs, user directory, system usage reports
+- Authentication and role-based access control
+- Students, staff, lecturers, and company profiles
+- Courses, sections, enrollments, attendance, and grading
+- Activities, jobs, applications, internships, and files
+- Requests, appointments, office hours, messages, notifications, audit logs, and reports
 
-## Important Note
-
-`prisma db push` and `prisma:seed` need a running PostgreSQL instance on `localhost:5432` or a matching `DATABASE_URL` in `.env`.
+Quest/training, subscription/payment, and assignment/submission modules are not part of the IQ backend.

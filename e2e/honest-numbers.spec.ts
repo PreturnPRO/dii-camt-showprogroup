@@ -21,7 +21,7 @@ test("no skill scores are shown: the skills tab and the soft-skill card are gone
 
 test("curriculum progress counts against the whole curriculum, without invented categories", async ({ page, request }) => {
   await login(page, "chompoo@student.showpro.local");
-  const token = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
+  const token = await page.evaluate(() => sessionStorage.getItem("xchange_auth_token") ?? localStorage.getItem("xchange_auth_token"));
   const stats = (await (await request.get("http://localhost:4000/api/students/stats", { headers: { Authorization: `Bearer ${token}` } })).json()).stats;
   await page.getByRole("tab", { name: /ตารางเรียน|Schedule/ }).click();
   await expect(page.getByTestId("credits-required")).toContainText(String(stats.curriculumProgress.requiredCredits));
@@ -44,7 +44,7 @@ test("the portfolio shows no invented completeness and skill levels as levels, n
 
 test("the lecturer workload page uses the real term, timetable and advisee count", async ({ page, request }) => {
   await login(page, "narin@showpro.local");
-  const token = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
+  const token = await page.evaluate(() => sessionStorage.getItem("xchange_auth_token") ?? localStorage.getItem("xchange_auth_token"));
   const lecturer = (await (await request.get("http://localhost:4000/api/courses/lecturer/schedule", { headers: { Authorization: `Bearer ${token}` } })).json()).lecturer;
   await page.goto("/workload");
   await expect(page.getByTestId("workload-advisees")).toHaveText(String(lecturer.advisees.length));

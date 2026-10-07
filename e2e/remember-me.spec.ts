@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 
-const TOKEN_KEY = "showpro_auth_token";
+const TOKEN_KEY = "xchange_auth_token";
 
 async function login(page: Page, email: string, remember: boolean) {
   await page.goto("/login");

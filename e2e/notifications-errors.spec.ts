@@ -43,6 +43,12 @@ const fail = (method: string, pattern: RegExp) => async (route: import("@playwri
   }
 };
 
+// open the bell's menu unless it is already open (choosing an item may or may not close it)
+async function openBell(page: Page) {
+  if (!(await page.getByRole("menu").isVisible())) await page.getByTestId("notification-bell").click();
+  await expect(page.getByRole("menu")).toBeVisible();
+}
+
 const markReadError = /ทำเครื่องหมายว่าอ่านแล้วไม่สำเร็จ|Could not mark as read/;
 
 test("notifications page: a failed mark-read keeps the item unread and says so", async ({ page, request }) => {
@@ -77,14 +83,16 @@ test("header bell: a failed mark-read keeps the item unread and says so", async 
   const title = await freshUnread(request, STUDENT);
   await page.route("**/api/notifications/**", fail("PATCH", /\/notifications\/[^/]+\/read$/));
   await login(page, STUDENT);
-  await page.getByTestId("unread-indicator").click();
-  const item = page.getByRole("menu").getByRole("button", { name: new RegExp(title) });
+  // the bell's items are menu items: choosing one closes the menu, so reopen it to read the state
+  const item = page.getByRole("menu").getByRole("menuitem", { name: new RegExp(title) });
+  await page.getByTestId("notification-bell").click();
   await expect(item).toHaveAttribute("data-unread", "true", { timeout: 15_000 });
 
   await item.click();
   await expect(page.getByText(markReadError)).toBeVisible();
-  await expect(item).toHaveAttribute("data-unread", "true");
   await expect(page.getByTestId("unread-indicator")).toBeVisible();
+  await openBell(page);
+  await expect(item).toHaveAttribute("data-unread", "true");
 });
 
 test("notifications page: a failed load is an error, not an empty inbox", async ({ page }) => {
@@ -98,10 +106,11 @@ test("notifications page: a failed load is an error, not an empty inbox", async 
 test("header bell: a successful mark-read still marks the item read", async ({ page, request }) => {
   const title = await freshUnread(request, STUDENT);
   await login(page, STUDENT);
-  await page.getByTestId("unread-indicator").click();
-  const item = page.getByRole("menu").getByRole("button", { name: new RegExp(title) });
+  const item = page.getByRole("menu").getByRole("menuitem", { name: new RegExp(title) });
+  await page.getByTestId("notification-bell").click();
   await expect(item).toHaveAttribute("data-unread", "true", { timeout: 15_000 });
   await item.click();
+  await openBell(page);
   await expect(item).toHaveAttribute("data-unread", "false");
   await expect(page.getByText(markReadError)).toHaveCount(0);
 });

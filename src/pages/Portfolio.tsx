@@ -481,18 +481,18 @@ export default function Portfolio() {
       whileHover={{ y: -5, scale: 1.02 }}
       className={`relative overflow-hidden rounded-3xl p-6 shadow-lg border border-white/20 ${gradient}`}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10 dark:bg-slate-900/50">
+          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10">
             <Icon className="w-6 h-6 text-white" />
           </div>
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center dark:bg-slate-900/50">
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
             <ArrowUpRight className="w-4 h-4 text-white" />
           </div>
         </div>
         <div>
-          <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{label}</p>
           <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
         </div>
       </div>
@@ -518,7 +518,7 @@ export default function Portfolio() {
             <span>{t.portfolioPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -605,7 +605,7 @@ export default function Portfolio() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-8">
           <Tabs defaultValue="projects" className="w-full">
-            <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm mb-6 w-full md:w-auto inline-flex dark:bg-slate-900/50">
+            <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm mb-6 w-full md:w-auto inline-flex">
               <TabsTrigger
                 value="projects"
                 className="rounded-xl px-6 py-3 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 data-[state=active]:dark:bg-slate-800 data-[state=active]:dark:text-white"
@@ -730,7 +730,7 @@ export default function Portfolio() {
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: index * 0.1 }}
-                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex gap-4 items-center group hover:border-amber-200 transition-all dark:bg-slate-900/50"
+                    className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm flex gap-4 items-center group hover:border-amber-200 transition-all"
                   >
                     <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-amber-600 shrink-0 group-hover:scale-110 transition-transform">
                       <Trophy className="w-8 h-8" />

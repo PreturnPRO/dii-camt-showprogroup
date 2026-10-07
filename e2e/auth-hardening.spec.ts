@@ -52,7 +52,8 @@ test("staff does not see the staff role or role change controls on the Users pag
   await page.keyboard.press("Enter");
   await page.waitForURL("**/dashboard");
   await page.goto("/users");
-  await page.getByRole("button", { name: /เพิ่มผู้ใช้|add user/i }).first().click();
-  await page.getByRole("combobox").first().click();
-  await expect(page.getByRole("option", { name: /^(staff|เจ้าหน้าที่)$/i })).toHaveCount(0);
+  // Biw's Users page: "add new" opens a per-role menu; each role has its own dialog with no role switch
+  await page.getByRole("button", { name: /เพิ่มผู้ใช้ใหม่|add new/i }).first().click();
+  await expect(page.getByRole("menuitem", { name: /นักศึกษา|student/i })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: /^(staff|เจ้าหน้าที่)$/i })).toHaveCount(0);
 });

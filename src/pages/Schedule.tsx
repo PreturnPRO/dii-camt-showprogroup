@@ -148,7 +148,7 @@ export default function Schedule() {
               <span>{t.schedulePage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -191,7 +191,7 @@ export default function Schedule() {
               <span>{t.schedulePage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -210,10 +210,10 @@ export default function Schedule() {
             className="p-5 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <BookOpen className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.totalCourses}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.totalCourses}</span>
             </div>
             <div className="text-3xl font-bold">{studentCourses.length}</div>
           </motion.div>
@@ -224,10 +224,10 @@ export default function Schedule() {
             className="p-5 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <GraduationCap className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.totalCredits}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.totalCredits}</span>
             </div>
             <div className="text-3xl font-bold">{totalCredits}</div>
           </motion.div>
@@ -238,10 +238,10 @@ export default function Schedule() {
             className="p-5 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 text-white shadow-lg shadow-emerald-500/20"
           >
             <div className="flex items-center gap-3 mb-3">
-              <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+              <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                 <Clock className="w-5 h-5" />
               </div>
-              <span className="font-medium text-white/90 text-sm">{t.schedulePage.hoursPerWeek} {language === 'th' ? '(ตามตารางประจำ)' : '(usual week)'}</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 text-sm">{t.schedulePage.hoursPerWeek} {language === 'th' ? '(ตามตารางประจำ)' : '(usual week)'}</span>
             </div>
             <div className="text-3xl font-bold">{totalHours} <span className="text-base font-medium">{language === 'th' ? 'ชม.' : 'h'}</span></div>
           </motion.div>
@@ -262,7 +262,7 @@ export default function Schedule() {
         </div>
 
         {/* Timetable Card */}
-        <motion.div variants={itemVariants} className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900/50">
+        <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm">
           {isLoading ? (
             <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
               กำลังโหลดตารางเรียนจากระบบ...
@@ -377,7 +377,7 @@ export default function Schedule() {
             <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
             <span>{t.schedulePage.lecturerSubtitle}</span>
           </motion.div>
-          <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+          <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.schedulePage.lecturerTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.lecturerHighlight}</span>
           </motion.h1>
         </div>

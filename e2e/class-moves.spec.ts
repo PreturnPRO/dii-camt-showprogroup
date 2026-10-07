@@ -91,7 +91,7 @@ test("a lecturer asks, staff see the clash check and approve, the lecturer's wee
     await expect(dialog).toBeHidden();
     await expect(page.locator(`[data-testid=timetable-slot][data-course="${c.code}"]`).first()).toContainText(/รออนุมัติ|Pending/);
 
-    await page.evaluate(() => localStorage.clear()); // sign out
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); }); // sign out
     await login(page, "staff@showpro.local");
     await page.goto("/schedule-management");
     const row = page.getByTestId("move-request").filter({ hasText: c.code });
@@ -99,7 +99,7 @@ test("a lecturer asks, staff see the clash check and approve, the lecturer's wee
     await row.getByRole("button", { name: /อนุมัติ|Approve/ }).click();
     await expect(row).toHaveCount(0);
 
-    await page.evaluate(() => localStorage.clear());
+    await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
     await login(page, "narin@showpro.local");
     await page.goto(`/schedule?week=${monday}`);
     await expect(page.locator(`[data-testid=timetable-slot][data-course="${c.code}"][data-kind=moved-in]`)).toHaveAttribute("data-start", "10:00");

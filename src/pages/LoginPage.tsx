@@ -1,191 +1,180 @@
 import React, { useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { loginRedirectTarget } from '@/lib/safe-url';
+import { useAuth } from '@/contexts/AuthContext';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Globe, Loader2, Lock, Mail, Moon, Sun } from 'lucide-react';
-import { useTheme } from 'next-themes';
-import { toast } from 'sonner';
+import { Mail, Lock, ArrowRight, ArrowLeft, Loader2, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/contexts/AuthContext';
+import { Checkbox } from '@/components/ui/checkbox';
+import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 
 export default function LoginPage() {
   const { t, language, toggleLanguage } = useLanguage();
-  const { login } = useAuth();
-  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const { login } = useAuth();
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
-  const [formData, setFormData] = useState({ identifier: '', password: '' });
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [remember, setRemember] = useState(false);
 
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
     setIsLoading(true);
-
     try {
-      await login(formData.identifier, formData.password, undefined, remember);
+      await login(formData.email, formData.password, undefined, remember);
       toast.success(t.login.loginSuccess, { description: t.login.loginSuccessDesc });
       navigate(loginRedirectTarget(location.state), { replace: true });
-    } catch {
-      toast.error(t.login.loginFailed, {
-        description: t.login.loginFailedDesc,
-      });
+    } catch (error) {
+      toast.error(t.login.loginFailed, { description: t.login.loginFailedDesc });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex font-sans bg-white dark:bg-slate-950 text-slate-900 dark:text-slate-100">
-      <div className="hidden lg:flex w-5/12 bg-slate-50 dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800 flex-col justify-between p-12">
-        <div>
-          <Link to="/" className="inline-flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors text-sm mb-12">
-            <ArrowLeft className="w-4 h-4" />
-            {language === 'th' ? 'กลับหน้าแรก' : 'Back to home'}
-          </Link>
-
-          <div className="flex items-center gap-2.5 mb-10">
-            <div className="w-8 h-8 bg-slate-900 dark:bg-white rounded-lg flex items-center justify-center">
-              <span className="text-[10px] font-bold text-white dark:text-slate-900">SP</span>
-            </div>
-            <span className="font-bold text-lg text-slate-900 dark:text-white">ShowPro</span>
-          </div>
-
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white leading-tight mb-3 tracking-tight">
-            {t.login.welcomeTo} ShowPro
-          </h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed max-w-xs">
-            {t.login.systemDescription}
-          </p>
-
-          <div className="mt-10 space-y-3">
-            {[
-              { role: language === 'th' ? 'นักศึกษา' : 'Student', desc: language === 'th' ? 'เกรด กิจกรรม และพอร์ตโฟลิโอ' : 'Grades, activities, portfolio', color: 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' },
-              { role: language === 'th' ? 'อาจารย์' : 'Lecturer', desc: language === 'th' ? 'ตารางสอน เกรด และนักศึกษา' : 'Schedule, grading, advisees', color: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400' },
-              { role: language === 'th' ? 'เจ้าหน้าที่' : 'Staff', desc: language === 'th' ? 'บริหารระบบและรายงาน' : 'System management & reports', color: 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400' },
-              { role: language === 'th' ? 'บริษัท' : 'Company', desc: language === 'th' ? 'ดูรายชื่อนักศึกษาและติดตามผู้สมัคร' : 'Student discovery & applicants', color: 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-400' },
-            ].map((item) => (
-              <div key={item.role} className="flex items-start gap-3 p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700">
-                <span className={`text-xs font-semibold px-2 py-0.5 rounded-md ${item.color} shrink-0 mt-0.5`}>{item.role}</span>
-                <span className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">{item.desc}</span>
-              </div>
-            ))}
-          </div>
+    <div className="min-h-screen flex font-sans bg-white dark:bg-slate-900 selection:bg-blue-100 selection:text-blue-900 overflow-hidden dark:text-slate-200">
+      {/* Left Side - Visual Form Premium Dark matching Register */}
+      <div className="hidden lg:flex w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-between p-12">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://images.unsplash.com/photo-1523050854058-8df90110c9f1?q=80&w=2070&auto=format&fit=crop"
+            alt="Background"
+            className="w-full h-full object-cover opacity-20 mix-blend-overlay"
+          />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-900/50 to-slate-900/80" />
+          {/* Animated particles */}
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] opacity-20"></div>
         </div>
 
-        <p className="text-xs text-slate-400 dark:text-slate-500">
-          © {new Date().getFullYear()} ShowPro - DII CAMT, Chiang Mai University
-        </p>
+        <div className="relative z-10 w-full max-w-lg mx-auto">
+          <Link to="/" className="inline-block p-3 bg-white/10 rounded-2xl mb-8 backdrop-blur-sm border border-white/10 hover:bg-white/20 transition-colors dark:bg-slate-900/50">
+            <ArrowLeft className="w-6 h-6 text-white" />
+          </Link>
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-4xl font-bold mb-6 text-white leading-tight"
+          >
+            {t.login.welcomeTo}<br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-blue-400">Xchange</span> Platform
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-slate-300 text-lg leading-relaxed mb-12"
+          >
+            {t.login.systemDescription}
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/5 dark:bg-slate-900/50"
+          >
+            <div className="flex items-center gap-4 mb-3">
+              <div className="flex -space-x-3">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-700 shadow-sm" />
+                ))}
+              </div>
+              <div className="text-sm font-medium">
+                <div className="text-white">Active Users</div>
+                <div className="text-blue-300">5,000+ {t.login.usersInSystem}</div>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 font-light">
+              "{t.login.quote}"
+            </p>
+          </motion.div>
+        </div>
+
+        <div className="relative z-10 text-center text-slate-500 dark:text-slate-400 text-sm mt-12">
+            © 2026 Xchange. All rights reserved.
+        </div>
       </div>
 
-      <div className="flex-1 flex items-center justify-center p-8 relative bg-white dark:bg-slate-950">
-        <div className="absolute top-6 right-6 flex items-center gap-2">
-          <button
-            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            className="w-8 h-8 flex items-center justify-center rounded-md text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            aria-label="toggle dark mode"
-          >
-            {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-          </button>
-          <button
-            onClick={toggleLanguage}
-            className="h-8 px-3 flex items-center gap-1.5 rounded-md text-sm text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors font-medium"
-          >
-            <Globe className="h-3.5 w-3.5" />
-            {language === 'th' ? 'EN' : 'TH'}
-          </button>
-        </div>
+      {/* Right Side - Form */}
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 lg:p-12 relative bg-slate-50 dark:bg-slate-900/50">
+        {/* Language Toggle */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleLanguage}
+          className="absolute top-6 right-6 z-20 font-medium text-slate-500 dark:text-slate-400 hover:text-blue-600 hover:bg-blue-50 gap-1.5 rounded-full dark:bg-slate-800"
+        >
+          <Globe className="h-4 w-4" />
+          {language === 'th' ? 'EN' : 'TH'}
+        </Button>
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-3xl z-0 dark:bg-slate-900/50"></div>
+        {/* Background blobs */}
+        <div className="absolute top-0 right-0 -translate-y-1/2 translate-x-1/2 w-96 h-96 bg-blue-100 dark:bg-blue-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 translate-y-1/2 -translate-x-1/2 w-96 h-96 bg-purple-100 dark:bg-purple-900/20 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
 
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
-          className="w-full max-w-sm"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md space-y-8 relative z-10 bg-white/80 dark:bg-slate-900/80 p-8 rounded-3xl shadow-xl shadow-slate-200/50 dark:shadow-black/50 border border-white dark:border-slate-800"
         >
-          <div className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center">
-              <span className="text-[9px] font-bold text-white dark:text-slate-900">SP</span>
-            </div>
-            <span className="font-bold text-slate-900 dark:text-white">ShowPro</span>
+          <div className="text-center">
+            <h2 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{t.login.title}</h2>
+            <p className="text-slate-500 mt-2 font-medium dark:text-slate-400">{t.login.enterCredentials}</p>
           </div>
 
-          <div className="mb-8">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight mb-1">
-              {t.login.title}
-            </h2>
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              {t.login.enterCredentials}
-            </p>
-          </div>
-
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <div className="space-y-1.5">
-              <Label htmlFor="identifier" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                {t.login.email}
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="text-slate-700 font-medium dark:text-slate-300">{t.login.email}</Label>
+              <div className="relative group">
+                <Mail className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
                 <Input
-                  id="identifier"
-                  type={'email'}
-                  placeholder={'name@example.com'}
-                  className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
-                  value={formData.identifier}
-                  onChange={(event) => setFormData({ ...formData, identifier: event.target.value })}
+                  id="email"
+                  type="email"
+                  placeholder="name@example.com"
+                  className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
                   required
                 />
               </div>
             </div>
 
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  {t.login.password}
-                </Label>
-                <Link to="/forgot-password" className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors">
-                  {t.login.forgotPassword}
-                </Link>
+                <Label htmlFor="password" className="text-slate-700 font-medium dark:text-slate-300">{t.login.password}</Label>
+                <Link to="/forgot-password" className="text-xs font-semibold text-blue-600 hover:text-blue-500 dark:text-slate-300">{t.login.forgotPassword}</Link>
               </div>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <div className="relative group">
+                <Lock className="absolute left-3 top-3 h-5 w-5 text-slate-400 group-hover:text-blue-500 transition-colors dark:text-slate-400" />
                 <Input
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className="pl-9 h-10 bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 focus:border-slate-400 dark:focus:border-slate-500 rounded-md text-sm"
+                  className="pl-10 h-12 bg-slate-50 dark:bg-slate-950 border-slate-200 dark:border-slate-700 focus:border-blue-500 focus:ring-blue-500/20 transition-all rounded-xl"
                   value={formData.password}
-                  onChange={(event) => setFormData({ ...formData, password: event.target.value })}
+                  onChange={e => setFormData({ ...formData, password: e.target.value })}
                   required
                 />
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Checkbox id="remember" checked={remember} onCheckedChange={(checked) => setRemember(checked === true)} className="rounded border-slate-300 dark:border-slate-600" />
-              <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
-                {t.login.rememberMe}
-              </label>
+            <div className="flex items-center space-x-2">
+              <Checkbox id="remember" checked={remember} onCheckedChange={(checked) => setRemember(checked === true)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:text-slate-300" />
+              <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer font-medium">{t.login.rememberMe}</label>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full h-10 bg-slate-900 dark:bg-white text-white dark:text-slate-900 hover:bg-slate-700 dark:hover:bg-slate-100 rounded-md font-medium text-sm"
-              disabled={isLoading}
-            >
-              {isLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
-              {t.login.loginButton}
+            <Button type="submit" className="w-full h-12 text-base font-semibold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 rounded-xl transition-all hover:scale-[1.01]" disabled={isLoading}>
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin mr-2" /> : t.login.loginButton}
             </Button>
           </form>
 
-          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-            {t.login.noAccount}{' '}
-            <Link to="/register" className="font-medium text-slate-900 dark:text-white hover:underline">
-              {t.login.registerNow}
-            </Link>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+            {t.login.noAccount} <Link to="/register" className="font-semibold text-blue-600 hover:text-blue-500 transition-colors dark:text-slate-300">{t.login.registerNow}</Link>
           </p>
         </motion.div>
       </div>

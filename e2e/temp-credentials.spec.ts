@@ -15,10 +15,15 @@ test("staff sees the temporary password after creating an account, and it works"
   await page.waitForURL("**/dashboard");
   await page.goto("/users");
   await page.getByRole("button", { name: /เพิ่มผู้ใช้ใหม่/ }).first().click();
-  const email = `ui-stu-${Date.now()}@example.com`;
-  await page.getByPlaceholder("เช่น สมชาย ใจดี").fill("UI Student");
-  await page.getByPlaceholder("email@example.com").fill(email);
-  await page.getByRole("button", { name: /^บันทึก$/ }).click();
+  await page.getByRole("menuitem", { name: /นักศึกษา/ }).click();
+  const form = page.getByRole("dialog", { name: /เพิ่มนักศึกษาใหม่/ });
+  const stamp = Date.now();
+  const email = `ui-stu-${stamp}@example.com`;
+  await form.getByPlaceholder("652110001").fill(String(stamp).slice(-9));
+  await form.getByPlaceholder("student@cmu.ac.th").fill(email);
+  await form.getByPlaceholder("สมชาย ใจดี").fill("นักศึกษา ทดสอบ");
+  await form.getByPlaceholder("Somchai Jaidee").fill("UI Student");
+  await form.getByRole("button", { name: /^บันทึกข้อมูล$/ }).click();
 
   const creds = page.getByRole("dialog", { name: /รหัสผ่านชั่วคราว/ });
   await expect(creds).toBeVisible();

@@ -1,40 +1,57 @@
-import { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import React, { useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard,
-  BookOpen,
   Calendar,
-  FileText,
-  Users,
-  Building2,
-  Trophy,
-  MessageSquare,
-  Settings,
+  BookOpen,
   GraduationCap,
-  ClipboardList,
-  BarChart3,
+  Trophy,
+  FileText,
   Briefcase,
-  UserCog,
-  Shield,
+  ClipboardList,
+  MessageSquare,
+  Users,
+  Settings,
   Bell,
-  X,
-  DollarSign,
-  Search,
-  Clock,
+  BarChart3,
+  Shield,
   Building,
-  Swords,
-  Target,
   Bot,
+  UserCheck,
   ChevronLeft,
   ChevronRight,
+  LogOut,
+  ChevronUp,
+  User,
+  Target,
+  UserCog,
+  Building2,
+  Search,
+  Clock,
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { UserRole } from '@/types';
-import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import type { UserRole } from '@/types';
+import { cn } from '@/lib/utils';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuPortal,
+  DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface NavItem {
   icon: React.ElementType;
@@ -46,238 +63,390 @@ interface NavItem {
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
 }
 
 const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => {
   const commonItems: NavItem[] = [
-    { icon: LayoutDashboard, label: nav.dashboard, href: '/dashboard' },
+    { icon: LayoutDashboard, label: nav.dashboard || 'Dashboard', href: '/dashboard' },
   ];
 
   switch (role) {
     case 'student':
       return [
         ...commonItems,
-        { icon: BookOpen, label: nav.courses, href: '/courses' },
-        { icon: Calendar, label: nav.schedule, href: '/schedule' },
-        { icon: GraduationCap, label: nav.grades, href: '/grades' },
-        { icon: Trophy, label: nav.activities, href: '/activities' },
-        { icon: FileText, label: nav.portfolio, href: '/portfolio' },
-        { icon: Briefcase, label: nav.internships, href: '/internships' },
-        { icon: Clock, label: nav.applicationHistory || 'ประวัติการสมัคร', href: '/application-history' },
-        { icon: ClipboardList, label: nav.requests, href: '/requests' },
-        { icon: MessageSquare, label: nav.messages, href: '/messages' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Calendar, label: nav.schedule || 'Schedule', href: '/schedule' },
+        { icon: BookOpen, label: nav.courses || 'Courses', href: '/courses' },
+        { icon: GraduationCap, label: nav.grades || 'Grades', href: '/grades' },
+        { icon: Trophy, label: nav.activities || 'Activities', href: '/activities' },
+        { icon: FileText, label: nav.portfolio || 'Portfolio', href: '/portfolio' },
+        { icon: Briefcase, label: nav.internships || 'Internships', href: '/internships' },
+        { icon: Clock, label: nav.applicationHistory || 'Application History', href: '/application-history' },
+        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'lecturer':
       return [
         ...commonItems,
-        { icon: Calendar, label: nav.teachingSchedule, href: '/schedule' },
-        { icon: Users, label: nav.adviseeStudents, href: '/advisees' },
-        { icon: BookOpen, label: nav.courseManagement, href: '/courses' },
-        { icon: ClipboardList, label: nav.attendanceBehavior, href: '/attendance' },
-        { icon: GraduationCap, label: nav.grading, href: '/grades' },
-        { icon: FileText, label: nav.appointments, href: '/appointments' },
-        { icon: MessageSquare, label: nav.messages, href: '/messages' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Calendar, label: nav.teachingSchedule || 'Teaching Schedule', href: '/schedule' },
+        { icon: Users, label: nav.adviseeStudents || 'Advisees', href: '/advisees' },
+        { icon: UserCheck, label: nav.allStudents || 'Students', href: '/students' },
+        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
+        { icon: ClipboardList, label: nav.attendanceBehavior || 'Attendance', href: '/attendance' },
+        { icon: GraduationCap, label: nav.grading || 'Grading', href: '/grades' },
+        { icon: FileText, label: nav.appointments || 'Appointments', href: '/appointments' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'staff':
       return [
         ...commonItems,
-        { icon: Users, label: nav.users, href: '/users' },
-        { icon: GraduationCap, label: nav.studentDatabase, href: '/students' },
-        { icon: BookOpen, label: nav.curriculumCourses, href: '/courses' },
-        { icon: ClipboardList, label: nav.requests, href: '/requests' },
-        { icon: MessageSquare, label: nav.messages, href: '/messages' },
-        { icon: DollarSign, label: nav.budgetProcurement, href: '/budget' },
-        { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
-        { icon: FileText, label: nav.issueDocuments, href: '/documents' },
-        { icon: UserCog, label: nav.personnelManagement, href: '/personnel' },
-        { icon: Calendar, label: nav.scheduleRoomManagement, href: '/schedule-management' },
-        { icon: Trophy, label: nav.activityManagement, href: '/activities-management' },
-        { icon: Clock, label: nav.workloadTracking, href: '/workload-tracking' },
-        { icon: BarChart3, label: nav.reportsStats, href: '/reports' },
-        { icon: Shield, label: nav.audit, href: '/audit' },
-        { icon: Bell, label: nav.announcementManagement, href: '/notifications' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Users, label: nav.users || 'Users', href: '/users' },
+        { icon: Bell, label: nav.announcementManagement || 'Announcements', href: '/notifications' },
+        { icon: Clock, label: nav.workloadTracking || 'Workload', href: '/workload-tracking' },
+        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
+        { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
+        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
+        { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'company':
       return [
         ...commonItems,
-        { icon: Briefcase, label: nav.jobPostings, href: '/job-postings' },
-        { icon: Target, label: nav.skillsRequirement, href: '/skills-requirement' },
-        { icon: Search, label: nav.searchStudents, href: '/talent-search' },
-        { icon: Users, label: nav.applicants, href: '/applicants' },
-        { icon: UserCog, label: nav.internTracking, href: '/intern-tracking' },
-        { icon: Settings, label: nav.settings, href: '/settings' },
+        { icon: Briefcase, label: nav.jobPostings || 'Job Postings', href: '/job-postings' },
+        { icon: Target, label: nav.skillsRequirement || 'Skills', href: '/skills-requirement' },
+        { icon: Search, label: nav.searchStudents || 'Search Students', href: '/talent-search' },
+        { icon: Users, label: nav.applicants || 'Applicants', href: '/applicants' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
+        { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
+        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
+        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
     case 'admin':
       return [
         ...commonItems,
-        { icon: Shield, label: nav.systemOverview, href: '/dashboard' },
-        { icon: Users, label: nav.userManagement, href: '/users' },
-        { icon: BookOpen, label: nav.curriculumCourses, href: '/courses' },
-        { icon: Calendar, label: nav.teachingScheduleAdmin, href: '/schedule-management' },
-        { icon: DollarSign, label: nav.budgetProcurement, href: '/budget' },
-        { icon: UserCog, label: nav.personnelManagement, href: '/personnel' },
-        { icon: FileText, label: nav.documentsRequests, href: '/documents' },
-        { icon: Building2, label: nav.cooperationNetwork, href: '/network' },
-        { icon: Trophy, label: nav.activityAdmin, href: '/activities-management' },
+        { icon: Users, label: nav.userManagement || 'User Management', href: '/users' },
+        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
+        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
+        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
+        { icon: Building2, label: nav.cooperationNetwork || 'Network', href: '/network' },
+        { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
         { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
-        { icon: Briefcase, label: nav.jobsInternships, href: '/job-postings' },
-        { icon: Search, label: nav.studentDatabase, href: '/student-profiles' },
-        { icon: Building, label: nav.partnerCompanies, href: '/cooperation' },
-        { icon: Bell, label: nav.announcementsNotifications, href: '/notifications' },
-        { icon: BarChart3, label: nav.reportsStats, href: '/reports' },
-        { icon: Shield, label: nav.auditLogs, href: '/audit' },
-        { icon: Settings, label: nav.systemSettingsAdmin, href: '/settings' },
+        { icon: Briefcase, label: nav.jobsInternships || 'Jobs & Interns', href: '/job-postings' },
+        { icon: Search, label: nav.studentDatabase || 'Student DB', href: '/talent-search' },
+        { icon: Building, label: nav.partnerCompanies || 'Partners', href: '/cooperation' },
+        { icon: Bell, label: nav.announcementsNotifications || 'Notifications', href: '/notifications' },
+        { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
+        { icon: Shield, label: nav.auditLogs || 'Audit Logs', href: '/audit' },
+        { icon: Settings, label: nav.systemSettings || 'Settings', href: '/settings' },
       ];
     default:
       return commonItems;
   }
 };
 
-const getRoleAccent = (role: UserRole) => {
-  switch (role) {
-    case 'student':  return { dot: 'bg-blue-500',   active: 'bg-blue-600 text-white',   init: 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' };
-    case 'lecturer': return { dot: 'bg-emerald-500', active: 'bg-emerald-600 text-white', init: 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300' };
-    case 'staff':    return { dot: 'bg-purple-500',  active: 'bg-purple-600 text-white',  init: 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300' };
-    case 'company':  return { dot: 'bg-amber-500',   active: 'bg-amber-600 text-white',   init: 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300' };
-    case 'admin':    return { dot: 'bg-red-500',     active: 'bg-red-600 text-white',     init: 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300' };
-    default:         return { dot: 'bg-slate-500',   active: 'bg-slate-700 text-white',   init: 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300' };
-  }
-};
-
-const COLLAPSE_STORAGE_KEY = 'showpro:sidebar-collapsed';
-
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse = () => {} }: SidebarProps) {
   const location = useLocation();
-  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { user, logout, switchRole } = useAuth();
   const { t } = useLanguage();
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(COLLAPSE_STORAGE_KEY) === 'true';
-    } catch {
-      return false;
-    }
-  });
+  const demoAccountsEnabled = import.meta.env.VITE_ENABLE_DEMO_ACCOUNTS === 'true';
 
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  // Handle Esc key to close overlay on both Desktop and Mobile
   useEffect(() => {
-    try {
-      localStorage.setItem(COLLAPSE_STORAGE_KEY, String(collapsed));
-    } catch {
-      // localStorage unavailable — collapse preference just won't persist.
-    }
-  }, [collapsed]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (!isCollapsed && onToggleCollapse) onToggleCollapse();
+        if (isOpen) onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isCollapsed, isOpen, onToggleCollapse, onClose]);
 
   if (!user) return null;
 
   const navItems = getNavItems(user.role, t.nav as unknown as Record<string, string>);
-  const accent = getRoleAccent(user.role);
-  const initials = user.name?.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase() || '??';
+
+  const isOverlayActive = !isCollapsed || isOpen;
 
   return (
     <>
-      {/* Mobile Overlay */}
+      {/* Semi-transparent Backdrop: Clicking closes the overlay without reflow */}
       <AnimatePresence>
-        {isOpen && (
+        {isOverlayActive && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-black/40 md:hidden"
-            onClick={onClose}
+            transition={{ duration: 0.2 }}
+            onClick={() => {
+              if (!isCollapsed && onToggleCollapse) onToggleCollapse();
+              if (isOpen) onClose();
+            }}
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm transition-opacity"
+            aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar */}
+      {/* Sidebar Container */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 h-[100dvh] shrink-0 self-start flex flex-col",
-          collapsed ? "md:w-[72px]" : "md:w-64",
-          "w-64",
-          "bg-white dark:bg-slate-950 border-r border-slate-200 dark:border-slate-800",
-          "transition-[transform,width] duration-300 md:sticky md:inset-auto md:top-0 md:translate-x-0",
-          isOpen ? "translate-x-0" : "-translate-x-full"
+          "fixed inset-y-0 left-0 h-[100dvh] shrink-0 bg-[#090d16] text-slate-100 flex flex-col overflow-visible border-r border-slate-800/80 transition-all duration-300 ease-in-out",
+          // When collapsed: fixed 72px icon column at z-30
+          // When expanded: fixed 288px (w-72) overlay at z-50 above backdrop and content
+          isCollapsed ? "w-[72px] z-30" : "w-72 z-50 shadow-2xl shadow-black/70",
+          // Mobile responsive: slide in/out
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
         )}
       >
-        {/* Collapse toggle (desktop only) */}
-        <button
-          onClick={() => setCollapsed((current) => !current)}
-          className="hidden md:flex absolute -right-3 top-20 z-10 w-6 h-6 items-center justify-center rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 hover:text-slate-900 dark:hover:text-white shadow-sm"
-          aria-label={collapsed ? 'ขยายแถบเมนู' : 'ย่อแถบเมนู'}
-        >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
-
-        {/* Header */}
-        <div className={cn("flex items-center justify-between py-4 border-b border-slate-200 dark:border-slate-800 shrink-0", collapsed ? "md:px-0 md:justify-center px-4" : "px-4")}>
-          <Link to="/dashboard" className="flex items-center gap-2.5 group">
-            <div className="w-7 h-7 bg-slate-900 dark:bg-white rounded-md flex items-center justify-center shrink-0">
-              <span className="text-[9px] font-bold text-white dark:text-slate-900">SP</span>
+        {/* Sidebar Header: Logo + Collapse/Expand Toggle Button */}
+        <div className={cn(
+          "h-16 flex items-center shrink-0 border-b border-slate-800/80 transition-all duration-200",
+          isCollapsed ? "justify-center px-0" : "justify-between px-5"
+        )}>
+          {/* Logo / Brand Mark */}
+          <Link
+            to="/dashboard"
+            onClick={onClose}
+            className="flex items-center gap-3.5 group min-w-0"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-sky-400 flex items-center justify-center text-white font-bold text-lg shadow-lg shadow-blue-500/25 shrink-0 group-hover:scale-105 transition-transform duration-200">
+              D
             </div>
-            <div className={collapsed ? "md:hidden" : ""}>
-              <div className="font-bold text-sm text-slate-900 dark:text-white leading-tight">ShowPro</div>
-              <div className="text-[10px] text-slate-400 dark:text-slate-500 leading-tight capitalize">{user.role}</div>
-            </div>
-          </Link>
-          <Button variant="ghost" size="icon" className="md:hidden w-8 h-8 text-slate-400 hover:text-slate-900 dark:hover:text-white" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        {/* Navigation */}
-        <ScrollArea className="flex-1 min-h-0 py-3 px-3">
-          <nav className="space-y-0.5">
-            {navItems.map((item) => {
-              const isActive = location.pathname === item.href;
-              return (
-                <Link
-                  key={item.href}
-                  to={item.href}
-                  onClick={onClose}
-                  title={collapsed ? item.label : undefined}
-                  aria-label={collapsed ? item.label : undefined}
-                  className={cn(
-                    "flex items-center gap-2.5 px-3 py-2 rounded-md text-sm transition-colors",
-                    collapsed && "md:justify-center",
-                    isActive
-                      ? `${accent.active}`
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/60"
-                  )}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  <span className={cn("font-medium truncate", collapsed && "md:hidden")}>{item.label}</span>
-                  {item.badge && (
-                    <span className={cn(
-                      "ml-auto text-[10px] font-semibold px-1.5 py-0.5 rounded-full",
-                      collapsed && "md:hidden",
-                      isActive ? "bg-white/20 text-white" : "bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                    )}>
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </nav>
-        </ScrollArea>
-
-        {/* User Profile */}
-        <div className="shrink-0 border-t border-slate-200 dark:border-slate-800 p-3">
-          <div className={cn("flex items-center gap-3 px-2 py-2 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer", collapsed && "md:justify-center")}>
-            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0", accent.init)}>
-              {initials}
-            </div>
-            <div className={cn("flex-1 min-w-0", collapsed && "md:hidden")}>
-              <div className="text-sm font-medium text-slate-900 dark:text-white truncate">{user.name}</div>
-              <div className="flex items-center gap-1.5">
-                <div className={cn("w-1.5 h-1.5 rounded-full", accent.dot)} />
-                <div className="text-xs text-slate-400 dark:text-slate-500 capitalize">{user.role}</div>
+            {!isCollapsed && (
+              <div className="flex flex-col min-w-0">
+                <span className="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white via-slate-200 to-slate-400 bg-clip-text text-transparent truncate">
+                  DII CAMT
+                </span>
+                <span className="text-[10px] font-semibold uppercase tracking-wider text-blue-400 truncate">
+                  ShowPro Portal
+                </span>
               </div>
-            </div>
-          </div>
+            )}
+          </Link>
+
+          {/* Desktop Toggle Button: Icon stays at right edge when expanded, or hovers nicely */}
+          {!isCollapsed && (
+            <button
+              onClick={onToggleCollapse}
+              title="Collapse sidebar (Ctrl+[)"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/80 transition-all duration-150 shrink-0"
+              aria-label="Collapse sidebar"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+          )}
         </div>
+
+        {/* When collapsed: Floating Expand Button just beneath header */}
+        {isCollapsed && (
+          <div className="hidden md:flex justify-center py-2 border-b border-slate-800/60">
+            <button
+              onClick={onToggleCollapse}
+              title="Expand sidebar (Ctrl+])"
+              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-all duration-150"
+              aria-label="Expand sidebar"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
+
+        {/* Navigation List */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-3 px-2.5 custom-scrollbar">
+          <TooltipProvider delayDuration={100}>
+            <nav className="space-y-1">
+              {navItems.map((item) => {
+                const isActive =
+                  location.pathname === item.href ||
+                  (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+
+                const linkContent = (
+                  <Link
+                    key={item.href}
+                    to={item.href}
+                    onClick={() => {
+                      if (isOpen) onClose();
+                      if (!isCollapsed && onToggleCollapse) onToggleCollapse();
+                    }}
+                    className={cn(
+                      "relative flex items-center rounded-xl transition-all duration-150 group font-medium",
+                      isCollapsed
+                        ? "justify-center h-11 w-11 mx-auto"
+                        : "px-3.5 py-2.5 w-full",
+                      isActive
+                        ? "bg-blue-600/15 text-blue-400 font-semibold"
+                        : "text-slate-400 hover:text-slate-100 hover:bg-slate-800/60"
+                    )}
+                  >
+                    {isActive && (
+                      <motion.div
+                        layoutId="activeNavIndicator"
+                        className="absolute left-0 top-1.5 bottom-1.5 w-1 rounded-r-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.9)]"
+                        transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                      />
+                    )}
+                    <div className="w-7 h-7 flex items-center justify-center shrink-0">
+                      <item.icon className={cn(
+                        "w-5 h-5 shrink-0 transition-colors duration-150",
+                        isActive ? "text-blue-400" : "text-slate-400 group-hover:text-slate-200"
+                      )} />
+                    </div>
+                    {!isCollapsed && (
+                      <span className="ml-3 text-base font-medium tracking-tight truncate transition-opacity duration-150">
+                        {item.label}
+                      </span>
+                    )}
+                    {!isCollapsed && item.badge && (
+                      <span className={cn(
+                        "ml-auto px-2 py-0.5 text-xs font-semibold rounded-md shrink-0",
+                        isActive
+                          ? "bg-blue-500/30 text-blue-300"
+                          : "bg-slate-800 text-slate-400"
+                      )}>
+                        {item.badge}
+                      </span>
+                    )}
+                  </Link>
+                );
+
+                if (isCollapsed) {
+                  return (
+                    <Tooltip key={item.href + item.label}>
+                      <TooltipTrigger asChild>
+                        {linkContent}
+                      </TooltipTrigger>
+                      <TooltipContent
+                        side="right"
+                        sideOffset={14}
+                        className="bg-[#0f172a] text-slate-100 border border-slate-700 text-sm px-3 py-1.5 font-medium shadow-2xl rounded-lg z-50"
+                      >
+                        {item.label}
+                      </TooltipContent>
+                    </Tooltip>
+                  );
+                }
+
+                return linkContent;
+              })}
+            </nav>
+          </TooltipProvider>
+        </div>
+
+        {/* User Profile - Bottom of Sidebar */}
+        {user && (
+          <div className="shrink-0 border-t border-slate-800/80 px-2.5 py-3 bg-[#070a12]/60">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  data-testid="user-menu"
+                  aria-label={user.name}
+                  className="w-full flex items-center gap-3 rounded-xl p-2 hover:bg-slate-800/60 transition-colors duration-150 cursor-pointer"
+                >
+                  <Avatar className="h-10 w-10 shrink-0 border-2 border-slate-700/80 shadow-md">
+                    <AvatarImage src={user.avatar} />
+                    <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-sm font-bold">
+                      {user.name.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {!isCollapsed && (
+                    <>
+                      <div className="flex-1 min-w-0 text-left">
+                        <div className="text-base font-semibold text-slate-100 truncate">{user.name}</div>
+                        <div className="text-xs text-slate-400 font-mono truncate">{user.email}</div>
+                      </div>
+                      <ChevronUp className="h-5 w-5 text-slate-400 shrink-0" />
+                    </>
+                  )}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                side={isCollapsed ? 'right' : 'top'}
+                align={isCollapsed ? 'end' : 'start'}
+                className="w-72 p-2 rounded-2xl shadow-2xl border border-slate-800 bg-[#0d1322] text-slate-100 mb-2 z-50"
+              >
+                {/* User Info Card */}
+                <div className="p-3 mb-1 bg-[#070b14] rounded-xl border border-slate-800/80">
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-11 w-11 border border-slate-700">
+                      <AvatarImage src={user.avatar} />
+                      <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-bold text-base">{user.name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-base font-bold text-slate-100 block truncate">{user.name}</span>
+                      <span className="text-xs text-slate-400 font-mono block truncate">{user.email}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <DropdownMenuItem className="rounded-xl cursor-pointer py-3 px-3.5 text-slate-200 focus:bg-slate-800 focus:text-white" onClick={() => navigate('/personal-dashboard')}>
+                  <User className="h-4.5 w-4.5 mr-3 text-slate-400" />
+                  <span className="font-medium text-sm sm:text-base">{t.header?.profile || 'My Profile'}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuItem className="rounded-xl cursor-pointer py-3 px-3.5 text-slate-200 focus:bg-slate-800 focus:text-white" onClick={() => navigate('/settings')}>
+                  <Settings className="h-4.5 w-4.5 mr-3 text-slate-400" />
+                  <span className="font-medium text-sm sm:text-base">{t.header?.systemSettings || 'Settings'}</span>
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator className="my-1.5 bg-slate-800" />
+
+                {demoAccountsEnabled && (
+                  <>
+                    <DropdownMenuSub>
+                      <DropdownMenuSubTrigger className="rounded-xl cursor-pointer py-3 px-3.5 text-slate-200 focus:bg-slate-700 focus:text-slate-50">
+                        <Users className="h-4.5 w-4.5 mr-3 text-slate-400" />
+                        <span className="font-medium text-sm sm:text-base">{t.header?.switchRole || 'Switch Account'}</span>
+                      </DropdownMenuSubTrigger>
+                      <DropdownMenuPortal>
+                        <DropdownMenuSubContent className="p-2 rounded-xl shadow-lg border border-slate-700/50 bg-slate-800 z-50">
+                          {(
+                            [
+                              { label: 'Student Portal', value: 'student' },
+                              { label: 'Lecturer Portal', value: 'lecturer' },
+                              { label: 'Staff Portal', value: 'staff' },
+                              { label: 'Company Portal', value: 'company' },
+                              { label: 'Admin Root', value: 'admin' },
+                            ] as const
+                          ).map(({ label, value }) => (
+                            <DropdownMenuItem
+                              key={value}
+                              onClick={() => switchRole(value)}
+                              className="rounded-lg cursor-pointer py-2.5 px-3.5 font-medium text-sm text-slate-400 focus:bg-blue-900/30 focus:text-blue-400"
+                            >
+                              {label}
+                            </DropdownMenuItem>
+                          ))}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuPortal>
+                    </DropdownMenuSub>
+                    <DropdownMenuSeparator className="my-1.5 bg-slate-700/50" />
+                  </>
+                )}
+
+                <DropdownMenuItem
+                  onClick={handleLogout}
+                  className="rounded-xl cursor-pointer py-3 px-3.5 text-red-400 focus:text-red-300 focus:bg-slate-700"
+                >
+                  <LogOut className="h-4.5 w-4.5 mr-3" />
+                  <span className="font-medium text-sm sm:text-base">{t.header?.logout || 'Log Out'}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        )}
       </aside>
     </>
   );

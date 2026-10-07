@@ -93,7 +93,7 @@ export default function Workload() {
                     <BarChart3 className="w-4 h-4 text-emerald-500 dark:text-slate-400" />
                     <span data-testid="workload-term">{t.workloadPage.subtitle} {workloadStats.term ?? '-'}</span>
                 </motion.div>
-                <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+                <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
                     {t.workloadPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600">{t.workloadPage.titleHighlight}</span>
                 </motion.h1>
             </div>
@@ -102,69 +102,69 @@ export default function Workload() {
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-green-500 via-emerald-500 to-teal-500 p-6 text-white shadow-xl shadow-green-200"
+                    className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                                 <Clock className="w-5 h-5" />
                             </div>
-                            <span className="font-medium text-white/90">{t.workloadPage.teachingHours}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.workloadPage.teachingHours}</span>
                         </div>
-                        <div data-testid="workload-teaching" className="text-4xl font-bold">{show(workloadStats.teachingHours)}</div>
-                        <p className="text-white/70 text-sm mt-1">{isTH ? 'ชั่วโมง (จากบันทึกภาระงาน)' : 'hours (workload record)'}</p>
+                        <div data-testid="workload-teaching" className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{show(workloadStats.teachingHours)}</div>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{isTH ? 'ชั่วโมง (จากบันทึกภาระงาน)' : 'hours (workload record)'}</p>
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-purple-500 p-6 text-white shadow-xl shadow-blue-200"
+                    className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                                 <Users className="w-5 h-5" />
                             </div>
-                            <span className="font-medium text-white/90">{t.workloadPage.advisees}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.workloadPage.advisees}</span>
                         </div>
-                        <div data-testid="workload-advisees" className="text-4xl font-bold">{show(workloadStats.advisees)}</div>
-                        <p className="text-white/70 text-sm mt-1">{isTH ? 'คน · นักศึกษาในความดูแล' : 'students advised'}</p>
+                        <div data-testid="workload-advisees" className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{show(workloadStats.advisees)}</div>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{isTH ? 'คน · นักศึกษาในความดูแล' : 'students advised'}</p>
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-orange-500 via-amber-500 to-yellow-500 p-6 text-white shadow-xl shadow-orange-200"
+                    className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                                 <BookOpen className="w-5 h-5" />
                             </div>
-                            <span className="font-medium text-white/90">{t.workloadPage.coursesLabel}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.workloadPage.coursesLabel}</span>
                         </div>
-                        <div className="text-4xl font-bold">{show(workloadStats.courses)}</div>
-                        <p className="text-white/70 text-sm mt-1">{t.workloadPage.coursesDesc}</p>
+                        <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{show(workloadStats.courses)}</div>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{t.workloadPage.coursesDesc}</p>
                     </div>
                 </motion.div>
 
                 <motion.div
                     whileHover={{ scale: 1.02 }}
-                    className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-500 via-pink-500 to-rose-500 p-6 text-white shadow-xl shadow-purple-200"
+                    className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5"
                 >
-                    <div className="absolute -top-10 -right-10 w-28 h-28 bg-white/10 rounded-full blur-2xl dark:bg-slate-900/50" />
+
                     <div className="relative z-10">
                         <div className="flex items-center gap-2 mb-3">
-                            <div className="p-2 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                            <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                                 <FlaskConical className="w-5 h-5" />
                             </div>
-                            <span className="font-medium text-white/90">{t.workloadPage.research}</span>
+                            <span className="text-xs text-slate-500 dark:text-slate-400">{t.workloadPage.research}</span>
                         </div>
-                        <div className="text-4xl font-bold">{show(workloadStats.researchHours)}</div>
-                        <p className="text-white/70 text-sm mt-1">{isTH ? 'ชั่วโมง (จากบันทึกภาระงาน)' : 'hours (workload record)'}</p>
+                        <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{show(workloadStats.researchHours)}</div>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">{isTH ? 'ชั่วโมง (จากบันทึกภาระงาน)' : 'hours (workload record)'}</p>
                     </div>
                 </motion.div>
             </motion.div>
@@ -175,7 +175,7 @@ export default function Workload() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="lg:col-span-3 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 shadow-xl p-6 transition-all dark:bg-slate-900/50"
+                    className="lg:col-span-3 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 transition-all"
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 text-white shadow-lg">
@@ -222,7 +222,7 @@ export default function Workload() {
                 <motion.div
                     variants={itemVariants}
                     whileHover={{ y: -5 }}
-                    className="lg:col-span-2 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 shadow-xl p-6 transition-all dark:bg-slate-900/50"
+                    className="lg:col-span-2 rounded-2xl bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 shadow-sm p-6 transition-all"
                 >
                     <div className="flex items-center gap-3 mb-6">
                         <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 text-white shadow-lg">

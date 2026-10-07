@@ -10,6 +10,7 @@ export default function Dashboard() {
 
   if (!user) return null;
 
+  // one dashboard per role at every width — the separate phone dashboard invented its numbers
   switch (user.role) {
     case 'student':
       return <StudentDashboard />;

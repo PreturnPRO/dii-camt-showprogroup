@@ -158,6 +158,8 @@ export default function ApplicationHistory() {
                         <SelectContent>
                             <SelectItem value="all">{language === 'th' ? 'ทั้งหมด' : 'All Statuses'}</SelectItem>
                             <SelectItem value="pending">{language === 'th' ? 'รอตรวจสอบ' : 'Pending'}</SelectItem>
+                            <SelectItem value="reviewed">{language === 'th' ? 'กำลังพิจารณา' : 'Reviewed'}</SelectItem>
+                            <SelectItem value="shortlisted">{language === 'th' ? 'ผ่านรอบแรก' : 'Shortlisted'}</SelectItem>
                             <SelectItem value="interviewed">{language === 'th' ? 'นัดสัมภาษณ์' : 'Interviewed'}</SelectItem>
                             <SelectItem value="accepted">{language === 'th' ? 'ตอบรับแล้ว' : 'Accepted'}</SelectItem>
                             <SelectItem value="rejected">{language === 'th' ? 'ไม่ผ่านการพิจารณา' : 'Rejected'}</SelectItem>
@@ -166,127 +168,120 @@ export default function ApplicationHistory() {
                 </motion.div>
             </div>
 
-            {/* Stats Bento Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <motion.div variants={itemVariants} whileHover={{ y: -5 }} className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-3xl p-6 text-white shadow-lg relative overflow-hidden">
-                    <div className="absolute top-0 right-0 w-24 h-24 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2" />
-                    <div className="relative z-10 flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md">
-                            <Briefcase className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <p className="text-white/70 text-sm font-medium">{language === 'th' ? 'สมัครทั้งหมด' : 'Total Applications'}</p>
-                            <h3 className="text-3xl font-bold tracking-tight">{applications.length}</h3>
-                        </div>
-                    </div>
-                </motion.div>
-                
-                <motion.div variants={itemVariants} whileHover={{ y: -5 }} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm group">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-500 group-hover:scale-110 transition-transform">
-                            <Clock className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{language === 'th' ? 'รอดำเนินการ' : 'In Progress'}</p>
-                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{pendingCount}</h3>
-                        </div>
-                    </div>
+            {/* Quick Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'รอการพิจารณา' : 'Under Review'}</span>
+                                <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500">
+                                    <Clock className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{pendingCount}</div>
+                            <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'ตำแหน่งที่กำลังอยู่ระหว่างการตรวจสอบ' : 'Applications currently being reviewed'}</p>
+                        </CardContent>
+                    </Card>
                 </motion.div>
 
-                <motion.div variants={itemVariants} whileHover={{ y: -5 }} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm group">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-500 group-hover:scale-110 transition-transform">
-                            <Calendar className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{language === 'th' ? 'นัดสัมภาษณ์' : 'Interviews'}</p>
-                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{interviewCount}</h3>
-                        </div>
-                    </div>
+                <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'สัมภาษณ์' : 'Interviews'}</span>
+                                <div className="p-2.5 rounded-2xl bg-purple-500/10 text-purple-500">
+                                    <Calendar className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{interviewCount}</div>
+                            <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'นัดหมายเพื่อสัมภาษณ์พูดคุย' : 'Interview appointments scheduled'}</p>
+                        </CardContent>
+                    </Card>
                 </motion.div>
 
-                <motion.div variants={itemVariants} whileHover={{ y: -5 }} className="bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-3xl p-6 shadow-sm group">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-500 group-hover:scale-110 transition-transform">
-                            <Sparkles className="w-6 h-6" />
-                        </div>
-                        <div>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{language === 'th' ? 'ตอบรับแล้ว' : 'Offers'}</p>
-                            <h3 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">{acceptedCount}</h3>
-                        </div>
-                    </div>
+                <motion.div variants={itemVariants} whileHover={{ y: -4 }}>
+                    <Card className="rounded-3xl border-slate-200/80 dark:border-slate-800 bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl shadow-sm">
+                        <CardContent className="p-6">
+                            <div className="flex items-center justify-between mb-4">
+                                <span className="text-sm font-medium text-slate-500">{language === 'th' ? 'ตอบรับแล้ว' : 'Accepted Offers'}</span>
+                                <div className="p-2.5 rounded-2xl bg-emerald-500/10 text-emerald-500">
+                                    <Sparkles className="w-5 h-5" />
+                                </div>
+                            </div>
+                            <div className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">{acceptedCount}</div>
+                            <p className="text-xs text-slate-400 mt-2">{language === 'th' ? 'บริษัทตอบรับเข้าทำงานหรือฝึกงาน' : 'Job / Internship offers accepted'}</p>
+                        </CardContent>
+                    </Card>
                 </motion.div>
             </div>
 
-            {/* List Section */}
-            <motion.div variants={itemVariants} className="bg-white/70 dark:bg-slate-900/60 backdrop-blur-xl border border-white/80 dark:border-slate-800/60 rounded-[2.5rem] shadow-sm overflow-hidden p-2">
-                <div className="p-6 md:p-8">
-                    <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-8">
-                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{language === 'th' ? 'ประวัติทั้งหมด' : 'All Applications'}</h2>
-                        <div className="relative w-full sm:w-72">
-                            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            {/* Applications List */}
+            <motion.div variants={itemVariants}>
+                <div className="bg-white/60 dark:bg-slate-900/50 backdrop-blur-xl rounded-3xl border border-slate-200/80 dark:border-slate-800 p-6 md:p-8 shadow-sm">
+                    <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-6">
+                        <div className="relative w-full md:w-96">
+                            <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
                             <Input 
-                                placeholder={language === 'th' ? 'ค้นหาชื่อบริษัท, ตำแหน่ง...' : 'Search company, job title...'}
+                                placeholder={language === 'th' ? 'ค้นหาชื่อตำแหน่ง หรือ บริษัท...' : 'Search by job title or company...'}
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-11 h-12 bg-slate-50 dark:bg-slate-900 border-none rounded-2xl focus-visible:ring-1 focus-visible:ring-blue-500"
+                                className="pl-10 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/50 dark:bg-slate-800/50"
                             />
+                        </div>
+                        <div className="text-sm text-slate-500">
+                            {language === 'th' ? 'พบทั้งหมด' : 'Total found:'} <strong className="text-slate-900 dark:text-white">{filteredApplications.length}</strong> {language === 'th' ? 'รายการ' : 'applications'}
                         </div>
                     </div>
 
                     <div className="space-y-4">
                         <AnimatePresence>
                             {isLoading ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-12 text-center text-slate-500 dark:text-slate-400">
-                                    <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-                                    <p>{language === 'th' ? 'กำลังโหลดข้อมูล...' : 'Loading applications...'}</p>
-                                </motion.div>
+                                <div className="py-12 text-center text-slate-400">Loading applications...</div>
                             ) : filteredApplications.length === 0 ? (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="py-16 text-center border-2 border-dashed border-slate-200 dark:border-slate-800 rounded-3xl">
-                                    <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                                        <Briefcase className="w-8 h-8 text-slate-400" />
-                                    </div>
-                                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">{language === 'th' ? 'ไม่พบข้อมูล' : 'No applications found'}</h3>
-                                    <p className="text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
-                                        {searchQuery || statusFilter !== 'all' 
-                                            ? (language === 'th' ? 'ไม่พบประวัติการสมัครงานที่ตรงกับเงื่อนไขการค้นหา' : 'No applications match your current filters.')
-                                            : (language === 'th' ? 'คุณยังไม่เคยสมัครงานใดๆ เริ่มค้นหาตำแหน่งฝึกงานที่สนใจได้เลย' : 'You haven\'t applied for any jobs yet.')}
-                                    </p>
-                                </motion.div>
+                                <div className="py-16 text-center">
+                                    <Briefcase className="w-12 h-12 mx-auto text-slate-300 dark:text-slate-700 mb-3" />
+                                    <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-1">{language === 'th' ? 'ไม่พบประวัติการสมัครงาน' : 'No applications found'}</h3>
+                                    <p className="text-sm text-slate-500">{language === 'th' ? 'คุณยังไม่ได้สมัครงาน หรือลองเปลี่ยนตัวกรองค้นหา' : 'You have not applied for any jobs yet or try changing filters.'}</p>
+                                </div>
                             ) : (
-                                filteredApplications.map((app, i) => {
+                                filteredApplications.map((app) => {
                                     const statusInfo = getStatusInfo(app.status);
                                     const StatusIcon = statusInfo.icon;
-                                    
+
                                     return (
-                                        <motion.div 
+                                        <motion.div
                                             key={app.id}
                                             layout
                                             initial={{ opacity: 0, y: 10 }}
                                             animate={{ opacity: 1, y: 0 }}
                                             exit={{ opacity: 0, scale: 0.95 }}
-                                            transition={{ delay: i * 0.05 }}
+                                            className="group relative p-6 rounded-2xl bg-white dark:bg-slate-800/60 border border-slate-200/60 dark:border-slate-700/60 hover:shadow-md hover:border-slate-300 dark:hover:border-slate-600 transition-all cursor-pointer"
                                             onClick={() => setSelectedApp(app)}
-                                            className="group p-5 md:p-6 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 hover:border-blue-200 dark:hover:border-blue-900/50 rounded-3xl cursor-pointer hover:shadow-lg transition-all"
                                         >
-                                            <div className="flex flex-col md:flex-row gap-5 items-start md:items-center">
-                                                <div className="w-14 h-14 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center border border-slate-100 dark:border-slate-700 shrink-0">
-                                                    <Building className="w-7 h-7 text-slate-400" />
-                                                </div>
-                                                
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-3 mb-1">
-                                                        <h3 className="text-xl font-bold text-slate-900 dark:text-white truncate">{app.jobTitle}</h3>
-                                                        <Badge variant="secondary" className="rounded-lg bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-medium">
-                                                            {app.jobType === 'internship' ? (language === 'th' ? 'ฝึกงาน' : 'Internship') : (language === 'th' ? 'สหกิจศึกษา' : 'Co-op')}
+                                            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                                                <div className="space-y-1.5 flex-1">
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="font-bold text-lg text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                                                            {app.jobTitle}
+                                                        </span>
+                                                        <Badge variant="secondary" className="rounded-lg text-xs capitalize">
+                                                            {app.jobType}
                                                         </Badge>
                                                     </div>
-                                                    <p className="text-slate-600 dark:text-slate-400 font-medium text-sm flex items-center gap-1.5 mb-2">
-                                                        {app.companyName}
-                                                        <span className="w-1 h-1 rounded-full bg-slate-300 dark:bg-slate-600" />
-                                                        <MapPin className="w-3.5 h-3.5" /> {app.location}
-                                                    </p>
-                                                    <div className="text-xs text-slate-500 dark:text-slate-500 font-medium flex items-center gap-1">
+                                                    
+                                                    <div className="flex items-center gap-4 text-sm text-slate-500 dark:text-slate-400 flex-wrap">
+                                                        <div className="flex items-center gap-1">
+                                                            <Building className="w-4 h-4 text-slate-400" />
+                                                            <span>{app.companyName}</span>
+                                                        </div>
+                                                        <div className="flex items-center gap-1">
+                                                            <MapPin className="w-4 h-4 text-slate-400" />
+                                                            <span>{app.location}</span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
                                                         <Clock className="w-3.5 h-3.5" />
                                                         {language === 'th' ? 'สมัครเมื่อ: ' : 'Applied: '} {app.appliedAt.toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
                                                     </div>
@@ -374,10 +369,6 @@ export default function ApplicationHistory() {
                                     <Button variant="outline" className="rounded-xl" onClick={() => setSelectedApp(null)}>
                                         {language === 'th' ? 'ปิดหน้าต่าง' : 'Close'}
                                     </Button>
-                                    {/* <Button className="rounded-xl bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200">
-                                        <Eye className="w-4 h-4 mr-2" />
-                                        {language === 'th' ? 'ดูประกาศงานนี้' : 'View Job Posting'}
-                                    </Button> */}
                                 </DialogFooter>
                             </>
                         );

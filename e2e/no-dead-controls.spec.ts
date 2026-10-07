@@ -21,7 +21,7 @@ test("header has no search box or ⌘K hint", async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 900 });
   await login(page, "alice@student.showpro.local");
   const header = page.locator("header").first();
-  await expect(header.getByRole("button", { name: /alice/i }).first()).toBeVisible();
+  await expect(header.getByTestId("notification-bell")).toBeVisible();
   await expect(header.getByPlaceholder(/ค้นหา\.\.\.|Search\.\.\./)).toHaveCount(0);
   await expect(header.getByText("⌘K")).toHaveCount(0);
 });

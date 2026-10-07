@@ -1,16 +1,16 @@
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: showpro-postgres
+    container_name: xchange-postgres
     restart: unless-stopped
     environment:
       POSTGRES_DB: showpro
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - showpro-postgres:/var/lib/postgresql/data
+      - iq-showpro-postgres:/var/lib/postgresql/data
 
 volumes:
-  showpro-postgres:
+  iq-showpro-postgres:

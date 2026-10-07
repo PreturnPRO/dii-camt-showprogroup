@@ -108,10 +108,10 @@ function CalendarView({ activities, isTH }: { activities: any[], isTH: boolean }
           {currentMonthName} {currentYear}
         </h3>
         <div className="flex gap-2">
-          <Button variant="outline" size="icon" onClick={prevMonth} className="rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-900/50">
+          <Button variant="outline" size="icon" onClick={prevMonth} className="rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
              &lt;
           </Button>
-          <Button variant="outline" size="icon" onClick={nextMonth} className="rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 dark:bg-slate-900/50">
+          <Button variant="outline" size="icon" onClick={nextMonth} className="rounded-xl border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800">
              &gt;
           </Button>
         </div>
@@ -254,18 +254,18 @@ export default function Activities() {
       onClick={onClick}
       className={`relative overflow-hidden rounded-3xl p-6 cursor-pointer group shadow-lg hover:shadow-2xl transition-all duration-300 border border-white/20 ${gradient}`}
     >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors dark:bg-slate-900/50" />
+      <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-white/20 transition-colors" />
       <div className="relative z-10">
         <div className="flex justify-between items-start mb-4">
-          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10 dark:bg-slate-900/50">
+          <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-md shadow-sm border border-white/10">
             <Icon className="w-6 h-6 text-white" />
           </div>
-          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity dark:bg-slate-900/50">
+          <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
             <ArrowUpRight className="w-4 h-4 text-white" />
           </div>
         </div>
         <div>
-          <p className="text-white/80 text-sm font-medium mb-1">{label}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{label}</p>
           <h3 className="text-3xl font-bold text-white tracking-tight">{value}</h3>
           {subtext && <div className="mt-2">{subtext}</div>}
         </div>
@@ -292,7 +292,7 @@ export default function Activities() {
             <span>{t.activitiesPage.subtitle}</span>
           </motion.div>
           <motion.h1
-            className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+            className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
@@ -337,22 +337,22 @@ export default function Activities() {
           <Tabs defaultValue="upcoming" onValueChange={setActiveTab} className="w-full space-y-6">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
               <h2 className="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">{t.activitiesPage.activityList}</h2>
-              <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm dark:bg-slate-900/50">
+              <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm">
                 <TabsTrigger
                   value="upcoming"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300"
                 >
                   {t.activitiesPage.upcomingTab}
                 </TabsTrigger>
                 <TabsTrigger
                   value="calendar"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300"
                 >
                   {isTH ? 'ปฏิทินกิจกรรม' : 'Calendar'}
                 </TabsTrigger>
                 <TabsTrigger
                   value="history"
-                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300 dark:bg-slate-900/50"
+                  className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-lg shadow-blue-500/10 transition-all duration-300 font-medium text-slate-600 dark:text-slate-300"
                 >
                   {t.activitiesPage.historyTab}
                 </TabsTrigger>
@@ -370,7 +370,7 @@ export default function Activities() {
                       exit={{ opacity: 0, x: 20 }}
                       transition={{ delay: index * 0.1 }}
                       onClick={() => setSelectedActivity(activity)}
-                      className="group bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[2rem] p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden dark:bg-slate-900/50"
+                      className="group bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[2rem] p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
                     >
                       <div className="flex flex-col md:flex-row gap-6">
                         <div className="relative shrink-0 w-full md:w-52 h-36 md:h-auto rounded-2xl overflow-hidden shadow-md">
@@ -379,7 +379,7 @@ export default function Activities() {
                             alt="Activity cover"
                             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                           />
-                          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-600 shadow-sm border border-white/50 dark:text-slate-300 dark:bg-slate-900/50">
+                          <div className="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-xl text-xs font-bold text-indigo-600 shadow-sm border border-white/50 dark:text-slate-300">
                             {activity.gamificationPoints} XP
                           </div>
                         </div>
@@ -462,7 +462,7 @@ export default function Activities() {
                       </button>
                     ))}
                     {historyActivities.length === 0 && (
-                      <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-12 text-center text-slate-400 border border-dashed border-slate-300 dark:bg-slate-900/50">
+                      <div className="bg-white/40 backdrop-blur-xl rounded-[2rem] p-12 text-center text-slate-400 border border-dashed border-slate-300">
                         <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-200 dark:border-slate-700">
                           <Hourglass className="w-10 h-10 opacity-30" />
                         </div>
@@ -480,7 +480,7 @@ export default function Activities() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[2rem] p-4 sm:p-6 shadow-sm dark:bg-slate-900/50"
+                    className="bg-white/60 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-[2rem] p-4 sm:p-6 shadow-sm"
                   >
                     <CalendarView activities={activities} isTH={isTH} />
                   </motion.div>
@@ -492,7 +492,7 @@ export default function Activities() {
 
         {/* Right Column: Gamification & Leaderboard */}
         <motion.div variants={itemVariants} className="space-y-6">
-          <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/60 dark:border-slate-800/60 shadow-sm p-6 dark:bg-slate-900/50">
+          <div className="bg-white/60 backdrop-blur-xl rounded-[2rem] border border-white/60 dark:border-slate-800/60 shadow-sm p-6">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Trophy className="w-5 h-5 text-amber-500" />
@@ -505,7 +505,7 @@ export default function Activities() {
                 <p className="text-sm text-slate-500 dark:text-slate-400 text-center py-4">{language === 'th' ? 'ยังไม่มีใครได้รับแต้มจากกิจกรรม' : 'Nobody has earned activity points yet'}</p>
               )}
               {leaderboard.map((user, idx) => (
-                <div key={idx} className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${user.rank === 1 ? 'bg-amber-400/10 border border-amber-200/50 shadow-inner' : 'hover:bg-white/50'} dark:bg-slate-900/50`}>
+                <div key={idx} className={`flex items-center gap-4 p-3.5 rounded-2xl transition-all duration-300 ${user.rank === 1 ? 'bg-amber-400/10 border border-amber-200/50 shadow-inner' : 'hover:bg-white/50'}`}>
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${user.rank === 1 ? 'bg-amber-500 text-white shadow-lg shadow-amber-500/30 ring-2 ring-white/50' :
                     user.rank === 2 ? 'bg-slate-300 text-slate-600' :
                       user.rank === 3 ? 'bg-orange-200 text-orange-700' :

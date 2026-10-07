@@ -16,7 +16,6 @@ import {
   GraduationCap,
   MessageSquare,
   Network,
-  Printer,
   RefreshCw,
   Settings,
   ShieldCheck,
@@ -435,7 +434,7 @@ function MetricCard({
           <span className="text-sm font-medium text-white/90">{label}</span>
         </div>
         <div className="mt-4 text-3xl font-bold">{value}</div>
-        <div className="mt-1 text-sm text-white/80">{detail}</div>
+        <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{detail}</div>
       </div>
     </motion.button>
   );
@@ -597,11 +596,6 @@ export default function StaffDashboard() {
 
   const atRiskStudents = students.filter((student) => ['probation', 'risk'].includes(student.academicStatus));
   const pendingRequests = requests.filter((request) => ['pending', 'under_review'].includes(request.status));
-  const pendingDocumentRequests = requests.filter((request) => {
-    if (!['pending', 'under_review'].includes(request.status)) return false;
-    const text = `${request.type} ${request.title}`.toLowerCase();
-    return text.includes('document') || text.includes('certificate') || text.includes('transcript') || text.includes('letter') || text.includes('เอกสาร') || text.includes('ใบ') || text.includes('หนังสือ');
-  });
   const pendingActivities = activities.filter((activity) => activity.status === 'pending');
   const upcomingActivities = activities.filter((activity) => activity.status === 'upcoming' || activity.startDate >= new Date());
   const pendingAppointments = appointments.filter((appointment) => appointment.status === 'pending');
@@ -641,13 +635,6 @@ export default function StaffDashboard() {
       detail: `${pendingRequests.length} รายการรอดำเนินการ`,
       path: '/requests',
       accent: 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300',
-    },
-    {
-      icon: Printer,
-      label: 'ออกเอกสาร',
-      detail: `${pendingDocumentRequests.length} รายการรอออกเอกสาร`,
-      path: '/documents',
-      accent: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300',
     },
     {
       icon: Activity,
@@ -702,15 +689,8 @@ export default function StaffDashboard() {
 
   const priorityQueue = [
     {
-      icon: Printer,
-      label: 'คำร้องเอกสาร',
-      value: pendingDocumentRequests.length,
-      detail: 'รอออกเอกสาร (Transcript, ฯลฯ)',
-      path: '/documents',
-    },
-    {
       icon: FileText,
-      label: 'คำร้องทั่วไป',
+      label: 'คำร้องนักศึกษา',
       value: pendingRequests.length,
       detail: 'รอ staff ตรวจสอบ',
       path: '/requests',
@@ -795,7 +775,7 @@ export default function StaffDashboard() {
           label="นักศึกษาทั้งหมด"
           value={students.length}
           detail={`เสี่ยง ${atRiskStudents.length} คน · GPAX เฉลี่ย ${averageGpaText}`}
-          gradient="bg-gradient-to-br from-purple-500 to-violet-600"
+          gradient="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800"
           onClick={() => navigate('/students')}
         />
         <MetricCard
@@ -803,7 +783,7 @@ export default function StaffDashboard() {
           label="รายวิชา"
           value={courses.length}
           detail={`ลงทะเบียน ${totalEnrollments} คน · เฉลี่ย ${averageClassSize}/ห้อง`}
-          gradient="bg-gradient-to-br from-blue-500 to-indigo-600"
+          gradient="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800"
           onClick={() => navigate('/courses')}
         />
         <MetricCard
@@ -811,7 +791,7 @@ export default function StaffDashboard() {
           label="Workload อาจารย์"
           value={averageWorkloadHours === null ? '-' : `${averageWorkloadHours} ชม.`}
           detail={`ชั่วโมงรวมเฉลี่ยต่อรายการ · ${workloads.length} รายการ`}
-          gradient="bg-gradient-to-br from-rose-500 to-pink-600"
+          gradient="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800"
           onClick={() => navigate('/workload-tracking')}
         />
         <MetricCard
@@ -819,7 +799,7 @@ export default function StaffDashboard() {
           label="งานรอตรวจ"
           value={pendingRequests.length + pendingActivities.length + pendingBudget.length}
           detail={`คำร้อง ${pendingRequests.length} · กิจกรรม ${pendingActivities.length} · งบ ${pendingBudget.length}`}
-          gradient="bg-gradient-to-br from-amber-500 to-orange-600"
+          gradient="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800"
           onClick={() => navigate('/requests')}
         />
       </motion.div>
@@ -1014,7 +994,7 @@ export default function StaffDashboard() {
               </CardHeader>
               <CardContent className="space-y-3">
                 {courses.slice(0, 5).map((course) => {
-                  const maxStudents = course.sections?.[0]?.maxStudents;
+                  const maxStudents = course.maxStudents;
                   const capacity = maxStudents ? clampPercent((course.enrolled / maxStudents) * 100) : 0;
                   return (
                     <div key={course.id} className="rounded-xl border border-slate-200 p-4 dark:border-slate-800">

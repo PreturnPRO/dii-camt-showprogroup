@@ -43,7 +43,7 @@ const emptyForm = {
   messageThai: 'There are items waiting for review.',
   badgeName: 'Milestone',
   badgeNameThai: 'Milestone',
-  badgeDescription: 'Awarded automatically by ShowPro.',
+  badgeDescription: 'Awarded automatically by Xchange.',
   badgeIcon: 'award',
   badgeCriteria: 'Automation criteria matched',
   isActive: true,

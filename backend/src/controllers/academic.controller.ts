@@ -191,7 +191,7 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
   }
 
   const criteriaList = course.gradingCriteria;
-  
+
   // CSV Header
   let csv = "Student ID,Name,";
   criteriaList.forEach(c => {
@@ -203,7 +203,7 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
   // CSV Rows
   course.enrollments.forEach(enrollment => {
     csv += `"${enrollment.student.studentId}","${enrollment.student.user.name}",`;
-    
+
     criteriaList.forEach(c => {
       const scoreObj = enrollment.scores.find(s => s.criteriaId === c.id);
       csv += `${scoreObj ? scoreObj.score : ""},`;
@@ -633,4 +633,3 @@ export const closeAttendanceSessionHandler = asyncHandler(async (req, res) => {
     session: updatedSession,
   });
 });
-

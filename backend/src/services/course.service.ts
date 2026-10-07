@@ -66,7 +66,7 @@ export const getCourseById = async (courseIdentifier: string) => {
 
 export const createCourse = async (data: any) => {
   const { sections, materials, gradingCriteria: inputGradingCriteria, gradeCutoffs, ...courseData } = data;
-  
+
   let gradingCriteria = inputGradingCriteria;
   if (!gradingCriteria || gradingCriteria.length === 0) {
     gradingCriteria = [
@@ -77,7 +77,7 @@ export const createCourse = async (data: any) => {
       { name: 'Project', weightPercentage: 10, maxScore: 100, orderIndex: 4 },
     ];
   }
-  
+
   let finalGradeCutoffs = gradeCutoffs;
   if (!finalGradeCutoffs || finalGradeCutoffs.length === 0) {
     finalGradeCutoffs = [
@@ -91,7 +91,7 @@ export const createCourse = async (data: any) => {
       { grade: 'F', minScore: 0 },
     ];
   }
-  
+
   if (gradingCriteria) {
     const totalWeight = gradingCriteria.reduce((sum: number, c: any) => sum + (Number(c.weightPercentage) || 0), 0);
     if (totalWeight > 100) {

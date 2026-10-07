@@ -765,7 +765,7 @@ export default function Courses() {
               <span>{t.coursesPage.semester}</span>
             </motion.div>
             <motion.h1
-              className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight"
+              className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
@@ -791,15 +791,15 @@ export default function Courses() {
             whileHover={{ y: -5 }}
             className="p-6 rounded-3xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/20 relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                   <BookMarked className="w-6 h-6" />
                 </div>
-                <span className="font-medium text-white/90">{t.coursesPage.registeredCourses}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t.coursesPage.registeredCourses}</span>
               </div>
-              <div className="text-4xl font-bold">{enrolledCourses.length}</div>{/* D-24: นับวิชาที่ลงทะเบียนจริง */}
+              <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{enrolledCourses.length}</div>{/* D-24: นับวิชาที่ลงทะเบียนจริง */}
               <div className="mt-2 text-sm text-blue-100 flex items-center gap-1">
                 <Sparkles className="w-4 h-4" /> {t.coursesPage.regularSemester}
               </div>
@@ -811,13 +811,13 @@ export default function Courses() {
             whileHover={{ y: -5 }}
             className="p-6 rounded-3xl bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-lg shadow-purple-500/20 relative overflow-hidden"
           >
-            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-4">
-                <div className="p-2.5 rounded-xl bg-white/20 backdrop-blur-sm dark:bg-slate-900/50">
+                <div className="p-2.5 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
                   <GraduationCap className="w-6 h-6" />
                 </div>
-                <span className="font-medium text-white/90">{t.coursesPage.totalCredits}</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">{t.coursesPage.totalCredits}</span>
               </div>
               {user?.role === 'student' ? (
                 <>
@@ -831,11 +831,11 @@ export default function Courses() {
                   )}
                   {/* Mini Progress Bar */}
                   <div className="mt-4 h-1.5 w-full bg-black/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white/90 dark:bg-slate-900/50" style={{ width: `${creditProgress}%` }} />
+                    <div className="h-full bg-white/90" style={{ width: `${creditProgress}%` }} />
                   </div>
                 </>
               ) : (
-                <div className="text-4xl font-bold">{totalCredits}</div>
+                <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{totalCredits}</div>
               )}
             </div>
           </motion.div>
@@ -863,7 +863,7 @@ export default function Courses() {
 
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
-          <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm w-full md:w-auto flex overflow-x-auto dark:bg-slate-900/50">
+          <TabsList className="bg-white/40 backdrop-blur-xl border border-white/40 p-1.5 h-auto rounded-2xl shadow-sm w-full md:w-auto flex overflow-x-auto">
             <TabsTrigger value="my-courses" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
               {t.coursesPage.myCourses}
             </TabsTrigger>
@@ -896,10 +896,10 @@ export default function Courses() {
                   placeholder={t.coursesPage.searchCourses}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-blue-100 dark:bg-slate-900/50"
+                  className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-blue-100"
                 />
               </div>
-              <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 hover:bg-white text-slate-600 dark:text-slate-300 dark:bg-slate-900/50" onClick={() => setSearchQuery('')}>
+              <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 hover:bg-white text-slate-600 dark:text-slate-300" onClick={() => setSearchQuery('')}>
                 <Filter className="w-4 h-4 mr-2" />
                 {t.coursesPage.filter}
               </Button>
@@ -919,7 +919,7 @@ export default function Courses() {
 
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
-                      <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors dark:bg-slate-900/50">
+                      <Badge variant="outline" className="bg-white/50 backdrop-blur border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors">
                         {(user as unknown as Student).year || 3}
                       </Badge>
                       <button 
@@ -962,7 +962,7 @@ export default function Courses() {
 
           <TabsContent value="registration" className="space-y-6">
             <motion.div variants={itemVariants} className="bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 dark:bg-slate-900/50" />
+              <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/10 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2" />
               <div className="relative z-10">
                 <h2 className="text-2xl font-bold mb-2 flex items-center gap-3">
                   <BookMarked className="w-6 h-6 text-yellow-300" />
@@ -977,7 +977,7 @@ export default function Courses() {
                     <div key={course.id} className="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl hover:bg-white/20 transition-colors cursor-pointer dark:bg-slate-900/50 flex flex-col justify-between" onClick={() => setViewingCourse(course)}>
                       <div>
                         <div className="flex justify-between items-start mb-3">
-                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur dark:bg-slate-900/50">{course.code}</Badge>
+                          <Badge className="bg-white/20 hover:bg-white/30 text-white border-0 backdrop-blur">{course.code}</Badge>
                           <span className="text-xs font-medium text-indigo-100 bg-indigo-500/30 px-2 py-1 rounded-lg">{course.lecturerName || t.coursesPage.instructorTBA}</span>
                         </div>
                         <h3 className="font-bold text-lg mb-1">{course.name}</h3>
@@ -1164,7 +1164,7 @@ export default function Courses() {
               <BookOpen className="w-4 h-4 text-blue-500 dark:text-slate-400" />
               <span>{t.coursesPage.semesterLabel}</span>
             </motion.div>
-            <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.coursesPage.manageCourses}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">{t.coursesPage.manageCoursesHighlight}</span>
             </motion.h1>
           </div>
@@ -1241,7 +1241,7 @@ export default function Courses() {
               <BookOpen className="w-4 h-4 text-purple-500 dark:text-slate-400" />
               <span>{t.coursesPage.semesterLabel}</span>
             </motion.div>
-            <motion.h1 className="text-4xl md:text-5xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+            <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white tracking-tight" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
               {t.coursesPage.manageCourses}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-fuchsia-600">
                 {t.coursesPage.manageCoursesHighlight}
@@ -1334,12 +1334,12 @@ export default function Courses() {
               placeholder={t.coursesPage.searchCourses}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-purple-100 dark:bg-slate-900/50"
+              className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-purple-100"
             />
           </div>
           <Button
             variant="outline"
-            className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 hover:bg-white text-slate-700 dark:text-slate-300 dark:bg-slate-900/50"
+            className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 hover:bg-white text-slate-700 dark:text-slate-300"
             onClick={() => setSearchQuery('')}
           >
             <Filter className="w-4 h-4 mr-2" />
@@ -1352,7 +1352,7 @@ export default function Courses() {
             <motion.div
               variants={itemVariants}
               key={course.id}
-              className="group bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all overflow-hidden dark:bg-slate-900/50"
+              className="group bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm hover:shadow-xl hover:shadow-purple-500/10 transition-all overflow-hidden"
             >
               <div className="p-6">
                 <div className="flex items-start justify-between gap-4">
@@ -1362,7 +1362,7 @@ export default function Courses() {
                       {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending Approval</Badge>}
                       {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
                       {course.status === 'archived' && <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-0">Archived</Badge>}
-                      <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:border-slate-700 dark:bg-slate-900/50">
+                      <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:border-slate-700">
                         {language === 'th' ? `${course.credits} หน่วยกิต` : `${course.credits} credits`}
                       </Badge>
                     </div>
@@ -1426,7 +1426,7 @@ export default function Courses() {
   // Company/Other roles: show a friendly "not applicable" screen
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-      <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm p-10 text-center dark:bg-slate-900/50">
+      <motion.div variants={itemVariants} className="bg-white/70 backdrop-blur-xl border border-white/60 dark:border-slate-800/60 rounded-3xl shadow-sm p-10 text-center">
         <div className="mx-auto w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
           <AlertCircle className="w-7 h-7 text-slate-500 dark:text-slate-400" />
         </div>

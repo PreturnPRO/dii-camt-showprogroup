@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { motion } from 'framer-motion';
 import { Shield, Users, BookOpen, Building, Activity, Settings, Bell } from 'lucide-react';
 import { useLanguage } from '@/contexts/LanguageContext';

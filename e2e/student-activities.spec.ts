@@ -13,7 +13,7 @@ test("a student sees what they joined, their real points, and no check-in button
   const calls: string[] = [];
   page.on("request", (r) => { if (r.url().includes("/api/")) calls.push(r.url()); });
   await login(page, "bob@student.showpro.local");
-  const token = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
+  const token = await page.evaluate(() => sessionStorage.getItem("xchange_auth_token") ?? localStorage.getItem("xchange_auth_token"));
   const stats = await (await request.get("http://localhost:4000/api/students/stats", { headers: { Authorization: `Bearer ${token}` } })).json();
 
   await page.goto("/activities");

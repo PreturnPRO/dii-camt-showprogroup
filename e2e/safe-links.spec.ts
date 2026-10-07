@@ -40,5 +40,9 @@ test("a student cannot change the semester in Settings", async ({ page }) => {
   await page.keyboard.press("Enter");
   await page.waitForURL("**/dashboard");
   await page.goto("/settings");
-  await expect(page.getByTestId("semester-select")).toBeDisabled();
+  // Biw's Settings has no semester control at all; the profile form is there, the picker is not
+  await expect(page.getByTestId("security-active").or(page.getByRole("button", { name: /บันทึก|save/i })).first()).toBeAttached({ timeout: 15_000 });
+  const picker = page.getByTestId("semester-select");
+  if (await picker.count()) await expect(picker).toBeDisabled();
+  await expect(page.getByRole("combobox", { name: /ภาคเรียน|semester/i })).toHaveCount(0);
 });

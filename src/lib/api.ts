@@ -2,7 +2,7 @@ import type { UserRole } from "@/types";
 import { createTokenStore, type KeyValueStorage } from "@/lib/token-store";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
-const TOKEN_STORAGE_KEY = "showpro_auth_token";
+const TOKEN_STORAGE_KEY = "xchange_auth_token";
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, "");
 
@@ -685,6 +685,8 @@ export const api = {
     },
     sign: (id: string) =>
       request<ApiEnvelope<{ asset: unknown; signedUrl: string }>>(`/files/assets/${id}/sign`),
+    download: (id: string) =>
+      requestBlob(`/files/assets/${encodeURIComponent(id)}`),
   },
   offices: {
     slots: (lecturerId: string, date?: string) =>
