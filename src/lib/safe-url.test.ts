@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { safeExternalUrl, safeInternalPath } from './safe-url';
+import { safeExternalUrl, safeInternalPath, loginRedirectTarget } from './safe-url';
 
 describe('safeExternalUrl', () => {
   it('keeps http and https links', () => {
@@ -17,5 +17,16 @@ describe('safeInternalPath', () => {
   });
   it.each(['//evil.com', '/\\evil.com', 'https://evil.com', 'javascript:alert(1)', ''])('drops %s', (value) => {
     expect(safeInternalPath(value)).toBeUndefined();
+  });
+});
+
+describe('loginRedirectTarget', () => {
+  it('returns the page the user wanted, with its query', () => {
+    expect(loginRedirectTarget({ from: { pathname: '/student/checkin', search: '?token=abc' } })).toBe('/student/checkin?token=abc');
+  });
+  it('falls back to the dashboard for missing, external or login targets', () => {
+    expect(loginRedirectTarget(null)).toBe('/dashboard');
+    expect(loginRedirectTarget({ from: { pathname: '//evil.example', search: '' } })).toBe('/dashboard');
+    expect(loginRedirectTarget({ from: { pathname: '/login', search: '' } })).toBe('/dashboard');
   });
 });

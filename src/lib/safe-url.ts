@@ -21,3 +21,11 @@ export const safeInternalPath = (value: unknown): string | undefined => {
   if (!value.startsWith('/') || value.startsWith('//') || value.startsWith('/\\')) return undefined;
   return value;
 };
+
+/** where to go after login: the protected page the user asked for (with its query), never off-site */
+export const loginRedirectTarget = (state: unknown): string => {
+  const from = state && typeof state === 'object' ? (state as { from?: { pathname?: unknown; search?: unknown } }).from : undefined;
+  const path = safeInternalPath(from?.pathname);
+  if (!path || path === '/login') return '/dashboard';
+  return `${path}${typeof from?.search === 'string' ? from.search : ''}`;
+};

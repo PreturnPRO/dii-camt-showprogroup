@@ -15,6 +15,7 @@ import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import { toast } from 'sonner';
+import { thaiToday } from '@/lib/thai-date';
 
 type CourseRow = ReturnType<typeof mapCourse>;
 type AttendanceRow = {
@@ -22,7 +23,8 @@ type AttendanceRow = {
     studentId: string;
     studentName: string;
     studentCode: string;
-    status: 'present' | 'late' | 'absent' | 'leave';
+    /** 'unmarked' = no record for this day; it is not an absence */
+    status: 'present' | 'late' | 'absent' | 'leave' | 'unmarked';
 };
 
 const containerVariants = {
@@ -36,12 +38,14 @@ const itemVariants = {
 };
 
 export default function Attendance() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { user } = useAuth();
     const { socket } = useSocket();
     const [courses, setCourses] = React.useState<CourseRow[]>([]);
     const [selectedCourse, setSelectedCourse] = React.useState('');
-    const [date, setDate] = React.useState(new Date().toISOString().split('T')[0]);
+    const [date, setDate] = React.useState(thaiToday());
+    const dateRef = React.useRef(date);
+    dateRef.current = date;
     const [attendanceRows, setAttendanceRows] = React.useState<AttendanceRow[]>([]);
     
     // QR Modal State
@@ -52,6 +56,7 @@ export default function Attendance() {
     // Summary Modal State
     const [summaryModalOpen, setSummaryModalOpen] = React.useState(false);
     const [summaryData, setSummaryData] = React.useState<any[] | null>(null);
+    const [summarySessions, setSummarySessions] = React.useState(0);
 
     // History Modal State
     const [historyModalOpen, setHistoryModalOpen] = React.useState(false);
@@ -76,6 +81,8 @@ export default function Attendance() {
         const handleCheckedIn = (record: any) => {
             if (!record || !record.enrollment) return;
             const enrollmentId = String(record.enrollmentId);
+            // a QR scan always records today; another day on screen stays as it is
+            if (date !== thaiToday()) return;
             setAttendanceRows(current => current.map(row => 
                 row.enrollmentId === enrollmentId ? { ...row, status: 'present' } : row
             ));
@@ -86,13 +93,17 @@ export default function Attendance() {
         return () => {
             socket.off('attendance:checked-in', handleCheckedIn);
         };
-    }, [socket]);
+    }, [socket, date]);
 
     React.useEffect(() => {
         let mounted = true;
 
-        api.courses
-            .list()
+        // lecturers mark only their own courses; staff/admin see every course
+        const coursesRequest = user?.role === 'lecturer'
+            ? api.courses.lecturerSchedule().then((response) => ({ courses: response.schedule }))
+            : api.courses.list();
+
+        coursesRequest
             .then((response) => {
                 if (!mounted) return;
                 const liveCourses = response.courses.map(mapCourse);
@@ -108,7 +119,7 @@ export default function Attendance() {
         return () => {
             mounted = false;
         };
-    }, [selectedCourse]);
+    }, [selectedCourse, user?.role]);
 
     React.useEffect(() => {
         if (!selectedCourse) return;
@@ -147,7 +158,7 @@ export default function Attendance() {
                     studentId: asString(student.id),
                     studentName: asString(studentUser.nameThai, asString(studentUser.name, 'Student')),
                     studentCode: asString(student.studentId, asString(student.id)),
-                    status: statusByEnrollment.get(enrollmentId) ?? 'absent',
+                    status: statusByEnrollment.get(enrollmentId) ?? 'unmarked',
                 };
             }));
         }).catch((error) => {
@@ -163,17 +174,23 @@ export default function Attendance() {
     const presentCount = attendanceRows.filter(row => row.status === 'present').length;
     const lateCount = attendanceRows.filter(row => row.status === 'late').length;
     const absentCount = attendanceRows.filter(row => row.status === 'absent').length;
+    const leaveCount = attendanceRows.filter(row => row.status === 'leave').length;
+    const unmarkedCount = attendanceRows.filter(row => row.status === 'unmarked').length;
 
-    const updateStatus = async (row: AttendanceRow, status: AttendanceRow['status']) => {
+    const updateStatus = async (row: AttendanceRow, status: Exclude<AttendanceRow['status'], 'unmarked'>) => {
+        const previous = row.status;
         setAttendanceRows(current => current.map(item => item.enrollmentId === row.enrollmentId ? { ...item, status } : item));
         try {
-            await api.attendance.checkIn({
-                enrollmentId: row.enrollmentId,
-                date,
-                status,
-            });
+            await api.attendance.checkIn({ enrollmentId: row.enrollmentId, date, status });
         } catch (error) {
-            console.warn('Unable to save attendance status', error);
+            // undo only our own optimistic change: not a newer click, and not a row of another day
+            if (dateRef.current === date) {
+                setAttendanceRows(current => current.map(item =>
+                    item.enrollmentId === row.enrollmentId && item.status === status ? { ...item, status: previous } : item));
+            }
+            toast.error(language === 'th' ? 'บันทึกการเช็คชื่อไม่สำเร็จ' : 'Could not save attendance', {
+                description: error instanceof Error ? error.message : undefined,
+            });
         }
     };
 
@@ -219,6 +236,7 @@ export default function Attendance() {
         try {
             const res = await api.attendance.summary(selectedCourse);
             setSummaryData((res as any).summary);
+            setSummarySessions(Number((res as any).totalSessions) || 0);
             setSummaryModalOpen(true);
         } catch (err: any) {
             toast.error("Failed to load summary");
@@ -290,7 +308,7 @@ export default function Attendance() {
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.dateLabel}</label>
-                            <Input type="date" value={date} onChange={e => setDate(e.target.value)} className="rounded-xl" />
+                            <Input type="date" value={date} max={thaiToday()} onChange={e => setDate(e.target.value)} className="rounded-xl" />
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.periodLabel}</label>
@@ -322,14 +340,17 @@ export default function Attendance() {
                             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedCourseInfo ? `${selectedCourseInfo.code} ${selectedCourseInfo.name}` : t.attendancePage.selectCourse}</p>
                         </div>
                         <div className="flex gap-3 text-sm">
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t.attendancePage.presentShort} {presentCount}</div>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t.attendancePage.lateShort} {lateCount}</div>
-                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> {t.attendancePage.absentShort} {absentCount}</div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t.attendancePage.presentShort} <span data-testid="present-count">{presentCount}</span></div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t.attendancePage.lateShort} <span data-testid="late-count">{lateCount}</span></div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> {t.attendancePage.absentShort} <span data-testid="absent-count">{absentCount}</span></div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-slate-500" /> {t.attendancePage.leaveShort} <span data-testid="leave-count">{leaveCount}</span></div>
+                            <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full border border-slate-400" /> {language === 'th' ? 'ยังไม่เช็ค' : 'Unmarked'} <span data-testid="unmarked-count">{unmarkedCount}</span></div>
                         </div>
                     </div>
                     <div className="space-y-2">
                         {attendanceRows.map((row, i) => (
                             <motion.div key={i} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: i * 0.03 }}
+                                data-testid="attendance-row" data-status={row.status}
                                 className="flex items-center justify-between p-3 rounded-2xl hover:bg-white border border-transparent hover:border-slate-100 hover:shadow-sm transition-all dark:bg-slate-900 dark:border-slate-700">
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold text-sm">{row.studentName.charAt(0)}</div>
@@ -341,10 +362,10 @@ export default function Attendance() {
                                     </div>
                                 </div>
                                 <div className="flex gap-1.5">
-                                    <Button size="sm" className={row.status === 'present' ? "bg-emerald-500 hover:bg-emerald-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50"} onClick={() => updateStatus(row, 'present')}>{t.attendancePage.presentShort}</Button>
-                                    <Button size="sm" className={row.status === 'late' ? "bg-amber-500 hover:bg-amber-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50"} onClick={() => updateStatus(row, 'late')}>{t.attendancePage.lateShort}</Button>
-                                    <Button size="sm" className={row.status === 'absent' ? "bg-red-500 hover:bg-red-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50 dark:bg-slate-800"} onClick={() => updateStatus(row, 'absent')}>{t.attendancePage.absentShort}</Button>
-                                    <Button size="sm" className={row.status === 'leave' ? "bg-slate-500 hover:bg-slate-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50 dark:bg-slate-800"} onClick={() => updateStatus(row, 'leave')}>{t.attendancePage.leaveShort}</Button>
+                                    <Button size="sm" className={row.status === 'present' ? "bg-emerald-500 hover:bg-emerald-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50"} data-testid="mark-present" onClick={() => updateStatus(row, 'present')}>{t.attendancePage.presentShort}</Button>
+                                    <Button size="sm" className={row.status === 'late' ? "bg-amber-500 hover:bg-amber-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50"} data-testid="mark-late" onClick={() => updateStatus(row, 'late')}>{t.attendancePage.lateShort}</Button>
+                                    <Button size="sm" className={row.status === 'absent' ? "bg-red-500 hover:bg-red-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50 dark:bg-slate-800"} data-testid="mark-absent" onClick={() => updateStatus(row, 'absent')}>{t.attendancePage.absentShort}</Button>
+                                    <Button size="sm" className={row.status === 'leave' ? "bg-slate-500 hover:bg-slate-600 h-8 px-3 rounded-xl text-xs" : "bg-transparent text-slate-400 h-8 px-3 rounded-xl text-xs hover:bg-slate-50 dark:bg-slate-800"} data-testid="mark-leave" onClick={() => updateStatus(row, 'leave')}>{t.attendancePage.leaveShort}</Button>
                                 </div>
                             </motion.div>
                         ))}
@@ -412,7 +433,9 @@ export default function Attendance() {
                             Attendance Summary Report
                         </DialogTitle>
                         <DialogDescription>
-                            Overall attendance statistics for {selectedCourseInfo?.code} {selectedCourseInfo?.name}
+                            {selectedCourseInfo?.code} {selectedCourseInfo?.name} · {language === 'th'
+                                ? `คาบที่เช็คแล้ว ${summarySessions} · % = (มา+สาย) ÷ (มา+สาย+ขาด) ไม่นับลาและวันที่ยังไม่เช็ค`
+                                : `${summarySessions} sessions marked · % = (present+late) ÷ (present+late+absent), leave and unmarked days not counted`}
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -426,6 +449,7 @@ export default function Attendance() {
                                     <th className="px-4 py-3 text-center">Late</th>
                                     <th className="px-4 py-3 text-center">Absent</th>
                                     <th className="px-4 py-3 text-center">Leave</th>
+                                    <th className="px-4 py-3 text-center">{language === 'th' ? 'ยังไม่เช็ค' : 'Unmarked'}</th>
                                     <th className="px-4 py-3 text-center rounded-r-lg">% Attendance</th>
                                 </tr>
                             </thead>
@@ -438,16 +462,21 @@ export default function Attendance() {
                                         <td className="px-4 py-3 text-center text-amber-600 font-medium">{row.late}</td>
                                         <td className="px-4 py-3 text-center text-red-600 font-medium">{row.absent}</td>
                                         <td className="px-4 py-3 text-center text-slate-600 font-medium">{row.leave}</td>
+                                        <td className="px-4 py-3 text-center text-slate-400 font-medium">{row.unmarked}</td>
                                         <td className="px-4 py-3 text-center">
-                                            <Badge variant={row.percentage >= 80 ? "default" : "destructive"} className={row.percentage >= 80 ? "bg-emerald-500" : ""}>
-                                                {row.percentage}%
-                                            </Badge>
+                                            {row.percentage === null ? (
+                                                <Badge variant="outline" className="text-slate-500">-</Badge>
+                                            ) : (
+                                                <Badge variant={row.percentage >= 80 ? "default" : "destructive"} className={row.percentage >= 80 ? "bg-emerald-500" : ""}>
+                                                    {row.percentage}%
+                                                </Badge>
+                                            )}
                                         </td>
                                     </tr>
                                 ))}
                                 {(!summaryData || summaryData.length === 0) && (
                                     <tr>
-                                        <td colSpan={7} className="px-4 py-8 text-center text-slate-500">No data available</td>
+                                        <td colSpan={8} className="px-4 py-8 text-center text-slate-500">No data available</td>
                                     </tr>
                                 )}
                             </tbody>

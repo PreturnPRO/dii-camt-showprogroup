@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { loginRedirectTarget } from '@/lib/safe-url';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Globe, Loader2, Lock, Mail, Moon, Sun } from 'lucide-react';
 import { useTheme } from 'next-themes';
@@ -16,6 +17,7 @@ export default function LoginPage() {
   const { login } = useAuth();
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ identifier: '', password: '' });
 
@@ -26,7 +28,7 @@ export default function LoginPage() {
     try {
       await login(formData.identifier, formData.password);
       toast.success(t.login.loginSuccess, { description: t.login.loginSuccessDesc });
-      navigate('/dashboard');
+      navigate(loginRedirectTarget(location.state), { replace: true });
     } catch {
       toast.error(t.login.loginFailed, {
         description: t.login.loginFailedDesc,

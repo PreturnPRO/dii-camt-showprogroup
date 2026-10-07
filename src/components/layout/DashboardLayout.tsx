@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Outlet, Navigate } from 'react-router-dom';
+import { Outlet, Navigate, useLocation } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,6 +9,7 @@ import { ForcePasswordChangeDialog } from '@/components/common/ForcePasswordChan
 export function DashboardLayout() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isAuthenticated, isLoading, user } = useAuth();
+  const location = useLocation();
 
   if (isLoading) {
     return (
@@ -19,7 +20,8 @@ export function DashboardLayout() {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+    // keep where the user was going (e.g. a QR check-in link with its token)
+    return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
   return (
