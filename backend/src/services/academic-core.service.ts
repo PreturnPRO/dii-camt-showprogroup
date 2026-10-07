@@ -1,20 +1,4 @@
 import { prisma } from "../lib/prisma";
-import { AppError } from "../utils/errors";
-
-export const getGradesDistribution = async (courseId: string) => {
-  const enrollments = await prisma.enrollment.findMany({
-    where: { courseId, status: { not: "dropped" } },
-    select: { letterGrade: true },
-  });
-
-  const distribution = enrollments.reduce((acc: Record<string, number>, curr) => {
-    const grade = curr.letterGrade || "Pending";
-    acc[grade] = (acc[grade] || 0) + 1;
-    return acc;
-  }, {});
-
-  return distribution;
-};
 
 export const getStudentTranscript = async (studentId: string) => {
   return await prisma.enrollment.findMany({
@@ -27,36 +11,3 @@ export const getStudentTranscript = async (studentId: string) => {
     orderBy: [{ course: { academicYear: "desc" } }, { course: { semester: "desc" } }],
   });
 };
-
-export const getAttendance = async (query: { courseId?: string; studentId?: string }) => {
-  return await prisma.attendanceRecord.findMany({
-    where: {
-      ...(query.courseId ? { enrollment: { courseId: String(query.courseId) } } : {}),
-      ...(query.studentId ? { enrollment: { studentId: String(query.studentId) } } : {}),
-    },
-    include: {
-      enrollment: {
-        include: {
-          student: { include: { user: true } },
-          course: true,
-        },
-      },
-    },
-    orderBy: { date: "desc" },
-  });
-};
-
-export const recordAttendance = async (data: { enrollmentId: string; date: Date; status: string }) => {
-  return await prisma.attendanceRecord.create({
-    data,
-    include: {
-      enrollment: {
-        include: {
-          student: { include: { user: true } },
-          course: true,
-        },
-      },
-    },
-  });
-};
-
