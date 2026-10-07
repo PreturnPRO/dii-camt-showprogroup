@@ -3,6 +3,9 @@ import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
 import { prepareCourseSections } from "./facility.service";
 import { getLecturerProfileByUserId } from "./profile.service";
+import { thaiDay } from "./attendance";
+import { formatDay, weekdayOf } from "./class-move-rules";
+import { parseSlots } from "./enrollment-rules";
 
 export const getCourses = async (query: { q?: string; semester?: number; academicYear?: string; lecturerId?: string }) => {
   const { q, semester, academicYear, lecturerId } = query;
@@ -159,6 +162,26 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
   const preparedSections = sections ? await prepareCourseSections(sections, existing.id) : null;
 
   return await prisma.$transaction(async (tx) => {
+    // owner decision 7/10/69: a weekly change may not drop a class that has a one-time move waiting or in effect
+    if (preparedSections) {
+      const today = thaiDay(new Date());
+      const pendingMoves = await tx.classMove.findMany({
+        where: { section: { courseId: existing.id }, status: { in: ["pending", "approved"] }, originalDate: { gt: today }, newDate: { gt: today } },
+        include: { section: true },
+      });
+      const nextByNumber = new Map(preparedSections.map((s: { number: string; schedule: unknown }) => [s.number, parseSlots(s.schedule)]));
+      const broken = pendingMoves.filter((m) => {
+        const slots = nextByNumber.get(m.section.number);
+        return !slots?.some((s) => s.day === weekdayOf(m.originalDate) && s.startTime === m.originalStart);
+      });
+      if (broken.length > 0) {
+        throw new AppError(409, "Cancel the pending class moves first", broken.map((m) => ({
+          moveId: m.id, sectionNumber: m.section.number, originalDate: formatDay(m.originalDate), originalStart: m.originalStart,
+          newDate: formatDay(m.newDate), newStart: m.newStart,
+        })));
+      }
+    }
+
     // sections are matched by number and updated in place, so enrollments keep their sectionId (seats, clashes)
     if (preparedSections) {
       const current = await tx.section.findMany({
