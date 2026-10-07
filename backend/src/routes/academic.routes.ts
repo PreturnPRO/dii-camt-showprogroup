@@ -26,6 +26,7 @@ import {
   updateCourseHandler,
   scheduleHandler,
   getEnrollmentsHandler,
+  registrationSummaryHandler,
   createEnrollmentHandler,
   dropCourseHandler,
   gradeBulkHandler,
@@ -82,6 +83,8 @@ router.delete(
 
 router.get("/lecturer/schedule", requireAuth, scheduleHandler);
 router.get("/courses/lecturer/schedule", requireAuth, scheduleHandler);
+
+router.get("/enrollments/summary", requireAuth, checkRole([Role.STUDENT]), registrationSummaryHandler);
 
 router.get(
   "/enrollments",

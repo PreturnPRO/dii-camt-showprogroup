@@ -11,7 +11,7 @@ import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
 import { getCourses, getCourseById, createCourse, updateCourse } from "../services/course.service";
-import { getEnrollments, createEnrollment, dropCourseByStudent } from "../services/enrollment.service";
+import { getEnrollments, createEnrollment, dropCourseByStudent, getRegistrationSummary } from "../services/enrollment.service";
 import { getStudentTranscript } from "../services/academic-core.service";
 import crypto from "crypto";
 import { emitToUser } from "../lib/realtime";
@@ -123,6 +123,11 @@ export const getEnrollmentsHandler = asyncHandler(async (req, res) => {
     success: true,
     enrollments,
   });
+});
+
+export const registrationSummaryHandler = asyncHandler(async (req, res) => {
+  const summary = await getRegistrationSummary(requireUser(req));
+  res.json({ success: true, summary });
 });
 
 export const createEnrollmentHandler = asyncHandler(async (req, res) => {

@@ -156,11 +156,33 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
     }
   }
 
+  const preparedSections = sections ? await prepareCourseSections(sections, existing.id) : null;
+
   return await prisma.$transaction(async (tx) => {
-    if (sections) {
-      await tx.section.deleteMany({
+    // sections are matched by number and updated in place, so enrollments keep their sectionId (seats, clashes)
+    if (preparedSections) {
+      const current = await tx.section.findMany({
         where: { courseId: existing.id },
+        include: { enrollments: { where: { status: { not: "dropped" } }, select: { id: true } } },
       });
+      const incoming = new Set(preparedSections.map((s: { number: string }) => s.number));
+      const removed = current.filter((s) => !incoming.has(s.number));
+      const occupied = removed.filter((s) => s.enrollments.length > 0);
+      if (occupied.length > 0) {
+        throw new AppError(409, `Section ${occupied.map((s) => s.number).join(", ")} still has enrolled students`);
+      }
+      // dropped enrollments may still point at an empty section; detach them before it goes
+      const removedIds = removed.map((s) => s.id);
+      await tx.enrollment.updateMany({ where: { sectionId: { in: removedIds } }, data: { sectionId: null } });
+      await tx.section.deleteMany({ where: { id: { in: removedIds } } });
+      for (const section of preparedSections) {
+        const match = current.find((s) => s.number === section.number);
+        if (match) {
+          await tx.section.update({ where: { id: match.id }, data: section });
+        } else {
+          await tx.section.create({ data: { ...section, courseId: existing.id } });
+        }
+      }
     }
 
     if (materials) {
@@ -215,11 +237,6 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
       where: { id: existing.id },
       data: {
         ...courseData,
-        ...(sections && {
-          sections: {
-            create: await prepareCourseSections(sections, existing.id),
-          },
-        }),
         ...(materials && {
           materials: {
             create: materials,

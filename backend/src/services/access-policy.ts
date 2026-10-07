@@ -86,27 +86,36 @@ const publicUser = (user: unknown, withEmail: boolean) => {
 
 type ScopableCourse = {
   lecturerId: string;
-  enrollments?: Array<{ studentId: string; student?: { user?: unknown } }>;
+  enrollments?: Array<{ studentId: string; status?: string; sectionId?: string | null; student?: { user?: unknown } }>;
+  sections?: Array<{ id: string } & object>;
   lecturer?: ({ user?: unknown } & object) | null;
 };
 
 /** Cuts a course down to what the viewer may see: full for staff/admin and the owning lecturer,
  *  own enrollment only for a student, no enrollment rows for anyone else. */
 export const scopeCourseForViewer = <T extends ScopableCourse>(course: T, viewer: ViewerContext | null): T => {
-  if (viewer && isStaffOrAdmin(viewer.role)) return course;
-  if (viewer?.role === Role.LECTURER && viewer.lecturerProfileId === course.lecturerId) return course;
-
   const all = course.enrollments ?? [];
+  const active = all.filter((e) => e.status !== "dropped");
+  // seat counts are numbers, not names, so every viewer gets them
+  const withSeats = {
+    ...course,
+    ...(course.sections && course.enrollments
+      ? { sections: course.sections.map((s) => ({ ...s, enrolledCount: active.filter((e) => e.sectionId === s.id).length })) }
+      : {}),
+  };
+  if (viewer && isStaffOrAdmin(viewer.role)) return withSeats;
+  if (viewer?.role === Role.LECTURER && viewer.lecturerProfileId === course.lecturerId) return withSeats;
+
   const visible =
     viewer?.role === Role.STUDENT && viewer.studentProfileId
       ? all.filter((e) => e.studentId === viewer.studentProfileId)
       : [];
 
   return {
-    ...course,
+    ...withSeats,
     ...(course.enrollments
       ? {
-          enrollmentCount: all.length,
+          enrollmentCount: active.length,
           enrollments: visible.map((e) =>
             e.student ? { ...e, student: { ...e.student, user: publicUser(e.student.user, true) } } : e,
           ),
