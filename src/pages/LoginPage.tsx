@@ -20,13 +20,14 @@ export default function LoginPage() {
   const location = useLocation();
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({ identifier: '', password: '' });
+  const [remember, setRemember] = useState(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsLoading(true);
 
     try {
-      await login(formData.identifier, formData.password);
+      await login(formData.identifier, formData.password, undefined, remember);
       toast.success(t.login.loginSuccess, { description: t.login.loginSuccessDesc });
       navigate(loginRedirectTarget(location.state), { replace: true });
     } catch {
@@ -164,7 +165,7 @@ export default function LoginPage() {
             </div>
 
             <div className="flex items-center gap-2">
-              <Checkbox id="remember" className="rounded border-slate-300 dark:border-slate-600" />
+              <Checkbox id="remember" checked={remember} onCheckedChange={(checked) => setRemember(checked === true)} className="rounded border-slate-300 dark:border-slate-600" />
               <label htmlFor="remember" className="text-sm text-slate-600 dark:text-slate-400 cursor-pointer">
                 {t.login.rememberMe}
               </label>
@@ -180,32 +181,12 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <>
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t border-slate-200 dark:border-slate-800" />
-              </div>
-              <div className="relative flex justify-center">
-                <span className="bg-white dark:bg-slate-950 px-3 text-xs text-slate-400">{t.login.orContinueWith}</span>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
-                Google
-              </Button>
-              <Button variant="outline" className="h-10 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 rounded-md text-sm font-medium">
-                Microsoft
-              </Button>
-            </div>
-
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
-              {t.login.noAccount}{' '}
-              <Link to="/register" className="font-medium text-slate-900 dark:text-white hover:underline">
-                {t.login.registerNow}
-              </Link>
-            </p>
-          </>
+          <p className="text-center text-sm text-slate-500 dark:text-slate-400 mt-6">
+            {t.login.noAccount}{' '}
+            <Link to="/register" className="font-medium text-slate-900 dark:text-white hover:underline">
+              {t.login.registerNow}
+            </Link>
+          </p>
         </motion.div>
       </div>
     </div>

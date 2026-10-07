@@ -12,7 +12,7 @@ async function login(page: Page, email: string) {
 }
 
 async function statsOf(page: Page, request: import("@playwright/test").APIRequestContext) {
-  const token = await page.evaluate(() => localStorage.getItem("showpro_auth_token"));
+  const token = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
   return (await (await request.get(`${API}/students/stats`, { headers: { Authorization: `Bearer ${token}` } })).json()).stats;
 }
 

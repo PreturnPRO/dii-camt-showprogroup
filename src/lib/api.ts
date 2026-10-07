@@ -1,4 +1,5 @@
 import type { UserRole } from "@/types";
+import { createTokenStore, type KeyValueStorage } from "@/lib/token-store";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
 const TOKEN_STORAGE_KEY = "showpro_auth_token";
@@ -96,14 +97,22 @@ const parseErrorPayload = async (response: Response) => {
   }
 };
 
-export const getStoredToken = () => localStorage.getItem(TOKEN_STORAGE_KEY);
+// resolved on every call: touching window.*Storage can throw (blocked site data), and this module also loads where window is absent
+const lazyStorage = (pick: () => Storage): KeyValueStorage => ({
+  getItem: (key) => pick().getItem(key),
+  setItem: (key, value) => pick().setItem(key, value),
+  removeItem: (key) => pick().removeItem(key),
+});
+const tokenStore = createTokenStore(lazyStorage(() => window.localStorage), lazyStorage(() => window.sessionStorage), TOKEN_STORAGE_KEY);
 
-export const setStoredToken = (token: string) => {
-  localStorage.setItem(TOKEN_STORAGE_KEY, token);
+export const getStoredToken = () => tokenStore.get();
+
+export const setStoredToken = (token: string, remember = true) => {
+  tokenStore.set(token, remember);
 };
 
 export const clearStoredToken = () => {
-  localStorage.removeItem(TOKEN_STORAGE_KEY);
+  tokenStore.clear();
 };
 
 export const normalizeRole = (role: BackendRole): UserRole => role.toLowerCase() as UserRole;

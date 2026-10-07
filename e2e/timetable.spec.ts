@@ -45,7 +45,7 @@ async function setup(request: APIRequestContext) {
 test("student timetable shows the enrolled section at :30, weekends, and only this term", async ({ page, request }) => {
   const { staff, a, b } = await setup(request);
   await login(page, "chompoo@student.showpro.local");
-  const studentToken = await page.evaluate(() => localStorage.getItem("showpro_auth_token"));
+  const studentToken = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
   const student = { Authorization: `Bearer ${studentToken}` };
   const me = (await (await request.get(`${API}/students/profile`, { headers: student })).json()).profile;
   for (const [course, sectionId] of [[a, a.sections.find((s) => s.number === "02")!.id], [b, b.sections[0].id]] as const) {

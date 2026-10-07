@@ -35,7 +35,7 @@ async function twoSectionCourse(request: APIRequestContext) {
 test("student picks a section, confirms, sees API credits, and must confirm a drop", async ({ page, request }) => {
   const course = await twoSectionCourse(request);
   await login(page, "chompoo@student.showpro.local");
-  const studentToken = await page.evaluate(() => localStorage.getItem("showpro_auth_token"));
+  const studentToken = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
   const headers = { Authorization: `Bearer ${studentToken}` };
   const before = (await (await request.get(`${API}/enrollments/summary`, { headers })).json()).summary;
 
@@ -70,7 +70,7 @@ test("student picks a section, confirms, sees API credits, and must confirm a dr
 
 test("degree card shows ungraded credits from the API, and '-' when that request fails", async ({ page, request }) => {
   await login(page, "alice@student.showpro.local");
-  const studentToken = await page.evaluate(() => localStorage.getItem("showpro_auth_token"));
+  const studentToken = await page.evaluate(() => sessionStorage.getItem("showpro_auth_token") ?? localStorage.getItem("showpro_auth_token"));
   const summary = (await (await request.get(`${API}/enrollments/summary`, { headers: { Authorization: `Bearer ${studentToken}` } })).json()).summary;
   await page.goto("/personal-dashboard");
   const value = page.getByTestId("in-progress-credits").first();

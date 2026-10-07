@@ -30,7 +30,7 @@ interface AuthContextType {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, password: string, role?: UserRole) => Promise<boolean>;
+  login: (email: string, password: string, role?: UserRole, remember?: boolean) => Promise<boolean>;
   register: (payload: RegisterPayload) => Promise<boolean>;
   updateProfile: (payload: Record<string, unknown>) => Promise<boolean>;
   logout: () => Promise<void>;
@@ -99,9 +99,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshSession]);
 
   const login = useCallback(
-    async (email: string, password: string, role?: UserRole): Promise<boolean> => {
+    async (email: string, password: string, role?: UserRole, remember = true): Promise<boolean> => {
       const response = await api.auth.login(email, password);
-      setStoredToken(response.token);
+      setStoredToken(response.token, remember);
       await applySessionUser(response.user);
       return true;
     },
