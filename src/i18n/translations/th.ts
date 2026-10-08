@@ -67,6 +67,8 @@ export const th = {
     teachingSchedule: 'ตารางสอน',
     adviseeStudents: 'อาจารย์ที่ปรึกษา',
     courseManagement: 'จัดการรายวิชา',
+    studentsList: 'นักศึกษา',
+    documentIssue: 'ออกเอกสาร',
     attendanceBehavior: 'การเข้าเรียน/พฤติกรรม',
     grading: 'ตัดเกรด',
     appointments: 'นัดหมาย',
@@ -475,7 +477,7 @@ export const th = {
 
   // Grades
   grades: {
-    subtitle: 'ผลการเรียนภาคเรียนที่ 1/2568',
+    subtitle: 'ผลการเรียนจากระบบ',
     title: 'สรุป',
     titleHighlight: 'ผลการเรียน',
     shareGrades: 'แชร์ผลการเรียน',
@@ -671,7 +673,7 @@ export const th = {
 
   // Courses
   coursesPage: {
-    semester: 'ภาคเรียนที่ 1/2568',
+    semester: 'ภาคเรียนที่',
     subtitle: 'รายวิชา',
     title: 'รายวิชา',
     titleHighlight: 'ที่ลงทะเบียน',
@@ -706,7 +708,7 @@ export const th = {
     room: 'ห้อง 301 อาคาร DII',
     yearLabel: 'ชั้นปีที่',
     studentsCount: 'คน',
-    semesterLabel: 'ภาคเรียนที่ 1/2567',
+    semesterLabel: 'รายวิชาทุกภาคเรียน',
     searchPlaceholder: 'เช่น 204100...',
     searchDesc: 'พิมพ์รหัสวิชาหรือชื่อวิชาเพื่อค้นหาหลักสูตรที่เปิดสอน',
   },
@@ -733,8 +735,8 @@ export const th = {
     titleHighlight: 'และสหกิจ',
     totalPositions: 'ตำแหน่งงานทั้งหมด',
     partnerCompanies: 'บริษัทพาร์ทเนอร์',
-    studentsPlaced: 'นักศึกษาที่ได้งาน',
-    matchedForYou: 'คัดสรรตามทักษะคุณ',
+    studentsPlaced: 'ใบสมัครทั้งหมด',
+    matchedForYou: 'ตรงกับตัวกรอง',
     searchPlaceholder: 'ค้นหาตำแหน่ง, บริษัท, หรือสถานที่...',
     allTab: 'ทั้งหมด',
     internshipTab: 'ฝึกงาน',
@@ -799,7 +801,7 @@ export const th = {
 
   // Schedule
   schedulePage: {
-    semester: 'ภาคเรียนที่ 1/2568',
+    semester: 'ภาคเรียนที่',
     title: 'ตารางเรียน',
     titleHighlight: 'สัปดาห์นี้',
     totalCourses: 'วิชาทั้งหมด',
@@ -1351,7 +1353,7 @@ export const th = {
     pendingAppointments: 'นัดหมายรอยืนยัน',
     appointmentsLabel: 'นัดหมาย',
     courseList: 'รายวิชาที่สอน',
-    semester: 'ภาคเรียนที่ 1/2567',
+    semester: 'ภาคเรียนปัจจุบัน',
     viewAll: 'ดูทั้งหมด',
     students: 'นักศึกษา',
     atRiskStudents: 'นักศึกษาที่ต้องดูแล',

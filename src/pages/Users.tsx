@@ -58,7 +58,7 @@ type ActiveDialogState =
   | null;
 
 export default function UsersPage() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user: currentUser } = useAuth();
   // Mirrors backend user-policy: staff manage students, lecturers and companies; only admins manage staff/admins.
   const isAdmin = currentUser?.role === 'admin';
@@ -87,28 +87,23 @@ export default function UsersPage() {
     [getRoleText],
   );
 
+  // active and suspended accounts load separately; GET /users hides inactive ones unless asked
+  const [inactiveUsers, setInactiveUsers] = useState<UserRow[]>([]);
+  const [showInactive, setShowInactive] = useState(false);
   const loadUsers = useCallback(async () => {
     try {
-      const response = await api.users.list();
-      setUsers(response.users.map(parseUser));
+      const [active, inactive] = await Promise.all([api.users.list(), api.users.list('?isActive=false')]);
+      setUsers(active.users.map(parseUser));
+      setInactiveUsers(inactive.users.map(parseUser));
     } catch (error) {
       console.error('Failed to load users', error);
+      toast.error(language === 'th' ? 'โหลดรายชื่อผู้ใช้ไม่สำเร็จ' : 'Could not load users');
     }
-  }, [parseUser]);
+  }, [parseUser, language]);
 
   useEffect(() => {
-    let isMounted = true;
-    api.users.list()
-      .then((response) => {
-        if (!isMounted) return;
-        setUsers(response.users.map(parseUser));
-      })
-      .catch(() => undefined);
-
-    return () => {
-      isMounted = false;
-    };
-  }, [parseUser]);
+    void loadUsers();
+  }, [loadUsers]);
 
   const handleEdit = (user: UserRow) => {
     if (user.type === 'student') {
@@ -156,6 +151,7 @@ export default function UsersPage() {
           current.map((u) => (u.id === activeDialog.user!.id ? parseUser(response.user) : u)),
         );
         toast.success(t.users.editSuccess);
+        void loadUsers();
       } else {
         const response = await api.users.create({
           name: values.name,
@@ -208,6 +204,7 @@ export default function UsersPage() {
           current.map((u) => (u.id === activeDialog.user!.id ? parseUser(response.user) : u)),
         );
         toast.success(t.users.editSuccess);
+        void loadUsers();
       } else {
         const response = await api.users.create({
           name: values.name,
@@ -257,6 +254,7 @@ export default function UsersPage() {
           current.map((u) => (u.id === activeDialog.user!.id ? parseUser(response.user) : u)),
         );
         toast.success(t.users.editSuccess);
+        void loadUsers();
       } else {
         const response = await api.users.create({
           name: values.name,
@@ -317,6 +315,7 @@ export default function UsersPage() {
           current.map((u) => (u.id === activeDialog.user!.id ? parseUser(response.user) : u)),
         );
         toast.success(t.users.editSuccess);
+        void loadUsers();
       } else {
         const response = await api.users.create({
           name: values.companyName,
@@ -488,13 +487,13 @@ export default function UsersPage() {
 
   const filteredUsers = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    return users.filter(
+    return (showInactive ? inactiveUsers : users).filter(
       (u) =>
         u.name?.toLowerCase().includes(q) ||
         u.email?.toLowerCase().includes(q) ||
         getRoleText(u.type).toLowerCase().includes(q),
     );
-  }, [users, searchQuery, getRoleText]);
+  }, [users, inactiveUsers, showInactive, searchQuery, getRoleText]);
 
   return (
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
@@ -590,6 +589,19 @@ export default function UsersPage() {
 
       {/* Main Table and Tabs View */}
       <motion.div variants={itemVariants}>
+        <div className="mb-3 flex justify-end">
+          <Button
+            variant={showInactive ? 'default' : 'outline'}
+            data-testid="show-inactive"
+            aria-pressed={showInactive}
+            onClick={() => setShowInactive((v) => !v)}
+            className="rounded-xl"
+          >
+            {showInactive
+              ? (language === 'th' ? 'กลับไปบัญชีที่ใช้งานอยู่' : 'Back to active accounts')
+              : (language === 'th' ? `บัญชีที่ระงับ (${inactiveUsers.length})` : `Suspended accounts (${inactiveUsers.length})`)}
+          </Button>
+        </div>
         <UserTableList
           users={filteredUsers}
           searchQuery={searchQuery}

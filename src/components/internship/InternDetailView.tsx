@@ -286,7 +286,6 @@ export function InternDetailView({
                               day: 'numeric',
                             })}
                           </span>
-                          <span className="text-xs text-slate-400 ml-2 font-mono">{log.date}</span>
                         </div>
                       </div>
 

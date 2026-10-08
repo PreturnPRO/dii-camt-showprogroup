@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { asArray, asRecord, asString } from '@/lib/live-data';
 import { thaiToday } from '@/lib/thai-date';
 import { addDays, DAY_LABELS, formatMinutes, moveSource, type Occurrence } from '@/lib/timetable';
@@ -62,7 +62,15 @@ export function ClassMoveDialog({ open, onOpenChange, occurrence, mode, initialD
     let alive = true;
     api.classMoves.check(body)
       .then((r) => { if (alive) { setCheck(r as unknown as CheckResult); setCheckError(''); } })
-      .catch((e) => { if (alive) { setCheck(null); setCheckError(e instanceof Error ? e.message : 'check failed'); } });
+      .catch((e) => {
+        if (!alive) return;
+        setCheck(null);
+        // the course has no room in the system and "usual room" was kept
+        const roomRequired = e instanceof ApiError && asRecord(asRecord(e.details).details).code === 'ROOM_REQUIRED';
+        setCheckError(roomRequired
+          ? (isTH ? 'วิชานี้ยังไม่มีห้องในระบบ เลือกห้องใหม่ก่อนส่ง' : 'This course has no room in the system — choose a room first')
+          : e instanceof Error ? e.message : 'check failed');
+      });
     return () => { alive = false; };
   }, [open, JSON.stringify(body)]);
 

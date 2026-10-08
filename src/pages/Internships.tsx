@@ -31,6 +31,18 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+// every posting type gets its own label; a full-time job is not "สหกิจ" (QA L10)
+const JOB_TYPE_LABELS: Record<string, { th: string; en: string }> = {
+  internship: { th: 'ฝึกงาน', en: 'Internship' },
+  'full-time': { th: 'งานประจำ', en: 'Full-time' },
+  'part-time': { th: 'งานพาร์ทไทม์', en: 'Part-time' },
+  contract: { th: 'สัญญาจ้าง', en: 'Contract' },
+};
+const jobTypeLabel = (type: string, language: string) => {
+  const label = JOB_TYPE_LABELS[type];
+  return label ? (language === 'en' ? label.en : label.th) : type;
+};
+
 export default function Internships() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
@@ -49,7 +61,7 @@ export default function Internships() {
       .list()
       .then((response) => {
         if (!mounted) return;
-        setJobs(response.jobs.map(mapJob).filter((job) => job.isActive && job.status === 'open'));
+        setJobs(response.jobs.map(mapJob).filter((job) => job.isActive && job.status === 'open' && job.type !== 'skill_requirement'));
       })
       .catch((error) => {
         console.warn('Unable to load internship jobs from API', error);
@@ -300,7 +312,7 @@ export default function Internships() {
                 <div className="flex items-center justify-between pt-2 mt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
                   <div className="flex items-center gap-2">
                     <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 text-[10.5px] font-medium px-2 py-0.5 rounded-md border-0">
-                      {job.type === 'internship' ? t.internshipsPage.internshipTab : t.internshipsPage.coopTab}
+                      {jobTypeLabel(job.type, language)}
                     </Badge>
                     <span className="text-slate-400 text-[11px] truncate max-w-[110px] sm:max-w-none">
                       {job.location}

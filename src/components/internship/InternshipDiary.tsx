@@ -269,9 +269,6 @@ export function InternshipDiary() {
                         day: 'numeric',
                       })}
                     </span>
-                    <span className="text-xs text-slate-400 ml-2 font-mono">
-                      {entry.date}
-                    </span>
                   </div>
                 </div>
 

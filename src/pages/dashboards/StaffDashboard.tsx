@@ -709,13 +709,7 @@ export default function StaffDashboard() {
       detail: `${upcomingActivities.length} กิจกรรมกำลังจะมาถึง`,
       path: '/activities-management',
     },
-    {
-      icon: Calendar,
-      label: 'นัดหมาย',
-      value: pendingAppointments.length,
-      detail: 'รายการรอยืนยัน',
-      path: '/appointments',
-    },
+    // no appointments card: staff have no appointments page (/appointments sent them back here)
   ];
 
   return (

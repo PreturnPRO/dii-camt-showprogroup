@@ -184,7 +184,7 @@ export default function Schedule() {
               className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
             >
               <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
-              <span>{t.schedulePage.semester}</span>
+              <span>{t.schedulePage.semester} {studentTerm ? `${studentTerm.semester}/${studentTerm.academicYear}` : '-'}</span>
             </motion.div>
             <motion.h1
               className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"
@@ -227,7 +227,7 @@ export default function Schedule() {
               className="flex items-center gap-2 text-slate-500 dark:text-slate-400 font-medium mb-2"
             >
               <Calendar className="w-4 h-4 text-purple-500 dark:text-slate-400" />
-              <span>{t.schedulePage.semester}</span>
+              <span>{t.schedulePage.semester} {studentTerm ? `${studentTerm.semester}/${studentTerm.academicYear}` : '-'}</span>
             </motion.div>
             <motion.h1
               className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug"

@@ -243,6 +243,8 @@ export default function StudentDashboard() {
 
   const studentCourses = courses.filter(c => c.enrolledStudents.includes(student.id) || c.enrolledStudents.includes(student.studentId));
   const courseGrades = gradesForCard(grades, courses);
+  // a student with nothing graded has no GPAX yet; 0.00 would read as a real (failing) average
+  const gpaxText = student.gpax > 0 || grades.some((g) => g.letterGrade) ? student.gpax.toFixed(2) : '-';
   
   const today = new Date();
   const nextMonth = new Date();
@@ -323,7 +325,7 @@ export default function StudentDashboard() {
                 {t.studentDashboard.studentId} {student.studentId}
               </Badge>
               <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
-                GPAX: {student.gpax.toFixed(2)}
+                GPAX: {gpaxText}
               </Badge>
               {student.academicStatus === 'normal' && (
                 <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30">
@@ -629,7 +631,7 @@ export default function StudentDashboard() {
                                 <div className="flex justify-between items-center mb-1">
                                   <span className="text-slate-600 dark:text-slate-400">GPA Minimum</span>
                                   <span className={`font-semibold ${isGpaMet ? 'text-emerald-600' : 'text-rose-500'}`}>
-                                    {student.gpax.toFixed(2)} / {requiredGpa.toFixed(2)}
+                                    {gpaxText} / {requiredGpa.toFixed(2)}
                                   </span>
                                 </div>
                               </div>

@@ -154,6 +154,9 @@ export function LecturerGradingView() {
 
     const payloadGrades = targetEnrollments.map((item) => ({
       enrollmentId: item.id,
+      // the bulk schema identifies each row by student + course
+      studentId: item.studentId,
+      courseId: item.courseId,
       scores: item.scores,
       total: item.total,
       letterGrade: item.letterGrade || undefined,
@@ -198,13 +201,17 @@ export function LecturerGradingView() {
     } catch (error) {
       console.warn('Unable to save grades', error);
       // ApiError.details is the whole error payload: { message, details: { rows } }
-      const rows = error instanceof ApiError ? asArray(asRecord(asRecord(error.details).details).rows) : [];
+      const payload = error instanceof ApiError ? asRecord(asRecord(error.details).details) : {};
+      const rows = asArray(payload.rows);
       setGradeRowErrors(rows.map((item) => {
         const row = asRecord(item);
         const sent = targetEnrollments[asNumber(row.index, -1)];
         return { studentCode: sent ? `${sent.studentCode} ${sent.studentName}` : asString(row.studentId), message: asString(row.message) };
       }));
-      toast.error(language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้ — ไม่มีแถวไหนถูกบันทึก ดูรายการที่ต้องแก้ด้านล่าง' : 'Unable to save grades — nothing was saved, see the rows to fix below');
+      // only point at "the rows below" when there are rows to show
+      toast.error(rows.length > 0
+        ? (language === 'th' ? 'ไม่สามารถบันทึกคะแนนได้ — ไม่มีแถวไหนถูกบันทึก ดูรายการที่ต้องแก้ด้านล่าง' : 'Unable to save grades — nothing was saved, see the rows to fix below')
+        : (language === 'th' ? `ไม่สามารถบันทึกคะแนนได้ — ไม่มีแถวไหนถูกบันทึก${error instanceof Error && error.message ? ` (${error.message})` : ''}` : `Unable to save grades — nothing was saved${error instanceof Error && error.message ? ` (${error.message})` : ''}`));
     } finally {
       setIsSaving(false);
     }
@@ -322,6 +329,8 @@ export function LecturerGradingView() {
           </div>
           <div className="flex flex-col gap-2 sm:flex-row">
             <select
+              data-testid="grade-course-filter"
+              aria-label={language === 'th' ? 'เลือกวิชา' : 'Course'}
               value={selectedCourseId}
               onChange={(event) => setSelectedCourseId(event.target.value)}
               className="h-11 rounded-2xl border border-slate-200 bg-white px-4 text-sm font-medium text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-200"
@@ -387,6 +396,7 @@ export function LecturerGradingView() {
               {filteredEnrollments.map((row) => (
                 <div
                   key={row.id}
+                  data-testid="grade-row"
                   className="grid items-center gap-2 rounded-2xl border border-slate-100 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-950/70"
                   style={{
                     gridTemplateColumns: `minmax(180px,1.3fr) minmax(120px,1fr) repeat(${maxCriteriaCount},88px) 88px 80px minmax(140px,1.2fr)`,
@@ -404,9 +414,11 @@ export function LecturerGradingView() {
                     </div>
                     <div className="truncate text-xs text-slate-500 dark:text-slate-400">{row.courseName}</div>
                   </div>
-                  {row.criteria.map((criterion) => (
+                  {row.criteria.map((criterion, criterionIndex) => (
                     <Input
                       key={criterion.id}
+                      data-testid={`grade-score-${criterionIndex}`}
+                      aria-label={`${criterion.name} (max ${criterion.maxScore})`}
                       type="number"
                       min="0"
                       max={criterion.maxScore}
@@ -431,7 +443,9 @@ export function LecturerGradingView() {
                     onChange={(event) =>
                       updateEnrollmentDraft(row.id, 'letterGrade', event.target.value.toUpperCase())
                     }
-                    placeholder="A"
+                    data-testid="grade-letter"
+                    aria-label={language === 'th' ? 'เกรด' : 'Grade'}
+                    placeholder="-"
                     className="h-10 rounded-xl border-slate-200 bg-slate-50 text-center font-bold dark:border-slate-700 dark:bg-slate-900"
                   />
                   <Input

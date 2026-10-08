@@ -630,7 +630,8 @@ export default function Requests() {
                   <div className="bg-slate-50/70 dark:bg-slate-900/60 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800/70 mb-4">
                     <div className="grid grid-cols-4 gap-2 text-center relative">
                       {steps.map((st, idx) => {
-                        const isCompleted = req.status === 'approved' || req.status === 'completed' || req.step > st.id;
+                        // the last step ("เสร็จสมบูรณ์") is ticked only when the request is really completed, not just approved
+                        const isCompleted = req.status === 'completed' || (req.status === 'approved' && st.id < steps.length) || (req.step > st.id && st.id < steps.length);
                         const isCurrent = req.step === st.id && req.status === 'pending';
                         const isRejected = req.status === 'rejected' && req.step === st.id;
 

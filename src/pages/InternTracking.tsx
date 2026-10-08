@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useSearchParams } from 'react-router-dom';
 import { Briefcase, Loader2 } from 'lucide-react';
@@ -103,19 +103,12 @@ export default function InternTracking() {
   const tr = t.internTracking;
   const [searchParams] = useSearchParams();
 
-  const { data: rawInternships = [], isLoading } = useInternshipsList();
-  const [interns, setInterns] = useState<InternRow[]>([]);
+  const { data: rawInternships, isLoading, isError } = useInternshipsList();
+  // derived, not copied into state: a fresh [] default on every render used to loop setState forever
+  const interns = useMemo<InternRow[]>(() => (rawInternships ?? []).map(mapRawInternship), [rawInternships]);
   const [selectedIntern, setSelectedIntern] = useState<InternRow | null>(null);
   const [detailTab, setDetailTab] = useState<'weekly' | 'daily'>('daily');
 
-  useEffect(() => {
-    if (rawInternships.length > 0) {
-      const mapped = rawInternships.map(mapRawInternship);
-      setInterns(mapped);
-    } else {
-      setInterns([]);
-    }
-  }, [rawInternships]);
 
   useEffect(() => {
     const targetInternId = searchParams.get('internId');
@@ -170,7 +163,11 @@ export default function InternTracking() {
         </h1>
       </div>
 
-      {interns.length === 0 ? (
+      {isError ? (
+        <div data-testid="interns-load-error" role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">
+          {language === 'th' ? 'โหลดรายชื่อนักศึกษาฝึกงานไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง' : 'Could not load interns. Please refresh.'}
+        </div>
+      ) : interns.length === 0 ? (
         <InternshipEmptyState />
       ) : (
         <>

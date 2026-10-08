@@ -49,9 +49,7 @@ const emptyForm = {
   target: 'STAFF',
   template: 'pending-request-digest',
   title: 'Pending work digest',
-  titleThai: 'สรุปงานที่รอดำเนินการ',
   message: 'There are items waiting for review.',
-  messageThai: 'มีรายการที่รอการตรวจสอบ',
   badgeName: 'Milestone',
   badgeNameThai: 'เหรียญความสำเร็จ',
   badgeDescription: 'Awarded automatically by Xchange.',
@@ -275,9 +273,10 @@ export default function Automation() {
           target: form.target,
           template: form.template === 'custom' ? undefined : form.template,
           title: form.title,
-          titleThai: form.titleThai,
+          // the form has one title/message field; Thai users must see what the admin typed, not hidden defaults
+          titleThai: form.title,
           message: form.message,
-          messageThai: form.messageThai,
+          messageThai: form.message,
           priority: 'medium',
         };
 

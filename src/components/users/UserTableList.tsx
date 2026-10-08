@@ -72,6 +72,7 @@ export function UserTableList({
                           animate={{ opacity: 1 }}
                           exit={{ opacity: 0 }}
                           key={user.id}
+                          data-testid="user-row"
                           className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-all bg-white dark:bg-slate-900"
                         >
                           <div className="flex items-center gap-4">
@@ -92,8 +93,11 @@ export function UserTableList({
                               {(user.name || user.email || '?').charAt(0)}
                             </div>
                             <div>
-                              <div className="font-semibold text-gray-900 dark:text-slate-200">
+                              <div className="font-semibold text-gray-900 dark:text-slate-200 flex items-center gap-2">
                                 {user.name}
+                                {user.isActive === false && (
+                                  <span className="rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-200">ระงับ (Inactive)</span>
+                                )}
                               </div>
                               <div className="text-sm text-gray-500 dark:text-slate-400">
                                 {user.email || 'No email'}
@@ -120,13 +124,15 @@ export function UserTableList({
                                   <KeyRound className="w-4 h-4 text-gray-500 dark:text-slate-400" />
                                 </Button>
                               )}
-                              <Button size="sm" variant="ghost" onClick={() => onEdit(user)}>
+                              <Button size="sm" variant="ghost" onClick={() => onEdit(user)} aria-label="แก้ไข" title="แก้ไข">
                                 <Edit className="w-4 h-4 text-gray-500 dark:text-slate-400" />
                               </Button>
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onDelete(user.id)}
+                                aria-label="ลบ"
+                                title="ลบ"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-300 dark:bg-slate-800"
                               >
                                 <Trash2 className="w-4 h-4" />

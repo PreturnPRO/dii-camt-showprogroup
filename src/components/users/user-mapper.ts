@@ -39,6 +39,7 @@ export function mapBackendUser(item: unknown, getRoleText: (role: UserType) => s
     image: asString(source.avatar),
     isActive: source.isActive !== false,
     nameThai: asString(source.nameThai),
+    nameEn: asString(source.name),
     phone: asString(source.phone),
     identifier,
     department,

@@ -100,7 +100,7 @@ const App = () => (
                   <Route path="/grades" element={<RoleGuard allowedRoles={['student', 'lecturer', 'staff', 'admin']}><Grades /></RoleGuard>} />
 
                   {/* Student Routes */}
-                  <Route path="/activities" element={<RoleGuard allowedRoles={['student', 'admin']}><Activities /></RoleGuard>} />
+                  <Route path="/activities" element={<RoleGuard allowedRoles={['student']}><Activities /></RoleGuard>} />
                   <Route path="/portfolio" element={<RoleGuard allowedRoles={['student']}><Portfolio /></RoleGuard>} />
                   <Route path="/internships" element={<RoleGuard allowedRoles={['student']}><Internships /></RoleGuard>} />
                   <Route path="/application-history" element={<RoleGuard allowedRoles={['student']}><ApplicationHistory /></RoleGuard>} />
@@ -112,7 +112,7 @@ const App = () => (
                   <Route path="/advisees" element={<RoleGuard allowedRoles={['lecturer']}><Advisees /></RoleGuard>} />
                   <Route path="/appointments" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Appointments /></RoleGuard>} />
                   <Route path="/attendance" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Attendance /></RoleGuard>} />
-                  <Route path="/workload" element={<RoleGuard allowedRoles={['lecturer', 'admin']}><Workload /></RoleGuard>} />
+                  <Route path="/workload" element={<RoleGuard allowedRoles={['lecturer']}><Workload /></RoleGuard>} />
 
                   {/* Staff / Admin Routes */}
                   <Route path="/users" element={<RoleGuard allowedRoles={['staff', 'admin']}><UsersPage /></RoleGuard>} />

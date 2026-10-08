@@ -67,6 +67,8 @@ export const en = {
     teachingSchedule: 'Teaching Schedule',
     adviseeStudents: 'Advisor',
     courseManagement: 'Course Management',
+    studentsList: 'Students',
+    documentIssue: 'Documents',
     attendanceBehavior: 'Attendance / Behavior',
     grading: 'Grading',
     appointments: 'Appointments',
@@ -475,7 +477,7 @@ export const en = {
 
   // Grades
   grades: {
-    subtitle: 'Academic Results - Semester 1/2568',
+    subtitle: 'Academic results',
     title: 'Academic',
     titleHighlight: 'Results',
     shareGrades: 'Share Results',
@@ -671,7 +673,7 @@ export const en = {
 
   // Courses
   coursesPage: {
-    semester: 'Semester 1/2568',
+    semester: 'Semester',
     subtitle: 'Courses',
     title: 'Registered',
     titleHighlight: 'Courses',
@@ -706,7 +708,7 @@ export const en = {
     room: 'Room 301 DII Building',
     yearLabel: 'Year',
     studentsCount: 'students',
-    semesterLabel: 'Semester 1/2567',
+    semesterLabel: 'Courses across terms',
     searchPlaceholder: 'e.g. 204100...',
     searchDesc: 'Type course code or name to search available courses',
   },
@@ -733,8 +735,8 @@ export const en = {
     titleHighlight: '& Co-op',
     totalPositions: 'Total Positions',
     partnerCompanies: 'Partner Companies',
-    studentsPlaced: 'Students Placed',
-    matchedForYou: 'Matched for You',
+    studentsPlaced: 'Applications',
+    matchedForYou: 'Matching filters',
     searchPlaceholder: 'Search position, company, or location...',
     allTab: 'All',
     internshipTab: 'Internship',
@@ -799,7 +801,7 @@ export const en = {
 
   // Schedule
   schedulePage: {
-    semester: 'Semester 1/2568',
+    semester: 'Semester',
     title: 'Class',
     titleHighlight: 'Schedule',
     totalCourses: 'Total Courses',
@@ -1351,7 +1353,7 @@ export const en = {
     pendingAppointments: 'Pending Appointments',
     appointmentsLabel: 'appointments',
     courseList: 'Courses Taught',
-    semester: 'Semester 1/2567',
+    semester: 'Current semester',
     viewAll: 'View All',
     students: 'Students',
     atRiskStudents: 'At Risk Students',

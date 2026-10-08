@@ -105,6 +105,12 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
       return [
         ...commonItems,
         { icon: Users, label: nav.users || 'Users', href: '/users' },
+        // pages staff could already open but only reach by URL (QA L1)
+        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
+        { icon: GraduationCap, label: nav.studentsList || 'Students', href: '/students' },
+        { icon: ClipboardList, label: nav.grades || 'Grades', href: '/grades' },
+        { icon: FileText, label: nav.documentIssue || 'Documents', href: '/documents' },
+        { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
         { icon: Bell, label: nav.announcementManagement || 'Announcements', href: '/notifications' },
         { icon: Clock, label: nav.workloadTracking || 'Workload', href: '/workload-tracking' },
         { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },

@@ -9,6 +9,8 @@ export type UserRow = {
   image?: string;
   isActive?: boolean;
   nameThai?: string;
+  /** the stored English name; `name` is the display name (Thai first) */
+  nameEn?: string;
   phone?: string;
   identifier?: string;
   department?: string;

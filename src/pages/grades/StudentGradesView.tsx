@@ -244,9 +244,6 @@ export function StudentGradesView() {
               {currentTermGpa === null ? '-' : currentTermGpa.toFixed(2)}
             </div>
           </div>
-          <div className="mt-3 text-[11px] text-slate-400 font-mono">
-            {t.grades.target}: <span className="text-slate-600 dark:text-slate-300 font-semibold">3.80</span>
-          </div>
         </motion.div>
 
         {/* Cumulative Credits */}
@@ -369,6 +366,7 @@ export function StudentGradesView() {
               return (
                 <motion.div
                   key={grade.courseId}
+                  data-testid="grade-card"
                   whileHover={{ y: -2 }}
                   transition={{ duration: 0.15 }}
                   className="flex flex-col justify-between bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-md transition-all duration-200"
@@ -407,7 +405,7 @@ export function StudentGradesView() {
                     </div>
 
                     <div className="grid grid-cols-4 gap-2 my-3 p-2 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 text-center font-mono">
-                      {grade.scores?.slice(0, 3).map((score) => (
+                      {grade.scores?.map((score) => (
                         <div
                           key={score.criteriaId}
                           className="p-1.5 rounded-lg bg-white/80 dark:bg-slate-800/60 border border-slate-200/50 dark:border-slate-700/50"

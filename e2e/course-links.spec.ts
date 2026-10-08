@@ -51,6 +51,8 @@ test("a student with no courses gets a register call-to-action, not a dead end",
   await login(page, email);
   const dashCta = page.getByTestId("register-cta");
   await expect(dashCta).toHaveText(CTA_TEXT);
+  // nothing graded yet: no invented 0.00 average
+  await expect(page.getByText("GPAX: -")).toBeVisible();
   await dashCta.click();
   await expectRegistrationTab(page);
 

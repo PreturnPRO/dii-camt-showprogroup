@@ -243,7 +243,7 @@ export default function Activities() {
     try {
       await api.activities.enroll(activityId);
       await refreshActivities();
-      toast.success(t.activitiesPage.joinActivity);
+      toast.success(language === 'en' ? 'Registered for the activity' : 'ลงทะเบียนเข้าร่วมกิจกรรมแล้ว');
     } catch (error) {
       console.warn('Unable to enroll activity', error);
       toast.error(error instanceof ApiError ? error.message : t.activitiesPage.details);

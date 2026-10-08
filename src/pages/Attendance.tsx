@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
-import { CalendarCheck, Users, Save, FileSpreadsheet, CheckCircle2, XCircle, Clock, AlertCircle, QrCode } from 'lucide-react';
+import { CalendarCheck, Users, FileSpreadsheet, CheckCircle2, XCircle, Clock, AlertCircle, QrCode } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -310,19 +310,6 @@ export default function Attendance() {
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.dateLabel}</label>
                             <Input type="date" value={date} max={thaiToday()} onChange={e => setDate(e.target.value)} className="rounded-xl" />
                         </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.periodLabel}</label>
-                            <Select defaultValue="1">
-                                <SelectTrigger className="rounded-xl"><SelectValue placeholder={t.attendancePage.selectPeriod} /></SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="1">09:00 - 12:00 (Lecture)</SelectItem>
-                                    <SelectItem value="2">13:00 - 16:00 (Lab)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <Button className="w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 h-11 shadow-lg shadow-emerald-200">
-                            <CalendarCheck className="w-4 h-4 mr-2" /> {t.attendancePage.startChecking}
-                        </Button>
                         <Button variant="outline" className="w-full rounded-xl border-dashed border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-11" onClick={handleGenerateQR}>
                             <QrCode className="w-4 h-4 mr-2" /> Generate QR Code
                         </Button>
@@ -370,11 +357,9 @@ export default function Attendance() {
                             </motion.div>
                         ))}
                     </div>
-                    <div className="flex justify-between items-center mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
-                        <span className="text-sm text-slate-400">{t.attendancePage.lastSaved}</span>
-                        <Button className="rounded-xl bg-emerald-600 hover:bg-emerald-700 shadow-lg shadow-emerald-200">
-                            <Save className="w-4 h-4 mr-2" /> {t.attendancePage.saveData}
-                        </Button>
+                    {/* every status click is saved on its own; there is no separate save step */}
+                    <div className="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700">
+                        <span className="text-sm text-slate-500 dark:text-slate-400">{language === 'en' ? 'Each status is saved as soon as you click it' : 'กดสถานะแล้วบันทึกทันที'}</span>
                     </div>
                 </motion.div>
             </div>

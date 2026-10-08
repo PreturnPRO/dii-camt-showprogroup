@@ -67,7 +67,8 @@ export function LecturerUserDialog({
       if (initialData) {
         form.reset({
           lecturerId: initialData.identifier || '',
-          name: initialData.name || '',
+          // the English field must hold the English name, not the Thai display name
+          name: initialData.nameEn ?? initialData.name ?? '',
           nameThai: initialData.nameThai || initialData.name || '',
           email: initialData.email || '',
           phone: initialData.phone || '',

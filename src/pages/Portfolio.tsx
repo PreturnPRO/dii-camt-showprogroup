@@ -347,7 +347,7 @@ export default function Portfolio() {
       highlights: [],
     };
 
-    let newProjects = [...projects];
+    const newProjects = [...projects];
     if (editingProjectIndex !== null) {
       newProjects[editingProjectIndex] = projectPayload;
     } else {
@@ -694,7 +694,9 @@ export default function Portfolio() {
                     <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">เมื่อเพิ่มข้อมูล portfolio ลงฐานข้อมูล ผลงานจะแสดงที่นี่ทันที</p>
                   </div>
                 )}
-                <motion.div
+                <motion.button
+                  type="button"
+                  data-testid="add-project"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   whileHover={{ scale: 1.02 }}
@@ -711,13 +713,13 @@ export default function Portfolio() {
                     });
                     setIsProjectDialogOpen(true);
                   }}
-                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl flex flex-col items-center justify-center p-8 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer min-h-[300px] dark:text-slate-300 dark:hover:border-indigo-500"
+                  className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-3xl flex flex-col items-center justify-center p-8 text-slate-400 hover:border-indigo-400 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 transition-all cursor-pointer min-h-[300px] dark:text-slate-300 dark:hover:border-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-indigo-500"
                 >
                   <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-slate-950 flex items-center justify-center mb-4 group-hover:bg-white dark:group-hover:bg-slate-900">
                     <Plus className="w-8 h-8" />
                   </div>
                   <span className="font-bold">{t.portfolioPage.addProject}</span>
-                </motion.div>
+                </motion.button>
               </div>
             </TabsContent>
 
@@ -804,10 +806,6 @@ export default function Portfolio() {
               <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                 <Phone className="w-4 h-4 text-slate-400" />
                 {student.phone || '-'}
-              </div>
-              <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
-                <MapPin className="w-4 h-4 text-slate-400" />
-                Chiang Mai, Thailand
               </div>
             </div>
             
