@@ -57,7 +57,11 @@ test("a late failure never undoes a newer choice", async ({ page }) => {
   await page.waitForURL("**/dashboard");
   await page.goto("/attendance");
   await pickDII340(page);
+  // the rows reload for the new date; a click made before that reload lands is overwritten by it
+  const reloaded = Promise.all(["/api/attendance/report", "/api/enrollments"].map((path) =>
+    page.waitForResponse((response) => response.url().includes(path)).then((response) => response.finished())));
   await page.locator("main input[type=date]").fill("2026-02-02");
+  await reloaded;
   const firstRow = page.getByTestId("attendance-row").first();
   await expect(firstRow).toHaveAttribute("data-status", "unmarked");
   let calls = 0;
