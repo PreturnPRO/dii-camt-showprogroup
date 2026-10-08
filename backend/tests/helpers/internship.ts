@@ -24,3 +24,18 @@ export async function freshIntern({ withRecord = false } = {}) {
 }
 
 export const authOf = async (email: string) => `Bearer ${await loginAs(email)}`;
+
+/** A lecturer no other test touches, with the given weekly office hours. */
+export async function freshLecturer(officeHours: Array<{ day: string; startTime: string; endTime: string; location: string }> = []) {
+  const email = uniqueEmail("lecturer");
+  const user = await prisma.user.create({
+    data: {
+      email, passwordHash: await bcrypt.hash(SEED_PASSWORD, 4), name: email, nameThai: `อาจารย์ ${email}`, role: "LECTURER",
+      lecturerProfile: { create: { lecturerId: `L${uid()}`, department: "DII", position: "Lecturer", specialization: [], researchInterests: [] } },
+    },
+    include: { lecturerProfile: true },
+  });
+  const profile = user.lecturerProfile!;
+  if (officeHours.length) await prisma.officeHour.createMany({ data: officeHours.map((slot) => ({ ...slot, lecturerId: profile.id })) });
+  return { userId: user.id, profile, auth: `Bearer ${await loginAs(email)}` };
+}

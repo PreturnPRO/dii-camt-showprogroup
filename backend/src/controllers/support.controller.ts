@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import { thaiDateTime } from "../services/attendance";
 
 import { prisma } from "../lib/prisma";
 import { getLecturerProfileByUserId, getStudentProfileByUserId } from "../services/profile.service";
@@ -10,6 +11,9 @@ import { requireUser } from "../utils/user";
 import { isStaffOrAdmin } from "../services/access-policy";
 
 
+
+// who a message or appointment involves, never how to reach them outside the system (Por 8/10/69)
+const MESSAGE_PERSON = { id: true, name: true, nameThai: true, role: true, avatar: true } as const;
 
 export const getRequests = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
@@ -197,8 +201,8 @@ export const getAppointments = asyncHandler(async (req, res) => {
             student: { userId: currentUser.id },
           },
           include: {
-            lecturer: { include: { user: true } },
-            student: { include: { user: true } },
+            lecturer: { include: { user: { select: MESSAGE_PERSON } } },
+            student: { include: { user: { select: MESSAGE_PERSON } } },
           },
           orderBy: { date: "asc" },
         })
@@ -208,15 +212,15 @@ export const getAppointments = asyncHandler(async (req, res) => {
               lecturer: { userId: currentUser.id },
             },
             include: {
-              lecturer: { include: { user: true } },
-              student: { include: { user: true } },
+              lecturer: { include: { user: { select: MESSAGE_PERSON } } },
+              student: { include: { user: { select: MESSAGE_PERSON } } },
             },
             orderBy: { date: "asc" },
           })
         : await prisma.appointment.findMany({
             include: {
-              lecturer: { include: { user: true } },
-              student: { include: { user: true } },
+              lecturer: { include: { user: { select: MESSAGE_PERSON } } },
+              student: { include: { user: { select: MESSAGE_PERSON } } },
             },
             orderBy: { date: "asc" },
           });
@@ -227,25 +231,68 @@ export const getAppointments = asyncHandler(async (req, res) => {
   });
 });
 
+const WEEKDAY_NAMES = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
 export const createAppointment = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student = await getStudentProfileByUserId(currentUser.id);
 
-  const appointment = await prisma.appointment.create({
-    data: {
-      studentId: student.id,
-      lecturerId: req.body.lecturerId,
-      date: req.body.date,
+  const lecturer = await prisma.lecturerProfile.findFirst({
+    where: { id: String(req.body.lecturerId), user: { isActive: true } },
+    select: { id: true },
+  });
+  if (!lecturer) throw new AppError(404, "Lecturer not found");
+
+  // dates are Thai calendar days stored as UTC midnight (see services/attendance)
+  const date = new Date(`${req.body.date}T00:00:00.000Z`);
+  // "2027-02-30" would roll over to March; refuse it rather than book another day
+  if (Number.isNaN(date.getTime()) || date.toISOString().slice(0, 10) !== req.body.date) {
+    throw new AppError(400, "That date does not exist");
+  }
+  if (thaiDateTime(date, req.body.startTime) <= new Date()) {
+    throw new AppError(400, "Choose a time that has not passed yet");
+  }
+  const slot = await prisma.officeHour.findFirst({
+    where: {
+      lecturerId: lecturer.id,
+      day: WEEKDAY_NAMES[date.getUTCDay()],
       startTime: req.body.startTime,
       endTime: req.body.endTime,
-      location: req.body.location,
-      purpose: req.body.purpose,
-      notes: req.body.notes,
+      isAvailable: true,
     },
-    include: {
-      lecturer: { include: { user: true } },
-      student: { include: { user: true } },
-    },
+  });
+  if (!slot) throw new AppError(400, "That time is not one of the lecturer's office hours");
+
+  const appointment = await prisma.$transaction(async (tx) => {
+    // one booking at a time per lecturer and day, then check nothing active overlaps this slot
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`appointment|${lecturer.id}|${req.body.date}`}))::text`;
+    const taken = await tx.appointment.count({
+      where: {
+        lecturerId: lecturer.id,
+        date,
+        status: { in: ["pending", "confirmed"] },
+        // HH:MM strings are zero-padded, so they compare like times
+        startTime: { lt: slot.endTime },
+        endTime: { gt: slot.startTime },
+      },
+    });
+    if (taken) throw new AppError(409, "Someone has just booked this slot. Please choose another time.");
+    return tx.appointment.create({
+      data: {
+        studentId: student.id,
+        lecturerId: lecturer.id,
+        date,
+        startTime: slot.startTime,
+        endTime: slot.endTime,
+        location: slot.location,
+        purpose: req.body.purpose,
+        notes: req.body.notes,
+      },
+      include: {
+        lecturer: { include: { user: { select: MESSAGE_PERSON } } },
+        student: { include: { user: { select: MESSAGE_PERSON } } },
+      },
+    });
   });
 
   await createNotification({
@@ -283,13 +330,18 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
   const appointmentId = String(req.params.id);
   const existing = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { lecturer: { select: { userId: true } } },
+    select: { status: true, lecturer: { select: { userId: true } } },
   });
   if (!existing) {
     throw new AppError(404, "Appointment not found");
   }
   if (currentUser.role === Role.LECTURER && existing.lecturer.userId !== currentUser.id) {
     throw new AppError(403, "You can only update your own appointments");
+  }
+  const allowed: Record<string, string[]> = { pending: ["confirmed", "cancelled"], confirmed: ["completed", "cancelled"] };
+  if (!allowed[existing.status]?.includes(req.body.status)) {
+    // a cancelled or completed booking stays closed; its slot may already belong to someone else
+    throw new AppError(409, `An appointment that is ${existing.status} cannot become ${req.body.status}`);
   }
   const appointment = await prisma.appointment.update({
     where: { id: appointmentId },
@@ -299,8 +351,8 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
       followUp: req.body.followUp,
     },
     include: {
-      lecturer: { include: { user: true } },
-      student: { include: { user: true } },
+      lecturer: { include: { user: { select: MESSAGE_PERSON } } },
+      student: { include: { user: { select: MESSAGE_PERSON } } },
     },
   });
 
@@ -345,9 +397,6 @@ export const updateOfficeHours = asyncHandler(async (req, res) => {
     officeHours,
   });
 });
-
-// who a message is from/to, never how to reach them outside the system (Por 8/10/69)
-const MESSAGE_PERSON = { id: true, name: true, nameThai: true, role: true, avatar: true } as const;
 
 export const getMessages = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);

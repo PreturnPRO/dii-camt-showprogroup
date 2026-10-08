@@ -871,8 +871,10 @@ export const getLecturersHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const full = isStaffOrAdmin(currentUser.role);
   const lecturers = await prisma.lecturerProfile.findMany({
+    // a suspended lecturer can neither be booked nor chosen as an advisor
     where: req.query.q
       ? {
+          user: { isActive: true },
           OR: [
             { lecturerId: { contains: String(req.query.q), mode: "insensitive" } },
             { department: { contains: String(req.query.q), mode: "insensitive" } },
@@ -880,7 +882,7 @@ export const getLecturersHandler = asyncHandler(async (req, res) => {
             { user: { nameThai: { contains: String(req.query.q), mode: "insensitive" } } },
           ],
         }
-      : undefined,
+      : { user: { isActive: true } },
     include: full
       ? {
           user: true,

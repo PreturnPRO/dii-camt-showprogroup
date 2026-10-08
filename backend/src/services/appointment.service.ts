@@ -39,9 +39,11 @@ export const getAvailableOfficeHourSlots = async (lecturerId: string, date?: str
     const requestedDate = new Date(date);
     const day = dayMap[requestedDate.getUTCDay()];
     const officeHours = lecturer.officeHours.filter((slot) => slot.day === day);
-    const bookedSlots = new Set(
-      lecturer.appointments.map((appointment) => `${appointment.startTime}-${appointment.endTime}`),
-    );
+    // booked = any active appointment overlapping the slot (the same rule createAppointment enforces)
+    const overlapsBooking = (slot: { startTime: string; endTime: string }) =>
+      lecturer.appointments.some((appointment) => appointment.startTime < slot.endTime && appointment.endTime > slot.startTime);
+    // a slot earlier today can no longer be booked either
+    const now = new Date();
 
     return {
       lecturer: {
@@ -52,7 +54,8 @@ export const getAvailableOfficeHourSlots = async (lecturerId: string, date?: str
       date,
       slots: officeHours.map((slot) => ({
         ...slot,
-        isBooked: bookedSlots.has(`${slot.startTime}-${slot.endTime}`),
+        isBooked: overlapsBooking(slot),
+        isPast: thaiDateTime(requestedDate, slot.startTime) <= now,
       })),
     };
   }
@@ -64,7 +67,6 @@ export const getAvailableOfficeHourSlots = async (lecturerId: string, date?: str
       name: lecturer.user.name,
     },
     officeHours: lecturer.officeHours,
-    appointments: lecturer.appointments,
   };
 };
 

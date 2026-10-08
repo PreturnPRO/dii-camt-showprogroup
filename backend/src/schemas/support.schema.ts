@@ -19,36 +19,53 @@ export const requestStatusSchema = z.object({
   completedAt: z.coerce.date().optional(),
 });
 
+const hhmm = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use HH:MM");
+const WEEKDAYS = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+
+// a booking names one of the lecturer's office-hour slots on a date; the place comes from that slot (M1)
 export const appointmentSchema = z.object({
   lecturerId: z.string().min(1),
-  date: z.coerce.date(),
-  startTime: z.string().min(1),
-  endTime: z.string().min(1),
-  location: z.string().min(1),
-  purpose: z.string().min(1),
-  notes: z.string().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD"),
+  startTime: hhmm,
+  endTime: hhmm,
+  location: z.string().optional(),
+  purpose: z.string().trim().min(1).max(500),
+  notes: z.string().max(2000).optional(),
 });
 
 export const appointmentStatusSchema = z.object({
-  status: z.string().min(1),
+  // pending → confirmed | cancelled, confirmed → completed | cancelled (checked in the controller)
+  status: z.enum(["confirmed", "cancelled", "completed"]),
   meetingNotes: z.string().optional(),
   followUp: z.string().optional(),
 });
 
 export const officeHourQuerySchema = z.object({
-  date: z.string().optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Use YYYY-MM-DD").optional(),
 });
 
 export const officeHoursUpdateSchema = z.object({
-  officeHours: z.array(
-    z.object({
-      day: z.string().min(1),
-      startTime: z.string().min(1),
-      endTime: z.string().min(1),
-      location: z.string().min(1),
-      isAvailable: z.boolean().optional(),
-    }),
-  ),
+  officeHours: z
+    .array(
+      z
+        .object({
+          day: z.enum(WEEKDAYS),
+          startTime: hhmm,
+          endTime: hhmm,
+          location: z.string().trim().min(1),
+          isAvailable: z.boolean().optional(),
+        })
+        .refine((slot) => slot.startTime < slot.endTime, { message: "A slot must end after it starts", path: ["endTime"] }),
+    )
+    .max(50)
+    // two rows of one day may not overlap, or one lecturer could be booked twice at once
+    .refine(
+      (slots) =>
+        slots.every((a, i) =>
+          slots.every((b, j) => i === j || a.day !== b.day || a.endTime <= b.startTime || b.endTime <= a.startTime),
+        ),
+      { message: "Office hours on the same day must not overlap" },
+    ),
 });
 
 export const messageCreateSchema = z.object({
