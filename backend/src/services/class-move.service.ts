@@ -64,7 +64,8 @@ export const checkMove = async (db: Db, input: MoveInput, ignoreMoveId?: string)
   const newEnd = fromMinutes(newStart + length);
 
   const facilityId = input.facilityId ?? section.facilityId;
-  if (!facilityId) throw new AppError(400, "Choose a room for the moved class");
+  // the code lets the page explain this case in the user's language
+  if (!facilityId) throw new AppError(400, "Choose a room for the moved class", { code: "ROOM_REQUIRED" });
   const facility = await db.facility.findFirst({ where: { id: facilityId, isActive: true } });
   if (!facility) throw new AppError(400, "That room does not exist or is closed");
 

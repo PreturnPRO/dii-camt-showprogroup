@@ -30,6 +30,8 @@ const matchSkills = (requiredSkills: string[], studentSkills: string[]) => {
   return { matched, missing, matchScore };
 };
 
+const SKILL_REQUIREMENT = "skill_requirement";
+
 export const getJobsHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const company =
@@ -55,6 +57,8 @@ export const getJobsHandler = asyncHandler(async (req, res) => {
             ? { companyId: String(req.query.companyId) }
             : {},
         !isPrivileged ? { status: "open" } : {},
+        // a company's "skill requirements" are stored as postings but are not jobs anyone can apply to
+        !isPrivileged ? { type: { not: SKILL_REQUIREMENT } } : {},
         req.query.q
           ? {
               OR: [
@@ -288,6 +292,7 @@ export const createApplicationHandler = asyncHandler(async (req, res) => {
     include: { _count: { select: { applications: true } } },
   });
   if (!job) throw new AppError(404, "Job posting not found");
+  if (job.type === SKILL_REQUIREMENT) throw new AppError(400, "This is a skill requirement, not a job you can apply for");
   if (job.status !== "open" || !job.isActive || job.deadline.getTime() < Date.now()) {
     throw new AppError(409, "This job is not accepting applications");
   }

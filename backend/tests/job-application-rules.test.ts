@@ -55,3 +55,21 @@ describe("deleting a job", () => {
     expect((await request(app).delete(`/api/jobs/${job.id}`).set("Authorization", await as("talent@northernsoft.local"))).status).toBe(200);
   });
 });
+
+describe("company skill requirements are not job postings for students", () => {
+  it("a student's job board leaves them out", async () => {
+    const job = await newJob({ type: "skill_requirement" });
+    const res = await request(app).get("/api/jobs").set("Authorization", await as("alice@student.showpro.local"));
+    expect(res.status).toBe(200);
+    expect(res.body.jobs.map((j: { id: string }) => j.id)).not.toContain(job.id);
+  });
+  it("applying to one is refused", async () => {
+    const job = await newJob({ type: "skill_requirement" });
+    expect((await apply(job.id)).status).toBe(400);
+  });
+  it("the company still sees its own", async () => {
+    const job = await newJob({ type: "skill_requirement" });
+    const res = await request(app).get("/api/jobs").set("Authorization", await as("talent@northernsoft.local"));
+    expect(res.body.jobs.map((j: { id: string }) => j.id)).toContain(job.id);
+  });
+});
