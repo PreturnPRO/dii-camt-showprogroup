@@ -11,12 +11,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { occurrenceKey, WeeklyTimetable } from '@/components/common/WeeklyTimetable';
 import { ClassMoveDialog } from '@/components/schedule/ClassMoveDialog';
+import { MonthCalendar } from '@/components/schedule/MonthCalendar';
 import { toast } from 'sonner';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
 import type { ClassMoveView } from '@/lib/api';
 import { thaiToday } from '@/lib/thai-date';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { type Occurrence, addDays, weekOccurrences, weekOf, DAY_LABELS, formatHours, formatMinutes, placeSlots, studentEntries, studyDays, teachingEntries, termKey, termsOf, weeklyMinutes, type Term } from '@/lib/timetable';
+import { type Occurrence, addDays, weekOccurrences, weekOf, DAY_LABELS, isDay, isMonth, monthGrid, monthOccurrences, formatHours, formatMinutes, placeSlots, studentEntries, studyDays, teachingEntries, termKey, termsOf, weeklyMinutes, type Term } from '@/lib/timetable';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { mapCourse, mapStudent } from '@/lib/live-mappers';
@@ -37,19 +39,37 @@ export default function Schedule() {
   const { t, language } = useLanguage();
   const [courses, setCourses] = React.useState<Course[]>([]);
   const [enrollmentRows, setEnrollmentRows] = React.useState<unknown[]>([]);
+  const [enrollmentsFailed, setEnrollmentsFailed] = React.useState(false);
   const [studentTerm, setStudentTerm] = React.useState<Term | null>(null);
   const [termValue, setTermValue] = React.useState('');
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const weekParam = searchParams.get('week');
-  const weekStart = weekOf(weekParam && /^\d{4}-\d{2}-\d{2}$/.test(weekParam) ? weekParam : thaiToday());
-  const setWeekStart = (next: string) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set('week', next); return p; });
+  const weekStart = weekOf(isDay(weekParam) ? weekParam : thaiToday());
+  const setParams = (next: Record<string, string>) => setSearchParams((prev) => { const p = new URLSearchParams(prev); for (const [k, v] of Object.entries(next)) p.set(k, v); return p; });
+  const setWeekStart = (next: string) => setParams({ week: next });
+  const view = searchParams.get('view') === 'month' ? 'month' : 'week';
+  const monthParam = searchParams.get('month');
+  // no ?month yet: open on the month of the week being viewed
+  const month = isMonth(monthParam) ? monthParam : (isDay(weekParam) ? addDays(weekStart, 3) : thaiToday()).slice(0, 7);
+  const setMonth = (next: string) => setParams({ month: next });
+  const openWeek = (date: string) => setParams({ view: 'week', week: weekOf(date) });
+  const grid = monthGrid(month);
+  const [rangeFrom, rangeTo] = view === 'month' ? [grid[0].date, grid[grid.length - 1].date] : [weekStart, addDays(weekStart, 6)];
   const [moves, setMoves] = React.useState<ClassMoveView[]>([]);
   const [moveTarget, setMoveTarget] = React.useState<Occurrence | null>(null);
+  // only the latest range's answer may land: quick prev/next clicks must not leave an older month's moves on screen
+  const movesRequest = React.useRef(0);
   const reloadMoves = React.useCallback(() => {
-    api.classMoves.list(weekStart, addDays(weekStart, 6))
-      .then((r) => setMoves(r.moves))
-      .catch(() => setMoves([]));
-  }, [weekStart]);
+    const id = ++movesRequest.current;
+    api.classMoves.list(rangeFrom, rangeTo)
+      .then((r) => { if (id === movesRequest.current) setMoves(r.moves); })
+      .catch(() => {
+        if (id !== movesRequest.current) return;
+        setMoves([]);
+        toast.error(language === 'th' ? 'โหลดการย้ายคาบไม่สำเร็จ ตารางอาจยังไม่รวมคาบที่ย้าย' : 'Could not load class moves; moved classes may not show');
+      });
+  }, [rangeFrom, rangeTo, language]);
   React.useEffect(() => {
     if (user?.role === 'student' || user?.role === 'lecturer') reloadMoves();
   }, [reloadMoves, user?.role]);
@@ -79,6 +99,7 @@ export default function Schedule() {
           setStudent(null);
         }
         setEnrollmentRows(enrollmentsResult.status === 'fulfilled' ? enrollmentsResult.value.enrollments : []);
+        setEnrollmentsFailed(enrollmentsResult.status !== 'fulfilled');
         if (enrollmentsResult.status === 'fulfilled') {
           const enrolledCourses = enrollmentsResult.value.enrollments.map((item, index) => {
             const enrollment = asRecord(item);
@@ -126,6 +147,24 @@ export default function Schedule() {
   }, [user?.role]);
 
   const today = thaiToday();
+  const viewSwitch = (
+    <div role="group" aria-label={language === 'th' ? 'มุมมองตาราง' : 'Schedule view'} className="inline-flex rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-700 dark:bg-slate-800">
+      {(['week', 'month'] as const).map((v) => (
+        <button
+          key={v}
+          type="button"
+          data-testid={`view-${v}`}
+          aria-pressed={view === v}
+          onClick={() => setParams({ view: v })}
+          className={view === v
+            ? 'rounded-lg bg-white px-4 py-1.5 text-sm font-semibold text-blue-700 shadow-sm dark:bg-slate-900 dark:text-blue-300'
+            : 'rounded-lg px-4 py-1.5 text-sm font-medium text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white'}
+        >
+          {v === 'week' ? (language === 'th' ? 'สัปดาห์' : 'Week') : (language === 'th' ? 'เดือน' : 'Month')}
+        </button>
+      ))}
+    </div>
+  );
   const dayList = (days: ReturnType<typeof studyDays>) =>
     days.length ? days.map((d) => (language === 'en' ? DAY_LABELS[d].en.slice(0, 3) : DAY_LABELS[d].short)).join(' ') : '-';
 
@@ -199,15 +238,18 @@ export default function Schedule() {
               {t.schedulePage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.titleHighlight}</span>
             </motion.h1>
           </div>
-
+          {viewSwitch}
         </div>
 
         {/* Stats Row */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <motion.div
+          <motion.button
+            type="button"
+            data-testid="schedule-total-courses"
+            onClick={() => navigate('/courses')}
             variants={itemVariants}
             whileHover={{ y: -5 }}
-            className="bg-blue-600 p-5 rounded-3xl text-white shadow-lg"
+            className="bg-blue-600 p-5 rounded-3xl text-white shadow-lg text-left cursor-pointer hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-500"
           >
             <div className="flex items-center gap-3 mb-3">
               <div className="p-2 rounded-xl bg-blue-500/10 dark:bg-blue-500/10">
@@ -216,7 +258,7 @@ export default function Schedule() {
               <span className="text-xs text-white/85 text-sm">{t.schedulePage.totalCourses}</span>
             </div>
             <div className="text-3xl font-bold leading-snug">{studentCourses.length}</div>
-          </motion.div>
+          </motion.button>
 
           <motion.div
             variants={itemVariants}
@@ -267,12 +309,14 @@ export default function Schedule() {
             <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
               กำลังโหลดตารางเรียนจากระบบ...
             </div>
+          ) : enrollmentsFailed ? (
+            <CoursesLoadError />
           ) : studentCourses.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
-              ยังไม่มีรายวิชาที่ลงทะเบียนในระบบ
-            </div>
+            <RegisterCta />
           ) : (
-            <WeeklyTimetable entries={entries} term={studentTerm} weekStart={weekStart} moves={moves} showWeekNav onWeekChange={setWeekStart} />
+            view === 'month'
+              ? <MonthCalendar month={month} byDate={monthOccurrences(entries, month, moves)} today={today} onMonthChange={setMonth} onOpenWeek={openWeek} />
+              : <WeeklyTimetable entries={entries} term={studentTerm} weekStart={weekStart} moves={moves} showWeekNav onWeekChange={setWeekStart} />
           )}
         </motion.div>
 
@@ -289,12 +333,16 @@ export default function Schedule() {
                 </div>
               )}
               {todaySlots.map((p, index) => (
-                <motion.div
+                <motion.button
+                  type="button"
                   key={p.key}
+                  data-testid="today-class"
+                  data-course={p.course.code}
+                  onClick={() => navigate('/courses')}
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm"
+                  className="w-full text-left flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 shadow-sm cursor-pointer hover:border-purple-300 dark:hover:border-purple-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
                 >
                   <div className="flex flex-col items-center justify-center bg-purple-50 text-purple-700 rounded-xl px-4 py-2 min-w-[80px] dark:text-slate-300 dark:bg-slate-800">
                     <div className="text-sm font-bold">{formatMinutes(p.start)}</div>
@@ -307,7 +355,7 @@ export default function Schedule() {
                       <span className="truncate">{[p.slot.room || p.section?.room, p.slot.building].filter(Boolean).join(' ') || '-'}</span>
                     </div>
                   </div>
-                </motion.div>
+                </motion.button>
               ))}
             </div>
           </div>
@@ -380,6 +428,8 @@ export default function Schedule() {
               {t.schedulePage.lecturerTitle}<span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600">{t.schedulePage.lecturerHighlight}</span>
           </motion.h1>
         </div>
+        <div className="flex items-center gap-3">
+        {viewSwitch}
         <Select value={lecturerTerm ? termKey(lecturerTerm) : ''} onValueChange={setTermValue}>
           <SelectTrigger data-testid="term-picker" className="w-48 rounded-xl"><SelectValue placeholder={language === 'th' ? 'เลือกเทอม' : 'Term'} /></SelectTrigger>
           <SelectContent>
@@ -388,6 +438,7 @@ export default function Schedule() {
             ))}
           </SelectContent>
         </Select>
+        </div>
       </div>
 
       <motion.div variants={itemVariants} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 dark:bg-slate-900 dark:border-slate-700">
@@ -399,6 +450,8 @@ export default function Schedule() {
           <div className="rounded-2xl border border-dashed border-slate-200 p-10 text-center text-sm font-medium text-slate-500 dark:border-slate-700 dark:text-slate-400">
             ไม่พบข้อมูลตารางสอนจากระบบ
           </div>
+        ) : view === 'month' ? (
+          <MonthCalendar month={month} byDate={monthOccurrences(teachingEntries(courses, lecturerTerm), month, moves)} today={today} onMonthChange={setMonth} onOpenWeek={openWeek} />
         ) : (
           <WeeklyTimetable
             entries={teachingEntries(courses, lecturerTerm)} term={lecturerTerm} weekStart={weekStart} moves={moves} showWeekNav onWeekChange={setWeekStart}

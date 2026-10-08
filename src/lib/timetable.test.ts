@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Course, Section } from '@/types';
 import {
-  addDays, enrolledSection, formatHours, inTerm, moveSource, placeSlots, weekOf, weekOccurrences, studentEntries, studyDays, teachingEntries, termsOf, toMinutes, visibleRange, weeklyMinutes,
+  addDays, enrolledSection, formatHours, inTerm, isDay, isMonth, monthGrid, monthOccurrences, moveSource, placeSlots, weekOf, weekOccurrences, studentEntries, studyDays, teachingEntries, termsOf, toMinutes, visibleRange, weeklyMinutes,
 } from './timetable';
 
 const slot = (day: string, startTime: string, endTime: string) => ({ id: `${day}${startTime}`, day, dayThai: '', startTime, endTime, type: 'lecture' }) as never;
@@ -127,5 +127,57 @@ describe('weekOccurrences', () => {
     const B = course('B', [section('s2', [slot('monday', '10:00', '11:00')])]);
     const occ = weekOccurrences([...entries, { course: B, section: B.sections[0] }], '2030-09-16', [mv({})]);
     expect(occ.find((o) => o.course.code === 'B')!.lanes).toBe(1);
+  });
+});
+
+describe('monthOccurrences', () => {
+  const A = course('A', [section('s1', [slot('monday', '09:00', '12:00')])]);
+  const entries = [{ course: A, section: A.sections[0] }];
+  const mv = (over: Record<string, unknown>) => ({
+    id: 'm', sectionId: 's1', sectionNumber: '01', courseId: 'A', courseCode: 'A', courseName: 'A', originalDate: '2030-09-16', originalStart: '09:00', originalEnd: '12:00',
+    newDate: '2030-09-18', newStart: '13:00', newEnd: '16:00', facilityId: null, room: 'R2', status: 'approved', reason: '', requestedById: 'u', decisionNote: null, ...over,
+  }) as never;
+
+  it('puts a Monday class on every Monday of the month and nowhere else', () => {
+    const byDate = monthOccurrences(entries, '2030-09', []);
+    // September 2030: Mondays are 2, 9, 16, 23, 30
+    expect(Object.keys(byDate).sort()).toEqual(['2030-09-02', '2030-09-09', '2030-09-16', '2030-09-23', '2030-09-30']);
+    expect(byDate['2030-09-02'].map((o) => o.kind)).toEqual(['regular']);
+  });
+
+  it('follows approved moves and leaves out dates outside the month', () => {
+    const byDate = monthOccurrences(entries, '2030-09', [mv({}), mv({ id: 'n', originalDate: '2030-09-30', newDate: '2030-10-01' })]);
+    expect(byDate['2030-09-16']).toBeUndefined();
+    expect(byDate['2030-09-18'].map((o) => [o.kind, o.start])).toEqual([['moved-in', 780]]);
+    expect(byDate['2030-09-30']).toBeUndefined();
+    expect(Object.keys(byDate).some((d) => !d.startsWith('2030-09'))).toBe(false);
+  });
+
+  it('ignores a malformed month', () => {
+    expect(monthOccurrences(entries, 'nope', [])).toEqual({});
+    expect(monthOccurrences(entries, '2026-13', [])).toEqual({});
+    expect(monthOccurrences(entries, '2026-00', [])).toEqual({});
+  });
+});
+
+describe('isMonth / isDay', () => {
+  it('rejects impossible months and days', () => {
+    expect(isMonth('2026-12')).toBe(true);
+    expect(isMonth('2026-13')).toBe(false);
+    expect(isMonth('2026-00')).toBe(false);
+    expect(isDay('2026-02-28')).toBe(true);
+    expect(isDay('2026-02-31')).toBe(false);
+    expect(isDay('2026-13-01')).toBe(false);
+  });
+});
+
+describe('monthGrid', () => {
+  it('starts on Monday and pads to whole weeks', () => {
+    const cells = monthGrid('2030-09');
+    // 1 Sep 2030 is a Sunday → grid starts Mon 26 Aug, ends Sun 6 Oct
+    expect(cells[0]).toEqual({ date: '2030-08-26', inMonth: false });
+    expect(cells[6]).toEqual({ date: '2030-09-01', inMonth: true });
+    expect(cells.length % 7).toBe(0);
+    expect(cells[cells.length - 1].date).toBe('2030-10-06');
   });
 });

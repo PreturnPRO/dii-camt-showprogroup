@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Trophy, Calendar, Users, CheckCircle, Clock, MapPin,
   Star, Award, Sparkles, Zap, Target, ArrowRight, Hourglass,
-  ArrowUpRight, Flame
+  ArrowUpRight, Flame, Lock, BadgePlus, BriefcaseBusiness, type LucideIcon
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -13,7 +13,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Progress } from '@/components/ui/progress';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { api, ApiError } from '@/lib/api';
+import { api, ApiError, type BadgeProgress } from '@/lib/api';
+import { cn } from '@/lib/utils';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapStudent, mapStudentStatsToStudent } from '@/lib/live-mappers';
 import { buildLeaderboard, type LeaderboardEntry } from '@/lib/activity-leaderboard';
@@ -62,6 +63,15 @@ const emptyStudent: Student = {
     history: [],
   },
   timeline: [],
+};
+
+const BADGE_ICONS: Record<string, LucideIcon> = {
+  sparkles: Sparkles,
+  'badge-plus': BadgePlus,
+  users: Users,
+  'briefcase-business': BriefcaseBusiness,
+  trophy: Trophy,
+  star: Star,
 };
 
 const containerVariants = {
@@ -174,7 +184,11 @@ export default function Activities() {
   );
   const studentPoints = student.gamificationPoints;
   const studentHours = student.totalActivityHours;
-  const badgesEarned = student.badges.length;
+  const [badges, setBadges] = React.useState<BadgeProgress[]>([]);
+  const [badgesState, setBadgesState] = React.useState<'loading' | 'ok' | 'error'>('loading');
+  const [selectedBadge, setSelectedBadge] = React.useState<string | null>(null);
+  const badgesEarned = badges.filter((b) => b.unlocked).length;
+  const selected = badges.find((b) => b.name === selectedBadge) ?? null;
   const enrolledCount = activities.filter(a => a.enrolledStudents.includes(student.id)).length;
 
   React.useEffect(() => {
@@ -205,10 +219,19 @@ export default function Activities() {
       console.warn('Unable to load activities from API', error);
     });
 
+    if (user?.role === 'student') {
+      api.students.badges()
+        .then((r) => { if (mounted) { setBadges(r.badges); setBadgesState('ok'); } })
+        .catch((error) => {
+          console.warn('Unable to load badges from API', error);
+          if (mounted) setBadgesState('error');
+        });
+    }
+
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user?.role]);
 
   const refreshActivities = React.useCallback(async () => {
     const response = await api.activities.list();
@@ -318,7 +341,7 @@ export default function Activities() {
         <StatCard
           icon={Star}
           label={t.activitiesPage.badgesEarned}
-          value={badgesEarned}
+          value={badgesState === 'ok' ? badgesEarned : '—'}
           gradient="bg-blue-600"
         />
         {/* there is no level system, hour target or term goal in the data, so none is shown (audit F6) */}
@@ -536,20 +559,62 @@ export default function Activities() {
                   <Sparkles className="w-5 h-5 text-purple-300" />
                   {t.activitiesPage.badgesCollection}
                 </h3>
-                <div className="text-[10px] text-white/80 font-bold tracking-widest uppercase">{badgesEarned} Unlocked</div>
+                <div className="text-[10px] text-white/80 font-bold tracking-widest uppercase">{badgesState === 'ok' ? `${badgesEarned} Unlocked` : ''}</div>
               </div>
 
-              {/* real badges only; next-badge progress had no data behind it (audit F6) */}
-              {student.badges.length === 0 ? (
+              {/* earned badges plus locked catalogue badges, counters straight from the server (design.md §4.9) */}
+              {badgesState === 'loading' ? (
+                <p className="text-sm text-slate-300 leading-relaxed">{language === 'th' ? 'กำลังโหลด badge...' : 'Loading badges...'}</p>
+              ) : badgesState === 'error' ? (
+                <p data-testid="badges-load-error" role="alert" className="text-sm text-red-200 leading-relaxed">{language === 'th' ? 'โหลด badge ไม่สำเร็จ กรุณารีเฟรชหน้าอีกครั้ง' : 'Could not load badges. Please refresh.'}</p>
+              ) : badges.length === 0 ? (
                 <p className="text-sm text-slate-300 leading-relaxed">{language === 'th' ? 'ยังไม่มี badge' : 'No badges yet'}</p>
               ) : (
-                <div className="flex flex-wrap gap-2">
-                  {student.badges.map((badge, i) => (
-                    <span key={i} className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/10 text-sm">
-                      {asString(asRecord(badge).nameThai, asString(asRecord(badge).name, '-'))}
-                    </span>
-                  ))}
-                </div>
+                <>
+                  <div className="grid grid-cols-3 gap-3">
+                    {badges.map((badge) => {
+                      const Icon = BADGE_ICONS[badge.icon] ?? Award;
+                      const isSelected = badge.name === selectedBadge;
+                      return (
+                        <button
+                          type="button"
+                          key={badge.name}
+                          data-testid="badge"
+                          data-name={badge.name}
+                          data-state={badge.unlocked ? 'unlocked' : 'locked'}
+                          aria-pressed={isSelected}
+                          onClick={() => setSelectedBadge(isSelected ? null : badge.name)}
+                          className={cn(
+                            'relative flex flex-col items-center gap-2 rounded-2xl p-3 text-center cursor-pointer transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-300',
+                            badge.unlocked ? 'bg-purple-600 text-white hover:bg-purple-500' : 'border border-dashed border-white/40 text-white opacity-60 hover:opacity-80',
+                            isSelected && 'border-2 border-purple-500 ring-2 ring-white opacity-100',
+                          )}
+                        >
+                          {isSelected && <span aria-hidden className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-amber-400" />}
+                          {badge.unlocked
+                            ? <Icon className="h-6 w-6 text-amber-300" aria-hidden />
+                            : <Lock data-testid="badge-lock" className="h-6 w-6" aria-label={language === 'th' ? 'ยังไม่ปลดล็อก' : 'Locked'} />}
+                          <span className="text-xs font-medium leading-snug">{language === 'th' ? badge.nameThai : badge.name}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {selected && (
+                    <div data-testid="badge-detail" className="mt-5 rounded-2xl bg-white/10 p-4 text-sm text-slate-100">
+                      <div className="font-semibold text-white">{language === 'th' ? selected.nameThai : selected.name}</div>
+                      <p className="mt-1 text-slate-200 leading-relaxed">{selected.criteria}</p>
+                      {selected.target !== null && selected.current !== null && (
+                        <>
+                          <div className="mt-3 flex justify-between text-xs">
+                            <span>{selected.current} / {selected.target} {selected.unit} ({Math.min(100, Math.round((selected.current / selected.target) * 100))}%)</span>
+                            {selected.unlocked && <span className="text-amber-300">{language === 'th' ? 'ปลดล็อกแล้ว' : 'Unlocked'}</span>}
+                          </div>
+                          <Progress value={Math.min(100, (selected.current / selected.target) * 100)} className="mt-2 h-2 bg-white/20" />
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </div>

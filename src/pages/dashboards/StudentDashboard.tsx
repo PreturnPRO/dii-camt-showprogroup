@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Calendar, Trophy, TrendingUp, Clock, Award,
@@ -15,6 +15,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Calendar as CalendarUI } from '@/components/ui/calendar';
 import { WeeklyTimetable } from '@/components/common/WeeklyTimetable';
+import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
 import { useWeekMoves } from '@/hooks/use-week-moves';
 import { StudentTimeline } from '@/components/common/StudentTimeline';
 import { DegreeProgressCard } from '@/components/dashboard/DegreeProgressCard';
@@ -28,6 +29,9 @@ import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapActivity, mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Activity, Course, Grade, Student } from '@/types';
 import { gradesForCard } from '@/lib/grade-cards';
+
+// course cards are real links: open-in-new-tab and screen readers work (design.md §4.10)
+const MotionLink = motion.create(Link);
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -160,6 +164,9 @@ export default function StudentDashboard() {
   // credits against the whole curriculum; null until stats load (audit M1: no categories)
   const [curriculumCredits, setCurriculumCredits] = React.useState<{ required: number | null; completed: number | null; inProgress: number | null; registrar: number | null }>({ required: null, completed: null, inProgress: null, registrar: null });
   const [companyTargets, setCompanyTargets] = React.useState<CompanyTarget[]>([]);
+  // only a loaded, empty course list earns the register call-to-action
+  // the term filter needs the profile too, so both must have loaded
+  const [coursesState, setCoursesState] = React.useState<'loading' | 'ok' | 'error'>('loading');
 
   React.useEffect(() => {
     let mounted = true;
@@ -213,6 +220,7 @@ export default function StudentDashboard() {
           return { ...course, enrolledStudents: [String(enrollment.studentId ?? nextStudent.id)] };
         }));
       }
+      setCoursesState(enrollmentsResult.status === 'fulfilled' && profileResult.status === 'fulfilled' ? 'ok' : 'error');
       if (activitiesResult.status === 'fulfilled') {
         setActivities(activitiesResult.value.activities.map(mapActivity));
       }
@@ -399,20 +407,26 @@ export default function StudentDashboard() {
                   {/* Current Courses */}
                   <motion.div variants={itemVariants} className="space-y-4">
                     <div className="flex items-center justify-between">
-                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                        <BookOpen className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.studentDashboard.coursesThisSem}
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200">
+                        <button type="button" data-testid="dashboard-courses-title" onClick={() => navigate('/courses')} className="flex items-center gap-2 cursor-pointer rounded-lg hover:text-purple-700 dark:hover:text-purple-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500">
+                          <BookOpen className="w-5 h-5 text-purple-500 dark:text-slate-400" /> {t.studentDashboard.coursesThisSem}
+                        </button>
                       </h3>
                       <Button variant="ghost" className="text-slate-500 dark:text-slate-400 hover:text-purple-600" onClick={() => navigate('/courses')}>{t.studentDashboard.viewAll}</Button>
                     </div>
 
                     <div className="grid gap-4">
+                      {coursesState === 'error' && <CoursesLoadError />}
+                      {coursesState === 'ok' && currentCourses.length === 0 && <RegisterCta />}
                       {currentCourses.slice(0, 3).map((course, index) => (
-                        <motion.div
+                        <MotionLink
                           key={course.id}
+                          to="/courses"
+                          data-testid="dashboard-course"
                           initial={{ opacity: 0, x: -20 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: index * 0.1 }}
-                          className="group relative bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 p-5 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden"
+                          className="group relative bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 p-5 rounded-2xl shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 block cursor-pointer overflow-hidden focus-visible:outline focus-visible:outline-2 focus-visible:outline-purple-500"
                         >
                           <div className="bg-purple-50 dark:bg-purple-500/10 absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" />
                           <div className="relative flex items-center justify-between">
@@ -435,7 +449,7 @@ export default function StudentDashboard() {
                               <ChevronRight className="w-5 h-5" />
                             </div>
                           </div>
-                        </motion.div>
+                        </MotionLink>
                       ))}
                     </div>
                   </motion.div>

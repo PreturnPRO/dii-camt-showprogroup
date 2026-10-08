@@ -154,3 +154,37 @@ export const weekOccurrences = (entries: TimetableEntry[], weekStart: string, mo
   return [...out.filter((o) => o.kind === 'moved-out'), ...laned]
     .sort((a, b) => a.date.localeCompare(b.date) || a.start - b.start);
 };
+
+// real calendar dates only: '2026-13' or '2026-02-31' from a hand-edited URL must not reach Date math
+export const isDay = (v: string | null | undefined): v is string =>
+  !!v && /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(Date.parse(`${v}T00:00:00Z`)) && new Date(`${v}T00:00:00Z`).toISOString().slice(0, 10) === v;
+export const isMonth = (v: string | null | undefined): v is string => !!v && /^\d{4}-\d{2}$/.test(v) && isDay(`${v}-01`);
+
+export const shiftMonth = (month: string, n: number) => {
+  const [y, m] = month.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1 + n, 1)).toISOString().slice(0, 7);
+};
+
+// month view: whole Monday-first weeks covering `month` (YYYY-MM)
+export const monthGrid = (month: string): { date: string; inMonth: boolean }[] => {
+  if (!isMonth(month)) return [];
+  const first = `${month}-01`;
+  const cells: { date: string; inMonth: boolean }[] = [];
+  for (let d = weekOf(first); d.startsWith(month) || d < first || cells.length % 7 !== 0; d = addDays(d, 1)) {
+    cells.push({ date: d, inMonth: d.startsWith(month) });
+  }
+  return cells;
+};
+
+// the month's dated classes, with approved moves applied; moved-out classes are left out
+export const monthOccurrences = (entries: TimetableEntry[], month: string, moves: ClassMoveView[]): Record<string, Occurrence[]> => {
+  const out: Record<string, Occurrence[]> = {};
+  const cells = monthGrid(month);
+  for (let i = 0; i < cells.length; i += 7) {
+    for (const o of weekOccurrences(entries, cells[i].date, moves)) {
+      if (o.kind === 'moved-out' || !o.date.startsWith(month)) continue;
+      (out[o.date] ??= []).push(o);
+    }
+  }
+  return out;
+};

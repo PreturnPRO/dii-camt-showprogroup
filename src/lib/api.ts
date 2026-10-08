@@ -1,4 +1,18 @@
 import type { UserRole } from "@/types";
+
+/** a catalogue badge with the student's real counter; current/target/unit are null for badges awarded outside the catalogue */
+export type BadgeProgress = {
+  name: string;
+  nameThai: string;
+  description: string;
+  icon: string;
+  criteria: string;
+  unlocked: boolean;
+  earnedAt: string | null;
+  current: number | null;
+  target: number | null;
+  unit: string | null;
+};
 import { createTokenStore, type KeyValueStorage } from "@/lib/token-store";
 
 const DEFAULT_API_BASE_URL = "http://localhost:4000/api";
@@ -369,6 +383,7 @@ export const api = {
       request<ApiEnvelope<{ stats: unknown }>>(
         `/students/stats${studentId ? `?studentId=${encodeURIComponent(studentId)}` : ""}`,
       ),
+    badges: () => request<ApiEnvelope<{ badges: BadgeProgress[] }>>("/students/badges"),
     updateProfile: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ profile: unknown }>>("/students/profile", {
         method: "PATCH",

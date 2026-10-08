@@ -1,6 +1,6 @@
 import React from 'react';
 import * as XLSX from 'xlsx';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Student } from '@/types';
@@ -28,6 +28,7 @@ import { isCourseFull, openSections, seatsLeft } from '@/lib/course-seats';
 import { api, type RegistrationSummary } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
+import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
 import type { Course } from '@/types';
 
 type CourseRow = Course;
@@ -123,6 +124,7 @@ export default function Courses() {
   const [registrationQuery, setRegistrationQuery] = React.useState('');
   const [courses, setCourses] = React.useState<CourseRow[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
+  const [enrollmentsFailed, setEnrollmentsFailed] = React.useState(false);
   const [editingCourse, setEditingCourse] = React.useState<CourseRow | null>(null);
   const [courseForm, setCourseForm] = React.useState<CourseFormState | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -133,7 +135,10 @@ export default function Courses() {
 
   const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
   const [viewingCourse, setViewingCourse] = React.useState<CourseRow | null>(null);
-  const [activeTab, setActiveTab] = React.useState('my-courses'); // D-25: ให้ปุ่มเพิ่มวิชาสลับไปแท็บเลือกวิชา
+  // tabs live in ?tab= so other pages can deep-link straight to registration (design.md §4.10)
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') === 'registration' ? 'registration' : 'my-courses';
+  const setActiveTab = (tab: string) => setSearchParams((prev) => { const p = new URLSearchParams(prev); p.set('tab', tab); return p; }, { replace: true });
   const [summary, setSummary] = React.useState<RegistrationSummary | null>(null);
   const [pendingEnroll, setPendingEnroll] = React.useState<CourseRow | null>(null);
   const [pendingSectionId, setPendingSectionId] = React.useState('');
@@ -172,8 +177,10 @@ export default function Courses() {
             return mapCourse(enrollment.course, index);
           });
           setEnrolledCourses(mappedEnrollments);
+          setEnrollmentsFailed(false);
         } else {
           setEnrolledCourses([]);
+          setEnrollmentsFailed(true);
         }
       }).catch((error) => {
         console.warn('Unable to load data from API', error);
@@ -861,10 +868,10 @@ export default function Courses() {
         {/* Content Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-8">
           <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 shadow-xs w-full md:w-auto flex overflow-x-auto">
-            <TabsTrigger value="my-courses" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
+            <TabsTrigger value="my-courses" data-value="my-courses" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
               {t.coursesPage.myCourses}
             </TabsTrigger>
-            <TabsTrigger value="registration" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
+            <TabsTrigger value="registration" data-value="registration" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:text-blue-600 data-[state=active]:shadow-md font-medium text-slate-600 dark:text-slate-400 flex-1 md:flex-none dark:bg-slate-900">
               {t.coursesPage.registerTab}
             </TabsTrigger>
           </TabsList>
@@ -949,9 +956,13 @@ export default function Courses() {
                   </div>
                 </motion.div>
               ))}
-              {filteredEnrolledCourses.length === 0 && (
+              {isLoading ? null : enrollmentsFailed ? (
+                <div className="col-span-full"><CoursesLoadError /></div>
+              ) : enrolledCourses.length === 0 ? (
+                <div className="col-span-full"><RegisterCta onClick={() => setActiveTab('registration')} /></div>
+              ) : filteredEnrolledCourses.length === 0 && (
                 <div className="col-span-full py-12 text-center text-slate-500 dark:text-slate-400">
-                  {language === 'th' ? 'ยังไม่มีวิชาที่ลงทะเบียน' : 'No enrolled courses'}
+                  {language === 'th' ? 'ไม่พบวิชาที่ค้นหา' : 'No matching courses'}
                 </div>
               )}
             </div>

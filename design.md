@@ -48,12 +48,16 @@ ShowPro relies on a dark-navy foundation with strict semantic mapping. Every col
 
 ## 3. LAYOUT & SCREEN REAL ESTATE RULES
 
-### 3.1 The Sacred Dashboard Layout Rule (NEVER BREAK)
-- In `src/components/layout/DashboardLayout.tsx`, the responsive layout padding:
-  ```tsx
-  className="ml-0 md:ml-60 px-4 sm:px-6 lg:pl-8 lg:pr-52"
-  ```
-  **MUST NEVER BE MODIFIED, OVERRIDDEN, OR REMOVED.**
+### 3.1 The Dashboard Layout Rule (NEVER BREAK)
+- `src/components/layout/DashboardLayout.tsx` renders **exactly one** `<Outlet />`, chosen by `useIsMobile()`:
+  - **Desktop (md and up):** a fixed 72px sidebar rail; the content column is offset by `pl-[72px]` and never reflows — the expanded sidebar opens **over** the content, not beside it. Inner page padding: `px-4 md:px-6 lg:px-8`, top `pt-24 sm:pt-28` (clears the fixed header).
+    ```tsx
+    <div className="h-full flex flex-col min-h-0 pl-[72px] w-full">
+      <main className="flex-1 min-h-0 pt-24 sm:pt-28 pb-8 overflow-y-auto w-full">
+        <div className="px-4 md:px-6 lg:px-8 w-full">
+    ```
+  - **Mobile:** `MobileHeader` + `MobileBottomNav` + `MobileDrawer`; content `pt-16 pb-20 px-3 sm:px-4`.
+- Do not change these offsets from a page, and never render the page twice (one tree hidden by CSS).
 - Page components must fit gracefully inside this container without hardcoding fixed pixel page widths.
 
 ### 3.2 Horizontal Efficiency Over Vertical Sprawl
@@ -166,6 +170,7 @@ Do **NOT** allow `TabsList` to stretch 100% across wide desktop viewports.
   - Render a subtle lock silhouette (`Lock` icon) with reduced opacity (60%) and dashed border.
 - **Badge Selection**: Selected badge features an explicit border highlight (`border-2 border-purple-500`) and an accent dot indicator at top-right. Only one badge selected at a time.
 - **Progress Counter**: Always display granular progress `6 / 10 ครั้ง (60%)` accompanied by the unlock rule text (`เข้าร่วมกิจกรรมให้ครบ 10 ครั้งเพื่อปลดล็อก`).
+- **Source of truth**: the badge list, locked state and counters come from `GET /api/students/badges` (server catalogue in `backend/src/services/badge.service.ts`). Never invent a counter on the client; a badge awarded outside the catalogue (automation) has no counter and shows as unlocked only.
 
 ### 4.10 Course & Registration Navigation Rules (Dashboard, Schedule, Timetable)
 - **Direct Interactive Links to Registration**:
