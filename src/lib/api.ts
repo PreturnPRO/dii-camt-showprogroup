@@ -589,6 +589,21 @@ export const api = {
         method: "POST",
         body: payload,
       }),
+    reviewLog: (id: string, payload: { status: 'approved' | 'changes_requested'; comment?: string; updatedAt: string }) =>
+      request<ApiEnvelope<{ log: unknown }>>(`/internship/logs/${encodeURIComponent(id)}/review`, {
+        method: "PATCH",
+        body: payload,
+      }),
+    updateLog: (id: string, payload: { date: string; hours: number; activities: string; learnings?: string; challenges?: string }) =>
+      request<ApiEnvelope<{ log: unknown }>>(`/internship/logs/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        body: payload,
+      }),
+    setStatus: (recordId: string, status: 'in_progress' | 'completed' | 'cancelled') =>
+      request<ApiEnvelope<{ internship: unknown }>>(`/internship/records/${encodeURIComponent(recordId)}/status`, {
+        method: "PATCH",
+        body: { status },
+      }),
     createDocument: (payload: Record<string, unknown>) =>
       request<ApiEnvelope<{ document: unknown }>>("/internship/documents", {
         method: "POST",
@@ -666,6 +681,11 @@ export const api = {
       ),
     cooperationSummary: (id: string) =>
       requestBlob(`/documents/cooperation-summary/${encodeURIComponent(id)}`),
+    revoke: (reference: string) =>
+      request<ApiEnvelope<{ document: { reference: string; valid: boolean } }>>("/documents/revoke", {
+        method: "POST",
+        body: { reference },
+      }),
   },
   files: {
     list: () => request<ApiEnvelope<{ assets: unknown[] }>>("/files/assets"),

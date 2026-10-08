@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   Calendar, Clock, CheckCircle2, AlertCircle, MessageSquare,
   Plus, Search, Building, UserCheck, Sparkles, Filter,
-  BookOpen, ChevronRight, Check, X, Award, Briefcase, Loader2
+  BookOpen, ChevronRight, Check, X, Award, Briefcase, Loader2, Pencil
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import type { InternshipLog } from '@/types';
 
@@ -26,10 +26,11 @@ export interface DailyDiaryEntry {
   activities: string;
   learnings: string;
   challenges: string;
+  reviewStatus: string;
+  reviewComment: string;
 }
 
-// Every entry comes from the student's internship record; the backend stores no review status or mentor
-// comment for a log, so none is shown (audit F9 / Por 8/10/69).
+// Every entry and review comes from the student's internship record; no placeholder review is shown.
 export function InternshipDiary() {
   const { language } = useLanguage();
   const { user } = useAuth();
@@ -38,6 +39,7 @@ export function InternshipDiary() {
   const [logs, setLogs] = useState<DailyDiaryEntry[]>([]);
   const [record, setRecord] = useState<Record<string, unknown> | null>(null);
   const [loadError, setLoadError] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -49,13 +51,42 @@ export function InternshipDiary() {
   const [formActivities, setFormActivities] = useState('');
   const [formLearnings, setFormLearnings] = useState('');
   const [formChallenges, setFormChallenges] = useState('');
+  // null = writing a new entry; otherwise the id of the entry being corrected
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Fetch from API on mount
+  const resetForm = () => {
+    setEditingId(null);
+    setFormDate(new Date().toISOString().slice(0, 10));
+    setFormActivities('');
+    setFormLearnings('');
+    setFormChallenges('');
+    setFormHours(8);
+  };
+
+  const openNewEntry = () => {
+    resetForm();
+    setIsDialogOpen(true);
+  };
+
+  const openEdit = (entry: DailyDiaryEntry) => {
+    setEditingId(entry.id);
+    setFormDate(entry.date);
+    setFormHours(entry.hours);
+    setFormActivities(entry.activities);
+    setFormLearnings(entry.learnings);
+    setFormChallenges(entry.challenges);
+    setIsDialogOpen(true);
+  };
+
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Fetch from API on mount, and again when an edit is refused because the entry changed on the server
   useEffect(() => {
     let mounted = true;
     api.internship.get()
       .then((res) => {
         if (!mounted) return;
+        setLoadError(false);
         const internship = res.internship ? asRecord(res.internship) : null;
         setRecord(internship);
         setLogs(asArray(internship?.logs).map((item, index) => {
@@ -67,18 +98,21 @@ export function InternshipDiary() {
             activities: asString(row.activities, ''),
             learnings: asString(row.learnings, ''),
             challenges: asString(row.challenges, ''),
+            reviewStatus: asString(row.reviewStatus, 'pending'),
+            reviewComment: asString(row.reviewComment, ''),
           };
         }));
       })
       .catch((err) => {
         console.warn('Unable to load internship logs', err);
         if (mounted) setLoadError(true);
-      });
+      })
+      .finally(() => { if (mounted) setIsLoading(false); });
 
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const handleCreateLog = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,14 +125,48 @@ export function InternshipDiary() {
     }
 
     setIsSubmitting(true);
+    const payload = {
+      date: formDate,
+      hours: Number(formHours) || 8,
+      activities: formActivities.trim(),
+      learnings: formLearnings.trim(),
+      challenges: formChallenges.trim(),
+    };
+    if (editingId) {
+      try {
+        await api.internship.updateLog(editingId, payload);
+        // the server puts an edited entry back in the review queue and drops the old comment
+        setLogs((current) => current.map((entry) => entry.id === editingId
+          ? { ...entry, ...payload, reviewStatus: 'pending', reviewComment: '' }
+          : entry));
+        setIsDialogOpen(false);
+        resetForm();
+        toast({ title: language === 'th' ? 'แก้ไขบันทึกแล้ว ส่งให้ตรวจอีกครั้ง' : 'Entry updated and sent for review again' });
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 409) {
+          // approved meanwhile, or the internship was closed: show the server's version instead of a stale Edit button
+          setIsDialogOpen(false);
+          resetForm();
+          setReloadKey((key) => key + 1);
+          toast({
+            title: language === 'th' ? 'แก้ไขบันทึกนี้ไม่ได้แล้ว' : 'This entry can no longer be edited',
+            description: language === 'th' ? 'บันทึกถูกอนุมัติหรือการฝึกงานจบแล้ว โหลดข้อมูลล่าสุดให้แล้ว' : 'It was approved or the internship has ended. The latest version is loaded.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        toast({
+          title: language === 'th' ? 'แก้ไขไม่สำเร็จ' : 'Could not update the entry',
+          description: error instanceof Error ? error.message : undefined,
+          variant: 'destructive',
+        });
+      } finally {
+        setIsSubmitting(false);
+      }
+      return;
+    }
     try {
-      const response = await api.internship.createLog({
-        date: formDate,
-        hours: Number(formHours) || 8,
-        activities: formActivities.trim(),
-        learnings: formLearnings.trim(),
-        challenges: formChallenges.trim(),
-      });
+      const response = await api.internship.createLog(payload);
       const saved = asRecord(asRecord(response).log);
       setLogs((current) => [{
         id: asString(saved.id, `log-${Date.now()}`),
@@ -107,12 +175,11 @@ export function InternshipDiary() {
         activities: asString(saved.activities, formActivities.trim()),
         learnings: asString(saved.learnings, formLearnings.trim()),
         challenges: asString(saved.challenges, formChallenges.trim()),
+        reviewStatus: 'pending',
+        reviewComment: '',
       }, ...current]);
       setIsDialogOpen(false);
-      setFormActivities('');
-      setFormLearnings('');
-      setFormChallenges('');
-      setFormHours(8);
+      resetForm();
       toast({
         title: language === 'th' ? 'บันทึกไดอารี่ประจำวันแล้ว' : 'Diary entry logged successfully',
         description: `${formDate} (${formHours} ${language === 'th' ? 'ชั่วโมง' : 'hours'})`,
@@ -128,6 +195,10 @@ export function InternshipDiary() {
       setIsSubmitting(false);
     }
   };
+
+  // a completed or cancelled internship's diary is closed; the server refuses new or edited entries
+  const internshipStatus = asString(record?.status, 'not_started');
+  const diaryClosed = internshipStatus === 'completed' || internshipStatus === 'cancelled';
 
   // Calculations
   const totalHours = logs.reduce((sum, l) => sum + l.hours, 0);
@@ -168,14 +239,21 @@ export function InternshipDiary() {
             </div>
           </div>
 
-          <Button
+          {diaryClosed ? (
+            <p data-testid="diary-closed" className="max-w-xs rounded-2xl bg-white/15 px-4 py-3 text-sm text-white">
+              {internshipStatus === 'completed'
+                ? (language === 'th' ? 'การฝึกงานบันทึกว่าจบแล้ว ไดอารี่ปิดแล้ว เพิ่มหรือแก้บันทึกไม่ได้' : 'This internship is marked completed; the diary is closed.')
+                : (language === 'th' ? 'การฝึกงานถูกยกเลิก ไดอารี่ปิดแล้ว' : 'This internship was cancelled; the diary is closed.')}
+            </p>
+          ) : <Button
             size="lg"
-            onClick={() => setIsDialogOpen(true)}
+            onClick={openNewEntry}
+            disabled={isLoading}
             className="rounded-2xl bg-white text-blue-700 hover:bg-blue-50 font-bold shadow-md hover:shadow-lg transition-all h-12 px-6 gap-2 shrink-0"
           >
             <Plus className="w-5 h-5 text-blue-700" />
             {language === 'th' ? 'บันทึกการทำงานวันนี้' : 'Log Daily Entry'}
-          </Button>
+          </Button>}
         </div>
 
       </div>
@@ -231,8 +309,10 @@ export function InternshipDiary() {
         </div>
       )}
 
+      {isLoading && <div role="status" className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="h-5 w-5 animate-spin" />{language === 'th' ? 'กำลังโหลดบันทึก...' : 'Loading diary...'}</div>}
+
       {/* Logs List */}
-      <div className="space-y-4">
+      {!isLoading && !loadError && <div className="space-y-4">
         {filteredLogs.length === 0 ? (
           <div className="p-12 text-center rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/30">
             <BookOpen className="w-10 h-10 mx-auto text-slate-400 mb-3 opacity-60" />
@@ -320,10 +400,24 @@ export function InternshipDiary() {
                 </div>
               )}
 
+              <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
+                <Badge variant="outline" className={entry.reviewStatus === 'approved' ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400' : entry.reviewStatus === 'changes_requested' ? 'border-amber-300 text-amber-700 dark:text-amber-400' : 'border-slate-300 text-slate-600 dark:text-slate-300'}>
+                  {entry.reviewStatus === 'approved' ? (language === 'th' ? 'อนุมัติแล้ว' : 'Approved') : entry.reviewStatus === 'changes_requested' ? (language === 'th' ? 'ขอให้แก้ไข' : 'Changes requested') : (language === 'th' ? 'รอตรวจ' : 'Pending review')}
+                </Badge>
+                {entry.reviewComment && <span className="text-slate-600 dark:text-slate-300">{language === 'th' ? 'ความเห็นผู้ตรวจ: ' : 'Reviewer comment: '}{entry.reviewComment}</span>}
+                {/* an approved entry is final; anything else the student may still correct */}
+                {entry.reviewStatus !== 'approved' && !diaryClosed && (
+                  <Button type="button" size="sm" variant="outline" onClick={() => openEdit(entry)} className="ml-auto h-8 gap-1.5 rounded-lg text-xs" data-testid="diary-edit">
+                    <Pencil className="h-3.5 w-3.5" />
+                    {language === 'th' ? 'แก้ไข' : 'Edit'}
+                  </Button>
+                )}
+              </div>
+
             </motion.div>
           ))
         )}
-      </div>
+      </div>}
 
       {/* Add Daily Log Dialog Form */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -332,7 +426,9 @@ export function InternshipDiary() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-xl font-bold">
                 <Calendar className="w-5 h-5 text-blue-600" />
-                {language === 'th' ? 'บันทึกไดอารี่การฝึกงานรายวัน' : 'Log Daily Internship Diary'}
+                {editingId
+                  ? (language === 'th' ? 'แก้ไขบันทึกการฝึกงาน' : 'Edit diary entry')
+                  : (language === 'th' ? 'บันทึกไดอารี่การฝึกงานรายวัน' : 'Log Daily Internship Diary')}
               </DialogTitle>
               <DialogDescription className="text-xs text-slate-500 dark:text-slate-400">
                 {language === 'th'

@@ -5,6 +5,10 @@ export type DailyLogItem = {
   activities: string;
   learnings: string;
   challenges: string;
+  reviewStatus: string;
+  reviewComment: string;
+  /** the version a reviewer is looking at; sent back so a newer edit cannot be approved unseen */
+  updatedAt: string;
 };
 
 export type InternshipPeriodInfo = {
@@ -26,6 +30,8 @@ export type WeeklyReportItem = {
 
 export type InternRow = {
   id: string;
+  /** not_started | in_progress | completed | cancelled — the first diary entry starts it, staff close it */
+  status: string;
   studentId?: string;
   name: string;
   nameEn: string;

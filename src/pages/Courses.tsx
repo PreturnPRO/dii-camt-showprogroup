@@ -258,7 +258,7 @@ export default function Courses() {
       syllabus: course.syllabus || '',
       status: course.status || 'active',
       room: course.sections?.[0]?.room || '',
-      sectionNumber: course.sections?.[0]?.sectionNumber || course.sections?.[0]?.number || '001',
+      sectionNumber: course.sections?.[0]?.sectionNumber || '001',
       scheduleDays: course.sections?.[0]?.schedule?.map(s => s.day) || [],
       scheduleStartTime: course.sections?.[0]?.schedule?.[0]?.startTime || '09:00',
       scheduleEndTime: course.sections?.[0]?.schedule?.[0]?.endTime || '12:00',
@@ -326,6 +326,7 @@ export default function Courses() {
           number: courseForm.sectionNumber.trim() || '001',
           room: courseForm.room.trim(),
           maxStudents: Number(courseForm.maxStudents),
+          minStudents: Number(courseForm.minStudents),
           schedule: courseForm.scheduleDays.map(day => ({
             day,
             startTime: courseForm.scheduleStartTime,

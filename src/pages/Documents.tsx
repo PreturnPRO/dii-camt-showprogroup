@@ -1,13 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
-import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen, Loader2 } from 'lucide-react';
+import { FileText, Printer, File, Download, CheckCircle, Search, Clock, FolderOpen, Loader2, Ban } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { asDate, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
 import { solidBg } from '@/lib/flat-color';
@@ -61,6 +62,28 @@ export default function Documents() {
     const [documentForm, setDocumentForm] = React.useState({ type: 'transcript', studentId: '' });
     const [issuingId, setIssuingId] = React.useState<string | null>(null);
     const [isGenerating, setIsGenerating] = React.useState(false);
+    const [revokeReference, setRevokeReference] = React.useState('');
+    const [confirmRevoke, setConfirmRevoke] = React.useState(false);
+    const [isRevoking, setIsRevoking] = React.useState(false);
+
+    const REFERENCE_PATTERN = /^SHOWPRO-\d{4}-\d{6,10}$/;
+    const revokeDocument = async () => {
+        setIsRevoking(true);
+        try {
+            const result = await api.documents.revoke(revokeReference.trim());
+            toast.success(`เพิกถอน ${result.document.reference} แล้ว — หน้าตรวจสอบจะแสดงว่าเอกสารถูกเพิกถอน`);
+            setRevokeReference('');
+        } catch (error) {
+            toast.error(error instanceof ApiError && error.status === 404
+                ? 'ไม่พบเอกสารเลขที่นี้ — ตรวจเลขบน PDF อีกครั้ง'
+                : error instanceof ApiError && error.status === 400
+                    ? 'รูปแบบเลขที่เอกสารไม่ถูกต้อง (เช่น SHOWPRO-2026-000123)'
+                    : 'เพิกถอนเอกสารไม่สำเร็จ กรุณาลองใหม่');
+        } finally {
+            setIsRevoking(false);
+            setConfirmRevoke(false);
+        }
+    };
 
     const mapDocumentRequest = React.useCallback((item: unknown, index: number): DocumentRequestRow => {
         const request = asRecord(item);
@@ -110,6 +133,12 @@ export default function Documents() {
         };
     }, [mapDocumentRequest]);
 
+    // the server refuses a completion certificate until staff mark the internship completed
+    const issueErrorMessage = (error: unknown, fallback: string) =>
+        error instanceof ApiError && error.status === 409
+            ? 'การฝึกงานของนักศึกษาคนนี้ยังไม่ถูกบันทึกว่าจบ — บันทึกได้ที่หน้าติดตามการฝึกงาน แล้วค่อยออกใบรับรอง'
+            : error instanceof Error ? error.message : fallback;
+
     const saveBlob = (blob: Blob, filename: string) => {
         const url = URL.createObjectURL(blob);
         const link = document.createElement('a');
@@ -143,7 +172,7 @@ export default function Documents() {
             }, ...current]);
             toast.success(t.documentsPage.issueDoc);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to issue document');
+            toast.error(issueErrorMessage(error, 'Unable to issue document'));
         } finally {
             setIssuingId(null);
         }
@@ -176,7 +205,7 @@ export default function Documents() {
             setIsDialogOpen(false);
             toast.success('ออกเอกสารแล้ว');
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Unable to generate document');
+            toast.error(issueErrorMessage(error, 'Unable to generate document'));
         } finally {
             setIsGenerating(false);
         }
@@ -307,6 +336,46 @@ export default function Documents() {
                     </div>
                 </motion.div>
             </div>
+
+            {/* a QR on a printed document keeps working; revoking is how staff withdraw one issued by mistake */}
+            <motion.div variants={itemVariants} className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-sm" data-testid="revoke-card">
+                <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-2 flex items-center gap-2">
+                    <Ban className="w-5 h-5 text-rose-500" /> เพิกถอนเอกสาร
+                </h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">ใส่เลขที่เอกสารที่พิมพ์อยู่บน PDF เช่น SHOWPRO-2026-000123 เมื่อเพิกถอนแล้ว ผู้ที่สแกน QR จะเห็นว่าเอกสารถูกเพิกถอน และย้อนกลับไม่ได้</p>
+                <div className="flex flex-col sm:flex-row gap-3">
+                    <Input
+                        aria-label="เลขที่เอกสาร"
+                        placeholder="SHOWPRO-2026-000123"
+                        value={revokeReference}
+                        onChange={(event) => setRevokeReference(event.target.value.toUpperCase())}
+                        className="font-mono sm:max-w-xs"
+                    />
+                    <Button
+                        variant="outline"
+                        disabled={!REFERENCE_PATTERN.test(revokeReference.trim()) || isRevoking}
+                        onClick={() => setConfirmRevoke(true)}
+                        className="border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/40"
+                    >
+                        เพิกถอน
+                    </Button>
+                </div>
+            </motion.div>
+
+            <AlertDialog open={confirmRevoke} onOpenChange={setConfirmRevoke}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>เพิกถอน {revokeReference.trim()}?</AlertDialogTitle>
+                        <AlertDialogDescription>ผู้ที่สแกน QR ของเอกสารนี้จะเห็นว่าเอกสารถูกเพิกถอน การเพิกถอนย้อนกลับไม่ได้</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isRevoking}>ยกเลิก</AlertDialogCancel>
+                        <AlertDialogAction disabled={isRevoking} onClick={(event) => { event.preventDefault(); void revokeDocument(); }} className="bg-rose-600 hover:bg-rose-700 text-white">
+                            {isRevoking ? 'กำลังเพิกถอน...' : 'ยืนยันเพิกถอน'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent>

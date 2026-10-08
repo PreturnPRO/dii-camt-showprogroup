@@ -214,6 +214,8 @@ export interface Section {
   sectionNumber: string; // "01", "02"
   room?: string;
   maxStudents: number;
+  /** the section's own minimum; the course-level minStudents is the sum across sections */
+  minStudents?: number;
   enrolledStudents: string[];
   /** non-dropped enrollments in this section, counted by the server */
   enrolledCount?: number;

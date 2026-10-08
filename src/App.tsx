@@ -58,6 +58,7 @@ const CourseGradingSettings = lazy(() => import("./pages/CourseGradingSettings")
 const ApplicationHistory = lazy(() => import("./pages/ApplicationHistory"));
 const StudentQRCheckIn = lazy(() => import("./pages/StudentQRCheckIn"));
 const PublicPortfolio = lazy(() => import("./pages/PublicPortfolio"));
+const VerifyDocument = lazy(() => import("./pages/VerifyDocument"));
 
 const RouteFallback = () => (
   <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/portfolio/:id" element={<PublicPortfolio />} />
+                <Route path="/verify/:token" element={<VerifyDocument />} />
                 <Route element={<DashboardLayout />}>
                   {/* Shared (ทุก role ที่ login แล้ว) */}
                   <Route path="/dashboard" element={<Dashboard />} />

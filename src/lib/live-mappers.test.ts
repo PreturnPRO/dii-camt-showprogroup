@@ -19,3 +19,10 @@ describe('mapCourse section seats', () => {
     expect(course.sections[0].enrolledCount).toBe(12);
   });
 });
+
+describe('mapCourse section minimum', () => {
+  it('keeps each section its own minimum so the edit form does not save 0 back', () => {
+    const course = mapCourse({ id: 'c1', sections: [{ id: 's1', number: '01', maxStudents: 30, minStudents: 8 }], enrollments: [] });
+    expect(course.sections[0].minStudents).toBe(8);
+  });
+});

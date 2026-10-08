@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -27,6 +27,13 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { useLanguage } from '@/contexts/LanguageContext';
+import { useAuth } from '@/contexts/AuthContext';
+import { api, ApiError } from '@/lib/api';
+import { queryKeys } from '@/lib/query-keys';
+import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import type { InternRow } from './types';
 
 interface InternDetailViewProps {
@@ -48,6 +55,75 @@ export function InternDetailView({
   onBack,
 }: InternDetailViewProps) {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
+  const [reviewDrafts, setReviewDrafts] = useState<Record<string, string>>({});
+  const [reviewingId, setReviewingId] = useState<string | null>(null);
+  const canReview = ['lecturer', 'company', 'staff', 'admin'].includes(user?.role ?? '');
+  const canSetStatus = ['staff', 'admin'].includes(user?.role ?? '');
+  // shown from the refetched row; the local value only bridges the moment between saving and the refetch
+  const [savedStatus, setSavedStatus] = useState<string | null>(null);
+  const status = savedStatus ?? intern.status;
+  useEffect(() => { setSavedStatus(null); }, [intern.status]);
+  const diaryClosed = status === 'completed' || status === 'cancelled';
+  const [savingStatus, setSavingStatus] = useState(false);
+  // leaving "completed" revokes the completion certificates already issued, so staff confirm it first
+  const [pendingStatus, setPendingStatus] = useState<'in_progress' | 'cancelled' | null>(null);
+  const requestStatus = (next: 'in_progress' | 'completed' | 'cancelled') => {
+    if (status === 'completed' && next !== 'completed') setPendingStatus(next);
+    else void changeStatus(next);
+  };
+  const th = language === 'th';
+  const STATUS_LABELS: Record<string, string> = {
+    not_started: th ? 'ยังไม่เริ่ม' : 'Not started',
+    in_progress: th ? 'กำลังฝึกงาน' : 'In progress',
+    completed: th ? 'ฝึกงานจบแล้ว' : 'Completed',
+    cancelled: th ? 'ยกเลิก' : 'Cancelled',
+  };
+
+  const changeStatus = async (next: 'in_progress' | 'completed' | 'cancelled') => {
+    setSavingStatus(true);
+    try {
+      const result = await api.internship.setStatus(intern.id, next);
+      setSavedStatus(next);
+      await queryClient.invalidateQueries({ queryKey: queryKeys.internships.all() });
+      const revoked = Number((result as { revokedCertificates?: number }).revokedCertificates ?? 0);
+      toast.success(revoked > 0
+        ? (th ? `บันทึกสถานะแล้ว · เพิกถอนใบรับรองฝึกงาน ${revoked} ฉบับ` : `Status saved · ${revoked} completion certificate(s) revoked`)
+        : (th ? 'บันทึกสถานะแล้ว' : 'Status saved'));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : (th ? 'บันทึกสถานะไม่สำเร็จ' : 'Could not save the status'));
+    } finally {
+      setSavingStatus(false);
+      setPendingStatus(null);
+    }
+  };
+
+  const reviewLog = async (log: { id: string; updatedAt: string }, status: 'approved' | 'changes_requested') => {
+    const { id } = log;
+    const comment = reviewDrafts[id]?.trim() ?? '';
+    if (status === 'changes_requested' && !comment) {
+      toast.error(language === 'th' ? 'กรุณาเขียนความเห็นก่อนขอแก้ไข' : 'Add a comment before requesting changes');
+      return;
+    }
+    setReviewingId(id);
+    try {
+      await api.internship.reviewLog(id, { status, comment, updatedAt: log.updatedAt });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.internships.all() });
+      setReviewDrafts((current) => { const next = { ...current }; delete next[id]; return next; });
+      toast.success(language === 'th' ? 'บันทึกผลตรวจแล้ว' : 'Review saved');
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        // the student edited the entry after this page loaded: show the new text instead of approving the old one
+        await queryClient.invalidateQueries({ queryKey: queryKeys.internships.all() });
+        toast.error(language === 'th' ? 'บันทึกนี้เปลี่ยนไปหลังจากคุณเปิดหน้า โหลดเนื้อหาล่าสุดแล้ว กรุณาอ่านอีกครั้งก่อนตรวจ' : 'This entry changed after you opened it. The latest version is loaded — please read it before reviewing.');
+        return;
+      }
+      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'บันทึกผลตรวจไม่สำเร็จ' : 'Could not save review'));
+    } finally {
+      setReviewingId(null);
+    }
+  };
   const tr = t.internTracking;
 
   const perf = intern.performance;
@@ -84,6 +160,55 @@ export function InternDetailView({
           <ArrowLeft className="w-4 h-4" /> {tr.backToList}
         </Button>
       </motion.div>
+
+      {/* Internship status: the first diary entry starts it; staff mark it completed (which unlocks the certificate) or cancelled */}
+      <motion.div variants={itemVariants} className="flex flex-wrap items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900" data-testid="intern-status">
+        <span className="text-sm text-slate-600 dark:text-slate-300">{th ? 'สถานะการฝึกงาน:' : 'Internship status:'}</span>
+        <Badge variant="outline" data-testid="intern-status-label" className={status === 'completed' ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400' : status === 'cancelled' ? 'border-rose-300 text-rose-700 dark:text-rose-400' : 'border-slate-300 text-slate-700 dark:text-slate-300'}>
+          {STATUS_LABELS[status] ?? status}
+        </Badge>
+        {canSetStatus && (
+          <div className="ml-auto flex flex-wrap gap-2">
+            {status !== 'completed' && (
+              <Button size="sm" disabled={savingStatus} onClick={() => requestStatus('completed')} className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+                {savingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+                {th ? 'บันทึกว่าฝึกงานจบแล้ว' : 'Mark completed'}
+              </Button>
+            )}
+            {status !== 'in_progress' && (
+              <Button size="sm" variant="outline" disabled={savingStatus} onClick={() => requestStatus('in_progress')}>
+                {status === 'not_started'
+                  ? (th ? 'บันทึกว่าเริ่มฝึกงาน' : 'Mark in progress')
+                  : (th ? 'กลับเป็นกำลังฝึกงาน' : 'Back to in progress')}
+              </Button>
+            )}
+            {status !== 'cancelled' && (
+              <Button size="sm" variant="outline" disabled={savingStatus} onClick={() => requestStatus('cancelled')} className="border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900 dark:text-rose-400 dark:hover:bg-rose-950/40">
+                {th ? 'ยกเลิกการฝึกงาน' : 'Cancel internship'}
+              </Button>
+            )}
+          </div>
+        )}
+      </motion.div>
+
+      <AlertDialog open={pendingStatus !== null} onOpenChange={(open) => { if (!open) setPendingStatus(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pendingStatus === 'cancelled' ? (th ? 'ยกเลิกการฝึกงานที่บันทึกว่าจบแล้ว?' : 'Cancel a completed internship?') : (th ? 'เปลี่ยนกลับเป็นกำลังฝึกงาน?' : 'Move back to in progress?')}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {th
+                ? 'ใบรับรองการฝึกงานทุกฉบับที่ออกให้นักศึกษาคนนี้แล้วจะถูกเพิกถอน ผู้ที่สแกน QR จะเห็นว่าถูกเพิกถอน และย้อนกลับไม่ได้ ถ้าบันทึกว่าจบอีกครั้งต้องออกใบใหม่'
+                : 'Every completion certificate already issued to this student will be revoked. Anyone scanning its QR will see it is revoked; this cannot be undone. Marking completed again needs a new certificate.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={savingStatus}>{th ? 'ยกเลิก' : 'Cancel'}</AlertDialogCancel>
+            <AlertDialogAction disabled={savingStatus} onClick={(event) => { event.preventDefault(); if (pendingStatus) void changeStatus(pendingStatus); }} className="bg-rose-600 text-white hover:bg-rose-700">
+              {th ? 'ยืนยันและเพิกถอน' : 'Confirm and revoke'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Top Student & Company Banner */}
       <motion.div
@@ -327,6 +452,49 @@ export function InternDetailView({
                             <p className="text-slate-600 dark:text-slate-300 leading-relaxed">{log.challenges}</p>
                           </div>
                         )}
+                      </div>
+                    )}
+
+                    <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3 text-xs dark:border-slate-800">
+                      <Badge variant="outline" className={
+                        log.reviewStatus === 'approved'
+                          ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400'
+                          : log.reviewStatus === 'changes_requested'
+                            ? 'border-amber-300 text-amber-700 dark:text-amber-400'
+                            : 'border-slate-300 text-slate-600 dark:text-slate-300'
+                      }>
+                        {log.reviewStatus === 'approved'
+                          ? (language === 'th' ? 'อนุมัติแล้ว' : 'Approved')
+                          : log.reviewStatus === 'changes_requested'
+                            ? (language === 'th' ? 'ขอให้แก้ไข' : 'Changes requested')
+                            : (language === 'th' ? 'รอตรวจ' : 'Pending review')}
+                      </Badge>
+                      {log.reviewComment && (
+                        <span className="text-slate-600 dark:text-slate-300">{language === 'th' ? 'ความเห็น: ' : 'Comment: '}{log.reviewComment}</span>
+                      )}
+                    </div>
+                    {canReview && diaryClosed && (
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{th ? 'การฝึกงานจบหรือถูกยกเลิกแล้ว ไม่ตรวจบันทึกเพิ่ม' : 'This internship has ended; entries are no longer reviewed.'}</p>
+                    )}
+                    {canReview && !diaryClosed && (
+                      <div className="space-y-2">
+                        <Textarea
+                          aria-label={language === 'th' ? 'ความเห็นต่อบันทึก' : 'Review comment'}
+                          placeholder={language === 'th' ? 'ความเห็นต่อบันทึกวันนี้' : 'Comment on this daily log'}
+                          maxLength={2000}
+                          value={reviewDrafts[log.id] ?? log.reviewComment}
+                          onChange={(event) => setReviewDrafts((current) => ({ ...current, [log.id]: event.target.value }))}
+                          className="min-h-20 text-sm"
+                        />
+                        <div className="flex flex-wrap gap-2">
+                          <Button type="button" size="sm" disabled={reviewingId !== null} onClick={() => void reviewLog(log, 'approved')}>
+                            {reviewingId === log.id && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                            {language === 'th' ? 'อนุมัติ' : 'Approve'}
+                          </Button>
+                          <Button type="button" size="sm" variant="outline" disabled={reviewingId !== null} onClick={() => void reviewLog(log, 'changes_requested')}>
+                            {language === 'th' ? 'ขอให้แก้ไข' : 'Request changes'}
+                          </Button>
+                        </div>
                       </div>
                     )}
 

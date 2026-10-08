@@ -51,6 +51,8 @@ export default function Internships() {
   const [savedJobs, setSavedJobs] = React.useState<string[]>([]);
   const [filterType, setFilterType] = React.useState('all');
   const [jobs, setJobs] = React.useState<JobPosting[]>([]);
+  const [isLoadingJobs, setIsLoadingJobs] = React.useState(true);
+  const [jobsLoadError, setJobsLoadError] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'positions' | 'diary'>('positions');
   const [isApplying, setIsApplying] = React.useState(false);
 
@@ -65,6 +67,10 @@ export default function Internships() {
       })
       .catch((error) => {
         console.warn('Unable to load internship jobs from API', error);
+        if (mounted) setJobsLoadError(true);
+      })
+      .finally(() => {
+        if (mounted) setIsLoadingJobs(false);
       });
 
     return () => {
@@ -257,7 +263,9 @@ export default function Internships() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
         {/* Left Column: Job List (~42% => 5 of 12 cols) */}
         <div className="lg:col-span-5 flex flex-col gap-3 max-h-[calc(100vh-18rem)] overflow-y-auto pr-1">
-          {filteredJobs.length === 0 && (
+          {isLoadingJobs && <div role="status" className="flex items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900"><Loader2 className="h-5 w-5 animate-spin" />{language === 'th' ? 'กำลังโหลดตำแหน่งฝึกงาน...' : 'Loading internships...'}</div>}
+          {jobsLoadError && <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">{language === 'th' ? 'โหลดตำแหน่งฝึกงานไม่สำเร็จ กรุณารีเฟรชหน้า' : 'Could not load internships. Please refresh.'}</div>}
+          {!isLoadingJobs && !jobsLoadError && filteredJobs.length === 0 && (
             <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0c1222] p-8 text-center">
               <Briefcase className="w-8 h-8 mx-auto text-slate-400 mb-2.5 opacity-60" />
               <h3 className="font-bold text-sm text-slate-800 dark:text-slate-100">ยังไม่มีตำแหน่งฝึกงาน</h3>

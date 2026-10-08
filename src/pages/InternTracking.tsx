@@ -56,6 +56,9 @@ export function mapRawInternship(item: unknown, index = 0): InternRow {
       activities: asString(log.activities, '-'),
       learnings: asString(log.learnings, ''),
       challenges: asString(log.challenges, ''),
+      reviewStatus: asString(log.reviewStatus, 'pending'),
+      reviewComment: asString(log.reviewComment, ''),
+      updatedAt: asString(log.updatedAt, ''),
     };
   });
 
@@ -65,6 +68,7 @@ export function mapRawInternship(item: unknown, index = 0): InternRow {
 
   return {
     id: asString(record.id, `intern-${index + 1}`),
+    status: asString(record.status, 'not_started'),
     studentId: asString(student.studentId, ''),
     name: nameThai,
     nameEn: asString(studentUser.name, nameThai),
@@ -106,7 +110,9 @@ export default function InternTracking() {
   const { data: rawInternships, isLoading, isError } = useInternshipsList();
   // derived, not copied into state: a fresh [] default on every render used to loop setState forever
   const interns = useMemo<InternRow[]>(() => (rawInternships ?? []).map(mapRawInternship), [rawInternships]);
-  const [selectedIntern, setSelectedIntern] = useState<InternRow | null>(null);
+  // keep the id, not a copy: after a review or status change the refetched row replaces what is shown
+  const [selectedInternId, setSelectedInternId] = useState<string | null>(null);
+  const selectedIntern = useMemo(() => interns.find((i) => i.id === selectedInternId) ?? null, [interns, selectedInternId]);
   const [detailTab, setDetailTab] = useState<'weekly' | 'daily'>('daily');
 
 
@@ -116,7 +122,7 @@ export default function InternTracking() {
     if (targetInternId && interns.length > 0) {
       const found = interns.find((i) => i.id === targetInternId);
       if (found) {
-        setSelectedIntern(found);
+        setSelectedInternId(found.id);
         if (targetTab === 'daily' || targetTab === 'weekly') {
           setDetailTab(targetTab);
         }
@@ -142,7 +148,7 @@ export default function InternTracking() {
           intern={selectedIntern}
           detailTab={detailTab}
           onTabChange={setDetailTab}
-          onBack={() => setSelectedIntern(null)}
+          onBack={() => setSelectedInternId(null)}
         />
       </>
     );
@@ -175,7 +181,7 @@ export default function InternTracking() {
           <InternTableList
             interns={interns}
             onSelectIntern={(intern, tab) => {
-              setSelectedIntern(intern);
+              setSelectedInternId(intern.id);
               if (tab) setDetailTab(tab);
             }}
           />

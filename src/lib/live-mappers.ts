@@ -345,6 +345,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
             sectionNumber: asString(section.number, asString(section.sectionNumber, fallbackSection?.sectionNumber ?? "01")),
             room: asString(section.room, fallbackSection?.room ?? mappedSchedule[0]?.room ?? ""),
             maxStudents: asNumber(section.maxStudents, fallbackSection?.maxStudents ?? fallback.maxStudents),
+            minStudents: asNumber(section.minStudents, fallbackSection?.minStudents ?? 0),
             enrolledStudents: enrollments
               .filter((enrollment) => asString(asRecord(enrollment).sectionId) === asString(section.id))
               .map((enrollment) => asString(asRecord(enrollment).studentId))
