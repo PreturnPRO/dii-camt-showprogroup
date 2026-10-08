@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { motion } from 'framer-motion';
@@ -43,7 +44,9 @@ export default function Attendance() {
     const { user } = useAuth();
     const { socket } = useSocket();
     const [courses, setCourses] = React.useState<CourseRow[]>([]);
-    const [selectedCourse, setSelectedCourse] = React.useState('');
+    // the dashboard's "เช็คชื่อ" opens one course via ?courseId=
+    const [searchParams] = useSearchParams();
+    const [selectedCourse, setSelectedCourse] = React.useState(() => searchParams.get('courseId') || '');
     const [date, setDate] = React.useState(thaiToday());
     const dateRef = React.useRef(date);
     dateRef.current = date;

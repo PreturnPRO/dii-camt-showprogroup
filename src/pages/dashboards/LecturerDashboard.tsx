@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Users, Calendar, BookOpen, ClipboardList, ChevronRight, UserCog } from 'lucide-react';
+import { Users, Calendar, BookOpen, ClipboardList, ChevronRight, UserCog, CheckSquare, PenLine } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,7 +12,9 @@ import { useWeekMoves } from '@/hooks/use-week-moves';
 import { api } from '@/lib/api';
 import { asArray, asRecord } from '@/lib/live-data';
 import { mapAppointment, mapCourse } from '@/lib/live-mappers';
-import { teachingEntries, termsOf } from '@/lib/timetable';
+import { teachingEntries, termKey, type Term } from '@/lib/timetable';
+import { gradeProgress, teachingTerm, upcomingAppointments as upcomingFrom } from '@/lib/lecturer-dashboard';
+import { thaiToday } from '@/lib/thai-date';
 
 type LecturerCourse = ReturnType<typeof mapCourse>;
 type LecturerAppointment = ReturnType<typeof mapAppointment>;
@@ -36,6 +38,8 @@ export default function LecturerDashboard() {
   const [courses, setCourses] = React.useState<LecturerCourse[]>([]);
   const [appointments, setAppointments] = React.useState<LecturerAppointment[]>([]);
   const [adviseeCount, setAdviseeCount] = React.useState<number | null>(null);
+  const [progress, setProgress] = React.useState<Map<string, { enrolled: number; awaitingGrade: number }>>(new Map());
+  const [currentTerm, setCurrentTerm] = React.useState<Term | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
 
   const rawUser = asRecord(user?.raw);
@@ -56,6 +60,11 @@ export default function LecturerDashboard() {
           viewAll: 'ดูทั้งหมด',
           credits: 'หน่วยกิต',
           reviewDiary: 'ตรวจไดอารี่ฝึกงาน',
+          students: 'นักศึกษา',
+          awaitingGrade: 'รอให้เกรด',
+          takeAttendance: 'เช็คชื่อ',
+          enterGrades: 'ให้เกรด',
+          awaitingConfirm: 'รอยืนยัน',
         }
       : {
           title: 'Teacher Dashboard',
@@ -69,6 +78,11 @@ export default function LecturerDashboard() {
           viewAll: 'View all',
           credits: 'credits',
           reviewDiary: 'Review Diary',
+          students: 'Students',
+          awaitingGrade: 'Awaiting grade',
+          takeAttendance: 'Attendance',
+          enterGrades: 'Grades',
+          awaitingConfirm: 'To confirm',
         };
 
   React.useEffect(() => {
@@ -82,6 +96,8 @@ export default function LecturerDashboard() {
 
       if (scheduleResult.status === 'fulfilled') {
         setCourses(scheduleResult.value.schedule.map(mapCourse));
+        setProgress(new Map(scheduleResult.value.schedule.map((raw) => [String(asRecord(raw).id), gradeProgress(raw)])));
+        setCurrentTerm(teachingTerm(scheduleResult.value.schedule));
         const lecturer = asRecord(scheduleResult.value.lecturer);
         setAdviseeCount(asArray(lecturer.advisees).length);
       }
@@ -99,10 +115,9 @@ export default function LecturerDashboard() {
     };
   }, []);
 
-  const upcomingAppointments = appointments
-    .filter((a) => a.status === 'confirmed')
-    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
-    .slice(0, 4);
+  // only what is still ahead (Bangkok calendar), and only this term's courses (M12)
+  const upcomingAppointments = upcomingFrom(appointments, thaiToday());
+  const termCourses = currentTerm ? courses.filter((course) => termKey({ semester: Number(course.semester), academicYear: String(course.academicYear) }) === termKey(currentTerm)) : [];
 
   if (isLoading) {
     return (
@@ -161,7 +176,7 @@ export default function LecturerDashboard() {
             </CardHeader>
             <CardContent>
               {courses.length > 0 ? (
-                <WeeklyTimetable entries={teachingEntries(courses, termsOf(courses)[0] ?? null)} term={termsOf(courses)[0] ?? null} weekStart={thisWeek} moves={weekMoves} />
+                <WeeklyTimetable entries={teachingEntries(courses, currentTerm)} term={currentTerm} weekStart={thisWeek} moves={weekMoves} />
               ) : (
                 <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-10 text-center text-sm text-slate-500 dark:text-slate-400">
                   {copy.noCourses}
@@ -186,16 +201,33 @@ export default function LecturerDashboard() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-2">
-                {courses.slice(0, 5).map((course) => (
-                  <div key={course.id} className="flex items-center justify-between p-2.5 border border-slate-100 dark:border-slate-800 rounded-lg text-sm">
-                    <div className="min-w-0">
-                      <div className="font-medium truncate">{course.code}</div>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{course.nameThai || course.name}</div>
+                {termCourses.slice(0, 5).map((course) => {
+                  const counts = progress.get(course.id) ?? { enrolled: 0, awaitingGrade: 0 };
+                  return (
+                    <div key={course.id} data-testid="lecturer-course" className="space-y-2 p-2.5 border border-slate-100 dark:border-slate-800 rounded-lg text-sm">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{course.code}</div>
+                          <div className="text-xs text-slate-500 dark:text-slate-400 truncate">{course.nameThai || course.name}</div>
+                        </div>
+                        <Badge variant="outline" className="shrink-0">{course.credits} {copy.credits}</Badge>
+                      </div>
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-600 dark:text-slate-300">
+                        <span data-testid="course-enrolled">{copy.students}: <span className="font-mono font-semibold">{counts.enrolled}</span></span>
+                        <span data-testid="course-awaiting" className={counts.awaitingGrade > 0 ? 'text-amber-700 dark:text-amber-400' : ''}>{copy.awaitingGrade}: <span className="font-mono font-semibold">{counts.awaitingGrade}</span></span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        <Button asChild size="sm" variant="outline" className="h-7 rounded-lg px-2 text-xs">
+                          <Link to={`/attendance?courseId=${encodeURIComponent(course.id)}`}><CheckSquare className="mr-1 h-3.5 w-3.5" />{copy.takeAttendance}</Link>
+                        </Button>
+                        <Button asChild size="sm" variant="outline" className="h-7 rounded-lg px-2 text-xs">
+                          <Link to={`/grades?courseId=${encodeURIComponent(course.id)}`}><PenLine className="mr-1 h-3.5 w-3.5" />{copy.enterGrades}</Link>
+                        </Button>
+                      </div>
                     </div>
-                    <Badge variant="outline" className="shrink-0">{course.credits} {copy.credits}</Badge>
-                  </div>
-                ))}
-                {courses.length === 0 && (
+                  );
+                })}
+                {termCourses.length === 0 && (
                   <div className="rounded-xl border border-dashed border-slate-200 dark:border-slate-800 p-4 text-center text-xs text-slate-500 dark:text-slate-400">
                     {copy.noCourses}
                   </div>
@@ -220,7 +252,10 @@ export default function LecturerDashboard() {
               <CardContent className="space-y-2">
                 {upcomingAppointments.map((appt) => (
                   <Link key={appt.id} to="/appointments" className="block p-2.5 border border-slate-100 dark:border-slate-800 rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-800/50">
-                    <div className="font-medium truncate">{appt.purpose || appt.studentName}</div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="font-medium truncate">{appt.purpose || appt.studentName}</span>
+                      {appt.status === 'pending' && <Badge variant="outline" className="shrink-0 border-amber-300 text-[11px] text-amber-700 dark:text-amber-400">{copy.awaitingConfirm}</Badge>}
+                    </div>
                     <div className="text-xs text-slate-500 dark:text-slate-400">
                       {new Date(appt.date).toLocaleDateString(language === 'th' ? 'th-TH' : 'en-US', { day: 'numeric', month: 'short' })} · {appt.startTime}
                     </div>

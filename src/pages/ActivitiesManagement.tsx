@@ -41,7 +41,8 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
+import { Checkbox } from '@/components/ui/checkbox';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
 import { solidBg } from '@/lib/flat-color';
@@ -161,6 +162,65 @@ export default function ActivitiesManagement() {
 
     // View Details Modal state
     const [viewingActivity, setViewingActivity] = React.useState<FullActivity | null>(null);
+    // attendance (M8): staff tick who came; "came" credits the activity's hours and points once
+    const [attendanceSelection, setAttendanceSelection] = React.useState<Set<string>>(new Set());
+    const [markingAttendance, setMarkingAttendance] = React.useState(false);
+
+    const am = t.activitiesManagementPage;
+    const ATTENDANCE_LABELS: Record<string, string> = { registered: am.attendanceRegistered, completed: am.attendanceCompleted, absent: am.attendanceAbsent };
+    const fill = (template: string, values: Record<string, string | number>) =>
+        Object.entries(values).reduce((text, [key, value]) => text.replace(`{${key}}`, String(value)), template);
+    // hours are credited only for an approved activity that has started and was not cancelled (the server enforces it too)
+    const canRecordAttendance = (activity: FullActivity) =>
+        !['pending', 'draft', 'cancelled'].includes(activity.status) && activity.rawDateStart.getTime() <= Date.now();
+
+    const markAttendance = async (enrollmentIds: string[], status: 'completed' | 'absent' | 'registered') => {
+        if (!viewingActivity || enrollmentIds.length === 0) return;
+        setMarkingAttendance(true);
+        const nameOf = (id: string) => viewingActivity.enrollmentsList.find((item) => item.id === id)?.studentName ?? '';
+        const saved = new Map<string, { status: string; checkedInAt?: string | null }>();
+        const failed: string[] = [];
+        let message: string | null = null;
+        // every selected person is tried; the ones that fail stay selected so staff can retry them
+        for (const enrollmentId of enrollmentIds) {
+            try {
+                const response = await api.activities.updateEnrollmentStatus(enrollmentId, { status });
+                const enrollment = asRecord(asRecord(response).enrollment);
+                saved.set(enrollmentId, {
+                    status: asString(enrollment.status, status),
+                    checkedInAt: enrollment.checkedInAt ? asDate(enrollment.checkedInAt).toLocaleString('th-TH') : null,
+                });
+            } catch (error) {
+                failed.push(enrollmentId);
+                if (error instanceof ApiError && error.status === 409 && status !== 'completed') {
+                    // someone credited them a moment ago: show that instead of a stale "registered"
+                    saved.set(enrollmentId, { status: 'completed' });
+                    message = fill(am.attendanceAlreadyCredited, { name: nameOf(enrollmentId) });
+                } else if (error instanceof ApiError && error.status === 409) {
+                    message = am.attendanceCannotCredit;
+                }
+            }
+        }
+        const apply = (activity: FullActivity): FullActivity => ({
+            ...activity,
+            enrollmentsList: activity.enrollmentsList.map((item) => {
+                const change = saved.get(item.id);
+                return change ? { ...item, status: change.status, checkedInAt: change.checkedInAt ?? item.checkedInAt } : item;
+            }),
+        });
+        setViewingActivity((current) => (current ? apply(current) : current));
+        setActivities((current) => current.map((item) => (item.id === viewingActivity.id ? apply(item) : item)));
+        setAttendanceSelection(new Set(failed.filter((id) => saved.get(id)?.status !== 'completed')));
+        setMarkingAttendance(false);
+        const savedCount = enrollmentIds.length - failed.length;
+        if (failed.length === 0) {
+            toast.success(fill(status === 'completed' ? am.attendanceSavedCame : am.attendanceSaved, { n: savedCount }));
+        } else if (enrollmentIds.length === 1) {
+            toast.error(message ?? fill(am.attendancePartial, { saved: 0, total: 1, names: nameOf(failed[0]) }));
+        } else {
+            toast.error(`${fill(am.attendancePartial, { saved: savedCount, total: enrollmentIds.length, names: failed.map(nameOf).join(', ') })}${message ? ` · ${message}` : ''}`);
+        }
+    };
 
     const mapActivity = React.useCallback((item: unknown): FullActivity => {
         const act = asRecord(item);
@@ -816,7 +876,7 @@ export default function ActivitiesManagement() {
             </Dialog>
 
             {/* View Activity Details Modal */}
-            <Dialog open={Boolean(viewingActivity)} onOpenChange={(open) => !open && setViewingActivity(null)}>
+            <Dialog open={Boolean(viewingActivity)} onOpenChange={(open) => { if (!open) { setViewingActivity(null); setAttendanceSelection(new Set()); } }}>
                 <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800">
                     {viewingActivity && (
                         <>
@@ -892,25 +952,71 @@ export default function ActivitiesManagement() {
                                         <Users className="w-4 h-4 text-indigo-500" />
                                         {t.activitiesManagementPage.enrolledStudents} ({viewingActivity.enrollmentsList.length})
                                     </h4>
+                                    {!canRecordAttendance(viewingActivity) && viewingActivity.enrollmentsList.length > 0 && (
+                                        <p className="text-xs text-slate-500 dark:text-slate-400">{am.attendanceNotYet}</p>
+                                    )}
+                                    {canRecordAttendance(viewingActivity) && viewingActivity.enrollmentsList.some((st) => st.status !== 'completed') && (
+                                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                disabled={markingAttendance || attendanceSelection.size === 0}
+                                                onClick={() => markAttendance([...attendanceSelection], 'completed')}
+                                                className="rounded-xl"
+                                            >
+                                                <CheckCircle className="mr-1.5 h-4 w-4 text-emerald-600" />
+                                                {am.markSelectedCame} ({attendanceSelection.size})
+                                            </Button>
+                                            <span className="text-slate-500 dark:text-slate-400">{am.selectHint}</span>
+                                        </div>
+                                    )}
                                     {viewingActivity.enrollmentsList.length === 0 ? (
                                         <p className="text-sm text-slate-400 py-4 text-center border border-dashed rounded-2xl">
                                             {t.activitiesManagementPage.noEnrolledStudents}
                                         </p>
                                     ) : (
-                                        <div className="max-h-48 overflow-y-auto space-y-2 pr-1">
+                                        <div className="max-h-72 overflow-y-auto space-y-2 pr-1">
                                             {viewingActivity.enrollmentsList.map((st) => (
                                                 <div
                                                     key={st.id}
                                                     className="flex items-center justify-between p-3 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/40 text-xs"
                                                 >
-                                                    <div>
-                                                        <p className="font-bold text-slate-800 dark:text-slate-200">{st.studentName}</p>
-                                                        <p className="text-slate-400">{st.email}</p>
+                                                    <div className="flex items-center gap-3">
+                                                        {canRecordAttendance(viewingActivity) && st.status !== 'completed' && (
+                                                            <Checkbox
+                                                                aria-label={`${am.selectStudent} ${st.studentName}`}
+                                                                checked={attendanceSelection.has(st.id)}
+                                                                onCheckedChange={(checked) => setAttendanceSelection((current) => {
+                                                                    const next = new Set(current);
+                                                                    if (checked) next.add(st.id); else next.delete(st.id);
+                                                                    return next;
+                                                                })}
+                                                            />
+                                                        )}
+                                                        <div>
+                                                            <p className="font-bold text-slate-800 dark:text-slate-200">{st.studentName}</p>
+                                                            <p className="text-slate-400">{st.email}</p>
+                                                        </div>
                                                     </div>
-                                                    <div className="text-right">
-                                                        <Badge variant="outline" className="rounded-xl text-[10px]">
-                                                            {st.status}
+                                                    <div className="flex flex-wrap items-center justify-end gap-1.5 text-right" data-testid="attendance-row">
+                                                        <Badge variant="outline" className={`rounded-xl text-[11px] ${st.status === 'completed' ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400' : st.status === 'absent' ? 'border-rose-300 text-rose-700 dark:text-rose-400' : ''}`}>
+                                                            {ATTENDANCE_LABELS[st.status] ?? st.status}
                                                         </Badge>
+                                                        {canRecordAttendance(viewingActivity) && st.status !== 'completed' && (
+                                                            <Button size="sm" variant="outline" disabled={markingAttendance} onClick={() => markAttendance([st.id], 'completed')} className="h-7 rounded-lg px-2 text-[11px]">
+                                                                {am.markCame}
+                                                            </Button>
+                                                        )}
+                                                        {canRecordAttendance(viewingActivity) && st.status === 'registered' && (
+                                                            <Button size="sm" variant="outline" disabled={markingAttendance} onClick={() => markAttendance([st.id], 'absent')} className="h-7 rounded-lg px-2 text-[11px]">
+                                                                {am.markAbsent}
+                                                            </Button>
+                                                        )}
+                                                        {canRecordAttendance(viewingActivity) && st.status === 'absent' && (
+                                                            <Button size="sm" variant="ghost" disabled={markingAttendance} onClick={() => markAttendance([st.id], 'registered')} className="h-7 rounded-lg px-2 text-[11px]">
+                                                                {am.markBackToRegistered}
+                                                            </Button>
+                                                        )}
                                                         {st.checkedInAt && (
                                                             <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">
                                                                 Check-in: {st.checkedInAt}

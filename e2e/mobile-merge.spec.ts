@@ -61,7 +61,9 @@ for (const email of [
       const path = new URL(page.url()).pathname;
       // NotFound sets the tab title; matching "404" in the page text also hit ids/numbers in real data
       const notFound = (await page.title()).startsWith("404") ? 1 : 0;
-      if (path !== href || notFound > 0) broken.push(`${href} → ${path}${notFound ? " (404)" : ""}`);
+      // a link may carry a query (the dashboard's ?courseId=); a role guard redirect changes the path itself
+      const expected = new URL(href, page.url()).pathname;
+      if (path !== expected || notFound > 0) broken.push(`${href} → ${path}${notFound ? " (404)" : ""}`);
     }
     expect(broken).toEqual([]);
   });

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import {
@@ -49,7 +50,9 @@ export function LecturerGradingView() {
 
   const [courses, setCourses] = useState<Course[]>([]);
   const [enrollments, setEnrollments] = useState<EnrollmentRow[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState<string>('all');
+  // the dashboard's "ให้เกรด" opens one course via ?courseId=
+  const [searchParams] = useSearchParams();
+  const [selectedCourseId, setSelectedCourseId] = useState<string>(() => searchParams.get('courseId') || 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   // rows the server rejected on the last save (the whole batch is saved or none of it)
@@ -67,6 +70,8 @@ export function LecturerGradingView() {
 
         const loadedCourses = coursesResult.status === 'fulfilled' ? coursesResult.value.map(mapCourse) : [];
         setCourses(loadedCourses);
+        // a linked course this lecturer does not teach falls back to all courses
+        setSelectedCourseId((current) => (current === 'all' || loadedCourses.some((course) => course.id === current) ? current : 'all'));
 
         if (enrollmentsResult.status === 'fulfilled') {
           const mappedEnrollments: EnrollmentRow[] = enrollmentsResult.value.enrollments.map((item) => {
