@@ -92,7 +92,7 @@ export default function Applicants() {
         reject: 'ปฏิเสธ',
         rejectConfirm: 'ยืนยันปฏิเสธผู้สมัครนี้?',
         openResume: 'เปิด Resume',
-        noResume: 'ยังไม่มีไฟล์ Resume',
+        noResume: 'นักศึกษายังไม่ได้แนบ CV หรือยังไม่ได้เปิดสิทธิ์ให้บริษัทนี้ดู',
         sendMessage: 'ส่งข้อความ',
         selectedCount: (n: number) => `${n} เลือก`,
         bulkShortlist: 'คัดเลือก',
@@ -127,7 +127,7 @@ export default function Applicants() {
         reject: 'Reject',
         rejectConfirm: 'Reject this applicant?',
         openResume: 'Open Resume',
-        noResume: 'No resume file',
+        noResume: 'The student has not attached a CV or has not shared it with your company',
         sendMessage: 'Send message',
         selectedCount: (n: number) => `${n} selected`,
         bulkShortlist: 'Shortlist',
@@ -161,7 +161,8 @@ export default function Applicants() {
             status: asString(application.status, 'pending') as Application['status'],
             appliedAt: asDate(application.appliedAt),
             coverLetter: asString(application.coverLetter),
-            resumeUrl: asString(application.resumeUrl),
+            // a file attached to this application, else the CV on the profile (sent only when the student shares it with this company)
+            resumeUrl: asString(application.resumeUrl) || asString(student.cvUrl),
             notes: asString(application.notes),
             jobTitle: asString(job.title, '-'),
             student: {

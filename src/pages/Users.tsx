@@ -145,6 +145,7 @@ export default function UsersPage() {
             year: values.year,
             semester: values.semester,
             academicYear: values.academicYear,
+            advisorId: values.advisorId || null,
           },
         });
         setUsers((current) =>
@@ -168,6 +169,7 @@ export default function UsersPage() {
             year: values.year,
             semester: values.semester,
             academicYear: values.academicYear,
+            advisorId: values.advisorId || undefined,
           },
         });
         const created = parseUser(response.user);
@@ -427,6 +429,7 @@ export default function UsersPage() {
           semester: Number(values.semester || 1),
           academicYear: values.academicYear,
           academicStatus: values.academicStatus || 'normal',
+          advisorEmail: values.advisorEmail || undefined,
           name,
           nameThai: values.nameThai || name,
           email:

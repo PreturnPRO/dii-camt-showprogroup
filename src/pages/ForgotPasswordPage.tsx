@@ -23,6 +23,17 @@ export default function ForgotPasswordPage() {
   const [isLoading, setIsLoading] = React.useState(false);
   const isResetMode = Boolean(token);
   const isTH = language !== 'en';
+  // without email delivery nobody would ever receive the link: send people to staff instead (Por 8/10/69)
+  const [selfService, setSelfService] = React.useState<'checking' | 'on' | 'off'>('checking');
+
+  React.useEffect(() => {
+    if (isResetMode) return;
+    let mounted = true;
+    api.auth.passwordResetAvailable()
+      .then((result) => { if (mounted) setSelfService(result.available ? 'on' : 'off'); })
+      .catch(() => { if (mounted) setSelfService('off'); });
+    return () => { mounted = false; };
+  }, [isResetMode]);
 
   const requestReset = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -35,7 +46,7 @@ export default function ForgotPasswordPage() {
       if (response.resetUrl) {
         setResetUrl(response.resetUrl);
       }
-      toast.success(isTH ? 'เตรียมลิงก์รีเซ็ตรหัสผ่านแล้ว' : 'Password reset link is ready');
+      toast.success(isTH ? 'ถ้ามีบัญชีที่ใช้อีเมลนี้ ระบบจะส่งลิงก์รีเซ็ตไปที่อีเมลนั้น' : 'If an account uses this email, a reset link is on its way');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to request password reset');
     } finally {
@@ -130,11 +141,22 @@ export default function ForgotPasswordPage() {
             <p className="text-slate-500 mt-2 font-medium dark:text-slate-400">
               {isResetMode
                 ? isTH ? 'กรอกรหัสผ่านใหม่สำหรับบัญชีของคุณ' : 'Enter a new password for your account.'
-                : isTH ? 'กรอกอีเมลที่ใช้สมัครสมาชิก' : 'Enter the email used for your account.'}
+                : selfService === 'off'
+                  ? (isTH ? 'รีเซ็ตรหัสผ่านผ่านเจ้าหน้าที่' : 'Password resets go through staff')
+                  : (isTH ? 'กรอกอีเมลที่ใช้สมัครสมาชิก' : 'Enter the email used for your account.')}
             </p>
           </div>
 
-          {!isResetMode ? (
+          {!isResetMode && selfService === 'checking' ? (
+            <div role="status" className="flex justify-center py-6 text-slate-500"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : !isResetMode && selfService === 'off' ? (
+            <div data-testid="reset-contact-staff" className="space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300">
+              <p className="font-semibold text-slate-900 dark:text-white">{isTH ? 'ติดต่อเจ้าหน้าที่หลักสูตรเพื่อรีเซ็ตรหัสผ่าน' : 'Ask the programme staff to reset your password'}</p>
+              <p>{isTH
+                ? 'ระบบยังไม่ส่งอีเมล เจ้าหน้าที่จะตั้งรหัสผ่านชั่วคราวให้ แล้วคุณเปลี่ยนเป็นรหัสของตัวเองตอนเข้าสู่ระบบครั้งถัดไป'
+                : 'The system does not send email yet. Staff will set a temporary password; you choose your own the next time you sign in.'}</p>
+            </div>
+          ) : !isResetMode ? (
             <form onSubmit={requestReset} className="space-y-6">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-slate-700 font-medium dark:text-slate-300">

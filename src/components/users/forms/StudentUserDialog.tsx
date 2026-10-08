@@ -20,6 +20,8 @@ import {
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { api } from '@/lib/api';
+import { asArray, asRecord, asString } from '@/lib/live-data';
 import {
   Select,
   SelectContent,
@@ -51,7 +53,11 @@ const defaultValues: StudentUserFormValues = {
   academicYear: '2569',
   status: 'active',
   password: '',
+  advisorId: '',
 };
+
+// Radix Select has no empty value; this stands for "no advisor"
+const NO_ADVISOR = 'none';
 
 export function StudentUserDialog({
   open,
@@ -64,6 +70,25 @@ export function StudentUserDialog({
     resolver: zodResolver(studentUserSchema),
     defaultValues,
   });
+  const [lecturers, setLecturers] = React.useState<Array<{ id: string; name: string }>>([]);
+  const [lecturersFailed, setLecturersFailed] = React.useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    let mounted = true;
+    api.lecturers.list()
+      .then((response) => {
+        if (!mounted) return;
+        setLecturersFailed(false);
+        setLecturers(asArray(response.lecturers).map((item) => {
+          const lecturer = asRecord(item);
+          const user = asRecord(lecturer.user);
+          return { id: asString(lecturer.id), name: asString(user.nameThai, asString(user.name, '-')) };
+        }).filter((lecturer) => lecturer.id));
+      })
+      .catch(() => { if (mounted) setLecturersFailed(true); });
+    return () => { mounted = false; };
+  }, [open]);
 
   useEffect(() => {
     if (open) {
@@ -82,6 +107,7 @@ export function StudentUserDialog({
           academicYear: initialData.academicYear || '2569',
           status: initialData.isActive === false ? 'inactive' : 'active',
           password: '',
+          advisorId: initialData.advisorId ?? '',
         });
       } else {
         form.reset(defaultValues);
@@ -288,6 +314,35 @@ export function StudentUserDialog({
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="advisorId"
+                render={({ field }) => (
+                  <FormItem className="sm:col-span-2">
+                    <FormLabel>อาจารย์ที่ปรึกษา</FormLabel>
+                    <Select onValueChange={(value) => field.onChange(value === NO_ADVISOR ? '' : value)} value={field.value || NO_ADVISOR}>
+                      <FormControl>
+                        <SelectTrigger aria-label="อาจารย์ที่ปรึกษา">
+                          <SelectValue placeholder="เลือกอาจารย์ที่ปรึกษา" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value={NO_ADVISOR}>ยังไม่มีอาจารย์ที่ปรึกษา</SelectItem>
+                        {/* the saved advisor while the list loads (or if it failed), so it never looks like "none" */}
+                        {field.value && !lecturers.some((lecturer) => lecturer.id === field.value) && (
+                          <SelectItem value={field.value}>{lecturersFailed ? 'อาจารย์ที่ปรึกษาเดิม (โหลดชื่อไม่สำเร็จ)' : 'กำลังโหลดชื่ออาจารย์...'}</SelectItem>
+                        )}
+                        {lecturers.map((lecturer) => (
+                          <SelectItem key={lecturer.id} value={lecturer.id}>{lecturer.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {lecturersFailed && <p className="text-xs text-rose-600 dark:text-rose-400">โหลดรายชื่ออาจารย์ไม่สำเร็จ — ปิดแล้วเปิดหน้าต่างนี้ใหม่</p>}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
 
             <DialogFooter className="pt-4 border-t">

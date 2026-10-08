@@ -49,6 +49,7 @@ export function mapBackendUser(item: unknown, getRoleText: (role: UserType) => s
     year: Number(studentProfile.year ?? 1),
     semester: Number(studentProfile.semester ?? 1),
     academicYear: asString(studentProfile.academicYear),
+    advisorId: asString(studentProfile.advisorId) || undefined,
     companyName: asString(companyProfile.companyName),
     companyNameThai: asString(companyProfile.companyNameThai),
     industry: asString(companyProfile.industry),

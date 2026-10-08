@@ -34,6 +34,23 @@ test("staff imports a student list and gets each new student's temporary passwor
   expect(res.status()).toBe(200);
 });
 
+test("an advisor email column in the import file gives each student that advisor", async ({ page, request }) => {
+  await login(page, "staff@showpro.local");
+  await page.goto("/users");
+  await page.getByRole("button", { name: "Import นักศึกษา" }).click();
+  const dialog = page.getByRole("dialog", { name: "Import รายชื่อนักศึกษา" });
+  const stamp = Date.now();
+  const studentId = `63${String(stamp).slice(-7)}`;
+  const csv = `studentId,name,nameThai,email,year,academicYear,advisor email\n${studentId},Advised Import,นักศึกษา มีที่ปรึกษา ${stamp},e2e-imp-adv-${stamp}@example.com,1,2569,mali@showpro.local\n`;
+  await dialog.locator("input[type=file]").setInputFiles({ name: "students.csv", mimeType: "text/csv", buffer: Buffer.from(csv) });
+  await dialog.getByRole("button", { name: /^Import 1 รายการ$/ }).click();
+  await expect(page.getByRole("dialog", { name: /รหัสผ่านชั่วคราว/ })).toBeVisible({ timeout: 15_000 });
+
+  const mali = { Authorization: `Bearer ${(await (await request.post(`${API}/auth/login`, { data: { email: "mali@showpro.local", password: "Password123!" } })).json()).token}` };
+  const schedule = await (await request.get(`${API}/courses/lecturer/schedule`, { headers: mali })).json();
+  expect(JSON.stringify(schedule.lecturer.advisees)).toContain(studentId);
+});
+
 test("students cannot open the Users page (and so cannot import)", async ({ page }) => {
   await login(page, "alice@student.showpro.local");
   await page.goto("/users");

@@ -233,6 +233,8 @@ export const api = {
         method: "POST",
         body: { email, password },
       }),
+    passwordResetAvailable: () =>
+      request<ApiEnvelope<{ available: boolean }>>("/auth/password-reset-available"),
     forgotPassword: (email: string) =>
       request<ApiEnvelope<{ resetToken?: string; resetUrl?: string }>>("/auth/forgot-password", {
         method: "POST",

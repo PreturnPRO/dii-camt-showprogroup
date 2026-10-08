@@ -57,6 +57,7 @@ export const studentImportFields: ImportField[] = [
   { key: 'gpa', label: 'GPA', type: 'number', aliases: ['gpa'] },
   { key: 'gpax', label: 'GPAX', type: 'number', aliases: ['gpax'] },
   { key: 'academicStatus', label: 'สถานะ', aliases: ['status', 'สถานะ'], defaultValue: 'normal' },
+  { key: 'advisorEmail', label: 'อีเมลอาจารย์ที่ปรึกษา', type: 'email', aliases: ['advisor email', 'advisoremail', 'อีเมลอาจารย์ที่ปรึกษา'] },
 ];
 
 export const normalizeColumnName = (value: unknown) =>

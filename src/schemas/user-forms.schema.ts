@@ -37,6 +37,8 @@ export const studentUserSchema = baseUserSchema.extend({
     .min(1, 'ภาคการศึกษาต้องอยู่ระหว่าง 1-3')
     .max(3, 'ภาคการศึกษาต้องอยู่ระหว่าง 1-3'),
   academicYear: z.string().min(4, 'กรุณาระบุปีการศึกษา (เช่น 2568)'),
+  /** lecturer profile id; '' = no advisor */
+  advisorId: z.string().default(''),
 });
 export type StudentUserFormValues = z.infer<typeof studentUserSchema>;
 

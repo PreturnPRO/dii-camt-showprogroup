@@ -20,6 +20,8 @@ export type UserRow = {
   year?: number;
   semester?: number;
   academicYear?: string;
+  /** the student's advisor (lecturer profile id) */
+  advisorId?: string;
   companyName?: string;
   companyNameThai?: string;
   industry?: string;
