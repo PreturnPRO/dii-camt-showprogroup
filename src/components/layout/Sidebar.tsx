@@ -29,6 +29,7 @@ import {
   Building2,
   Search,
   Clock,
+  CalendarClock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -84,6 +85,8 @@ const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => 
         { icon: Briefcase, label: nav.internships || 'Internships', href: '/internships' },
         { icon: Clock, label: nav.applicationHistory || 'Application History', href: '/application-history' },
         { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
+        // M1: students book office hours with a lecturer
+        { icon: CalendarClock, label: nav.appointments || 'Appointments', href: '/appointments' },
         { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
         { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];

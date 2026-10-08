@@ -14,12 +14,30 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { api } from '@/lib/api';
+import { api, ApiError } from '@/lib/api';
 import { mapAppointment, mapLecturer } from '@/lib/live-mappers';
+import { asArray, asBoolean, asRecord, asString } from '@/lib/live-data';
+import { thaiToday } from '@/lib/thai-date';
+import { OfficeHoursEditor } from '@/components/appointments/OfficeHoursEditor';
 import type { Appointment, Lecturer } from '@/types';
 
 type AppointmentRow = Appointment;
 type LecturerRow = Lecturer;
+type FreeSlot = { startTime: string; endTime: string; location: string; isBooked: boolean; isPast: boolean };
+
+const sameSlot = (a: FreeSlot | null, b: FreeSlot) => a?.startTime === b.startTime && a?.endTime === b.endTime;
+
+// the server's refusals, said in Thai
+const bookingError = (error: unknown) => {
+    if (error instanceof ApiError && error.status === 409) return 'มีคนจองช่วงเวลานี้ไปแล้ว กรุณาเลือกเวลาอื่น';
+    if (error instanceof ApiError && error.status === 404) return 'ไม่พบอาจารย์ท่านนี้ในระบบแล้ว';
+    if (error instanceof ApiError && error.status === 400) return 'ช่วงเวลานี้จองไม่ได้ (ผ่านไปแล้ว หรือไม่ใช่ office hours ของอาจารย์) กรุณาเลือกใหม่';
+    return 'จองนัดไม่สำเร็จ กรุณาลองใหม่';
+};
+
+const DAY_LABELS: Record<string, string> = {
+    monday: 'จันทร์', tuesday: 'อังคาร', wednesday: 'พุธ', thursday: 'พฤหัสบดี', friday: 'ศุกร์', saturday: 'เสาร์', sunday: 'อาทิตย์',
+};
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -38,15 +56,19 @@ export default function Appointments() {
     const [lecturers, setLecturers] = React.useState<LecturerRow[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
     const [bookingLecturer, setBookingLecturer] = React.useState<LecturerRow | null>(null);
-    const [bookingDate, setBookingDate] = React.useState(() => new Date(Date.now() + 86400000).toISOString().slice(0, 10));
-    const [bookingStart, setBookingStart] = React.useState('09:00');
-    const [bookingEnd, setBookingEnd] = React.useState('10:00');
-    const [bookingLocation, setBookingLocation] = React.useState('');
+    const [bookingDate, setBookingDate] = React.useState('');
+    // the lecturer's office-hour slots on the chosen date, each marked booked or free by the server (M1)
+    const [daySlots, setDaySlots] = React.useState<FreeSlot[] | null>(null);
+    const [slotsError, setSlotsError] = React.useState(false);
+    const [chosenSlot, setChosenSlot] = React.useState<FreeSlot | null>(null);
     const [bookingPurpose, setBookingPurpose] = React.useState('');
     const [isBooking, setIsBooking] = React.useState(false);
     const pendingCount = appointments.filter(a => a.status === 'pending').length;
     const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
     const isTeacher = user?.role === 'lecturer';
+    // only students book; admin sees the list (the API takes bookings from students only)
+    const canBook = user?.role === 'student';
+
 
     React.useEffect(() => {
         let mounted = true;
@@ -97,31 +119,57 @@ export default function Appointments() {
     };
 
     const openBooking = (lecturer: LecturerRow) => {
-        const firstSlot = lecturer.officeHours.find((slot) => slot.isAvailable) ?? lecturer.officeHours[0];
         setBookingLecturer(lecturer);
-        setBookingStart(firstSlot?.startTime || '09:00');
-        setBookingEnd(firstSlot?.endTime || '10:00');
-        setBookingLocation(firstSlot?.location || lecturer.department || '');
+        setBookingDate('');
+        setDaySlots(null);
+        setChosenSlot(null);
         setBookingPurpose('');
     };
 
+    // only the latest request may fill the list: switching dates quickly must not show the old day's slots
+    const slotRequest = React.useRef(0);
+    const loadDaySlots = React.useCallback(async (lecturerId: string, date: string) => {
+        const requestId = ++slotRequest.current;
+        setDaySlots(null);
+        setSlotsError(false);
+        setChosenSlot(null);
+        try {
+            const response = await api.offices.slots(lecturerId, date);
+            if (requestId !== slotRequest.current) return;
+            setDaySlots(asArray(asRecord(response).slots).map((item) => {
+                const slot = asRecord(item);
+                return {
+                    startTime: asString(slot.startTime), endTime: asString(slot.endTime), location: asString(slot.location),
+                    isBooked: asBoolean(slot.isBooked, false), isPast: asBoolean(slot.isPast, false),
+                };
+            }));
+        } catch {
+            if (requestId === slotRequest.current) setSlotsError(true);
+        }
+    }, []);
+
+    React.useEffect(() => {
+        if (bookingLecturer && bookingDate) void loadDaySlots(bookingLecturer.id, bookingDate);
+    }, [bookingLecturer, bookingDate, loadDaySlots]);
+
     const createAppointment = async () => {
-        if (!bookingLecturer || !bookingPurpose.trim()) return;
+        if (!bookingLecturer || !chosenSlot || !bookingPurpose.trim()) return;
         setIsBooking(true);
         try {
             const response = await api.appointments.create({
                 lecturerId: bookingLecturer.id,
                 date: bookingDate,
-                startTime: bookingStart,
-                endTime: bookingEnd,
-                location: bookingLocation || bookingLecturer.department || 'TBA',
+                startTime: chosenSlot.startTime,
+                endTime: chosenSlot.endTime,
                 purpose: bookingPurpose.trim(),
             });
             setAppointments((current) => [mapAppointment(response.appointment), ...current]);
             toast.success(`${t.appointmentsPage.bookSuccess} ${bookingLecturer.nameThai}`);
             setBookingLecturer(null);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : t.appointmentsPage.systemUpgrade);
+            toast.error(bookingError(error));
+            // whatever changed (taken, or the time passed), show the day as it is now
+            if (error instanceof ApiError && (error.status === 409 || error.status === 400)) void loadDaySlots(bookingLecturer.id, bookingDate);
         } finally {
             setIsBooking(false);
         }
@@ -149,12 +197,13 @@ export default function Appointments() {
                         {t.appointmentsPage.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-cyan-600">{t.appointmentsPage.titleHighlight}</span>
                     </motion.h1>
                 </div>
-                {!isTeacher && (
-                    <Button className="bg-slate-900 dark:bg-blue-600 hover:bg-slate-800 dark:hover:bg-blue-700 text-white h-9 px-4 text-xs font-semibold rounded-xl" onClick={() => lecturers[0] ? openBooking(lecturers[0]) : toast.error('ไม่พบอาจารย์ที่เปิดให้จอง')}>
-                        <Plus className="w-4 h-4 mr-2" />{t.appointmentsPage.newAppointment}
-                    </Button>
-                )}
             </div>
+
+            {isTeacher && (
+                <motion.div variants={itemVariants}>
+                    <OfficeHoursEditor userId={user?.id ?? ''} />
+                </motion.div>
+            )}
 
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
@@ -176,11 +225,12 @@ export default function Appointments() {
                 ))}
             </motion.div>
 
-            {!isTeacher && (
+            {canBook && (
                 <motion.div variants={itemVariants}>
                     <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-2"><User className="w-5 h-5" />{t.appointmentsPage.availableLecturers}</CardTitle>
+                            <CardDescription>เลือกอาจารย์ แล้วเลือกวันและช่วงเวลาว่างตาม office hours ของอาจารย์</CardDescription>
                         </CardHeader>
                         <CardContent>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -195,19 +245,22 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && lecturers.map((lecturer) => (
-                                    <div key={lecturer.id} className="p-4 border rounded-xl hover:shadow-md transition-all">
+                                    <div key={lecturer.id} data-testid="bookable-lecturer" className="p-4 border rounded-xl hover:shadow-md transition-all">
                                         <div className="flex items-start gap-4">
                                             <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg">{lecturer.nameThai.charAt(0)}</div>
                                             <div className="flex-1">
                                                 <h3 className="font-semibold">{lecturer.nameThai}</h3>
                                                 <p className="text-sm text-gray-600 dark:text-slate-300">{lecturer.department}</p>
                                                 <div className="flex flex-wrap gap-1 mt-2">
-                                                    {lecturer.officeHours.slice(0, 2).map((hour) => (
-                                                        <Badge key={hour.id} variant="outline" className="text-xs">{hour.day} {hour.startTime}-{hour.endTime}</Badge>
+                                                    {lecturer.officeHours.filter((hour) => hour.isAvailable).map((hour) => (
+                                                        <Badge key={hour.id} variant="outline" className="text-xs">{DAY_LABELS[hour.day] ?? hour.day} {hour.startTime}-{hour.endTime}</Badge>
                                                     ))}
+                                                    {lecturer.officeHours.every((hour) => !hour.isAvailable) && (
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400">ยังไม่ได้ตั้ง office hours</span>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <Button size="sm" onClick={() => openBooking(lecturer)}>{ t.appointmentsPage.bookTime}</Button>
+                                            <Button size="sm" disabled={lecturer.officeHours.every((hour) => !hour.isAvailable)} onClick={() => openBooking(lecturer)}>{t.appointmentsPage.bookTime}</Button>
                                         </div>
                                     </div>
                                 ))}
@@ -330,33 +383,53 @@ export default function Appointments() {
                         <DialogTitle>{t.appointmentsPage.newAppointment}</DialogTitle>
                         <DialogDescription>{bookingLecturer?.nameThai || bookingLecturer?.name}</DialogDescription>
                     </DialogHeader>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="appointment-date">Date</Label>
-                            <Input id="appointment-date" type="date" value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} />
+                            <Label htmlFor="appointment-date">วันที่</Label>
+                            <Input id="appointment-date" type="date" min={thaiToday()} value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} />
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
+                                office hours: {bookingLecturer?.officeHours.filter((hour) => hour.isAvailable).map((hour) => `${DAY_LABELS[hour.day] ?? hour.day} ${hour.startTime}-${hour.endTime}`).join(' · ') || '-'}
+                            </p>
                         </div>
+                        {bookingDate && (
+                            <div className="space-y-2" data-testid="day-slots">
+                                <Label>ช่วงเวลาว่าง</Label>
+                                {slotsError ? (
+                                    <p role="alert" className="text-sm text-rose-600 dark:text-rose-400">โหลดช่วงเวลาว่างไม่สำเร็จ ลองเลือกวันใหม่อีกครั้ง</p>
+                                ) : daySlots === null ? (
+                                    <p role="status" className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" />กำลังโหลด...</p>
+                                ) : daySlots.length === 0 ? (
+                                    <p className="text-sm text-slate-500 dark:text-slate-400">อาจารย์ไม่มี office hours ในวันนี้ — ลองเลือกวันอื่น</p>
+                                ) : (
+                                    <div className="flex flex-wrap gap-2">
+                                        {daySlots.map((slot) => (
+                                            <Button
+                                                key={`${slot.startTime}-${slot.endTime}`}
+                                                type="button"
+                                                size="sm"
+                                                variant={sameSlot(chosenSlot, slot) ? 'default' : 'outline'}
+                                                disabled={slot.isBooked || slot.isPast}
+                                                aria-pressed={sameSlot(chosenSlot, slot)}
+                                                onClick={() => setChosenSlot(slot)}
+                                                className="rounded-lg"
+                                            >
+                                                {slot.startTime}-{slot.endTime} · {slot.location}{slot.isBooked ? ' (มีคนจองแล้ว)' : slot.isPast ? ' (เลยเวลาแล้ว)' : ''}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        )}
                         <div className="space-y-2">
-                            <Label htmlFor="appointment-location">Location</Label>
-                            <Input id="appointment-location" value={bookingLocation} onChange={(event) => setBookingLocation(event.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="appointment-start">Start</Label>
-                            <Input id="appointment-start" type="time" value={bookingStart} onChange={(event) => setBookingStart(event.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="appointment-end">End</Label>
-                            <Input id="appointment-end" type="time" value={bookingEnd} onChange={(event) => setBookingEnd(event.target.value)} />
-                        </div>
-                        <div className="sm:col-span-2 space-y-2">
-                            <Label htmlFor="appointment-purpose">Purpose</Label>
-                            <Textarea id="appointment-purpose" value={bookingPurpose} onChange={(event) => setBookingPurpose(event.target.value)} />
+                            <Label htmlFor="appointment-purpose">เรื่องที่ต้องการปรึกษา</Label>
+                            <Textarea id="appointment-purpose" maxLength={500} value={bookingPurpose} onChange={(event) => setBookingPurpose(event.target.value)} />
                         </div>
                     </div>
                     <DialogFooter>
                         <Button variant="outline" onClick={() => setBookingLecturer(null)} disabled={isBooking}>{t.common.cancel}</Button>
                         <Button
                             onClick={createAppointment}
-                            disabled={isBooking || !bookingPurpose.trim()}
+                            disabled={isBooking || !chosenSlot || !bookingPurpose.trim()}
                             className="flex items-center gap-1.5"
                         >
                             {isBooking ? (

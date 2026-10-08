@@ -7,7 +7,8 @@ import {
   Users, Building2, DollarSign, UserCog, Clock, BarChart3,
   Shield, Bell, Target, Search, Building, Settings,
   LogOut, QrCode, CheckSquare, ChevronRight, User,
-  CreditCard
+  CreditCard,
+  CalendarClock,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -68,6 +69,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
             { icon: Trophy, label: 'กิจกรรมและชั่วโมง', labelEn: 'Activities', href: '/activities' },
             { icon: FileText, label: 'แฟ้มสะสมผลงาน', labelEn: 'Portfolio', href: '/portfolio' },
             { icon: Briefcase, label: 'ตำแหน่งฝึกงาน/สหกิจ', labelEn: 'Internships', href: '/internships' },
+            { icon: CalendarClock, label: 'นัดหมายอาจารย์', labelEn: 'Appointments', href: '/appointments' },
             { icon: QrCode, label: 'สแกน QR เช็คชื่อ', labelEn: 'QR Check-in', href: '/student/checkin' },
           ],
         };
