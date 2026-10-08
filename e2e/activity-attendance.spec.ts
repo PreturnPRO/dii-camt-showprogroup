@@ -62,4 +62,10 @@ test("staff tick who came; that student gets the hours, the one marked absent do
 
   expect(await hoursOf(request, came.auth)).toBe(before.came + 3);
   expect(await hoursOf(request, absent.auth)).toBe(before.absent);
+
+  // a credit given by mistake is taken back after confirming
+  page.once("dialog", (dialog) => dialog.accept());
+  await cameRow.getByRole("button", { name: "ถอนการเข้าร่วม" }).click();
+  await expect(cameRow.getByText("ไม่มา", { exact: true }).first()).toBeVisible();
+  expect(await hoursOf(request, came.auth)).toBe(before.came);
 });

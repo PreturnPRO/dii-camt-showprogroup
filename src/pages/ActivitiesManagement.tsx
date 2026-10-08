@@ -176,8 +176,11 @@ export default function ActivitiesManagement() {
 
     const markAttendance = async (enrollmentIds: string[], status: 'completed' | 'absent' | 'registered') => {
         if (!viewingActivity || enrollmentIds.length === 0) return;
-        setMarkingAttendance(true);
         const nameOf = (id: string) => viewingActivity.enrollmentsList.find((item) => item.id === id)?.studentName ?? '';
+        // taking back a credit given by mistake removes hours and points, so staff confirm it first
+        const withdrawing = status !== 'completed' && enrollmentIds.some((id) => viewingActivity.enrollmentsList.find((item) => item.id === id)?.status === 'completed');
+        if (withdrawing && !window.confirm(fill(am.withdrawConfirm, { name: enrollmentIds.map(nameOf).join(', ') }))) return;
+        setMarkingAttendance(true);
         const saved = new Map<string, { status: string; checkedInAt?: string | null }>();
         const failed: string[] = [];
         let message: string | null = null;
@@ -193,9 +196,9 @@ export default function ActivitiesManagement() {
             } catch (error) {
                 failed.push(enrollmentId);
                 if (error instanceof ApiError && error.status === 409 && status !== 'completed') {
-                    // someone credited them a moment ago: show that instead of a stale "registered"
+                    // someone credited them a moment ago: show that instead of a stale row
                     saved.set(enrollmentId, { status: 'completed' });
-                    message = fill(am.attendanceAlreadyCredited, { name: nameOf(enrollmentId) });
+                    message = fill(am.attendanceCreditedMeanwhile, { name: nameOf(enrollmentId) });
                 } else if (error instanceof ApiError && error.status === 409) {
                     message = am.attendanceCannotCredit;
                 }
@@ -214,7 +217,7 @@ export default function ActivitiesManagement() {
         setMarkingAttendance(false);
         const savedCount = enrollmentIds.length - failed.length;
         if (failed.length === 0) {
-            toast.success(fill(status === 'completed' ? am.attendanceSavedCame : am.attendanceSaved, { n: savedCount }));
+            toast.success(withdrawing ? am.attendanceWithdrawn : fill(status === 'completed' ? am.attendanceSavedCame : am.attendanceSaved, { n: savedCount }));
         } else if (enrollmentIds.length === 1) {
             toast.error(message ?? fill(am.attendancePartial, { saved: 0, total: 1, names: nameOf(failed[0]) }));
         } else {
@@ -1010,6 +1013,11 @@ export default function ActivitiesManagement() {
                                                         {canRecordAttendance(viewingActivity) && st.status === 'registered' && (
                                                             <Button size="sm" variant="outline" disabled={markingAttendance} onClick={() => markAttendance([st.id], 'absent')} className="h-7 rounded-lg px-2 text-[11px]">
                                                                 {am.markAbsent}
+                                                            </Button>
+                                                        )}
+                                                        {canRecordAttendance(viewingActivity) && st.status === 'completed' && (
+                                                            <Button size="sm" variant="ghost" disabled={markingAttendance} onClick={() => markAttendance([st.id], 'absent')} className="h-7 rounded-lg px-2 text-[11px] text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/40">
+                                                                {am.withdrawAttendance}
                                                             </Button>
                                                         )}
                                                         {canRecordAttendance(viewingActivity) && st.status === 'absent' && (

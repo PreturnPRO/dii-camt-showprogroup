@@ -625,7 +625,7 @@ export interface TimelineEvent {
   id: string;
   studentId: string;
 
-  type: 'enrollment' | 'course' | 'grade' | 'activity' | 'internship' | 'achievement' | 'warning' | 'plan_change';
+  type: 'enrollment' | 'course' | 'grade' | 'activity' | 'activity_revoked' | 'internship' | 'achievement' | 'warning' | 'plan_change';
 
   title: string;
   titleThai: string;

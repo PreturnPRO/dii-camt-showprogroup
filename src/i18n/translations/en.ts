@@ -1160,7 +1160,10 @@ export const en = {
     attendanceSavedCame: 'Marked {n} as attended — hours and points credited',
     attendanceSaved: 'Saved {n}',
     attendancePartial: 'Saved {saved} of {total} — failed: {names} (still selected to retry)',
-    attendanceAlreadyCredited: '{name} was already credited; cannot switch to absent',
+    withdrawAttendance: 'Withdraw attendance',
+    attendanceCreditedMeanwhile: '{name} was just marked as attended by someone else — showing the latest status',
+    withdrawConfirm: 'Withdraw {name}\'s attendance? The hours and points from this activity are taken back (badges already earned stay).',
+    attendanceWithdrawn: 'Attendance withdrawn — hours and points taken back',
     attendanceCannotCredit: 'This activity cannot credit hours yet (not approved, not started, or cancelled)',
   },
 

@@ -1160,7 +1160,10 @@ export const th = {
     attendanceSavedCame: 'บันทึกว่าเข้าร่วม {n} คน — ได้ชั่วโมงและคะแนนแล้ว',
     attendanceSaved: 'บันทึกแล้ว {n} คน',
     attendancePartial: 'บันทึกได้ {saved} จาก {total} คน — ไม่สำเร็จ: {names} (ยังเลือกไว้ให้ลองใหม่)',
-    attendanceAlreadyCredited: '{name} ได้รับชั่วโมงกิจกรรมไปแล้ว เปลี่ยนเป็นไม่มาไม่ได้',
+    withdrawAttendance: 'ถอนการเข้าร่วม',
+    attendanceCreditedMeanwhile: '{name} เพิ่งถูกบันทึกว่าเข้าร่วมโดยคนอื่น — โหลดสถานะล่าสุดแล้ว',
+    withdrawConfirm: 'ถอนการเข้าร่วมของ {name}? ชั่วโมงและคะแนนจากกิจกรรมนี้จะถูกหักคืน (badge ที่ได้ไปแล้วยังอยู่)',
+    attendanceWithdrawn: 'ถอนการเข้าร่วมแล้ว — หักชั่วโมงและคะแนนคืน',
     attendanceCannotCredit: 'กิจกรรมนี้ยังให้ชั่วโมงไม่ได้ (ยังไม่อนุมัติ ยังไม่เริ่ม หรือถูกยกเลิก)',
   },
 
