@@ -11,9 +11,20 @@ import {
   getTranscript,
   getInternshipCertificate,
   getCooperationSummary,
+  verifyDocument,
+  revokeDocument,
 } from "../controllers/documents.controller";
 
 const router = Router();
+
+router.get("/documents/verify/:token", verifyDocument);
+
+router.post(
+  "/documents/revoke",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN]),
+  revokeDocument
+);
 
 router.get(
   "/documents/transcript",

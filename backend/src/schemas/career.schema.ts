@@ -55,9 +55,22 @@ export const internshipLogCreateSchema = z.object({
   studentId: z.string().optional(),
   date: z.coerce.date(),
   activities: z.string().min(1),
-  hours: z.coerce.number().int().positive(),
+  hours: z.coerce.number().int().min(1).max(16),
   learnings: z.string().optional(),
   challenges: z.string().optional(),
+});
+
+export const internshipLogUpdateSchema = internshipLogCreateSchema.omit({ studentId: true });
+
+export const internshipStatusSchema = z.object({
+  status: z.enum(["in_progress", "completed", "cancelled"]),
+});
+
+export const internshipLogReviewSchema = z.object({
+  status: z.enum(["approved", "changes_requested"]),
+  // the version the reviewer was looking at; a newer edit makes the review stale
+  updatedAt: z.coerce.date(),
+  comment: z.string().trim().max(2000).optional(),
 });
 
 export const internshipDocumentCreateSchema = z.object({

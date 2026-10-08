@@ -2,7 +2,9 @@ import fs from "fs";
 import os from "os";
 import path from "path";
 import PDFDocument from "pdfkit";
+import QRCode from "qrcode";
 import { env } from "../config/env";
+import { thaiDay } from "./attendance";
 
 const commonFontCandidates = () => {
   switch (os.platform()) {
@@ -73,6 +75,28 @@ const drawLabelValue = (doc: PDFKit.PDFDocument, label: string, value: string) =
   doc.moveDown(0.6);
 };
 
+export type PdfVerification = {
+  reference: string;
+  issuedAt: Date;
+  url: string;
+};
+
+const qrImage = async (verification: PdfVerification) =>
+  Buffer.from((await QRCode.toDataURL(verification.url, { margin: 1, width: 256, errorCorrectionLevel: "M" })).split(",")[1], "base64");
+
+const drawVerification = (doc: PDFKit.PDFDocument, verification: PdfVerification, qr: Buffer) => {
+  doc.moveDown(1.2);
+  if (doc.y > doc.page.height - doc.page.margins.bottom - 100) doc.addPage();
+  const top = doc.y;
+  doc.image(qr, 48, top, { width: 82 });
+  doc.fontSize(9).fillColor("#475569")
+    .text(`Document Ref No: ${verification.reference}`, 142, top + 9)
+    .text(`Issued: ${thaiDay(verification.issuedAt).toISOString().slice(0, 10)}`)
+    .text("Scan the QR code to verify this document.");
+  doc.fillColor("#0f172a");
+  doc.y = Math.max(doc.y, top + 90);
+};
+
 export const buildTranscriptPdf = async (
   student: {
     name: string;
@@ -92,8 +116,10 @@ export const buildTranscriptPdf = async (
     letterGrade: string | null;
     total: number | null;
   }>,
-) =>
-  createPdfBuffer((doc) => {
+  verification?: PdfVerification,
+) => {
+  const qr = verification ? await qrImage(verification) : null;
+  return createPdfBuffer((doc) => {
     drawHeader(
       doc,
       "Official Transcript Summary",
@@ -129,7 +155,9 @@ export const buildTranscriptPdf = async (
         );
       doc.fillColor("#0f172a").moveDown(0.4);
     });
+    if (verification && qr) drawVerification(doc, verification, qr);
   });
+};
 
 export const buildInternshipCertificatePdf = async (
   payload: {
@@ -140,8 +168,10 @@ export const buildInternshipCertificatePdf = async (
     totalHours: number;
     status: string;
   },
-) =>
-  createPdfBuffer((doc) => {
+  verification?: PdfVerification,
+) => {
+  const qr = verification ? await qrImage(verification) : null;
+  return createPdfBuffer((doc) => {
     drawHeader(
       doc,
       "Internship Completion Certificate",
@@ -160,7 +190,9 @@ export const buildInternshipCertificatePdf = async (
     drawLabelValue(doc, "Position", payload.position);
     drawLabelValue(doc, "Total Logged Hours", `${payload.totalHours} hours`);
     drawLabelValue(doc, "Record Status", payload.status);
+    if (verification && qr) drawVerification(doc, verification, qr);
   });
+};
 
 export const buildCooperationSummaryPdf = async (
   payload: {
@@ -171,8 +203,10 @@ export const buildCooperationSummaryPdf = async (
     expiryDate?: Date | null;
     details?: string | null;
   },
-) =>
-  createPdfBuffer((doc) => {
+  verification?: PdfVerification,
+) => {
+  const qr = verification ? await qrImage(verification) : null;
+  return createPdfBuffer((doc) => {
     drawHeader(
       doc,
       "Cooperation Agreement Summary",
@@ -197,4 +231,6 @@ export const buildCooperationSummaryPdf = async (
         lineGap: 4,
       });
     }
+    if (verification && qr) drawVerification(doc, verification, qr);
   });
+};

@@ -528,6 +528,9 @@ export const getInternshipLogsHandler = asyncHandler(async (req, res) => {
   });
 });
 
+// a completed or cancelled internship's diary no longer changes: the hours are on its certificate
+const CLOSED_INTERNSHIP = new Set(["completed", "cancelled"]);
+
 export const createInternshipLogHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student =
@@ -555,21 +558,148 @@ export const createInternshipLogHandler = asyncHandler(async (req, res) => {
       },
     }));
 
-  const log = await prisma.internshipLog.create({
-    data: {
-      recordId: record.id,
-      date: req.body.date,
-      activities: req.body.activities,
-      hours: req.body.hours,
-      learnings: req.body.learnings,
-      challenges: req.body.challenges,
-    },
+  if (CLOSED_INTERNSHIP.has(record.status)) {
+    throw new AppError(409, "This internship is finished; its diary is closed");
+  }
+
+  const log = await prisma.$transaction(async (tx) => {
+    // the first diary entry is when an internship starts; a status staff already set is left alone
+    await tx.internshipRecord.updateMany({
+      where: { id: record.id, status: "not_started" },
+      data: { status: "in_progress" },
+    });
+    return tx.internshipLog.create({
+      data: {
+        recordId: record.id,
+        date: req.body.date,
+        activities: req.body.activities,
+        hours: req.body.hours,
+        learnings: req.body.learnings,
+        challenges: req.body.challenges,
+      },
+    });
   });
 
   res.status(201).json({
     success: true,
     log,
   });
+});
+
+export const reviewInternshipLogHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const log = await prisma.internshipLog.findUnique({
+    where: { id: String(req.params.id) },
+    include: { record: { include: { student: true, company: true } } },
+  });
+  if (!log) throw new AppError(404, "Internship log not found");
+
+  const canReview =
+    isStaffOrAdmin(currentUser.role) ||
+    (currentUser.role === Role.COMPANY && log.record.company?.userId === currentUser.id) ||
+    (currentUser.role === Role.LECTURER &&
+      log.record.student.advisorId !== null &&
+      log.record.student.advisorId === (await lecturerProfileIdOf(currentUser.id)));
+  if (!canReview) throw new AppError(403, "You cannot review this internship log");
+  // the diary is closed: a "needs changes" here would ask the student for an edit they can no longer make
+  if (CLOSED_INTERNSHIP.has(log.record.status)) {
+    throw new AppError(409, "This internship is finished; its diary can no longer be reviewed");
+  }
+  if (req.body.status === "changes_requested" && !req.body.comment?.trim()) {
+    throw new AppError(400, "A comment is required when requesting changes");
+  }
+
+  const claimed = await prisma.internshipLog.updateMany({
+    where: { id: log.id, updatedAt: req.body.updatedAt },
+    data: {
+      reviewStatus: req.body.status,
+      reviewComment: req.body.comment?.trim() || null,
+      reviewedById: currentUser.id,
+      reviewedAt: new Date(),
+    },
+  });
+  if (!claimed.count) {
+    throw new AppError(409, "This entry changed after you opened it. Reload to see the latest version.");
+  }
+  const reviewed = await prisma.internshipLog.findUniqueOrThrow({ where: { id: log.id } });
+  await createNotification({
+    userId: log.record.student.userId,
+    title: "Internship diary reviewed",
+    titleThai: "บันทึกฝึกงานได้รับการตรวจแล้ว",
+    message: req.body.status === "approved" ? "Your daily log was approved." : "Your daily log needs changes. Please read the review comment.",
+    messageThai: req.body.status === "approved" ? "บันทึกฝึกงานรายวันได้รับการอนุมัติ" : "บันทึกฝึกงานรายวันต้องแก้ไข กรุณาอ่านความเห็นผู้ตรวจ",
+    type: "internship",
+    priority: "medium",
+    channels: ["in-app"],
+    actionUrl: "/internships",
+  });
+  res.json({ success: true, log: reviewed });
+});
+
+export const updateInternshipLogHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const student = await prisma.studentProfile.findUnique({ where: { userId: currentUser.id }, select: { id: true } });
+  const log = await prisma.internshipLog.findUnique({
+    where: { id: String(req.params.id) },
+    include: { record: true },
+  });
+  if (!log) throw new AppError(404, "Internship log not found");
+  if (!student || log.record.studentId !== student.id) throw new AppError(403, "You can only edit your own diary entries");
+  if (CLOSED_INTERNSHIP.has(log.record.status)) throw new AppError(409, "This internship is finished; its diary is closed");
+  if (log.reviewStatus === "approved") throw new AppError(409, "An approved diary entry can no longer be edited");
+
+  // guarded write: an approval that lands between the read above and this write wins
+  const written = await prisma.internshipLog.updateMany({
+    where: { id: log.id, reviewStatus: { not: "approved" } },
+    data: {
+      date: req.body.date,
+      activities: req.body.activities,
+      hours: req.body.hours,
+      learnings: req.body.learnings,
+      challenges: req.body.challenges,
+      // an edited entry needs a fresh look; the old verdict no longer describes it
+      reviewStatus: "pending",
+      reviewComment: null,
+      reviewedById: null,
+      reviewedAt: null,
+    },
+  });
+  if (!written.count) throw new AppError(409, "An approved diary entry can no longer be edited");
+  const updated = await prisma.internshipLog.findUniqueOrThrow({ where: { id: log.id } });
+  if (log.reviewedById) {
+    await createNotification({
+      userId: log.reviewedById,
+      title: "Internship diary updated",
+      titleThai: "นักศึกษาแก้ไขบันทึกฝึกงานแล้ว",
+      message: "A diary entry you reviewed was edited and is waiting for your review again.",
+      messageThai: "บันทึกฝึกงานที่คุณตรวจถูกแก้ไขแล้ว รอตรวจอีกครั้ง",
+      type: "internship",
+      priority: "medium",
+      channels: ["in-app"],
+      actionUrl: "/intern-tracking",
+    });
+  }
+  res.json({ success: true, log: updated });
+});
+
+export const updateInternshipStatusHandler = asyncHandler(async (req, res) => {
+  const record = await prisma.internshipRecord.findUnique({ where: { id: String(req.params.id) } });
+  if (!record) throw new AppError(404, "Internship record not found");
+  const { internship, revoked } = await prisma.$transaction(async (tx) => {
+    const internship = await tx.internshipRecord.update({
+      where: { id: record.id },
+      data: { status: req.body.status },
+    });
+    // a completion certificate only stays true while the internship is completed
+    const revoked = req.body.status === "completed"
+      ? { count: 0 }
+      : await tx.issuedDocument.updateMany({
+          where: { kind: "internship-certificate", subjectId: record.studentId, revokedAt: null },
+          data: { revokedAt: new Date() },
+        });
+    return { internship, revoked };
+  });
+  res.json({ success: true, internship, revokedCertificates: revoked.count });
 });
 
 export const createInternshipDocumentHandler = asyncHandler(async (req, res) => {

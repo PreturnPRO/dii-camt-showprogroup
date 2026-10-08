@@ -62,6 +62,18 @@ model Session {
   @@index([userId])
 }
 
+model IssuedDocument {
+  id         Int       @id @default(autoincrement())
+  kind       String
+  subjectId  String
+  issuedById String
+  token      String    @unique
+  issuedAt   DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([subjectId, kind])
+}
+
 model StudentProfile {
   id                  String               @id @default(cuid())
   userId              String               @unique
@@ -455,6 +467,7 @@ model InternshipRecord {
   supervisor        String?
   supervisorContact String?
   status            String               @default("not_started")
+  lastLogReminderAt DateTime?
   documents         InternshipDocument[]
   logs              InternshipLog[]
   evaluation        InternshipEvaluation?
@@ -471,6 +484,12 @@ model InternshipLog {
   hours      Int
   learnings  String?
   challenges String?
+  reviewStatus String         @default("pending")
+  reviewComment String?
+  reviewedById String?
+  reviewedAt DateTime?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @default(now()) @updatedAt
 }
 
 model InternshipDocument {

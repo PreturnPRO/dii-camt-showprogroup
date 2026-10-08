@@ -31,8 +31,12 @@ const envSchema = z.object({
     .transform((value) => value === "true"),
 });
 
-export const env = envSchema.parse(process.env);
-
-if (env.NODE_ENV === "production" && env.EXPOSE_RESET_TOKEN) {
-  throw new Error("EXPOSE_RESET_TOKEN must never be true in production");
+/** Settings production cannot run without; FRONTEND_URL is printed into every issued PDF's QR code. */
+export function assertProductionEnv(config: { NODE_ENV: string; FRONTEND_URL?: string; EXPOSE_RESET_TOKEN: boolean }) {
+  if (config.NODE_ENV !== "production") return;
+  if (config.EXPOSE_RESET_TOKEN) throw new Error("EXPOSE_RESET_TOKEN must never be true in production");
+  if (!config.FRONTEND_URL) throw new Error("FRONTEND_URL is required in production (it goes into document QR codes)");
 }
+
+export const env = envSchema.parse(process.env);
+assertProductionEnv(env);

@@ -12,6 +12,9 @@ import {
   applicationQuerySchema,
   internshipLogQuerySchema,
   internshipLogCreateSchema,
+  internshipLogReviewSchema,
+  internshipLogUpdateSchema,
+  internshipStatusSchema,
   internshipDocumentCreateSchema,
   internshipDocumentStatusSchema,
   talentQuerySchema,
@@ -30,6 +33,9 @@ import {
   getInternshipsHandler,
   getInternshipLogsHandler,
   createInternshipLogHandler,
+  reviewInternshipLogHandler,
+  updateInternshipLogHandler,
+  updateInternshipStatusHandler,
   createInternshipDocumentHandler,
   updateInternshipDocumentStatusHandler,
   searchTalentHandler,
@@ -137,6 +143,30 @@ router.post(
   checkRole([Role.STUDENT, Role.STAFF, Role.ADMIN]),
   validate(internshipLogCreateSchema),
   createInternshipLogHandler
+);
+
+router.patch(
+  "/internship/logs/:id",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  validate(internshipLogUpdateSchema),
+  updateInternshipLogHandler
+);
+
+router.patch(
+  "/internship/records/:id/status",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN]),
+  validate(internshipStatusSchema),
+  updateInternshipStatusHandler
+);
+
+router.patch(
+  "/internship/logs/:id/review",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.COMPANY, Role.STAFF, Role.ADMIN]),
+  validate(internshipLogReviewSchema),
+  reviewInternshipLogHandler
 );
 
 router.post(
