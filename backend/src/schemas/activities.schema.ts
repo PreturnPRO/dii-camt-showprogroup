@@ -31,6 +31,7 @@ export const activityQuerySchema = z.object({
 
 export const activityUpdateSchema = activityCreateSchema.partial();
 
+// registered → completed (came; grants the reward) or absent; absent can go back to registered
 export const enrollmentStatusSchema = z.object({
-  status: z.string().min(1),
+  status: z.enum(["registered", "completed", "absent"]),
 });

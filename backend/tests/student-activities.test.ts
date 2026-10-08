@@ -43,8 +43,9 @@ describe("activity reward timeline", () => {
     const staff = await as("staff@showpro.local");
     const created = await request(app).post("/api/activities").set("Authorization", staff).send({
       title: "Timeline check", titleThai: "ทดสอบไทม์ไลน์", description: "d", type: "workshop",
-      startDate: "2026-12-01T09:00:00.000Z", endDate: "2026-12-01T12:00:00.000Z",
-      location: "CAMT", organizer: "DII", activityHours: 1, gamificationPoints: 1, status: "upcoming",
+      // already held: attendance is only credited once an activity has started
+      startDate: "2026-10-01T09:00:00.000Z", endDate: "2026-10-01T12:00:00.000Z",
+      location: "CAMT", organizer: "DII", activityHours: 1, gamificationPoints: 1, status: "completed",
     });
     const bob = await prisma.studentProfile.findFirstOrThrow({ where: { user: { email: "bob@student.showpro.local" } } });
     const enrollment = await prisma.activityEnrollment.create({ data: { activityId: created.body.activity.id, studentId: bob.id } });

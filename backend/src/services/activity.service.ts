@@ -23,16 +23,25 @@ export const grantActivityReward = async (activityEnrollmentId: string) => {
   if (["pending", "draft"].includes(activityEnrollment.activity.status)) {
     throw new AppError(409, "This activity has not been approved yet");
   }
+  // nobody attended an activity that was cancelled or has not started (pending Por's confirmation, 8/10/69)
+  if (activityEnrollment.activity.status === "cancelled") {
+    throw new AppError(409, "This activity was cancelled");
+  }
+  if (activityEnrollment.activity.startDate > new Date()) {
+    throw new AppError(409, "This activity has not started yet");
+  }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.activityEnrollment.update({
-      where: { id: activityEnrollment.id },
+  const granted = await prisma.$transaction(async (tx) => {
+    // claim the reward: of two clicks arriving together only one flips rewardGranted, so it is paid once
+    const claimed = await tx.activityEnrollment.updateMany({
+      where: { id: activityEnrollment.id, rewardGranted: false },
       data: {
         rewardGranted: true,
         status: "completed",
         checkedInAt: new Date(),
       },
     });
+    if (claimed.count === 0) return false;
 
     await tx.studentProfile.update({
       where: { id: activityEnrollment.studentId },
@@ -61,9 +70,10 @@ export const grantActivityReward = async (activityEnrollmentId: string) => {
         },
       },
     });
+    return true;
   });
 
-  await evaluateStudentBadges(activityEnrollment.studentId);
+  if (granted) await evaluateStudentBadges(activityEnrollment.studentId);
 
   return prisma.activityEnrollment.findUnique({
     where: { id: activityEnrollmentId },

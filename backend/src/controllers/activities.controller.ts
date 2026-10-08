@@ -181,12 +181,16 @@ export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
   const enrollmentId = String(req.params.id);
   const target = await prisma.activityEnrollment.findUnique({
     where: { id: enrollmentId },
-    select: { activityId: true },
+    select: { activityId: true, rewardGranted: true },
   });
   if (!target) {
     throw new AppError(404, "Activity enrollment not found");
   }
   await assertActivityManager(requireUser(req), target.activityId);
+  // hours and points already paid out are not taken back by switching to absent
+  if (target.rewardGranted && req.body.status !== "completed") {
+    throw new AppError(409, "This student was already credited for attending");
+  }
   if (req.body.status === "completed") {
     const rewarded = await grantActivityReward(enrollmentId);
     return res.json({
@@ -195,11 +199,14 @@ export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
     });
   }
 
-  const enrollment = await prisma.activityEnrollment.update({
+  // guarded: a "came" that was credited a moment ago is not overwritten
+  const written = await prisma.activityEnrollment.updateMany({
+    where: { id: enrollmentId, rewardGranted: false },
+    data: { status: req.body.status },
+  });
+  if (!written.count) throw new AppError(409, "This student was already credited for attending");
+  const enrollment = await prisma.activityEnrollment.findUniqueOrThrow({
     where: { id: enrollmentId },
-    data: {
-      status: req.body.status,
-    },
     include: {
       activity: true,
       student: { include: { user: true } },

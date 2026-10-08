@@ -167,6 +167,8 @@ export const evaluateStudentBadges = async (studentId: string) => {
       icon: badge.icon,
       criteria: badge.criteria,
     })),
+    // two rewards for the same student evaluated at once must not fail on the unique (studentId, name)
+    skipDuplicates: true,
   });
 
   return newBadges;
