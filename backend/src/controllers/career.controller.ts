@@ -479,6 +479,33 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
   });
 });
 
+type InternRecordForView = {
+  student: {
+    id: string; studentId: string; major: string; program: string; year: number; gpax: number; cvUrl: string | null;
+    consent?: { allowDataSharing: boolean; sharedWithCompanies: string[] } | null;
+    user: { id: string; name: string; nameThai: string; email: string; phone: string | null; avatar: string | null };
+  };
+};
+
+// a company's own intern: who they are and how to reach them, a GPA band, and the CV only if shared (Por 8/10/69)
+const internForCompany = <R extends InternRecordForView>(record: R, companyId: string) => {
+  const { student, ...rest } = record;
+  const sharesCv = student.consent?.allowDataSharing === true || student.consent?.sharedWithCompanies.includes(companyId) === true;
+  return {
+    ...rest,
+    student: {
+      id: student.id,
+      studentId: student.studentId,
+      major: student.major,
+      program: student.program,
+      year: student.year,
+      gpaBand: gpaBand(student.gpax),
+      cvUrl: sharesCv ? student.cvUrl : null,
+      user: { id: student.user.id, name: student.user.name, nameThai: student.user.nameThai, email: student.user.email, phone: student.user.phone, avatar: student.user.avatar },
+    },
+  };
+};
+
 export const getInternshipsHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student =
@@ -497,7 +524,7 @@ export const getInternshipsHandler = asyncHandler(async (req, res) => {
         : {}),
     },
     include: {
-      student: { include: { user: true } },
+      student: { include: { user: true, consent: { select: { allowDataSharing: true, sharedWithCompanies: true } } } },
       company: { include: { user: true } },
       logs: { orderBy: { date: "desc" } },
       documents: true,
@@ -508,7 +535,8 @@ export const getInternshipsHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    internships,
+    // a company may contact its own interns, but sees a GPA band, never the exact grade (Por 8/10/69)
+    internships: company ? internships.map((record) => internForCompany(record, company.id)) : internships,
   });
 });
 

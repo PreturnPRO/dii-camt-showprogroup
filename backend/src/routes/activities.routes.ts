@@ -60,7 +60,8 @@ router.post(
 router.patch(
   "/activities/enrollments/:id/status",
   requireAuth,
-  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  // Por 8/10/69: staff confirm attendance, not the lecturer who runs the activity
+  checkRole([Role.STAFF, Role.ADMIN]),
   validate(enrollmentStatusSchema),
   updateEnrollmentStatus
 );

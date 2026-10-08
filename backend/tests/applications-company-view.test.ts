@@ -92,3 +92,27 @@ describe("messages show who, not how to reach them", () => {
     }
   });
 });
+
+describe("a company's own interns", () => {
+  it("come with contact details but only a GPA band (Por 8/10/69)", async () => {
+    const intern = await freshIntern({ withRecord: true });
+    await prisma.studentProfile.update({ where: { id: intern.profile.id }, data: { gpax: 3.67, gpa: 3.5, cvUrl: "https://cv.example.com/intern.pdf" } });
+    const res = await request(app).get("/api/internships").set("Authorization", await authOf("talent@northernsoft.local"));
+    expect(res.status).toBe(200);
+    const record = res.body.internships.find((r: { studentId: string }) => r.studentId === intern.profile.id);
+    expect(record.student.user.email).toContain("@");
+    expect(record.student.gpax).toBeUndefined();
+    expect(record.student.gpa).toBeUndefined();
+    expect(record.student.gpaBand).toBe("3.50+");
+    // contact details and the basics only: no academic standing, credits, XP or unshared CV
+    for (const hidden of ["academicStatus", "earnedCredits", "xp", "coins", "advisorId"]) expect(record.student[hidden]).toBeUndefined();
+    expect(record.student.cvUrl ?? null).toBeNull();
+  });
+
+  it("staff still see the exact GPAX", async () => {
+    const intern = await freshIntern({ withRecord: true });
+    await prisma.studentProfile.update({ where: { id: intern.profile.id }, data: { gpax: 3.67 } });
+    const res = await request(app).get("/api/internships").set("Authorization", await authOf("staff@showpro.local"));
+    expect(res.body.internships.find((r: { studentId: string }) => r.studentId === intern.profile.id).student.gpax).toBe(3.67);
+  });
+});

@@ -22,7 +22,8 @@ describe("an unapproved activity does nothing yet", () => {
     const enrollment = await prisma.activityEnrollment.create({ data: { activityId: id, studentId: alice.id } });
     const before = alice.gamificationPoints;
     const res = await request(app).patch(`/api/activities/enrollments/${enrollment.id}/status`).set("Authorization", await as("narin@showpro.local")).send({ status: "completed" });
-    expect(res.status).toBe(409);
+    // Por 8/10/69: only staff/admin mark attendance, so the creator is refused outright
+    expect(res.status).toBe(403);
     expect((await prisma.studentProfile.findUniqueOrThrow({ where: { id: alice.id } })).gamificationPoints).toBe(before);
   });
 

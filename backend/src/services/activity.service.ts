@@ -81,6 +81,62 @@ export const grantActivityReward = async (activityEnrollmentId: string) => {
   });
 };
 
+/**
+ * Takes back a credit given by mistake (Por 8/10/69): the hours and points come off and the timeline
+ * says so. Badges already earned stay. Of two take-backs at once only one runs.
+ */
+export const revokeActivityReward = async (activityEnrollmentId: string, status: "absent" | "registered") => {
+  const enrollment = await prisma.activityEnrollment.findUnique({
+    where: { id: activityEnrollmentId },
+    include: { activity: true, student: true },
+  });
+  if (!enrollment) throw new AppError(404, "Activity enrollment not found");
+
+  await prisma.$transaction(async (tx) => {
+    const claimed = await tx.activityEnrollment.updateMany({
+      where: { id: enrollment.id, rewardGranted: true },
+      data: { rewardGranted: false, status, checkedInAt: null },
+    });
+    if (claimed.count === 0) {
+      // not credited (any more): record the status only while it stays uncredited — a re-credit that won meanwhile stands
+      const written = await tx.activityEnrollment.updateMany({ where: { id: enrollment.id, rewardGranted: false }, data: { status } });
+      if (written.count === 0) throw new AppError(409, "This student was credited again a moment ago");
+      return;
+    }
+    // take back what was given (recorded on the "Completed" timeline event), not the activity's current reward,
+    // which staff may have edited since; never below zero
+    const granted = await tx.timelineEvent.findFirst({
+      where: { studentId: enrollment.studentId, relatedId: enrollment.activityId, type: "activity" },
+      orderBy: { date: "desc" },
+    });
+    const given = (granted?.metadata ?? {}) as { points?: unknown; hours?: unknown };
+    const points = Number.isFinite(Number(given.points)) ? Number(given.points) : enrollment.activity.gamificationPoints;
+    const hours = Number.isFinite(Number(given.hours)) ? Number(given.hours) : enrollment.activity.activityHours;
+    await tx.$executeRaw`UPDATE "StudentProfile" SET "gamificationPoints" = GREATEST("gamificationPoints" - ${points}, 0), "totalActivityHours" = GREATEST("totalActivityHours" - ${hours}, 0) WHERE "id" = ${enrollment.studentId}`;
+    await tx.timelineEvent.create({
+      data: {
+        studentId: enrollment.studentId,
+        type: "activity_revoked",
+        title: `Attendance withdrawn: ${enrollment.activity.title}`,
+        titleThai: `ยกเลิกการเข้าร่วม ${enrollment.activity.titleThai}`,
+        description: `หัก ${points} คะแนน และ ${hours} ชั่วโมงกิจกรรมคืน`,
+        semester: enrollment.student.semester,
+        academicYear: enrollment.student.academicYear,
+        relatedId: enrollment.activityId,
+        relatedType: "activity",
+        isImportant: false,
+        tags: ["activity"],
+        metadata: { points: -points, hours: -hours },
+      },
+    });
+  });
+
+  return prisma.activityEnrollment.findUniqueOrThrow({
+    where: { id: activityEnrollmentId },
+    include: { activity: true, student: { include: { user: true } } },
+  });
+};
+
 export const checkInToActivity = async (activityId: string, studentId: string) => {
   const activity = await prisma.activity.findUnique({
     where: { id: activityId },

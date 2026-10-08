@@ -2,7 +2,7 @@ import { Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { scopeActivityForViewer, viewerContext } from "../services/access-policy";
-import { grantActivityReward } from "../services/activity.service";
+import { grantActivityReward, revokeActivityReward } from "../services/activity.service";
 import { getStudentProfileByUserId } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
@@ -187,9 +187,9 @@ export const updateEnrollmentStatus = asyncHandler(async (req, res) => {
     throw new AppError(404, "Activity enrollment not found");
   }
   await assertActivityManager(requireUser(req), target.activityId);
-  // hours and points already paid out are not taken back by switching to absent
+  // switching a credited student away from "came" takes the hours and points back (Por 8/10/69)
   if (target.rewardGranted && req.body.status !== "completed") {
-    throw new AppError(409, "This student was already credited for attending");
+    return res.json({ success: true, enrollment: await revokeActivityReward(enrollmentId, req.body.status) });
   }
   if (req.body.status === "completed") {
     const rewarded = await grantActivityReward(enrollmentId);
