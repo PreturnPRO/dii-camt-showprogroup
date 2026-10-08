@@ -83,6 +83,10 @@ export const createUserHandler = asyncHandler(async (req, res) => {
   const temporaryPassword = req.body.password ?? generateTemporaryPassword();
   const passwordHash = await hashPassword(temporaryPassword);
   const profile = req.body.profile ?? {};
+  const studentAdvisorId =
+    req.body.role === Role.STUDENT && profile.advisorId !== undefined && profile.advisorId !== null
+      ? await lecturerProfileIdOrNull(profile.advisorId)
+      : null;
   assertHttpUrls(profile, ["website", "locationMapUrl"]);
 
   const user = await prisma.$transaction(async (tx) => {
@@ -111,6 +115,7 @@ export const createUserHandler = asyncHandler(async (req, res) => {
             year: Number(profile.year ?? 1),
             semester: Number(profile.semester ?? 1),
             academicYear: String(profile.academicYear ?? "2569"),
+            advisorId: studentAdvisorId,
             consent: {
               create: {
                 allowDataSharing: Boolean(profile.allowDataSharing ?? false),
@@ -353,6 +358,21 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
       const duplicateStudent = await prisma.studentProfile.findUnique({
         where: { studentId: row.studentId },
       });
+      const advisor = row.advisorEmail
+        ? await prisma.lecturerProfile.findFirst({
+            where: { user: { email: { equals: row.advisorEmail, mode: "insensitive" }, isActive: true } },
+            select: { id: true },
+          })
+        : null;
+      if (row.advisorEmail && !advisor) {
+        results.push({
+          rowNumber,
+          status: "failed",
+          identifier: row.studentId,
+          message: `Advisor ${row.advisorEmail} is not a lecturer in the system`,
+        });
+        continue;
+      }
 
       if (duplicateEmail || duplicateStudent) {
         results.push({
@@ -384,6 +404,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
                 semester: Number(row.semester),
                 academicYear: row.academicYear,
                 academicStatus: row.academicStatus || "normal",
+                advisorId: advisor?.id ?? null,
                 consent: {
                   create: {
                     allowDataSharing: false,
@@ -438,6 +459,15 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
   });
 });
 
+const lecturerProfileIdOrNull = async (value: unknown) => {
+  if (value === null) return null;
+  const lecturer = typeof value === "string" && value
+    ? await prisma.lecturerProfile.findFirst({ where: { id: value, user: { isActive: true } }, select: { id: true } })
+    : null;
+  if (!lecturer) throw new AppError(400, "advisorId must be a lecturer, or null to clear it");
+  return lecturer.id;
+};
+
 export const updateUserHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const userId = String(req.params.id);
@@ -475,6 +505,11 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
   }
 
   const roleData = req.body.roleData ?? {};
+  // a student's advisor: a lecturer profile id, or null to clear; left out = unchanged (H2)
+  const advisorUpdate =
+    user.role === Role.STUDENT && "advisorId" in roleData
+      ? { advisorId: await lecturerProfileIdOrNull(roleData.advisorId) }
+      : {};
   const newPasswordHash = req.body.password ? await hashPassword(req.body.password) : undefined;
 
   // a reset password, a deactivation or a new role ends every signed-in device of that user
@@ -588,6 +623,7 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
               year: roleData.year,
               semester: roleData.semester,
               academicYear: roleData.academicYear,
+              ...advisorUpdate,
             },
           });
         }

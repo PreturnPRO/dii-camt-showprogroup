@@ -73,13 +73,7 @@ export const getJobsHandler = asyncHandler(async (req, res) => {
     include: {
       company: { include: { user: { select: { id: true, name: true, email: true } } } },
       ...(isPrivileged
-        ? {
-            applications: {
-              include: {
-                student: { include: { user: { select: { id: true, name: true, email: true } } } },
-              },
-            },
-          }
+        ? { applications: { include: { student: APPLICANT_STUDENT } } }
         : {}),
     },
     orderBy: [{ postedAt: "desc" }],
@@ -87,7 +81,8 @@ export const getJobsHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    jobs,
+    // the applicants on a company's own postings go through the same filter as /applications
+    jobs: jobs.map((job) => withApplicantsForViewer(job, currentUser.role, company?.id)),
   });
 });
 
@@ -228,17 +223,13 @@ export const updateJobHandler = asyncHandler(async (req, res) => {
     data: updateData,
     include: {
       company: { include: { user: { select: { id: true, name: true, email: true } } } },
-      applications: {
-        include: {
-          student: { include: { user: { select: { id: true, name: true, email: true } } } },
-        },
-      },
+      applications: { include: { student: APPLICANT_STUDENT } },
     },
   });
 
   res.json({
     success: true,
-    job,
+    job: withApplicantsForViewer(job, currentUser.role, company?.id),
   });
 });
 
@@ -345,14 +336,51 @@ export const createApplicationHandler = asyncHandler(async (req, res) => {
 });
 
 /** Companies see an applicant's GPA band only, never the exact GPA/GPAX (S-b1 company policy). */
-const forViewer = <T extends { student?: ({ gpa?: number; gpax?: number } & object) | null }>(
+type ApplicantView = {
+  gpa?: number;
+  gpax?: number;
+  cvUrl?: string | null;
+  user?: { email?: string } & object;
+  consent?: { allowDataSharing: boolean; sharedWithCompanies: string[] } | null;
+};
+
+// the applicant as a company sees them: a GPA band, no email (Por 8/10/69: talk through messages),
+// and the profile CV only when the student shares data with this company (partner protocol §3)
+// what an applicant row loads; forViewer decides what each role may see of it
+const APPLICANT_STUDENT = {
+  include: {
+    user: { select: { id: true, name: true, nameThai: true, email: true } },
+    consent: { select: { allowDataSharing: true, sharedWithCompanies: true } },
+  },
+} as const;
+
+const forViewer = <T extends { student?: (ApplicantView & object) | null }>(
   application: T,
   role: Role,
+  companyId?: string,
 ): T => {
-  if (role !== Role.COMPANY || !application.student) return application;
-  const { gpa: _gpa, gpax, ...student } = application.student;
-  return { ...application, student: { ...student, gpaBand: gpaBand(gpax) } };
+  if (!application.student) return application;
+  const { consent, ...withoutConsent } = application.student;
+  if (role !== Role.COMPANY) return { ...application, student: withoutConsent };
+  const { gpa: _gpa, gpax, user, cvUrl, ...student } = withoutConsent;
+  const { email: _email, ...publicUser } = user ?? {};
+  const sharesCv = consent?.allowDataSharing === true || (companyId !== undefined && consent?.sharedWithCompanies.includes(companyId) === true);
+  return {
+    ...application,
+    student: { ...student, user: publicUser, cvUrl: sharesCv ? cvUrl ?? null : null, gpaBand: gpaBand(gpax) },
+  };
 };
+
+// a conditional include loses the applicant's type, hence the loose parameter
+const withApplicantsForViewer = <J extends { applications?: unknown[] }>(job: J, role: Role, companyId?: string): J =>
+  job.applications
+    ? {
+        ...job,
+        applications: (job.applications as Array<{ student?: (ApplicantView & object) | null }>).map((application) =>
+          forViewer(application, role, companyId),
+        ),
+      }
+    : job;
 
 export const getApplicationsHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
@@ -379,6 +407,7 @@ export const getApplicationsHandler = asyncHandler(async (req, res) => {
         include: {
           user: { select: { id: true, name: true, nameThai: true, email: true } },
           skills: { include: { skill: true } },
+          consent: { select: { allowDataSharing: true, sharedWithCompanies: true } },
         },
       },
       jobPosting: { include: { company: { include: { user: { select: { id: true, name: true, email: true } } } } } },
@@ -388,7 +417,7 @@ export const getApplicationsHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    applications: applications.map((application) => forViewer(application, currentUser.role)),
+    applications: applications.map((application) => forViewer(application, currentUser.role, company?.id)),
   });
 });
 
@@ -422,8 +451,13 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
       notes: req.body.notes,
     },
     include: {
-      student: { include: { user: true } },
-      jobPosting: { include: { company: { include: { user: true } } } },
+      student: {
+        include: {
+          user: { select: { id: true, name: true, nameThai: true, email: true } },
+          consent: { select: { allowDataSharing: true, sharedWithCompanies: true } },
+        },
+      },
+      jobPosting: { include: { company: { include: { user: { select: { id: true, name: true, email: true } } } } } },
     },
   });
 
@@ -441,7 +475,7 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
 
   res.json({
     success: true,
-    application: forViewer(updated, currentUser.role),
+    application: forViewer(updated, currentUser.role, company?.id),
   });
 });
 

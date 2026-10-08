@@ -116,6 +116,11 @@ export const login = asyncHandler(async (req, res) => {
   });
 });
 
+// the reset link only reaches anyone through the webhook (or, in development, the exposed token)
+export const passwordResetAvailable = asyncHandler(async (_req, res) => {
+  res.json({ success: true, available: Boolean(env.PASSWORD_RESET_WEBHOOK_URL) || env.EXPOSE_RESET_TOKEN });
+});
+
 export const forgotPassword = asyncHandler(async (req, res) => {
   const { email } = req.body;
   const user = await prisma.user.findFirst({

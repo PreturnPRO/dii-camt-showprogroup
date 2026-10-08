@@ -346,16 +346,16 @@ export const updateOfficeHours = asyncHandler(async (req, res) => {
   });
 });
 
+// who a message is from/to, never how to reach them outside the system (Por 8/10/69)
+const MESSAGE_PERSON = { id: true, name: true, nameThai: true, role: true, avatar: true } as const;
+
 export const getMessages = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const messages = await prisma.message.findMany({
     where: {
       OR: [{ fromId: currentUser.id }, { toId: currentUser.id }],
     },
-    include: {
-      from: true,
-      to: true,
-    },
+    include: { from: { select: MESSAGE_PERSON }, to: { select: MESSAGE_PERSON } },
     orderBy: { timestamp: "desc" },
   });
 
@@ -388,10 +388,7 @@ export const createMessage = asyncHandler(async (req, res) => {
       hasAttachment: Boolean(req.body.attachments?.length),
       attachments: req.body.attachments ?? [],
     },
-    include: {
-      from: true,
-      to: true,
-    },
+    include: { from: { select: MESSAGE_PERSON }, to: { select: MESSAGE_PERSON } },
   });
 
   await createNotification({
@@ -432,10 +429,7 @@ export const markMessageRead = asyncHandler(async (req, res) => {
     data: {
       read: true,
     },
-    include: {
-      from: true,
-      to: true,
-    },
+    include: { from: { select: MESSAGE_PERSON }, to: { select: MESSAGE_PERSON } },
   });
 
   res.json({

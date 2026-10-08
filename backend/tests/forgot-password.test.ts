@@ -46,3 +46,12 @@ describe("POST /api/auth/reset-password", () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe("GET /api/auth/password-reset-available", () => {
+  // Por 8/10/69: with no email delivery the page must send people to staff, not claim a link was sent
+  it("says self-service reset is off when no delivery webhook is configured", async () => {
+    const res = await request(app).get("/api/auth/password-reset-available");
+    expect(res.status).toBe(200);
+    expect(res.body).toMatchObject({ success: true, available: false });
+  });
+});

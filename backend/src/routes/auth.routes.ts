@@ -12,6 +12,7 @@ import {
 import {
   login,
   forgotPassword,
+  passwordResetAvailable,
   resetPassword,
   getMe,
   logout,
@@ -26,6 +27,8 @@ router.post(
   validate(loginSchema),
   login
 );
+
+router.get("/auth/password-reset-available", passwordResetAvailable);
 
 router.post(
   "/auth/forgot-password",

@@ -56,6 +56,8 @@ const studentImportRowSchema = z.object({
   semester: z.coerce.number().int().positive(),
   academicYear: z.string().min(1),
   academicStatus: z.string().optional(),
+  // the advisor's login email; optional (H2) — checked per row, so one typo fails only its row
+  advisorEmail: z.string().trim().toLowerCase().optional(),
 });
 
 export const companyImportSchema = z.object({
