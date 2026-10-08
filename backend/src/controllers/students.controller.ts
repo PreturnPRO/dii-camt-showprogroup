@@ -3,7 +3,7 @@ import { Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { computeGpa, isPassing, termGpas, type GradedRow } from "../services/gpa";
 import { assertCanViewStudentRecord, canViewStudentRecord, gpaBand, isStaffOrAdmin, lecturerProfileIdOf, lecturerStudentsWhere } from "../services/access-policy";
-import { evaluateStudentBadges } from "../services/badge.service";
+import { evaluateStudentBadges, getBadgeProgress } from "../services/badge.service";
 import {
   getLecturerProfileByUserId,
   getCompanyProfileByUserId,
@@ -675,4 +675,14 @@ export const getStudentStatsHandler = asyncHandler(async (req, res) => {
       },
     },
   });
+});
+
+// the student's badges: earned ones plus locked catalogue badges with their real counter
+export const getStudentBadgesHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const student = await getStudentProfileByAnyId(currentUser.id);
+  if (!student) {
+    throw new AppError(404, "Student profile not found");
+  }
+  res.json({ success: true, badges: await getBadgeProgress(student.id) });
 });

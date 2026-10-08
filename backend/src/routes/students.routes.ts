@@ -17,6 +17,7 @@ import {
   getStudentProfilesHandler,
   updateStudentProfileHandler,
   getStudentStatsHandler,
+  getStudentBadgesHandler,
 } from "../controllers/students.controller";
 
 const router = Router();
@@ -34,6 +35,13 @@ router.get(
   requireAuth,
   validate(studentProfileQuerySchema, "query"),
   getStudentProfileHandler
+);
+
+router.get(
+  "/students/badges",
+  requireAuth,
+  checkRole([Role.STUDENT]),
+  getStudentBadgesHandler
 );
 
 router.get(
