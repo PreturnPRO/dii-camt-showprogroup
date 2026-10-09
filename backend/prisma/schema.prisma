@@ -235,7 +235,8 @@ model AdminProfile {
 
 model Course {
   id               String           @id @default(cuid())
-  code             String           @unique
+  /// unique per term (owner decision 9/10/69), so a course opens again every term under its code
+  code             String
   name             String
   nameThai         String
   credits          Int
@@ -259,6 +260,9 @@ model Course {
   gradesPublishedAt DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
+
+  @@unique([code, semester, academicYear])
+  @@index([code])
 }
 
 model Section {

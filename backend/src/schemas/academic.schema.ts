@@ -43,7 +43,7 @@ export const courseCreateSchema = z.object({
       z.object({
         number: z.string().min(1),
         room: z.string().optional(),
-        facilityId: z.string().optional(),
+        facilityId: z.string().nullable().optional(),
         maxStudents: z.coerce.number().int().positive().default(60),
         minStudents: z.coerce.number().int().nonnegative().default(0),
         schedule: z.any(),

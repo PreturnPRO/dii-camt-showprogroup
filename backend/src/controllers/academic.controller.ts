@@ -383,14 +383,44 @@ export const deleteCourseHandler = asyncHandler(async (req, res) => {
     if (existing.lecturer?.userId !== currentUser.id) {
       throw new AppError(403, "You can only delete your own courses");
     }
+    // an open course is closed by staff (owner decision 9/10/69)
+    if (existing.status === "active") {
+      throw new AppError(403, "An open course can only be closed by staff");
+    }
   }
 
-  await prisma.course.delete({
-    where: { id: existing.id },
+  // owner decision 9/10/69: a course anyone ever enrolled in (or took attendance for) keeps its history
+  // and is archived; only a course with no history is removed
+  const history =
+    (await prisma.enrollment.count({ where: { courseId: existing.id } })) +
+    (await prisma.attendanceSession.count({ where: { courseId: existing.id } }));
+  if (history > 0) {
+    await prisma.course.update({ where: { id: existing.id }, data: { status: "archived" } });
+    return res.json({ success: true, archived: true, message: "The course has enrollment history, so it was archived instead of deleted" });
+  }
+
+  try {
+  await prisma.$transaction(async (tx) => {
+    const sectionIds = (await tx.section.findMany({ where: { courseId: existing.id }, select: { id: true } })).map((s) => s.id);
+    await tx.classMove.deleteMany({ where: { sectionId: { in: sectionIds } } });
+    await tx.section.deleteMany({ where: { courseId: existing.id } });
+    await tx.courseGradingCriteria.deleteMany({ where: { courseId: existing.id } });
+    await tx.courseGradeCutoff.deleteMany({ where: { courseId: existing.id } });
+    await tx.courseMaterial.deleteMany({ where: { courseId: existing.id } });
+    await tx.course.delete({ where: { id: existing.id } });
   });
+  } catch (error) {
+    // someone enrolled between the history check and the delete: keep it, archived
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2003") {
+      await prisma.course.update({ where: { id: existing.id }, data: { status: "archived" } });
+      return res.json({ success: true, archived: true, message: "The course has enrollment history, so it was archived instead of deleted" });
+    }
+    throw error;
+  }
 
   res.json({
     success: true,
+    archived: false,
     message: "Course deleted successfully",
   });
 });

@@ -7,6 +7,7 @@ import { loginAs } from "./helpers/auth";
 const as = async (email: string) => `Bearer ${await loginAs(email)}`;
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
+// sections of an open course are staff's to change (owner decision 9/10/69), so staff edit here
 /** a narin course with sections 01 and 02, and bob enrolled in 01 */
 const courseWithEnrollment = async () => {
   const narin = await prisma.lecturerProfile.findFirstOrThrow({ where: { user: { email: "narin@showpro.local" } } });
@@ -29,7 +30,7 @@ const courseWithEnrollment = async () => {
 describe("editing a course keeps its sections and enrollments", () => {
   it("an edit that resends section 01 updates it in place and keeps the enrollment on it", async () => {
     const { course, enrollment } = await courseWithEnrollment();
-    const res = await request(app).patch(`/api/courses/${course.id}`).set("Authorization", await as("narin@showpro.local")).send({
+    const res = await request(app).patch(`/api/courses/${course.id}`).set("Authorization", await as("staff@showpro.local")).send({
       description: "new text",
       sections: [
         { number: "01", maxStudents: 45, schedule: [{ day: "saturday", startTime: "10:00", endTime: "12:00" }] },
@@ -44,7 +45,7 @@ describe("editing a course keeps its sections and enrollments", () => {
 
   it("drops an empty section that is left out, but refuses to drop one with students", async () => {
     const { course } = await courseWithEnrollment();
-    const auth = await as("narin@showpro.local");
+    const auth = await as("staff@showpro.local");
     const onlyOne = await request(app).patch(`/api/courses/${course.id}`).set("Authorization", auth).send({ sections: [{ number: "01", maxStudents: 40, schedule: [] }] });
     expect(onlyOne.status).toBe(200);
     expect(await prisma.section.count({ where: { courseId: course.id } })).toBe(1);
@@ -53,5 +54,21 @@ describe("editing a course keeps its sections and enrollments", () => {
     expect(withoutStudents.status).toBe(409);
     expect(withoutStudents.body.message).toMatch(/01/);
     expect(await prisma.section.count({ where: { courseId: course.id, number: "01" } })).toBe(1);
+  });
+
+  it("staff can let go of a booked room by sending facilityId null", async () => {
+    const { course } = await courseWithEnrollment();
+    const room = await prisma.facility.create({ data: { code: `R${uid()}`, name: "Room", building: "TEST", room: uid(), type: "classroom", capacity: 40 } });
+    await prisma.section.update({ where: { id: course.sections[0].id }, data: { facilityId: room.id } });
+    const res = await request(app).patch(`/api/courses/${course.id}`).set("Authorization", await as("staff@showpro.local")).send({
+      sections: [
+        { number: "01", room: "CAMT 113", facilityId: null, maxStudents: 40, schedule: [{ day: "saturday", startTime: "09:00", endTime: "12:00" }] },
+        { number: "02", maxStudents: 40, schedule: [] },
+      ],
+    });
+    expect(res.status).toBe(200);
+    const after = await prisma.section.findUniqueOrThrow({ where: { id: course.sections[0].id } });
+    expect(after.facilityId).toBeNull();
+    expect(after.room).toBe("CAMT 113");
   });
 });

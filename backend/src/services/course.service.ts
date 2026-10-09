@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
 import { prepareCourseSections } from "./facility.service";
@@ -39,10 +39,12 @@ export const getCourses = async (query: { q?: string; semester?: number; academi
 };
 
 export const getCourseById = async (courseIdentifier: string) => {
+  // a code names a course in every term it ran; the latest term is the one meant
   const course = await prisma.course.findFirst({
     where: {
       OR: [{ id: courseIdentifier }, { code: courseIdentifier }],
     },
+    orderBy: [{ academicYear: "desc" }, { semester: "desc" }],
     include: {
       lecturer: { include: { user: true } },
       sections: { include: { facility: true } },
@@ -99,6 +101,10 @@ export const createCourse = async (data: any) => {
     }
   }
 
+  if (courseData.lecturerId && !(await prisma.lecturerProfile.findUnique({ where: { id: courseData.lecturerId } }))) {
+    throw new AppError(400, "The chosen instructor does not exist");
+  }
+
   const existing = await prisma.course.findFirst({
     where: {
       code: courseData.code,
@@ -131,7 +137,22 @@ export const createCourse = async (data: any) => {
   });
 };
 
-export const updateCourse = async (currentUser: any, id: string, data: any) => {
+/** sections compared by what students see of them: number, seats, room and weekly times */
+const sectionShape = (sections: Array<{ number: string; maxStudents?: number | null; facilityId?: string | null; schedule?: unknown }>) =>
+  JSON.stringify(
+    [...sections]
+      .map((s) => ({
+        number: s.number,
+        maxStudents: s.maxStudents ?? null,
+        facilityId: s.facilityId ?? null,
+        schedule: (Array.isArray(s.schedule) ? s.schedule : [])
+          .map((slot: any) => `${String(slot.day).toLowerCase()}|${slot.startTime}|${slot.endTime}`)
+          .sort(),
+      }))
+      .sort((a, b) => a.number.localeCompare(b.number)),
+  );
+
+const updateCourseUnchecked = async (currentUser: any, id: string, data: any) => {
   const { sections, materials, gradingCriteria, gradeCutoffs, ...courseData } = data;
 
   if (gradingCriteria) {
@@ -156,6 +177,24 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
     }
     if (courseData.lecturerId && courseData.lecturerId !== lecturer.id) {
       throw new AppError(403, "Lecturers cannot reassign courses");
+    }
+    // owner decision 9/10/69: once a course is open, its shape (credits, term, code, sections, times,
+    // rooms) is changed by staff; the lecturer keeps the description, materials and grading
+    if (existing.status === "active") {
+      const changed = (["code", "credits", "semester", "academicYear"] as const).filter(
+        (field) => courseData[field] !== undefined && String(courseData[field]) !== String(existing[field]),
+      );
+      if (sections) {
+        const current = await prisma.section.findMany({ where: { courseId: existing.id } });
+        if (sectionShape(current) !== sectionShape(sections)) changed.push("sections" as never);
+        // the room text students see is part of the shape too (only when the request sends one)
+        const roomMoved = sections.some((s: { number: string; room?: string | null }) =>
+          s.room !== undefined && (s.room ?? "").trim() !== (current.find((c) => c.number === s.number)?.room ?? "").trim());
+        if (roomMoved && !changed.includes("sections" as never)) changed.push("rooms" as never);
+      }
+      if (changed.length > 0) {
+        throw new AppError(403, `An open course's ${changed.join(", ")} can only be changed by staff`);
+      }
     }
   }
 
@@ -281,4 +320,19 @@ export const updateCourse = async (currentUser: any, id: string, data: any) => {
       },
     });
   });
+};
+
+export const updateCourse = async (currentUser: any, id: string, data: any) => {
+  try {
+    return await updateCourseUnchecked(currentUser, id, data);
+  } catch (error) {
+    // a new code or term that another course already has: name the term, not "record exists"
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const current = await prisma.course.findUnique({ where: { id } });
+      const code = data.code ?? current?.code;
+      const term = `${data.semester ?? current?.semester}/${data.academicYear ?? current?.academicYear}`;
+      throw new AppError(409, `Course ${code} already exists for ${term}`);
+    }
+    throw error;
+  }
 };
