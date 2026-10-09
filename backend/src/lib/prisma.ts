@@ -15,6 +15,13 @@ const createPrismaClient = () =>
       user: {
         passwordHash: true,
       },
+      // a course's grade sheet is a draft until it is published; only the grading code asks for it,
+      // with `omit: { workingTotal: false, workingLetterGrade: false, workingRemarks: false }`
+      enrollment: {
+        workingTotal: true,
+        workingLetterGrade: true,
+        workingRemarks: true,
+      },
     },
   });
 

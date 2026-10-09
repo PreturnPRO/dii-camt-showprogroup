@@ -1,7 +1,7 @@
 import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
-import { bulkUpdateGrades } from "../services/grade.service";
+import { bulkUpdateGrades, publishCourseGrades } from "../services/grade.service";
 import {
   getLecturerProfileByUserId,
   getStudentProfileByAnyId,
@@ -163,6 +163,14 @@ export const gradeBulkHandler = asyncHandler(async (req, res) => {
   });
 });
 
+export const publishCourseGradesHandler = asyncHandler(async (req, res) => {
+  const currentUser = requireUser(req);
+  const courseId = String(req.params.courseId);
+  await assertCourseManager(currentUser, courseId);
+  const course = await publishCourseGrades(currentUser.id, courseId, req.ip);
+  res.json({ success: true, course: { id: course.id, gradesPublishedAt: course.gradesPublishedAt } });
+});
+
 export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const courseId = String(req.params.courseId);
@@ -176,6 +184,8 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
           student: { include: { user: true } },
           scores: true,
         },
+        // the export is the grade sheet (staff/lecturer only), drafts included
+        omit: { workingTotal: false, workingLetterGrade: false, workingRemarks: false },
       },
     },
   });
@@ -201,9 +211,9 @@ export const exportGradesCsvHandler = asyncHandler(async (req, res) => {
         enrollment.student.studentId,
         enrollment.student.user.name,
         ...criteriaList.map((c) => enrollment.scores.find((s) => s.criteriaId === c.id)?.score ?? null),
-        enrollment.total ?? null,
-        enrollment.letterGrade ?? null,
-        enrollment.remarks ?? null,
+        enrollment.workingTotal ?? null,
+        enrollment.workingLetterGrade ?? null,
+        enrollment.workingRemarks ?? null,
       ]),
     ),
   ];

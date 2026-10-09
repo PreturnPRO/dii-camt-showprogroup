@@ -27,8 +27,11 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
     };
   }
 
-  return await prisma.enrollment.findMany({
+  const isStudent = currentUser.role === Role.STUDENT;
+  const rows = await prisma.enrollment.findMany({
     where: { ...where, status: { not: "dropped" } }, // ไม่แสดงวิชาที่ถอนแล้ว
+    // the grade sheet is for the people who grade; a student only ever gets what was published
+    omit: isStudent ? undefined : { workingTotal: false, workingLetterGrade: false, workingRemarks: false },
     include: {
       student: { include: { user: true } },
       course: {
@@ -44,7 +47,12 @@ export const getEnrollments = async (currentUser: any, query: { studentId?: stri
     },
     orderBy: { createdAt: "desc" },
   });
+  return isStudent ? rows.map(hideDraftScores) : rows;
 };
+
+/** criterion scores of a course whose grades are not published yet are part of the draft */
+export const hideDraftScores = <T extends { scores: unknown[]; course: { gradesPublishedAt: Date | null } }>(row: T): T =>
+  row.course.gradesPublishedAt ? row : { ...row, scores: [] };
 
 const enrollmentInclude = {
   student: { include: { user: true } },
@@ -138,7 +146,7 @@ export const createEnrollment = async (currentUser: any, data: { studentId?: str
       const enrollment = existing
         ? await tx.enrollment.update({
             where: { id: existing.id },
-            data: { status: "enrolled", sectionId: section?.id ?? null, total: null, letterGrade: null, remarks: null, gradedBy: null, gradedAt: null },
+            data: { status: "enrolled", sectionId: section?.id ?? null, total: null, letterGrade: null, remarks: null, workingTotal: null, workingLetterGrade: null, workingRemarks: null, gradedBy: null, gradedAt: null },
             include: enrollmentInclude,
           })
         : await tx.enrollment.create({

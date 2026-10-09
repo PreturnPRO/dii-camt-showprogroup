@@ -566,6 +566,7 @@ async function main() {
   const courseA = await prisma.course.create({
     data: {
       code: "DII340",
+      gradesPublishedAt: new Date("2026-03-12"),
       name: "Full Stack Product Development",
       nameThai: "การพัฒนาผลิตภัณฑ์ฟูลสแตก",
       credits: 3,
@@ -608,6 +609,7 @@ async function main() {
   const courseB = await prisma.course.create({
     data: {
       code: "DII420",
+      gradesPublishedAt: new Date("2026-03-12"),
       name: "UX Strategy Studio",
       nameThai: "สตูดิโอกลยุทธ์ประสบการณ์ผู้ใช้",
       credits: 3,
@@ -678,6 +680,8 @@ async function main() {
       sectionId: courseA.sections[0].id,
       total: 95,
       letterGrade: "A",
+      workingTotal: 95,
+      workingLetterGrade: "A",
       gradedBy: lecturerA.id,
       gradedAt: new Date("2026-03-10"),
       remarks: "Outstanding project delivery",
@@ -691,6 +695,8 @@ async function main() {
       sectionId: courseA.sections[0].id,
       total: 85,
       letterGrade: "B+",
+      workingTotal: 85,
+      workingLetterGrade: "B+",
       gradedBy: lecturerA.id,
       gradedAt: new Date("2026-03-10"),
       remarks: "Strong progression throughout the term",
@@ -704,6 +710,8 @@ async function main() {
       sectionId: courseB.sections[0].id,
       total: 92,
       letterGrade: "A",
+      workingTotal: 92,
+      workingLetterGrade: "A",
       gradedBy: lecturerB.id,
       gradedAt: new Date("2026-03-11"),
     },
@@ -716,6 +724,8 @@ async function main() {
       sectionId: courseB.sections[0].id,
       total: 69,
       letterGrade: "C+",
+      workingTotal: 69,
+      workingLetterGrade: "C+",
       gradedBy: lecturerB.id,
       gradedAt: new Date("2026-03-11"),
       remarks: "Needs stronger synthesis and final presentation",

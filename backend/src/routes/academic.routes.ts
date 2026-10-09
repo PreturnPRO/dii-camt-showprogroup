@@ -41,6 +41,7 @@ import {
   getStudentAttendanceHistoryHandler,
   closeAttendanceSessionHandler,
   exportGradesCsvHandler,
+  publishCourseGradesHandler,
 } from "../controllers/academic.controller";
 
 const router = Router();
@@ -135,6 +136,13 @@ router.get(
   requireAuth,
   validate(transcriptQuerySchema, "query"),
   getStudentTranscriptHandler
+);
+
+router.post(
+  "/grades/courses/:courseId/publish",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  publishCourseGradesHandler
 );
 
 router.get(

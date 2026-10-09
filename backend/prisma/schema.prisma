@@ -255,6 +255,8 @@ model Course {
   attendanceSessions AttendanceSession[]
   gradingCriteria  CourseGradingCriteria[]
   gradeCutoffs     CourseGradeCutoff[]
+  /// null = grades are a draft only the lecturer/staff see; set once by publishing (owner decision 9/10/69)
+  gradesPublishedAt DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 }
@@ -284,8 +286,13 @@ model Enrollment {
   course        Course             @relation(fields: [courseId], references: [id])
   sectionId     String?
   section       Section?           @relation(fields: [sectionId], references: [id])
+  /// what the student sees: copied from the working values when the course is published, kept in step after
   total         Float?
   letterGrade   String?
+  /// the lecturer's grade sheet; hidden by the global omit in lib/prisma.ts
+  workingTotal       Float?
+  workingLetterGrade String?
+  workingRemarks     String?
   status        String             @default("enrolled")
   gradedBy      String?
   gradedAt      DateTime?

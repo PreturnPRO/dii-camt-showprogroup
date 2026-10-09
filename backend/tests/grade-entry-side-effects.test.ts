@@ -11,12 +11,13 @@ const { app } = await import("../src/app");
 const { prisma } = await import("../src/lib/prisma");
 const { loginAs } = await import("./helpers/auth");
 
+// a published course, so the change goes straight to the student and the notification is attempted
 describe("grading when a side effect fails", () => {
   it("the save still succeeds and GPAX is recalculated", async () => {
     const bob = await prisma.studentProfile.findFirstOrThrow({ where: { user: { email: "bob@student.showpro.local" } } });
     const narin = await prisma.lecturerProfile.findFirstOrThrow({ where: { user: { email: "narin@showpro.local" } } });
     const course = await prisma.course.create({
-      data: { code: `S${Math.random().toString(36).slice(2, 8).toUpperCase()}`, name: "Side", nameThai: "ข้าง", credits: 3, semester: 2, academicYear: String(Number(bob.academicYear) - 2), year: 1, lecturerId: narin.id, status: "active" },
+      data: { code: `S${Math.random().toString(36).slice(2, 8).toUpperCase()}`, name: "Side", nameThai: "ข้าง", credits: 3, semester: 2, academicYear: String(Number(bob.academicYear) - 2), year: 1, lecturerId: narin.id, status: "active", gradesPublishedAt: new Date() },
     });
     await prisma.enrollment.create({ data: { studentId: bob.id, courseId: course.id } });
     const res = await request(app).patch("/api/grades/bulk").set("Authorization", `Bearer ${await loginAs("narin@showpro.local")}`)

@@ -36,10 +36,11 @@ describe("GET /api/courses/:id/grades/export", () => {
   });
 
   it("a remark that looks like a formula is exported as text", async () => {
-    const enrollment = await prisma.enrollment.findFirstOrThrow({ include: { course: true } });
-    const before = enrollment.remarks;
-    restore = () => prisma.enrollment.update({ where: { id: enrollment.id }, data: { remarks: before } });
-    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { remarks: "=1+1" } });
+    // the export is the lecturer's grade sheet, so the remark lives in workingRemarks
+    const enrollment = await prisma.enrollment.findFirstOrThrow({ include: { course: true }, omit: { workingRemarks: false } });
+    const before = enrollment.workingRemarks;
+    restore = () => prisma.enrollment.update({ where: { id: enrollment.id }, data: { workingRemarks: before } });
+    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { workingRemarks: "=1+1" } });
 
     const token = await loginAs("staff@showpro.local");
     const res = await request(app)
