@@ -20,21 +20,21 @@ interface CourseGradesProps {
 }
 
 const getGradeColor = (grade: string) => {
-    if (grade === 'A') return 'bg-emerald-500 text-white';
-    if (grade === 'B+') return 'bg-blue-500 text-white';
-    if (grade === 'B') return 'bg-blue-400 text-white';
-    if (grade === 'C+') return 'bg-orange-400 text-white';
-    if (grade === 'C') return 'bg-orange-300 text-white';
-    if (grade === 'D+' || grade === 'D') return 'bg-red-400 text-white';
-    if (grade === 'F') return 'bg-red-600 text-white';
-    return 'bg-slate-300 text-slate-700';
+    if (grade === 'A') return 'bg-emerald-600 text-white';
+    if (grade === 'B+') return 'bg-blue-600 text-white';
+    if (grade === 'B') return 'bg-blue-500 text-white';
+    if (grade === 'C+') return 'bg-orange-600 text-white';
+    if (grade === 'C') return 'bg-orange-500 text-white';
+    if (grade === 'D+' || grade === 'D') return 'bg-red-500 text-white';
+    if (grade === 'F') return 'bg-red-700 text-white';
+    return 'bg-slate-300 text-slate-700 dark:bg-slate-700 dark:text-slate-200';
 };
 
 const getGradeBgColor = (grade: string) => {
-    if (grade === 'A') return 'bg-emerald-50 border-emerald-100';
-    if (grade.startsWith('B')) return 'bg-blue-50 border-blue-100';
-    if (grade.startsWith('C')) return 'bg-orange-50 border-orange-100';
-    return 'bg-slate-50 border-slate-100';
+    if (grade === 'A') return 'bg-emerald-50 border-emerald-100 dark:bg-emerald-500/10 dark:border-emerald-500/20';
+    if (grade.startsWith('B')) return 'bg-blue-50 border-blue-100 dark:bg-blue-500/10 dark:border-blue-500/20';
+    if (grade.startsWith('C')) return 'bg-orange-50 border-orange-100 dark:bg-orange-500/10 dark:border-orange-500/20';
+    return 'bg-slate-50 border-slate-100 dark:bg-slate-900 dark:border-slate-800';
 };
 
 export function CourseGradesCard({ grades, currentSemester }: CourseGradesProps) {
@@ -93,7 +93,7 @@ export function CourseGradesCard({ grades, currentSemester }: CourseGradesProps)
                                 <div>
                                     <h5 className="font-semibold text-slate-800 dark:text-slate-200">{grade.courseCode}</h5>
                                     <p className="text-sm text-slate-500 dark:text-slate-400 line-clamp-1">{grade.courseName}</p>
-                                    <span className="text-xs text-slate-400">{grade.credits} หน่วยกิต</span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">{grade.credits} หน่วยกิต</span>
                                 </div>
                             </div>
                             <div className="flex items-center gap-3">
@@ -125,7 +125,7 @@ export function CourseGradesCard({ grades, currentSemester }: CourseGradesProps)
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 transition-colors"
+                                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-950 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors"
                                 >
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-white dark:bg-slate-900 shadow-sm flex items-center justify-center font-bold text-slate-500 dark:text-slate-400 text-xs">

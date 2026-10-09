@@ -324,12 +324,12 @@ export default function Attendance() {
 
                 {/* Student List */}
                 <motion.div variants={itemVariants} className="lg:col-span-3 bg-white border border-slate-200/80 dark:border-slate-800/60 rounded-3xl p-6 shadow-sm dark:bg-slate-900">
-                    <div className="flex justify-between items-center mb-5">
+                    <div className="flex flex-wrap justify-between items-center gap-3 mb-5">
                         <div>
                             <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">{t.attendancePage.studentList}</h3>
                             <p className="text-sm text-slate-500 dark:text-slate-400">{selectedCourseInfo ? `${selectedCourseInfo.code} ${selectedCourseInfo.name}` : t.attendancePage.selectCourse}</p>
                         </div>
-                        <div className="flex gap-3 text-sm">
+                        <div className="flex flex-wrap gap-2 text-sm">
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-emerald-500" /> {t.attendancePage.presentShort} <span data-testid="present-count">{presentCount}</span></div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-amber-500" /> {t.attendancePage.lateShort} <span data-testid="late-count">{lateCount}</span></div>
                             <div className="flex items-center gap-1.5 px-3 py-1.5 bg-red-50 rounded-xl dark:bg-slate-800"><div className="w-2.5 h-2.5 rounded-full bg-red-500" /> {t.attendancePage.absentShort} <span data-testid="absent-count">{absentCount}</span></div>

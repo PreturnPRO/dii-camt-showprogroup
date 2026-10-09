@@ -2,38 +2,18 @@ import React, { useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  LayoutDashboard,
-  Calendar,
-  BookOpen,
-  GraduationCap,
-  Trophy,
-  FileText,
-  Briefcase,
-  ClipboardList,
-  MessageSquare,
-  Users,
   Settings,
-  Bell,
-  BarChart3,
-  Shield,
-  Building,
-  Bot,
-  UserCheck,
   ChevronLeft,
   ChevronRight,
   LogOut,
   ChevronUp,
   User,
-  Target,
-  UserCog,
-  Building2,
-  Search,
-  Clock,
-  CalendarClock,
+  Users,
 } from 'lucide-react';
+import { getNavItems, isNavActive } from './nav-items';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
-import type { UserRole } from '@/types';
+
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import {
@@ -54,12 +34,6 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-interface NavItem {
-  icon: React.ElementType;
-  label: string;
-  href: string;
-  badge?: number;
-}
 
 interface SidebarProps {
   isOpen: boolean;
@@ -67,97 +41,6 @@ interface SidebarProps {
   isCollapsed?: boolean;
   onToggleCollapse?: () => void;
 }
-
-const getNavItems = (role: UserRole, nav: Record<string, string>): NavItem[] => {
-  const commonItems: NavItem[] = [
-    { icon: LayoutDashboard, label: nav.dashboard || 'Dashboard', href: '/dashboard' },
-  ];
-
-  switch (role) {
-    case 'student':
-      return [
-        ...commonItems,
-        { icon: Calendar, label: nav.schedule || 'Schedule', href: '/schedule' },
-        { icon: BookOpen, label: nav.courses || 'Courses', href: '/courses' },
-        { icon: GraduationCap, label: nav.grades || 'Grades', href: '/grades' },
-        { icon: Trophy, label: nav.activities || 'Activities', href: '/activities' },
-        { icon: FileText, label: nav.portfolio || 'Portfolio', href: '/portfolio' },
-        { icon: Briefcase, label: nav.internships || 'Internships', href: '/internships' },
-        { icon: Clock, label: nav.applicationHistory || 'Application History', href: '/application-history' },
-        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
-        // M1: students book office hours with a lecturer
-        { icon: CalendarClock, label: nav.appointments || 'Appointments', href: '/appointments' },
-        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
-      ];
-    case 'lecturer':
-      return [
-        ...commonItems,
-        { icon: Calendar, label: nav.teachingSchedule || 'Teaching Schedule', href: '/schedule' },
-        { icon: Users, label: nav.adviseeStudents || 'Advisees', href: '/advisees' },
-        { icon: UserCheck, label: nav.allStudents || 'Students', href: '/students' },
-        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
-        { icon: ClipboardList, label: nav.attendanceBehavior || 'Attendance', href: '/attendance' },
-        { icon: GraduationCap, label: nav.grading || 'Grading', href: '/grades' },
-        { icon: FileText, label: nav.appointments || 'Appointments', href: '/appointments' },
-        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
-        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
-      ];
-    case 'staff':
-      return [
-        ...commonItems,
-        { icon: Users, label: nav.users || 'Users', href: '/users' },
-        // pages staff could already open but only reach by URL (QA L1)
-        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
-        { icon: GraduationCap, label: nav.studentsList || 'Students', href: '/students' },
-        { icon: ClipboardList, label: nav.grades || 'Grades', href: '/grades' },
-        { icon: FileText, label: nav.documentIssue || 'Documents', href: '/documents' },
-        { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
-        { icon: Bell, label: nav.announcementManagement || 'Announcements', href: '/notifications' },
-        { icon: Clock, label: nav.workloadTracking || 'Workload', href: '/workload-tracking' },
-        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
-        { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
-        { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
-        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
-        { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
-        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
-      ];
-    case 'company':
-      return [
-        ...commonItems,
-        { icon: Briefcase, label: nav.jobPostings || 'Job Postings', href: '/job-postings' },
-        { icon: Target, label: nav.skillsRequirement || 'Skills', href: '/skills-requirement' },
-        { icon: Search, label: nav.searchStudents || 'Search Students', href: '/talent-search' },
-        { icon: Users, label: nav.applicants || 'Applicants', href: '/applicants' },
-        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
-        { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
-        { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
-        { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
-      ];
-    case 'admin':
-      return [
-        ...commonItems,
-        { icon: Users, label: nav.userManagement || 'User Management', href: '/users' },
-        { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
-        { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
-        { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
-        { icon: Building2, label: nav.cooperationNetwork || 'Network', href: '/network' },
-        { icon: Trophy, label: nav.activityAdmin || 'Activities', href: '/activities-management' },
-        { icon: Bot, label: nav.automation || 'Automation', href: '/automation' },
-        { icon: Briefcase, label: nav.jobsInternships || 'Jobs & Interns', href: '/job-postings' },
-        { icon: Search, label: nav.studentDatabase || 'Student DB', href: '/talent-search' },
-        { icon: Building, label: nav.partnerCompanies || 'Partners', href: '/cooperation' },
-        { icon: Bell, label: nav.announcementsNotifications || 'Notifications', href: '/notifications' },
-        { icon: BarChart3, label: nav.reportsStats || 'Reports', href: '/reports' },
-        { icon: Shield, label: nav.auditLogs || 'Audit Logs', href: '/audit' },
-        { icon: Settings, label: nav.systemSettings || 'Settings', href: '/settings' },
-      ];
-    default:
-      return commonItems;
-  }
-};
 
 export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse = () => {} }: SidebarProps) {
   const location = useLocation();
@@ -278,14 +161,15 @@ export function Sidebar({ isOpen, onClose, isCollapsed = false, onToggleCollapse
           <TooltipProvider delayDuration={100}>
             <nav className="space-y-1">
               {navItems.map((item) => {
-                const isActive =
-                  location.pathname === item.href ||
-                  (item.href !== '/dashboard' && location.pathname.startsWith(item.href));
+                const isActive = isNavActive(location.pathname, item.href);
 
                 const linkContent = (
                   <Link
                     key={item.href}
                     to={item.href}
+                    // the collapsed rail shows only an icon, so the link carries its own name (UX-M5)
+                    aria-label={isCollapsed ? item.label : undefined}
+                    aria-current={isActive ? 'page' : undefined}
                     onClick={() => {
                       if (isOpen) onClose();
                       if (!isCollapsed && onToggleCollapse) onToggleCollapse();

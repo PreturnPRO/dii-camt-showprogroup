@@ -39,7 +39,7 @@ export function MobileBottomNav() {
           { icon: BookOpen, label: 'จัดการวิชา', labelEn: 'Courses', href: '/courses' },
           { icon: Users, label: 'นักศึกษา', labelEn: 'Students', href: '/students' },
         ];
-      // same first items as the staff/admin drawer — the student tabs include /schedule, which staff may not open
+      // staff/admin tabs: the student tabs include /schedule, which staff may not open
       case 'staff':
       case 'admin':
         return [

@@ -49,7 +49,8 @@ for (const email of [
   test(`${email}: every phone menu link opens a page this role may see`, async ({ page }) => {
     await page.setViewportSize(PHONE);
     await login(page, email);
-    await page.getByTitle("Open Menu").click();
+    await page.getByRole("button", { name: /เปิดเมนู|Open menu/ }).click();
+    await expect(page.getByRole("dialog").locator("a").first()).toBeVisible();
     const hrefs = await page.locator("a[href^='/']").evaluateAll((as) =>
       [...new Set(as.map((a) => a.getAttribute("href") as string))],
     );

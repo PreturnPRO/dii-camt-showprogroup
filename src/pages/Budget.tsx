@@ -218,7 +218,7 @@ export default function Budget() {
                                 <span className="text-xs text-slate-500 dark:text-slate-400">{stat.label}</span>
                             </div>
                             <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{stat.value}</div>
-                            <p className="text-sm text-white/70 mt-1">{stat.sub}</p>
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{stat.sub}</p>
                         </div>
                     </motion.div>
                 ))}
@@ -280,12 +280,12 @@ export default function Budget() {
                                     </div>
                                     <div>
                                         <h4 className="font-semibold text-slate-800 dark:text-slate-200">{tx.description}</h4>
-                                        <p className="text-sm text-slate-400">{tx.category} • {tx.date}</p>
+                                        <p className="text-sm text-slate-500 dark:text-slate-400">{tx.category} • {tx.date}</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3">
                                     <div className="text-right">
-                                    <div className={`font-bold ${tx.type === 'expense' ? 'text-red-500' : 'text-emerald-500'}`}>
+                                    <div className={`font-bold ${tx.type === 'expense' ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                         {tx.type === 'expense' ? '-' : '+'}฿{tx.amount.toLocaleString()}
                                     </div>
                                     <Badge variant="outline" className={`text-xs mt-1 ${tx.status === 'approved' ? 'border-emerald-200 text-emerald-600 bg-emerald-50' : tx.status === 'rejected' ? 'border-red-200 text-red-600 bg-red-50' : 'border-amber-200 text-amber-600 bg-amber-50'}`}>

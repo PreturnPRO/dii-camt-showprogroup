@@ -260,7 +260,7 @@ export default function SkillsRequirement() {
           <motion.h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 dark:text-white leading-snug" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
             {tr.title}<span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-500">{tr.titleHighlight}</span>
           </motion.h1>
-          <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 gap-2">
+          <Button onClick={() => { setEditingReq(null); setFormData({ name: '', description: '', priority: 'medium', positions: 1, skills: [{ name: '', level: 'beginner' }] }); setShowForm(true); }} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2">
             <Plus className="w-4 h-4" /> {tr.createNew}
           </Button>
         </div>
@@ -293,7 +293,7 @@ export default function SkillsRequirement() {
           const priority = getPriorityConfig(req.priority);
           return (
             <motion.div key={req.id} variants={itemVariants} whileHover={{ y: -4 }}
-              className="bg-white border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-100/50 hover:shadow-xl transition-all">
+              className="bg-white dark:bg-[#0c1222] border border-slate-100 dark:border-slate-800 rounded-2xl p-6 shadow-lg shadow-slate-100/50 dark:shadow-none hover:shadow-xl transition-all">
               <div className="flex items-start justify-between mb-4">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 dark:text-slate-200">

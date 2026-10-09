@@ -422,7 +422,8 @@ export default function JobPostings() {
       {/* Table */}
       <motion.div variants={itemVariants}>
         <Card className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm overflow-hidden">
-          <CardContent className="p-0">
+          {/* on a phone the table scrolls sideways instead of losing columns (UX-M8) */}
+          <CardContent className="p-0 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-slate-200 dark:border-slate-800 text-left text-xs text-slate-500 dark:text-slate-400">

@@ -491,7 +491,7 @@ export default function Portfolio() {
           </div>
         </div>
         <div>
-          <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-1">{label}</p>
+          <p className="text-white/90 text-sm font-medium mb-1">{label}</p>
           <h3 className="text-3xl font-bold text-white leading-snug">{value}</h3>
         </div>
       </div>
@@ -591,13 +591,13 @@ export default function Portfolio() {
           icon={Award}
           label={t.portfolioPage.achievements}
           value={achievements.length}
-          gradient="bg-amber-600"
+          gradient="bg-amber-700"
         />
         <StatCard
           icon={Zap}
           label={t.portfolioPage.skills}
           value={skills.length}
-          gradient="bg-emerald-600"
+          gradient="bg-emerald-700"
         />
       </div>
 

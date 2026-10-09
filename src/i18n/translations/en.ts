@@ -65,7 +65,7 @@ export const en = {
     settings: 'Settings',
     // Lecturer
     teachingSchedule: 'Teaching Schedule',
-    adviseeStudents: 'Advisor',
+    adviseeStudents: 'Advisees',
     courseManagement: 'Course Management',
     studentsList: 'Students',
     documentIssue: 'Documents',

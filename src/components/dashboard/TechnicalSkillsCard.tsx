@@ -30,8 +30,8 @@ const careerPaths: CareerPath[] = [
         name: 'UI/UX',
         nameThai: 'UI/UX Design',
         icon: Palette,
-        color: 'text-pink-600',
-        bgColor: 'bg-pink-50',
+        color: 'text-pink-600 dark:text-pink-400',
+        bgColor: 'bg-pink-50 dark:bg-pink-500/10',
         gradientFrom: 'from-pink-500',
         gradientTo: 'to-rose-500',
     },
@@ -40,8 +40,8 @@ const careerPaths: CareerPath[] = [
         name: 'Frontend',
         nameThai: 'Frontend Development',
         icon: Code2,
-        color: 'text-blue-600',
-        bgColor: 'bg-blue-50',
+        color: 'text-blue-600 dark:text-blue-400',
+        bgColor: 'bg-blue-50 dark:bg-blue-500/10',
         gradientFrom: 'from-blue-500',
         gradientTo: 'to-indigo-500',
     },
@@ -50,8 +50,8 @@ const careerPaths: CareerPath[] = [
         name: 'Backend',
         nameThai: 'Backend Development',
         icon: Server,
-        color: 'text-emerald-600',
-        bgColor: 'bg-emerald-50',
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bgColor: 'bg-emerald-50 dark:bg-emerald-500/10',
         gradientFrom: 'from-emerald-500',
         gradientTo: 'to-teal-500',
     },
@@ -60,8 +60,8 @@ const careerPaths: CareerPath[] = [
         name: 'PM',
         nameThai: 'Project Management',
         icon: Users,
-        color: 'text-violet-600',
-        bgColor: 'bg-violet-50',
+        color: 'text-violet-600 dark:text-violet-400',
+        bgColor: 'bg-violet-50 dark:bg-violet-500/10',
         gradientFrom: 'from-violet-500',
         gradientTo: 'to-purple-500',
     },
@@ -79,7 +79,7 @@ const getLevelColor = (level: string) => {
         case 'expert': return 'bg-violet-100 text-violet-700 border-violet-200';
         case 'advanced': return 'bg-emerald-100 text-emerald-700 border-emerald-200';
         case 'intermediate': return 'bg-blue-100 text-blue-700 border-blue-200';
-        default: return 'bg-slate-100 text-slate-700 dark:text-slate-300 border-slate-200';
+        default: return 'bg-slate-100 text-slate-700 border-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700';
     }
 };
 
@@ -129,7 +129,7 @@ export function TechnicalSkillsCard({ skills, activities = [] }: TechnicalSkills
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: pathIndex * 0.1 }}
-                        className={`p-4 rounded-2xl ${path.bgColor} border border-white/50`}
+                        className={`p-4 rounded-2xl ${path.bgColor} border border-white/50 dark:border-white/5`}
                     >
                         <div className="flex items-center gap-2 mb-3">
                             <path.icon className={`w-4 h-4 ${path.color}`} />
@@ -158,7 +158,7 @@ export function TechnicalSkillsCard({ skills, activities = [] }: TechnicalSkills
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-slate-400">ยังไม่มีทักษะในหมวดนี้</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">ยังไม่มีทักษะในหมวดนี้</p>
                         )}
                     </motion.div>
                 ))}

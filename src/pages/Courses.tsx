@@ -763,10 +763,10 @@ export default function Courses() {
                   placeholder={t.coursesPage.searchCourses}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-blue-100"
+                  className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm focus:ring-2 focus:ring-blue-100"
                 />
               </div>
-              <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 hover:bg-white text-slate-600 dark:text-slate-300" onClick={() => setSearchQuery('')}>
+              <Button variant="outline" className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/60 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300" onClick={() => setSearchQuery('')}>
                 <Filter className="w-4 h-4 mr-2" />
                 {t.coursesPage.filter}
               </Button>
@@ -1217,12 +1217,12 @@ export default function Courses() {
               placeholder={t.coursesPage.searchCourses}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 focus:bg-white transition-all shadow-sm focus:ring-2 focus:ring-purple-100"
+              className="pl-12 h-12 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 focus:bg-white dark:focus:bg-slate-900 transition-all shadow-sm focus:ring-2 focus:ring-purple-100"
             />
           </div>
           <Button
             variant="outline"
-            className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 hover:bg-white text-slate-700 dark:text-slate-300"
+            className="h-12 px-6 rounded-2xl border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
             onClick={() => setSearchQuery('')}
           >
             <Filter className="w-4 h-4 mr-2" />
@@ -1245,7 +1245,7 @@ export default function Courses() {
                       {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending Approval</Badge>}
                       {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
                       {course.status === 'archived' && <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-0">Archived</Badge>}
-                      <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:border-slate-700">
+                      <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:bg-slate-900/60 dark:border-slate-700">
                         {language === 'th' ? `${course.credits} หน่วยกิต` : `${course.credits} credits`}
                       </Badge>
                     </div>

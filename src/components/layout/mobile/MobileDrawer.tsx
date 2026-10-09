@@ -1,40 +1,24 @@
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X, LayoutDashboard, Calendar, BookOpen, GraduationCap,
-  Trophy, FileText, Briefcase, ClipboardList, MessageSquare,
-  Users, Building2, DollarSign, UserCog, Clock, BarChart3,
-  Shield, Bell, Target, Search, Building, Settings,
-  LogOut, QrCode, CheckSquare, ChevronRight, User,
-  CreditCard,
-  CalendarClock,
-} from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X, LogOut, QrCode } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useReturnFocus } from '@/components/ui/return-focus';
 import { cn } from '@/lib/utils';
-import type { UserRole } from '@/types';
+import { getNavItems, isNavActive, type NavItem } from '../nav-items';
 
 interface MobileDrawerProps {
   isOpen: boolean;
   onClose: () => void;
 }
 
-interface NavItem {
-  icon: React.ElementType;
-  label: string;
-  labelEn: string;
-  href: string;
-}
-
 export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const { user, logout } = useAuth();
   const { language, t } = useLanguage();
   const location = useLocation();
-  const navigate = useNavigate();
-
-  const role = (user?.role || 'student') as UserRole;
+  const returnFocus = useReturnFocus(undefined, () => document.querySelector<HTMLElement>('[data-mobile-menu-button]'));
 
   const initials = user?.name
     ? user.name
@@ -48,95 +32,24 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   // the shared role names (t.roles); an unknown role is '-', never a guessed 'Student'
   const roleLabel = (t.roles as Record<string, string>)[user?.role ?? ''] ?? '-';
 
-  // ── Navigation structure per role ──
-  const getNavStructure = (userRole: UserRole) => {
-    switch (userRole) {
-      case 'student':
-        return {
-          primary: [
-            { icon: LayoutDashboard, label: 'แดชบอร์ด', labelEn: 'Dashboard', href: '/dashboard' },
-            { icon: Calendar, label: 'ตารางเรียน', labelEn: 'Schedule', href: '/schedule' },
-            { icon: BookOpen, label: 'วิชาเรียน', labelEn: 'Courses', href: '/courses' },
-            { icon: GraduationCap, label: 'ผลการเรียน', labelEn: 'Grades', href: '/grades' },
-          ],
-          services: [],
-          extras: [
-            { icon: Trophy, label: 'กิจกรรมและชั่วโมง', labelEn: 'Activities', href: '/activities' },
-            { icon: FileText, label: 'แฟ้มสะสมผลงาน', labelEn: 'Portfolio', href: '/portfolio' },
-            { icon: Briefcase, label: 'ตำแหน่งฝึกงาน/สหกิจ', labelEn: 'Internships', href: '/internships' },
-            { icon: CalendarClock, label: 'นัดหมายอาจารย์', labelEn: 'Appointments', href: '/appointments' },
-            { icon: QrCode, label: 'สแกน QR เช็คชื่อ', labelEn: 'QR Check-in', href: '/student/checkin' },
-          ],
-        };
-      case 'lecturer':
-        return {
-          primary: [
-            { icon: LayoutDashboard, label: 'แดชบอร์ด', labelEn: 'Dashboard', href: '/dashboard' },
-            { icon: Calendar, label: 'ตารางสอน', labelEn: 'Schedule', href: '/schedule' },
-            { icon: BookOpen, label: 'จัดการวิชา', labelEn: 'Courses', href: '/courses' },
-            { icon: Users, label: 'นักศึกษา', labelEn: 'Students', href: '/students' },
-          ],
-          services: [
-            { icon: ClipboardList, label: 'เช็คชื่อและพฤติกรรม', labelEn: 'Attendance', href: '/attendance' },
-            { icon: GraduationCap, label: 'บันทึกคะแนนและเกรด', labelEn: 'Grading', href: '/grades' },
-            { icon: FileText, label: 'นัดหมาย', labelEn: 'Appointments', href: '/appointments' },
-          ],
-          extras: [],
-        };
-      case 'company':
-        return {
-          primary: [
-            { icon: LayoutDashboard, label: 'แดชบอร์ด', labelEn: 'Dashboard', href: '/dashboard' },
-            { icon: Briefcase, label: 'ประกาศตำแหน่งงาน', labelEn: 'Job Postings', href: '/job-postings' },
-            { icon: Target, label: 'ระบุ Requirement', labelEn: 'Skills Req.', href: '/skills-requirement' },
-            { icon: Users, label: 'ผู้สมัคร', labelEn: 'Applicants', href: '/applicants' },
-          ],
-          services: [
-            { icon: Search, label: 'ค้นหาโปรไฟล์นักศึกษา', labelEn: 'Search Students', href: '/student-profiles' },
-            { icon: UserCog, label: 'ติดตามการฝึกงาน', labelEn: 'Intern Tracking', href: '/intern-tracking' },
-            { icon: Building2, label: 'ความร่วมมือ MOU', labelEn: 'MOU', href: '/cooperation' },
-          ],
-          extras: [],
-        };
-      case 'staff':
-      case 'admin':
-        return {
-          primary: [
-            { icon: LayoutDashboard, label: 'แดชบอร์ด', labelEn: 'Dashboard', href: '/dashboard' },
-            { icon: Users, label: 'ผู้ใช้งาน', labelEn: 'Users', href: '/users' },
-            { icon: BookOpen, label: 'หลักสูตร/วิชา', labelEn: 'Courses', href: '/courses' },
-            { icon: ClipboardList, label: 'คำร้อง', labelEn: 'Requests', href: '/requests' },
-          ],
-          services: [
-            { icon: UserCog, label: 'ติดตามการฝึกงาน', labelEn: 'Intern Tracking', href: '/intern-tracking' },
-            { icon: FileText, label: 'ออกเอกสาร', labelEn: 'Documents', href: '/documents' },
-            { icon: Building2, label: 'เครือข่ายความร่วมมือ', labelEn: 'Network', href: '/network' },
-            { icon: Bell, label: 'การแจ้งเตือน', labelEn: 'Notifications', href: '/notifications' },
-          ],
-          extras: [
-            { icon: Calendar, label: 'ตารางสอนและห้อง', labelEn: 'Schedule Management', href: '/schedule-management' },
-            { icon: Trophy, label: 'จัดการกิจกรรม', labelEn: 'Activities Management', href: '/activities-management' },
-          ],
-        };
-      default:
-        return { primary: [], services: [], extras: [] };
-    }
-  };
-
-  const navStructure = getNavStructure(role);
-
-  // System items (shared across roles)
-  const systemItems: NavItem[] = [
-    { icon: Settings, label: 'ตั้งค่า', labelEn: 'Settings', href: '/settings' },
-  ];
+  // the same pages as the desktop sidebar (G5, UX-H2), plus the phone-only QR check-in for students
+  const navItems: NavItem[] = user
+    ? [
+        ...getNavItems(user.role, t.nav as unknown as Record<string, string>),
+        ...(user.role === 'student'
+          ? [{ icon: QrCode, label: language === 'th' ? 'สแกน QR เช็คชื่อ' : 'QR Check-in', href: '/student/checkin' }]
+          : []),
+      ]
+    : [];
 
   // ── Render a single nav item ──
   const renderNavItem = (item: NavItem) => {
-    const isActive = location.pathname === item.href;
+    const isActive = isNavActive(location.pathname, item.href);
     return (
       <Link
-        key={item.href}
+        key={item.href + item.label}
         to={item.href}
+        aria-current={isActive ? 'page' : undefined}
         onClick={onClose}
         className={cn(
           'flex items-center gap-3 px-3 py-2.5 rounded-xl min-h-[44px] transition-all active:scale-[0.98]',
@@ -157,7 +70,7 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
           'text-[13px] flex-1 truncate',
           isActive ? 'font-bold' : 'font-medium'
         )}>
-          {language === 'th' ? item.label : item.labelEn}
+          {item.label}
         </span>
         {isActive && (
           <div className="w-1.5 h-1.5 rounded-full bg-blue-500 dark:bg-blue-400 shrink-0" />
@@ -166,37 +79,17 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
     );
   };
 
-  // ── Section divider with label ──
-  const renderSectionLabel = (thLabel: string, enLabel: string) => (
-    <div className="px-3 pt-4 pb-1.5">
-      <span className="text-[10px] font-bold uppercase tracking-[0.08em] text-slate-400 dark:text-slate-500">
-        {language === 'th' ? thLabel : enLabel}
-      </span>
-    </div>
-  );
-
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <div className="fixed inset-0 z-50 flex">
-          {/* Backdrop overlay */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            onClick={onClose}
-            className="absolute inset-0 bg-black/50 dark:bg-black/60"
-          />
-
-          {/* Drawer panel — slides in from left */}
-          <motion.div
-            initial={{ x: '-100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '-100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-            className="relative z-10 w-[80%] max-w-[320px] h-full bg-white dark:bg-[#0b1121] flex flex-col shadow-2xl overflow-hidden"
-          >
+    <DialogPrimitive.Root open={isOpen} onOpenChange={(open) => { if (!open) onClose(); }}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 dark:bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
+        {/* a real dialog (UX-M3): focus moves in and stays, Esc closes, focus returns to the menu button */}
+        <DialogPrimitive.Content
+          aria-describedby={undefined}
+          onCloseAutoFocus={returnFocus.onCloseAutoFocus}
+          className="fixed inset-y-0 left-0 z-50 w-[80%] max-w-[320px] h-full bg-white dark:bg-[#0b1121] flex flex-col shadow-2xl overflow-hidden focus:outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left data-[state=closed]:duration-200 data-[state=open]:duration-300"
+        >
+          <returnFocus.Capture />
             {/* ── Drawer Header ── */}
             <div className="px-4 pt-5 pb-4 border-b border-slate-100 dark:border-slate-800/60">
               {/* Top row: Brand + Close */}
@@ -205,16 +98,16 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                   <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md p-1 shrink-0">
                     <img src="/showpro_logo.png" alt="Xchange" className="w-full h-full object-contain" />
                   </div>
-                  <span className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
-                    Xchange
-                  </span>
+                  <DialogPrimitive.Title className="font-extrabold text-base tracking-tight text-slate-900 dark:text-white">
+                    <span className="sr-only">{language === 'th' ? 'เมนู ' : 'Menu '}</span>Xchange
+                  </DialogPrimitive.Title>
                 </div>
-                <button
-                  onClick={onClose}
-                  className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors active:scale-90 cursor-pointer"
+                <DialogPrimitive.Close
+                  aria-label={language === 'th' ? 'ปิดเมนู' : 'Close menu'}
+                  className="w-11 h-11 rounded-lg flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/5 transition-colors active:scale-90 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </DialogPrimitive.Close>
               </div>
 
               {/* Student Identity Card */}
@@ -239,45 +132,12 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
               </div>
             </div>
 
-            {/* ── Scrollable Navigation ── */}
-            <div className="flex-1 overflow-y-auto overscroll-contain py-2 px-2">
-              {/* Primary Navigation */}
-              {renderSectionLabel('เมนูหลัก', 'Primary')}
+            {/* ── Navigation ── */}
+            <nav className="flex-1 overflow-y-auto overscroll-contain py-2 px-2" aria-label={language === 'th' ? 'เมนูหลัก' : 'Main menu'}>
               <div className="space-y-0.5">
-                {navStructure.primary.map(renderNavItem)}
+                {navItems.map(renderNavItem)}
               </div>
-
-              {/* Additional Services */}
-              {navStructure.services.length > 0 && (
-                <>
-                  <div className="mx-3 my-2 border-t border-slate-100 dark:border-slate-800/50" />
-                  {renderSectionLabel('บริการเพิ่มเติม', 'Additional Services')}
-                  <div className="space-y-0.5">
-                    {navStructure.services.map(renderNavItem)}
-                  </div>
-                </>
-              )}
-
-              {/* Extra items (student-only: activities, portfolio, etc.) */}
-              {navStructure.extras.length > 0 && (
-                <>
-                  <div className="mx-3 my-2 border-t border-slate-100 dark:border-slate-800/50" />
-                  {renderSectionLabel('กิจกรรมและโปรไฟล์', 'Activities & Profile')}
-                  <div className="space-y-0.5">
-                    {navStructure.extras.map(renderNavItem)}
-                  </div>
-                </>
-              )}
-
-              {/* Divider */}
-              <div className="mx-3 my-2 border-t border-slate-100 dark:border-slate-800/50" />
-
-              {/* System */}
-              {renderSectionLabel('ระบบ', 'System')}
-              <div className="space-y-0.5">
-                {systemItems.map(renderNavItem)}
-              </div>
-            </div>
+            </nav>
 
             {/* ── Drawer Footer: Logout ── */}
             <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-800/60">
@@ -296,9 +156,8 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
                 </span>
               </button>
             </div>
-          </motion.div>
-        </div>
-      )}
-    </AnimatePresence>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }

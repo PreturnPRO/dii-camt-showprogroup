@@ -47,7 +47,7 @@ export function UserTableList({
       </div>
 
       <Tabs defaultValue="all" className="space-y-4">
-        <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
+        <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex flex-wrap justify-start shadow-xs">
           <TabsTrigger value="all">{t.users.allTab}</TabsTrigger>
           <TabsTrigger value="student">{t.roles.student}</TabsTrigger>
           <TabsTrigger value="lecturer">{t.roles.lecturer}</TabsTrigger>
@@ -73,11 +73,11 @@ export function UserTableList({
                           exit={{ opacity: 0 }}
                           key={user.id}
                           data-testid="user-row"
-                          className="flex items-center justify-between p-4 border rounded-xl hover:shadow-md transition-all bg-white dark:bg-slate-900"
+                          className="flex flex-wrap items-center justify-between gap-3 p-4 border rounded-xl hover:shadow-md transition-all bg-white dark:bg-slate-900"
                         >
-                          <div className="flex items-center gap-4">
+                          <div className="flex min-w-0 items-center gap-4">
                             <div
-                              className={`w-12 h-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg
+                              className={`w-12 h-12 shrink-0 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg
                               ${
                                 user.type === 'student'
                                   ? 'from-blue-400 to-blue-600'
@@ -92,14 +92,14 @@ export function UserTableList({
                             >
                               {(user.name || user.email || '?').charAt(0)}
                             </div>
-                            <div>
-                              <div className="font-semibold text-gray-900 dark:text-slate-200 flex items-center gap-2">
+                            <div className="min-w-0">
+                              <div className="font-semibold text-gray-900 dark:text-slate-200 flex flex-wrap items-center gap-2">
                                 {user.name}
                                 {user.isActive === false && (
                                   <span className="rounded-md bg-red-100 px-2 py-0.5 text-xs font-medium text-red-800 dark:bg-red-950 dark:text-red-200">ระงับ (Inactive)</span>
                                 )}
                               </div>
-                              <div className="text-sm text-gray-500 dark:text-slate-400">
+                              <div className="text-sm text-gray-500 dark:text-slate-400 break-all">
                                 {user.email || 'No email'}
                               </div>
                               <div className="text-xs text-gray-400 dark:text-slate-500">
@@ -116,7 +116,7 @@ export function UserTableList({
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-wrap items-center gap-3">
                             {getRoleBadge(user.type)}
                             {canManage(user.type) && <div className="flex gap-1">
                               {onResetPassword && (

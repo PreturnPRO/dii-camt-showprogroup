@@ -346,7 +346,7 @@ export function StudentGradesView() {
       {/* Content Tabs */}
       <Tabs defaultValue="current" className="space-y-6">
         <div className="flex items-center justify-between">
-          <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
+          <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex flex-wrap justify-start shadow-xs">
             <TabsTrigger
               value="current"
               className="rounded-lg px-4 py-2 text-xs font-semibold data-[state=active]:bg-white data-[state=active]:text-emerald-600 data-[state=active]:dark:bg-slate-900 data-[state=active]:dark:text-emerald-400 data-[state=active]:shadow-xs transition-all text-slate-600 dark:text-slate-400 cursor-pointer select-none"

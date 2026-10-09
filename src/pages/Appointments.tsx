@@ -19,6 +19,7 @@ import { mapAppointment, mapLecturer } from '@/lib/live-mappers';
 import { asArray, asBoolean, asRecord, asString } from '@/lib/live-data';
 import { thaiToday } from '@/lib/thai-date';
 import { OfficeHoursEditor } from '@/components/appointments/OfficeHoursEditor';
+import { lecturerDirectory } from '@/lib/lecturer-directory';
 import type { Appointment, Lecturer } from '@/types';
 
 type AppointmentRow = Appointment;
@@ -50,11 +51,13 @@ const itemVariants = {
 };
 
 export default function Appointments() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const { user } = useAuth();
     const [appointments, setAppointments] = React.useState<AppointmentRow[]>([]);
     const [lecturers, setLecturers] = React.useState<LecturerRow[]>([]);
     const [isLoading, setIsLoading] = React.useState(true);
+    const [lecturerQuery, setLecturerQuery] = React.useState('');
+    const [advisorId, setAdvisorId] = React.useState<string | null>(null);
     const [bookingLecturer, setBookingLecturer] = React.useState<LecturerRow | null>(null);
     const [bookingDate, setBookingDate] = React.useState('');
     // the lecturer's office-hour slots on the chosen date, each marked booked or free by the server (M1)
@@ -69,6 +72,20 @@ export default function Appointments() {
     // only students book; admin sees the list (the API takes bookings from students only)
     const canBook = user?.role === 'student';
 
+    // the student's own advisor goes first in the directory (S-M3)
+    React.useEffect(() => {
+        if (!canBook) return;
+        let mounted = true;
+        api.students.profile()
+            .then((response) => {
+                const advisor = asRecord(asRecord(response.profile).advisor);
+                if (mounted) setAdvisorId(asString(advisor.id) || null);
+            })
+            .catch(() => undefined);
+        return () => { mounted = false; };
+    }, [canBook]);
+
+    const directory = React.useMemo(() => lecturerDirectory(lecturers, lecturerQuery, advisorId), [lecturers, lecturerQuery, advisorId]);
 
     React.useEffect(() => {
         let mounted = true;
@@ -225,51 +242,6 @@ export default function Appointments() {
                 ))}
             </motion.div>
 
-            {canBook && (
-                <motion.div variants={itemVariants}>
-                    <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-2"><User className="w-5 h-5" />{t.appointmentsPage.availableLecturers}</CardTitle>
-                            <CardDescription>เลือกอาจารย์ แล้วเลือกวันและช่วงเวลาว่างตาม office hours ของอาจารย์</CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {isLoading && (
-                                    <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                                        กำลังโหลดข้อมูลอาจารย์จากระบบ...
-                                    </div>
-                                )}
-                                {!isLoading && lecturers.length === 0 && (
-                                    <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
-                                        ไม่พบข้อมูลอาจารย์จากระบบ
-                                    </div>
-                                )}
-                                {!isLoading && lecturers.map((lecturer) => (
-                                    <div key={lecturer.id} data-testid="bookable-lecturer" className="p-4 border rounded-xl hover:shadow-md transition-all">
-                                        <div className="flex items-start gap-4">
-                                            <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg">{lecturer.nameThai.charAt(0)}</div>
-                                            <div className="flex-1">
-                                                <h3 className="font-semibold">{lecturer.nameThai}</h3>
-                                                <p className="text-sm text-gray-600 dark:text-slate-300">{lecturer.department}</p>
-                                                <div className="flex flex-wrap gap-1 mt-2">
-                                                    {lecturer.officeHours.filter((hour) => hour.isAvailable).map((hour) => (
-                                                        <Badge key={hour.id} variant="outline" className="text-xs">{DAY_LABELS[hour.day] ?? hour.day} {hour.startTime}-{hour.endTime}</Badge>
-                                                    ))}
-                                                    {lecturer.officeHours.every((hour) => !hour.isAvailable) && (
-                                                        <span className="text-xs text-slate-500 dark:text-slate-400">ยังไม่ได้ตั้ง office hours</span>
-                                                    )}
-                                                </div>
-                                            </div>
-                                            <Button size="sm" disabled={lecturer.officeHours.every((hour) => !hour.isAvailable)} onClick={() => openBooking(lecturer)}>{t.appointmentsPage.bookTime}</Button>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </CardContent>
-                    </Card>
-                </motion.div>
-            )}
-
             <motion.div variants={itemVariants}>
                 <Tabs defaultValue="upcoming" className="space-y-4">
                     <TabsList className="bg-slate-100 dark:bg-slate-800/80 p-1 h-auto rounded-xl border border-slate-200/70 dark:border-slate-700/60 inline-flex shadow-xs">
@@ -292,15 +264,15 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'confirmed').map((apt) => (
-                                    <div key={apt.id} className="bg-blue-50 dark:bg-blue-500/10 flex items-start gap-4 p-4 border dark:border-slate-700 rounded-xl">
+                                    <div key={apt.id} data-testid="appointment-card" className="bg-blue-50 dark:bg-blue-500/10 flex flex-wrap items-start gap-4 p-4 border dark:border-slate-700 rounded-xl">
                                         <div className="bg-blue-600 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
                                             <div className="text-xs">{new Date(apt.date).toLocaleDateString('th-TH', { month: 'short' })}</div>
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0 break-words">
                                             <h3 className="font-semibold">{isTeacher ? apt.studentName : apt.lecturerName}</h3>
                                             <p className="text-sm text-gray-600 dark:text-slate-300">{apt.purpose}</p>
-                                            <div className="flex items-center gap-4 text-sm text-gray-500 dark:text-slate-400 mt-2">
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-slate-400 mt-2">
                                                 <span><Clock className="w-4 h-4 inline mr-1" />{apt.startTime}-{apt.endTime}</span>
                                                 <span><MapPin className="w-4 h-4 inline mr-1" />{apt.location}</span>
                                             </div>
@@ -326,13 +298,18 @@ export default function Appointments() {
                                     </div>
                                 )}
                                 {!isLoading && appointments.filter(a => a.status === 'pending').map((apt) => (
-                                    <div key={apt.id} className="flex items-start gap-4 p-4 border rounded-xl bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900/30">
+                                    <div key={apt.id} data-testid="appointment-card" className="flex flex-wrap items-start gap-4 p-4 border rounded-xl bg-orange-50 dark:bg-orange-950/20 dark:border-orange-900/30">
                                         <div className="bg-orange-600 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
+                                            <div className="text-xs">{new Date(apt.date).toLocaleDateString('th-TH', { month: 'short' })}</div>
                                         </div>
-                                        <div className="flex-1">
+                                        <div className="flex-1 min-w-0 break-words">
                                             <h3 className="font-semibold">{isTeacher ? apt.studentName : apt.lecturerName}</h3>
                                             <p className="text-sm text-gray-600 dark:text-slate-300">{apt.purpose}</p>
+                                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-slate-400 mt-2">
+                                                <span><Clock className="w-4 h-4 inline mr-1" />{apt.startTime}-{apt.endTime}</span>
+                                                {apt.location && <span><MapPin className="w-4 h-4 inline mr-1" />{apt.location}</span>}
+                                            </div>
                                         </div>
                                         {isTeacher ? (
                                             <div className="flex gap-2">
@@ -376,6 +353,67 @@ export default function Appointments() {
                     </TabsContent>
                 </Tabs>
             </motion.div>
+
+            {canBook && (
+                <motion.div variants={itemVariants}>
+                    <Card className="bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-sm">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-2"><User className="w-5 h-5" />{t.appointmentsPage.availableLecturers}</CardTitle>
+                            <CardDescription>เลือกอาจารย์ แล้วเลือกวันและช่วงเวลาว่างตาม office hours ของอาจารย์</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Input
+                                type="search"
+                                aria-label={language === 'th' ? 'ค้นหาอาจารย์' : 'Search lecturers'}
+                                placeholder={language === 'th' ? 'ค้นหาชื่ออาจารย์หรือสาขา' : 'Search by name or department'}
+                                value={lecturerQuery}
+                                onChange={(event) => setLecturerQuery(event.target.value)}
+                                className="mb-4 rounded-xl"
+                            />
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {isLoading && (
+                                    <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                        กำลังโหลดข้อมูลอาจารย์จากระบบ...
+                                    </div>
+                                )}
+                                {!isLoading && lecturers.length === 0 && (
+                                    <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
+                                        ไม่พบข้อมูลอาจารย์จากระบบ
+                                    </div>
+                                )}
+                                {!isLoading && lecturers.length > 0 && directory.length === 0 && (
+                                    <div className="md:col-span-2 rounded-2xl border border-dashed border-slate-200 p-6 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+                                        {language === 'th' ? 'ไม่พบอาจารย์ที่ตรงกับคำค้น' : 'No lecturer matches'}
+                                    </div>
+                                )}
+                                {!isLoading && directory.map((lecturer) => (
+                                    <div key={lecturer.id} data-testid="bookable-lecturer" className="p-4 border rounded-xl hover:shadow-md transition-all">
+                                        <div className="flex items-start gap-4">
+                                            <div className="bg-emerald-600 w-14 h-14 rounded-xl flex items-center justify-center text-white font-bold text-lg">{lecturer.nameThai.charAt(0)}</div>
+                                            <div className="flex-1 min-w-0 break-words">
+                                                <h3 className="font-semibold">{lecturer.nameThai}</h3>
+                                                {lecturer.id === advisorId && (
+                                                    <Badge className="mt-1 bg-blue-600 text-white">{language === 'th' ? 'อาจารย์ที่ปรึกษา' : 'Your advisor'}</Badge>
+                                                )}
+                                                <p className="text-sm text-gray-600 dark:text-slate-300">{lecturer.department}</p>
+                                                <div className="flex flex-wrap gap-1 mt-2">
+                                                    {lecturer.officeHours.filter((hour) => hour.isAvailable).map((hour) => (
+                                                        <Badge key={hour.id} variant="outline" className="text-xs">{DAY_LABELS[hour.day] ?? hour.day} {hour.startTime}-{hour.endTime}</Badge>
+                                                    ))}
+                                                    {lecturer.officeHours.every((hour) => !hour.isAvailable) && (
+                                                        <span className="text-xs text-slate-500 dark:text-slate-400">ยังไม่ได้ตั้ง office hours</span>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            <Button size="sm" disabled={lecturer.officeHours.every((hour) => !hour.isAvailable)} onClick={() => openBooking(lecturer)}>{t.appointmentsPage.bookTime}</Button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                </motion.div>
+            )}
 
             <Dialog open={Boolean(bookingLecturer)} onOpenChange={(open) => !open && setBookingLecturer(null)}>
                 <DialogContent>

@@ -63,7 +63,9 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
           size="icon"
           onClick={onMenuToggle}
           className="h-9 w-9 rounded-xl text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 active:scale-90 transition-transform cursor-pointer shrink-0"
-          title="Open Menu"
+          aria-label={language === 'th' ? 'เปิดเมนู' : 'Open menu'}
+          aria-haspopup="dialog"
+          data-mobile-menu-button
         >
           <Menu className="w-5 h-5 stroke-[2.2px]" />
         </Button>

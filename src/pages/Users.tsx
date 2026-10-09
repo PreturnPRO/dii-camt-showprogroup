@@ -502,7 +502,7 @@ export default function UsersPage() {
     <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-8 pb-10">
       <TemporaryPasswordsDialog items={credentials} onClose={() => setCredentials([])} />
       {/* Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-end gap-6">
+      <div className="flex flex-col md:flex-row justify-between md:items-end gap-6">
         <div>
           <motion.div
             initial={{ opacity: 0, x: -20 }}
@@ -527,7 +527,7 @@ export default function UsersPage() {
           </motion.h1>
         </div>
 
-        <motion.div className="flex gap-3" variants={itemVariants}>
+        <motion.div className="flex flex-wrap gap-3" variants={itemVariants}>
           <Button variant="outline" onClick={() => setIsStudentImportOpen(true)} className="rounded-xl">
             <Upload className="w-4 h-4 mr-2" />
             Import นักศึกษา

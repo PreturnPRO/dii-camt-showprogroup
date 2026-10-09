@@ -432,14 +432,14 @@ function MetricCard({
       variants={itemVariants}
       whileHover={{ y: -3 }}
       onClick={onClick}
-      className={`relative overflow-hidden rounded-2xl p-5 text-left text-white shadow-lg ${gradient}`}
+      className={`relative overflow-hidden rounded-2xl p-5 text-left text-slate-950 dark:text-white shadow-lg ${gradient}`}
     >
       <div className="relative z-10">
         <div className="flex items-center gap-2">
-          <div className="rounded-xl bg-white/20 p-2">
+          <div className="rounded-xl bg-slate-100 dark:bg-white/10 p-2">
             <Icon className="h-5 w-5" />
           </div>
-          <span className="text-sm font-medium text-white/90">{label}</span>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">{label}</span>
         </div>
         <div className="mt-4 text-3xl font-bold leading-snug">{value}</div>
         <div className="mt-1 text-sm text-slate-500 dark:text-slate-400">{detail}</div>

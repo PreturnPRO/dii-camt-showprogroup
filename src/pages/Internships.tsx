@@ -20,6 +20,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { InternshipDiary } from '@/components/internship/InternshipDiary';
 import { BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -48,6 +49,13 @@ export default function Internships() {
   const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = React.useState('');
   const [selectedJobId, setSelectedJobId] = React.useState<string | null>(null);
+  const isMobile = useIsMobile();
+  const detailRef = React.useRef<HTMLDivElement>(null);
+  // on a phone the details sit below the list; a tap takes the student there (S-M2)
+  const chooseJob = (id: string) => {
+    setSelectedJobId(id);
+    if (isMobile) requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
   const [savedJobs, setSavedJobs] = React.useState<string[]>([]);
   const [filterType, setFilterType] = React.useState('all');
   const [jobs, setJobs] = React.useState<JobPosting[]>([]);
@@ -285,7 +293,19 @@ export default function Internships() {
             return (
               <motion.div
                 key={job.id}
-                onClick={() => setSelectedJobId(job.id)}
+                data-testid="job-card"
+                role="button"
+                tabIndex={0}
+                aria-pressed={isSelected}
+                onClick={() => chooseJob(job.id)}
+                onKeyDown={(event) => {
+                  // keys from the bookmark button inside the card are the bookmark's own
+                  if (event.target !== event.currentTarget) return;
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    chooseJob(job.id);
+                  }
+                }}
                 whileHover={{ y: -1 }}
                 transition={{ duration: 0.12 }}
                 className={`p-4 rounded-2xl border transition-all duration-150 relative cursor-pointer ${
@@ -318,6 +338,8 @@ export default function Internships() {
                     variant="ghost"
                     size="icon"
                     onClick={(e) => toggleSaveJob(e, job.id)}
+                    aria-label={language === 'th' ? 'บันทึกงาน' : 'Save job'}
+                    aria-pressed={isSaved(job.id)}
                     className="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 shrink-0"
                   >
                     <Bookmark className={`w-4 h-4 ${isSaved(job.id) ? 'fill-amber-400 text-amber-400' : ''}`} />
@@ -344,7 +366,7 @@ export default function Internships() {
         </div>
 
         {/* Right Column: Selected Job Detail Preview (~58% => 7 of 12 cols) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col min-h-[520px]">
+        <div data-testid="job-detail" ref={detailRef} className="scroll-mt-20 lg:col-span-7 bg-white dark:bg-[#0c1222] rounded-2xl border border-slate-200/80 dark:border-slate-800 shadow-xs overflow-hidden flex flex-col min-h-[520px]">
           <AnimatePresence mode="wait">
             {selectedJob ? (
               <motion.div

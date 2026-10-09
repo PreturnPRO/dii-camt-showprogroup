@@ -65,7 +65,7 @@ export const th = {
     settings: 'ตั้งค่า',
     // Lecturer
     teachingSchedule: 'ตารางสอน',
-    adviseeStudents: 'อาจารย์ที่ปรึกษา',
+    adviseeStudents: 'นักศึกษาในที่ปรึกษา',
     courseManagement: 'จัดการรายวิชา',
     studentsList: 'นักศึกษา',
     documentIssue: 'ออกเอกสาร',
