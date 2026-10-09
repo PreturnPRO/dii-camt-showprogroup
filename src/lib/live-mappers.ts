@@ -523,11 +523,11 @@ export const mapStudent = (value: unknown, index = 0): Student => {
     requiredCredits: asNumber(source.requiredCredits, fallback.requiredCredits),
     academicStatus: normalizeAcademicStatus(source.academicStatus, fallback.academicStatus),
     advisorId: asString(source.advisorId, asString(advisor.id, fallback.advisorId ?? "")),
-    advisorName: asString(advisor.nameThai, asString(advisor.name, fallback.advisorName ?? "ผศ.ดร. นรินทร์ พิชยกุล")),
-    advisorNameThai: asString(advisor.nameThai, asString(source.advisorNameThai, fallback.advisorNameThai ?? "ผศ.ดร. นรินทร์ พิชยกุล")),
+    advisorName: asString(advisor.nameThai, asString(advisor.name, fallback.advisorName ?? "")),
+    advisorNameThai: asString(advisor.nameThai, asString(source.advisorNameThai, fallback.advisorNameThai ?? "")),
     coAdvisorId: asString(source.coAdvisorId, fallback.coAdvisorId ?? ""),
-    coAdvisorName: asString(source.coAdvisorName, fallback.coAdvisorName ?? "ดร. วิลเลียม สมิธ"),
-    coAdvisorNameThai: asString(source.coAdvisorNameThai, fallback.coAdvisorNameThai ?? "ดร. วิลเลียม สมิธ"),
+    coAdvisorName: asString(source.coAdvisorName, fallback.coAdvisorName ?? ""),
+    coAdvisorNameThai: asString(source.coAdvisorNameThai, fallback.coAdvisorNameThai ?? ""),
     skills: rawSkills.length
       ? rawSkills.map((item) => {
           if (typeof item === "string") {

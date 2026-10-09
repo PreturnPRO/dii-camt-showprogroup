@@ -14,7 +14,7 @@ interface MobileHeaderProps {
 
 export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
   const { user } = useAuth();
-  const { language, toggleLanguage } = useLanguage();
+  const { language, toggleLanguage, t } = useLanguage();
   const navigate = useNavigate();
   const [unreadCount, setUnreadCount] = React.useState(0);
 
@@ -51,15 +51,8 @@ export function MobileHeader({ onMenuToggle }: MobileHeaderProps) {
         .toUpperCase()
     : 'U';
 
-  const roleLabels: Record<string, { en: string; th: string }> = {
-    student: { en: 'Student', th: 'นักศึกษา' },
-    lecturer: { en: 'Lecturer', th: 'อาจารย์' },
-    company: { en: 'Company', th: 'สถานประกอบการ' },
-  };
-
-  const roleText = user?.role
-    ? roleLabels[user.role]?.[language] || (user.role === 'company' ? 'Company' : user.role === 'lecturer' ? 'Lecturer' : 'Student')
-    : 'Student';
+  // every role has a name; staff and admin were shown as "Student" (UX-M11)
+  const roleText = (t.roles as Record<string, string>)[user?.role ?? ''] ?? '-';
 
   return (
     <header className="fixed top-0 left-0 right-0 h-14 z-40 bg-white dark:bg-[#070d19] border-b border-slate-200/80 dark:border-slate-800/80 px-2.5 flex items-center justify-between shadow-xs select-none">

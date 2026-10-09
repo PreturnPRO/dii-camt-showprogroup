@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapCourse, mapTermGpaHistory } from './live-mappers';
+import { mapCourse, mapStudent, mapTermGpaHistory } from './live-mappers';
 
 describe('mapCourse enrolledCount', () => {
   it('uses the server count when the enrollment rows were scoped to the viewer', () => {
@@ -30,5 +30,15 @@ describe('mapCourse section minimum', () => {
 describe('mapTermGpaHistory', () => {
   it('keeps the term number the server sends as a number ("1/2569", not "/2569")', () => {
     expect(mapTermGpaHistory({ termGpa: [{ semester: 1, academicYear: '2569', gpa: 3.5, credits: 9 }] })[0].semester).toBe('1/2569');
+  });
+});
+
+describe('mapStudent advisors', () => {
+  it('a student without an advisor gets no invented one (not "ผศ.ดร. นรินทร์" or "ดร. วิลเลียม สมิธ")', () => {
+    const s = mapStudent({ id: 'x', studentId: '1', user: { name: 'A' } });
+    expect(s.advisorName).toBe('');
+    expect(s.advisorNameThai).toBe('');
+    expect(s.coAdvisorName).toBe('');
+    expect(s.coAdvisorNameThai).toBe('');
   });
 });

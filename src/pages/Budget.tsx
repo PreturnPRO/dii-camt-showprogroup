@@ -1,4 +1,5 @@
 import React from 'react';
+import { monthlyExpense } from '@/lib/budget-month';
 import { motion } from 'framer-motion';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { PieChart, TrendingUp, TrendingDown, DollarSign, FileText, CreditCard, AlertCircle, Plus, Wallet, Receipt, Edit, Trash2, CheckCircle, XCircle } from 'lucide-react';
@@ -46,18 +47,21 @@ const emptyBudgetForm = {
 };
 
 export default function Budget() {
-    const { t } = useLanguage();
+    const { t, language } = useLanguage();
     const [transactions, setTransactions] = React.useState<BudgetRow[]>([]);
     const [isDialogOpen, setIsDialogOpen] = React.useState(false);
     const [editingTx, setEditingTx] = React.useState<BudgetRow | null>(null);
     const [formData, setFormData] = React.useState(emptyBudgetForm);
-    const totalIncome = transactions.filter((tx) => tx.type !== 'expense').reduce((sum, tx) => sum + tx.amount, 0);
-    const totalExpense = transactions.filter((tx) => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+    // a rejected request was never received or spent, so it is in no total (pending ones are counted as committed)
+    const counted = transactions.filter((tx) => tx.status !== 'rejected');
+    const totalIncome = counted.filter((tx) => tx.type !== 'expense').reduce((sum, tx) => sum + tx.amount, 0);
+    const totalExpense = counted.filter((tx) => tx.type === 'expense').reduce((sum, tx) => sum + tx.amount, 0);
     const totalBudget = totalIncome;
     const remainingBudget = totalIncome - totalExpense;
     const pendingCount = transactions.filter((tx) => tx.status === 'pending').length;
+    const month = monthlyExpense(transactions);
     const categoryBreakdown = Object.entries(
-        transactions
+        counted
             .filter((tx) => tx.type === 'expense')
             .reduce<Record<string, number>>((acc, tx) => {
                 acc[tx.category] = (acc[tx.category] || 0) + tx.amount;
@@ -194,7 +198,16 @@ export default function Budget() {
             <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {[
                     { icon: DollarSign, label: t.budgetPage.remaining, value: `฿${remainingBudget.toLocaleString()}`, sub: `${t.budgetPage.fromTotal} ฿${totalBudget.toLocaleString()}`, gradient: '', shadow: '' },
-                    { icon: TrendingDown, label: t.budgetPage.monthlyExpense, value: `฿${totalExpense.toLocaleString()}`, sub: t.budgetPage.increaseFromLast, gradient: '', shadow: '' },
+                    // this month's expenses and the change from last month, both from the records (not every month's total, not a fixed %)
+                    {
+                        icon: TrendingDown, label: t.budgetPage.monthlyExpense, value: `฿${month.thisMonth.toLocaleString()}`,
+                        sub: month.changePercent === null
+                            ? (language === 'th' ? `เดือนที่แล้ว ฿${month.lastMonth.toLocaleString()}` : `Last month ฿${month.lastMonth.toLocaleString()}`)
+                            : (language === 'th'
+                                ? `${month.changePercent > 0 ? '+' : ''}${month.changePercent}% จากเดือนที่แล้ว (฿${month.lastMonth.toLocaleString()})`
+                                : `${month.changePercent > 0 ? '+' : ''}${month.changePercent}% vs last month (฿${month.lastMonth.toLocaleString()})`),
+                        gradient: '', shadow: '',
+                    },
                     { icon: Receipt, label: t.budgetPage.pendingApproval, value: String(pendingCount), sub: t.budgetPage.disbursementReqs, gradient: '', shadow: '' },
                 ].map((stat, i) => (
                     <motion.div key={i} whileHover={{ scale: 1.02 }} className={`bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 ${stat.shadow}`}>

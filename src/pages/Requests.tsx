@@ -478,11 +478,12 @@ export default function Requests() {
                         {selectedRequest.comments.map((comment) => (
                           <li key={comment.id} className="rounded-lg bg-slate-50 p-3 text-sm dark:bg-slate-900">
                             <p className="mb-1 text-xs font-medium text-slate-500">
+                              {/* the author is known from the request's student, not guessed from who is reading */}
                               {comment.authorId === user?.id
                                 ? (language === 'th' ? 'คุณ' : 'You')
-                                : (canReviewRequest
+                                : comment.authorId && comment.authorId === selectedRequest.studentUserId
                                   ? (language === 'th' ? 'นักศึกษา' : 'Student')
-                                  : (language === 'th' ? 'เจ้าหน้าที่' : 'Staff'))}
+                                  : (language === 'th' ? 'เจ้าหน้าที่' : 'Staff')}
                             </p>
                             <p className="whitespace-pre-wrap">{comment.text}</p>
                             <p className="mt-1 text-xs text-slate-500">
@@ -753,7 +754,7 @@ export default function Requests() {
 
             <div className="space-y-2 mt-3">
               <a
-                href="tel:053942123"
+                href="tel:053942110"
                 className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50/70 dark:bg-slate-900/60 border border-slate-100 dark:border-slate-800/70 hover:bg-slate-100 dark:hover:bg-slate-800/60 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2.5">
@@ -762,7 +763,7 @@ export default function Requests() {
                   </div>
                   <div>
                     <div className="text-[10px] text-slate-400 font-mono">CONTACT SUPPORT</div>
-                    <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">053-942123</div>
+                    <div className="font-mono font-bold text-xs text-slate-900 dark:text-slate-100">053-942110</div>
                   </div>
                 </div>
                 <ChevronRight className="w-3.5 h-3.5 text-slate-400" />

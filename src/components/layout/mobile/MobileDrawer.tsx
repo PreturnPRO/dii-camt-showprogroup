@@ -30,7 +30,7 @@ interface NavItem {
 
 export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
   const { user, logout } = useAuth();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -45,13 +45,8 @@ export function MobileDrawer({ isOpen, onClose }: MobileDrawerProps) {
         .toUpperCase()
     : 'U';
 
-  // ── Student-specific role label ──
-  const roleLabelMap: Record<string, { th: string; en: string }> = {
-    student: { th: 'นักศึกษา', en: 'Student' },
-    lecturer: { th: 'อาจารย์', en: 'Lecturer' },
-    company: { th: 'สถานประกอบการ', en: 'Company' },
-  };
-  const roleLabel = roleLabelMap[role]?.[language] || role;
+  // the shared role names (t.roles); an unknown role is '-', never a guessed 'Student'
+  const roleLabel = (t.roles as Record<string, string>)[user?.role ?? ''] ?? '-';
 
   // ── Navigation structure per role ──
   const getNavStructure = (userRole: UserRole) => {

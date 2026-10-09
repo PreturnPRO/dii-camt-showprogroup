@@ -1,4 +1,5 @@
 import React from 'react';
+import { enrolledSectionInfo } from '@/lib/enrolled-section';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -71,6 +72,16 @@ const itemVariants = {
   visible: { opacity: 1, y: 0 },
 };
 
+/** the course's real status (a pending course is not "active") */
+const courseStatusLabel = (status: Course['status'], th: boolean) => {
+  switch (status) {
+    case 'pending': return th ? 'รออนุมัติ' : 'Pending approval';
+    case 'draft': return th ? 'ฉบับร่าง' : 'Draft';
+    case 'archived': return th ? 'ปิดแล้ว' : 'Archived';
+    default: return th ? 'เปิดใช้งาน' : 'Active';
+  }
+};
+
 export default function Courses() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
@@ -89,6 +100,8 @@ export default function Courses() {
   const importInputRef = React.useRef<HTMLInputElement | null>(null);
 
   const [enrolledCourses, setEnrolledCourses] = React.useState<Course[]>([]);
+  // the student's own section per course (times, room), from the enrollment rows
+  const [enrolledSections, setEnrolledSections] = React.useState<Record<string, unknown>>({});
   const [viewingCourse, setViewingCourse] = React.useState<CourseRow | null>(null);
   // tabs live in ?tab= so other pages can deep-link straight to registration (design.md §4.10)
   const [searchParams, setSearchParams] = useSearchParams();
@@ -107,6 +120,7 @@ export default function Courses() {
     ]);
     setCourses(coursesResponse.courses.map(mapCourse));
     setEnrolledCourses(enrollmentsResponse.enrollments.map((item, index) => mapCourse(asRecord(item).course, index)));
+    setEnrolledSections(Object.fromEntries(enrollmentsResponse.enrollments.map((item) => [asString(asRecord(item).courseId), item])));
     setSummary(summaryResponse.summary);
   }, []);
 
@@ -132,6 +146,7 @@ export default function Courses() {
             return mapCourse(enrollment.course, index);
           });
           setEnrolledCourses(mappedEnrollments);
+          setEnrolledSections(Object.fromEntries(enrollmentsResult.value.enrollments.map((item) => [asString(asRecord(item).courseId), item])));
           setEnrollmentsFailed(false);
         } else {
           setEnrolledCourses([]);
@@ -755,10 +770,12 @@ export default function Courses() {
                 </div>
                 <span className="font-medium text-slate-600 dark:text-slate-300">{t.coursesPage.registrationStatus}</span>
               </div>
-              <div className="text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">{t.coursesPage.confirmed}</div>
-              <div className="mt-2 text-sm text-green-600 flex items-center gap-1 bg-green-50 dark:bg-green-950/30 dark:text-green-400 w-fit px-2 py-1 rounded-lg">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                {t.coursesPage.paid}
+              {/* what the system knows: the courses registered this term; it has no payment records */}
+              <div data-testid="registration-status" className="text-2xl font-bold text-slate-800 dark:text-slate-200 leading-snug">
+                {enrollmentsFailed ? '-' : language === 'th' ? `ลงทะเบียนแล้ว ${enrolledCourses.length} วิชา` : `${enrolledCourses.length} course(s) registered`}
+              </div>
+              <div className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {language === 'th' ? 'ระบบนี้ไม่มีข้อมูลการชำระเงิน' : 'Payment is not tracked here'}
               </div>
             </div>
           </motion.div>
@@ -782,7 +799,8 @@ export default function Courses() {
                   {language === 'th' ? 'ความคืบหน้าการลงทะเบียน' : 'Registration Progress'}
                 </h3>
                 <p className="text-sm text-slate-500 dark:text-slate-400">
-                  {language === 'th' ? `คุณได้ลงทะเบียนไปแล้ว ${enrolledCourses.length} จาก ${visibleCourses.length} วิชาที่แนะนำในภาคเรียนนี้` : `You have enrolled in ${enrolledCourses.length} out of ${visibleCourses.length} recommended courses this semester`}
+                  {/* the term's open courses, not a recommendation list (nothing recommends them) */}
+                  {language === 'th' ? `ลงทะเบียนแล้ว ${enrolledCourses.length} วิชา จากวิชาที่เปิดในภาคเรียนนี้ ${visibleCourses.length} วิชา` : `Registered in ${enrolledCourses.length} of the ${visibleCourses.length} courses open this term`}
                 </p>
               </div>
               <div className="text-right">
@@ -823,7 +841,8 @@ export default function Courses() {
                   <div className="relative z-10">
                     <div className="flex justify-between items-start mb-6">
                       <Badge variant="outline" className="bg-white dark:bg-[#0c1222] border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 px-3 py-1 text-xs font-bold rounded-lg group-hover:bg-blue-50 group-hover:text-blue-600 group-hover:border-blue-100 dark:group-hover:bg-blue-950/30 dark:group-hover:text-blue-400 dark:group-hover:border-blue-900/30 transition-colors">
-                        {(user as unknown as Student).year || 3}
+                        {/* the year the course is meant for, not a guessed year of the student */}
+                        {language === 'th' ? `ปี ${course.year}` : `Year ${course.year}`}
                       </Badge>
                       <button 
                         data-testid={`drop-${course.code}`}
@@ -845,11 +864,11 @@ export default function Courses() {
                       </div>
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <Clock className="w-4 h-4 text-slate-400" />
-                        <span>{t.coursesPage.lecturerSchedule}</span>
+                        <span data-testid="course-card-schedule">{enrolledSectionInfo(enrolledSections[course.id], language === 'th' ? 'th' : 'en').schedule}</span>
                       </div>
                       <div className="flex items-center gap-3 text-sm text-slate-600 dark:text-slate-300">
                         <MapPin className="w-4 h-4 text-slate-400" />
-                        <span>{course.sections?.[0]?.room || t.coursesPage.room}</span>
+                        <span data-testid="course-card-room">{enrolledSectionInfo(enrolledSections[course.id], language === 'th' ? 'th' : 'en').room}</span>
                       </div>
                     </div>
                   </div>
@@ -1311,7 +1330,7 @@ export default function Courses() {
                   </div>
                   <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-100 dark:border-slate-700">
                     <div className="text-xs text-slate-500 dark:text-slate-400">{language === 'th' ? 'สถานะ' : 'Status'}</div>
-                    <div className="font-semibold text-emerald-700 dark:text-slate-300">{language === 'th' ? 'เปิดใช้งาน' : 'Active'}</div>
+                    <div data-testid="course-card-status" className="font-semibold text-emerald-700 dark:text-slate-300">{courseStatusLabel(course.status, language === 'th')}</div>
                   </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">

@@ -63,6 +63,7 @@ export default function Applicants() {
 
   const [applicants, setApplicants] = useState<ApplicantRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -179,7 +180,8 @@ export default function Applicants() {
         });
         setApplicants(mapped);
       })
-      .catch(() => undefined)
+      // a failed load is an error, not "no applicants"
+      .catch(() => { if (isMounted) setLoadFailed(true); })
       .finally(() => {
         if (isMounted) setIsLoading(false);
       });
@@ -329,7 +331,8 @@ export default function Applicants() {
           {copy.title}
         </motion.h1>
         <motion.p className="mt-2 text-sm text-slate-500 dark:text-slate-400" variants={itemVariants}>
-          {copy.summary(scoped.length, pendingCount, shortlistedCount, acceptedCount)}
+          {/* no counts when the list did not load: they would read as "0 applicants" */}
+          {loadFailed ? '-' : copy.summary(scoped.length, pendingCount, shortlistedCount, acceptedCount)}
         </motion.p>
       </div>
 
@@ -407,7 +410,12 @@ export default function Applicants() {
                 </tbody>
               </table>
               {isLoading && <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">{copy.loading}</div>}
-              {!isLoading && filtered.length === 0 && (
+              {!isLoading && loadFailed && (
+                <div role="alert" data-testid="applicants-load-error" className="p-8 text-center text-sm text-rose-600 dark:text-rose-400">
+                  {language === 'th' ? 'โหลดรายชื่อผู้สมัครไม่สำเร็จ กรุณารีเฟรชหน้า' : 'Could not load applicants. Please refresh.'}
+                </div>
+              )}
+              {!isLoading && !loadFailed && filtered.length === 0 && (
                 <div className="p-8 text-center text-sm text-slate-500 dark:text-slate-400">{copy.noApplicants}</div>
               )}
             </CardContent>

@@ -24,6 +24,8 @@ export type RequestRow = {
   documents: string[];
   studentName?: string;
   studentId?: string;
+  /** the requesting student's user id, to tell their comments from staff ones */
+  studentUserId?: string;
   comments: RequestComment[];
 };
 
@@ -47,6 +49,7 @@ export function mapRawRequest(item: unknown, index = 0): RequestRow {
     documents: asArray<string>(request.documents),
     studentName: asString(studentUser.nameThai, asString(studentUser.name, '-')),
     studentId: asString(student.studentId),
+    studentUserId: asString(studentUser.id, asString(student.userId)) || undefined,
     comments: asArray(request.comments).map((commentValue) => {
       const comment = asRecord(commentValue);
       return {

@@ -196,7 +196,7 @@ export function Header({ onMenuToggle, isSidebarOpen, isSidebarCollapsed }: Head
             </div>
             <div className={`flex flex-col transition-all duration-300 ${scrolled ? 'scale-90 origin-left' : ''}`}>
               <div className="font-extrabold text-xl tracking-tight text-slate-900 dark:text-slate-50 leading-none">ShowPro</div>
-              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.1em] uppercase mt-0.5">{user?.role ? user.role.toUpperCase() : 'PROFESSIONALISM'}</div>
+              <div className="text-[10px] text-slate-500 dark:text-slate-400 font-bold tracking-[0.1em] uppercase mt-0.5">{user?.role ? ((t.roles as Record<string, string>)[user.role] ?? '-') : 'PROFESSIONALISM'}</div>
             </div>
           </Link>
         </div>

@@ -36,6 +36,7 @@ import { Progress } from '@/components/ui/progress';
 import { api } from '@/lib/api';
 import { asArray, asDate, asNumber, asRecord, asString } from '@/lib/live-data';
 import { gpaAverage } from '@/lib/gpa-average';
+import { mouStatus } from '@/lib/mou-status';
 import { toast } from 'sonner';
 
 const containerVariants = {
@@ -173,6 +174,9 @@ type CooperationRow = {
   id: string;
   title: string;
   status: string;
+  companyId: string;
+  type: string;
+  expiryDate: string | null;
 };
 
 type SystemReport = {
@@ -384,7 +388,11 @@ const mapCooperation = (item: unknown, index: number): CooperationRow => {
   return {
     id: asString(source.id, `cooperation-${index}`),
     title: asString(source.title, '-'),
-    status: asString(source.status, 'active'),
+    // no status is not "active"
+    status: asString(source.status, '-'),
+    companyId: asString(source.companyId),
+    type: asString(source.type),
+    expiryDate: source.expiryDate ? String(source.expiryDate) : null,
   };
 };
 
@@ -615,7 +623,9 @@ export default function StaffDashboard() {
   const unreadMessages = messages.filter((message) => !message.read);
   const unreadNotifications = notifications.filter((notification) => !notification.isRead);
   const urgentNotifications = notifications.filter((notification) => ['high', 'urgent'].includes(notification.priority));
-  const activeCooperation = cooperation.filter((item) => item.status === 'active');
+  // companies with an MOU in force (type MOU, active, not expired), the same rule as the Network page
+  const companiesWithMou = [...new Set(cooperation.map((item) => item.companyId))]
+    .filter((id) => id && mouStatus(id, cooperation).state === 'active').length;
   const failedAudits = auditLogs.filter((log) => log.status === 'failed');
   const roleCounts = systemReport?.usersByRole ?? {};
   const totalUsers =
@@ -839,12 +849,13 @@ export default function StaffDashboard() {
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-slate-500 dark:text-slate-400">บริษัทคู่ความร่วมมือ</p>
+                {/* every company account, not only partners with an MOU (those are the line below) */}
+                <p className="text-sm text-slate-500 dark:text-slate-400">บริษัทในระบบ</p>
                 <p className="mt-1 text-2xl font-bold text-slate-950 dark:text-white leading-snug">{companies.length}</p>
               </div>
               <Network className="h-8 w-8 text-orange-500" />
             </div>
-            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">MOU active {activeCooperation.length} รายการ</p>
+            <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">มี MOU ที่มีผล {companiesWithMou} บริษัท</p>
           </CardContent>
         </Card>
       </motion.div>

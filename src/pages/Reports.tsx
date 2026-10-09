@@ -257,7 +257,9 @@ export default function Reports() {
                                             { range: '3.00-3.49', count: students.filter(s => s.gpa >= 3.0 && s.gpa < 3.5).length, color: 'bg-blue-500' },
                                             { range: '2.50-2.99', count: students.filter(s => s.gpa >= 2.5 && s.gpa < 3.0).length, color: 'bg-yellow-500' },
                                             { range: '2.00-2.49', count: students.filter(s => s.gpa >= 2.0 && s.gpa < 2.5).length, color: 'bg-orange-500' },
-                                            { range: t.reports.gpaBelowTwo, count: students.filter(s => s.gpa < 2.0).length, color: 'bg-red-500' },
+                                            // a 0 is "no grade yet" (audit M1), not a GPAX below 2.00
+                                            { range: t.reports.gpaBelowTwo, count: students.filter(s => s.gpa > 0 && s.gpa < 2.0).length, color: 'bg-red-500' },
+                                            { range: language === 'th' ? 'ยังไม่มีเกรด' : 'No grade yet', count: students.filter(s => !(s.gpa > 0)).length, color: 'bg-slate-400' },
                                         ].map((item) => (
                                             <div key={item.range}>
                                                 <div className="flex justify-between text-sm mb-1">

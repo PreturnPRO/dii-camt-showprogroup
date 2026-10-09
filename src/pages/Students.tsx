@@ -1,4 +1,5 @@
 import React from 'react';
+import { gpaAverage } from '@/lib/gpa-average';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -33,7 +34,7 @@ const itemVariants = {
 };
 
 export default function Students() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = React.useState('');
@@ -89,7 +90,9 @@ export default function Students() {
   });
 
   const atRiskCount = students.filter(s => s.academicStatus === 'probation' || s.academicStatus === 'risk').length;
-  const avgGPA = (students.reduce((sum, s) => sum + s.gpax, 0) / Math.max(students.length, 1)).toFixed(2);
+  // students with a GPAX only, the same number the dashboard and Reports show (audit M1)
+  const gpa = gpaAverage(students);
+  const avgGPA = gpa.average === null ? '-' : gpa.average.toFixed(2);
 
   const handleMessageStudent = (student: StudentRow) => {
     const recipientId = student.userId || student.id;
@@ -138,7 +141,7 @@ export default function Students() {
             <div className="grid gap-3 text-sm sm:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                 <div className="text-slate-500 dark:text-slate-400">GPA</div>
-                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpax.toFixed(2)}</div>
+                <div className="text-lg font-bold text-slate-900 dark:text-white">{selectedStudent.gpax > 0 ? selectedStudent.gpax.toFixed(2) : '-'}</div>
               </div>
               <div className="rounded-xl border border-slate-200 p-3 dark:border-slate-800">
                 <div className="text-slate-500 dark:text-slate-400">{t.studentsPage.credits}</div>
@@ -218,7 +221,10 @@ export default function Students() {
               </div>
               <span className="text-xs text-slate-500 dark:text-slate-400">{t.studentsPage.avgGPA}</span>
             </div>
-            <div className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{avgGPA}</div>
+            <div data-testid="students-avg-gpa" className="text-3xl font-extrabold font-mono tracking-tight text-slate-900 dark:text-slate-100">{avgGPA}</div>
+            <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+              {language === 'th' ? `จาก ${gpa.count} คนที่มีเกรด (ทั้งหมด ${students.length} คน)` : `of ${gpa.count} with grades (${students.length} in all)`}
+            </div>
           </div>
         </motion.div>
 
@@ -340,7 +346,7 @@ export default function Students() {
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-right hidden sm:block">
-                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPAX {student.gpax.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-gray-900 dark:text-white">GPAX {student.gpax > 0 ? student.gpax.toFixed(2) : '-'}</div>
                       <div className="text-xs text-gray-500 dark:text-slate-400">{student.earnedCredits}/{student.totalCredits} {t.studentsPage.credits}</div>
                     </div>
                     {getStatusBadge(student.academicStatus)}

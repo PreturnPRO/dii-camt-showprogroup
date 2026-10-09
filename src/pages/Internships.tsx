@@ -55,6 +55,13 @@ export default function Internships() {
   const [jobsLoadError, setJobsLoadError] = React.useState(false);
   const [activeTab, setActiveTab] = React.useState<'positions' | 'diary'>('positions');
   const [isApplying, setIsApplying] = React.useState(false);
+  // the student's own applications; the job list does not carry other students' applications (null = not loaded)
+  const [myApplications, setMyApplications] = React.useState<number | null>(null);
+  React.useEffect(() => {
+    api.applications.list()
+      .then((response) => setMyApplications(response.applications.length))
+      .catch(() => setMyApplications(null));
+  }, []);
 
   React.useEffect(() => {
     let mounted = true;
@@ -211,7 +218,7 @@ export default function Internships() {
         <StatCard
           icon={Users}
           label={t.internshipsPage.studentsPlaced}
-          value={jobs.reduce((sum, job) => sum + job.applicants.length, 0)}
+          value={myApplications === null ? '-' : myApplications}
           accentColor="text-emerald-600 dark:text-emerald-400"
           iconBg="bg-emerald-500/10"
         />
@@ -237,10 +244,10 @@ export default function Internships() {
         </div>
         {/* Compact Segmented Control */}
         <div className="flex gap-1 p-1 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200/70 dark:border-slate-700/60 w-full sm:w-auto shrink-0">
+          {/* one tab per posting type that is actually open; there is no "coop" type to filter on */}
           {[
             { id: 'all', label: t.internshipsPage.allTab },
-            { id: 'internship', label: t.internshipsPage.internshipTab },
-            { id: 'coop', label: t.internshipsPage.coopTab }
+            ...[...new Set(jobs.map((job) => job.type))].sort().map((type) => ({ id: type, label: jobTypeLabel(type, language) })),
           ].map(opt => (
             <Button
               key={opt.id}
@@ -401,7 +408,7 @@ export default function Internships() {
                     {/* Compact Metadata Strip (4 Columns) */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 my-4">
                       {[
-                        { label: t.internshipsPage.jobType, value: selectedJob.type === 'internship' ? t.internshipsPage.internshipTab : t.internshipsPage.coopTab, icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
+                        { label: t.internshipsPage.jobType, value: jobTypeLabel(selectedJob.type, language), icon: Briefcase, color: 'text-blue-600', bg: 'bg-blue-50' },
                         { label: t.internshipsPage.locationLabel, value: selectedJob.workType || 'On-site', icon: MapPin, color: 'text-purple-600', bg: 'bg-purple-50' },
                         { label: t.internshipsPage.salary, value: selectedJob.salary || 'N/A', icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
                         { label: 'Positions', value: selectedJob.positions?.toString() || '1', icon: Users, color: 'text-indigo-600', bg: 'bg-indigo-50' },

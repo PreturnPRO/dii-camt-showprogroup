@@ -14,6 +14,8 @@ import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
 import { toast } from 'sonner';
 import { TemporaryPasswordsDialog, type TemporaryCredential } from '@/components/common/TemporaryPasswordsDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { mouStatus } from '@/lib/mou-status';
 
 const containerVariants = {
     hidden: { opacity: 0 },
@@ -53,6 +55,24 @@ const emptyCompanyForm = {
 
 export default function Network() {
     const { t } = useLanguage();
+    const COMPANY_SIZES: Record<string, string> = { startup: 'สตาร์ทอัพ', small: 'ขนาดเล็ก', medium: 'ขนาดกลาง', large: 'ขนาดใหญ่', enterprise: 'องค์กรขนาดใหญ่' };
+    // cooperation records decide each card's MOU line; null = they could not be loaded, so no MOU claim is shown
+    const [cooperations, setCooperations] = React.useState<Array<Record<string, unknown>> | null>(null);
+    const [pendingMou, setPendingMou] = React.useState<CompanyRow | null>(null);
+    // the company whose MOU is being saved; its button stays off until the save and the reload are done
+    const [savingMouFor, setSavingMouFor] = React.useState<string | null>(null);
+    const reloadCooperations = React.useCallback(() =>
+        api.cooperation.list()
+            .then((response) => setCooperations(response.cooperation.map((item) => asRecord(item))))
+            .catch(() => setCooperations(null)), []);
+    React.useEffect(() => { void reloadCooperations(); }, [reloadCooperations]);
+    const mouText = (companyId: string) => {
+        if (cooperations === null) return 'MOU: -';
+        const mou = mouStatus(companyId, cooperations);
+        if (mou.state === 'active') return mou.expiry ? `MOU มีผลถึง ${mou.expiry}` : 'MOU มีผล';
+        if (mou.state === 'expired') return `MOU หมดอายุ ${mou.expiry ?? ''}`.trim();
+        return 'ยังไม่มี MOU';
+    };
     const [credentials, setCredentials] = React.useState<TemporaryCredential[]>([]);
     const navigate = useNavigate();
     const [searchQuery, setSearchQuery] = React.useState('');
@@ -76,7 +96,8 @@ export default function Network() {
             companyName: asString(source.companyName),
             companyNameThai: asString(source.companyNameThai, asString(source.companyName)),
             industry: asString(source.industry),
-            size: asString(source.size, 'small'),
+            // no size on record stays empty; it is not 'small'
+            size: asString(source.size),
             website: asString(source.website),
             address: asString(source.address),
         };
@@ -157,7 +178,7 @@ export default function Network() {
                         companyName: formData.companyName,
                         companyNameThai: formData.companyNameThai || formData.companyName,
                         industry: formData.industry,
-                        size: formData.size,
+                        size: formData.size || undefined,
                         website: formData.website || undefined,
                         address: formData.address || undefined,
                     },
@@ -174,7 +195,7 @@ export default function Network() {
                         companyName: formData.companyName,
                         companyNameThai: formData.companyNameThai || formData.companyName,
                         industry: formData.industry,
-                        size: formData.size,
+                        size: formData.size || undefined,
                         website: formData.website || undefined,
                         address: formData.address || undefined,
                     },
@@ -192,17 +213,22 @@ export default function Network() {
     };
 
     const createCooperation = async (company: CompanyRow) => {
+        if (savingMouFor) return;
+        setSavingMouFor(company.id);
         try {
             await api.cooperation.create({
                 companyId: company.id,
                 title: `MOU - ${company.companyName}`,
                 type: 'mou',
-                details: 'Created from network page',
+                details: 'บันทึกจากหน้าเครือข่ายบริษัท',
                 status: 'active',
             });
-            toast.success('สร้าง MOU ให้บริษัทนี้แล้ว');
+            toast.success('บันทึก MOU กับบริษัทนี้แล้ว');
+            await reloadCooperations();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Unable to create cooperation record');
+        } finally {
+            setSavingMouFor(null);
         }
     };
 
@@ -285,8 +311,8 @@ export default function Network() {
                         <div className="grid grid-cols-2 gap-3 text-sm mb-4">
                             {[
                                 { icon: MapPin, text: company.address || t.networkPage.noAddress },
-                                { icon: Users, text: company.size || t.networkPage.companySize },
-                                { icon: Handshake, text: 'MOU: Active' },
+                                { icon: Users, text: COMPANY_SIZES[company.size] ?? (company.size || 'ไม่ระบุขนาด') },
+                                { icon: Handshake, text: mouText(company.id) },
                                 { icon: Globe, text: company.website },
                             ].map((item, i) => (
                                 <div key={i} className="flex items-center gap-2 text-slate-500 dark:text-slate-400">
@@ -299,7 +325,16 @@ export default function Network() {
                             <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => openInternTracking(company)}>
                                 <Briefcase className="w-3.5 h-3.5 mr-1.5" /> {t.networkPage.sendIntern}
                             </Button>
-                            <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => createCooperation(company)}>
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                data-testid="network-mou"
+                                className="flex-1 rounded-xl text-xs"
+                                // one MOU in force is enough; a second click must not make another
+                                disabled={savingMouFor !== null || cooperations === null || mouStatus(company.id, cooperations).state === 'active'}
+                                title={cooperations !== null && mouStatus(company.id, cooperations).state === 'active' ? 'บริษัทนี้มี MOU ที่มีผลอยู่แล้ว' : undefined}
+                                onClick={() => setPendingMou(company)}
+                            >
                                 <FilePlus className="w-3.5 h-3.5 mr-1.5" /> MOU
                             </Button>
                             <Button size="sm" variant="outline" className="flex-1 rounded-xl text-xs" onClick={() => openEditDialog(company)}>
@@ -309,6 +344,21 @@ export default function Network() {
                     </motion.div>
                 ))}
             </div>
+            <AlertDialog open={pendingMou !== null} onOpenChange={(open) => { if (!open) setPendingMou(null); }}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>บันทึก MOU กับ {pendingMou?.companyName}?</AlertDialogTitle>
+                        <AlertDialogDescription>ระบบจะบันทึกว่ามี MOU ที่มีผลกับบริษัทนี้ (ไม่มีวันหมดอายุ) ทำเมื่อลงนาม MOU จริงแล้วเท่านั้น</AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+                        <AlertDialogAction data-testid="network-mou-confirm" onClick={() => { if (pendingMou) void createCooperation(pendingMou); setPendingMou(null); }}>
+                            ยืนยันบันทึก MOU
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogContent className="max-w-2xl">
                     <DialogHeader>

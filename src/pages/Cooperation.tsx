@@ -33,13 +33,15 @@ export default function Cooperation() {
                 const mapped = response.cooperation.map((item) => {
                     const source = asRecord(item);
                     const company = asRecord(source.company);
+                    const companyName = asString(company.companyNameThai, asString(company.companyName, '-'));
                     return {
                         id: asString(source.id, 'cooperation'),
                         title: asString(source.title, t.cooperationPage.mouTitle),
                         type: asString(source.type, 'MOU'),
-                        details: asString(source.details, t.cooperationPage.mouParties),
+                        // no details: name the record's own company, never an invented one
+                        details: asString(source.details, companyName === '-' ? '-' : `ระหว่างมหาวิทยาลัยเชียงใหม่ และ ${companyName}`),
                         status: asString(source.status, 'active'),
-                        companyName: asString(company.companyNameThai, asString(company.companyName, 'Partner')),
+                        companyName,
                         createdAt: asDate(source.createdAt),
                         expiryDate: source.expiryDate ? asDate(source.expiryDate) : undefined,
                     };
@@ -56,7 +58,7 @@ export default function Cooperation() {
         return () => {
             mounted = false;
         };
-    }, [t.cooperationPage.mouParties, t.cooperationPage.mouTitle]);
+    }, [t.cooperationPage.mouTitle]);
 
     const hasMou = records.length > 0;
     const currentMou = records.find((record) => record.status === 'active') ?? records[0] ?? {
