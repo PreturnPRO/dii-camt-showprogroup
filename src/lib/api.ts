@@ -606,6 +606,12 @@ export const api = {
         method: "PATCH",
         body: payload,
       }),
+    /** staff/admin: tie a company to a student's internship (creates the record when there is none) */
+    bindCompany: (studentId: string, payload: { companyId: string; position?: string }) =>
+      request<ApiEnvelope<{ internship: unknown }>>(`/internship/students/${encodeURIComponent(studentId)}/company`, {
+        method: "PUT",
+        body: payload,
+      }),
     setStatus: (recordId: string, status: 'in_progress' | 'completed' | 'cancelled') =>
       request<ApiEnvelope<{ internship: unknown }>>(`/internship/records/${encodeURIComponent(recordId)}/status`, {
         method: "PATCH",

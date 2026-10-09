@@ -15,8 +15,10 @@ export type InternshipPeriodInfo = {
   startDate: string;
   endDate: string;
   durationMonths: number | null;
+  /** weeks with at least one diary entry */
   currentWeek: number;
-  totalWeeks: number;
+  /** the planned duration in weeks; null when none was recorded */
+  totalWeeks: number | null;
 };
 
 export type WeeklyReportItem = {
@@ -38,9 +40,10 @@ export type InternRow = {
   position: string;
   company: string;
   companyEn: string;
-  progress: number;
+  /** logged weeks over planned weeks; null without a planned duration */
+  progress: number | null;
   weeks: number;
-  totalWeeks: number;
+  totalWeeks: number | null;
   /** null when the company has not evaluated the intern */
   rating: number | null;
   avatar: string;

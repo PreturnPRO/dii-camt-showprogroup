@@ -46,7 +46,9 @@ test("settings has no notification switches and no fake 'Active' button", async 
   const main = page.locator("main");
   await expect(main.getByRole("button", { name: /^(ข้อมูลโปรไฟล์|Profile Information)$/ })).toBeVisible({ timeout: 15_000 });
   await expect(main.getByRole("button", { name: /^(การแจ้งเตือน|Notifications)$/ })).toHaveCount(0);
-  await expect(main.getByRole("switch")).toHaveCount(0);
+  // the only switch is the real data-sharing consent for the CV (it saves to the server)
+  await expect(main.getByRole("switch")).toHaveCount(1);
+  await expect(page.getByTestId("cv-sharing").getByRole("switch")).toHaveCount(1);
 
   await main.getByRole("button", { name: /^(ความปลอดภัย|Security)$/ }).click();
   await expect(page.getByTestId("security-active")).toBeVisible();

@@ -89,3 +89,22 @@ test("degree card shows ungraded credits from the API, and '-' when that request
   await page.reload();
   await expect(page.getByTestId("in-progress-credits").first()).toHaveText("-");
 });
+
+test("a course with a draft grade cannot be dropped, and the student is told in Thai without the grade", async ({ page, request }) => {
+  const course = await twoSectionCourse(request);
+  created.push(course.id);
+  const staff = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };
+  const chompoo = { Authorization: `Bearer ${await token(request, "chompoo@student.showpro.local")}` };
+  const me = (await (await request.get(`${API}/students/profile`, { headers: chompoo })).json()).profile as { id: string };
+  expect((await request.post(`${API}/enrollments`, { headers: staff, data: { studentId: me.id, courseId: course.id, sectionId: course.sections[0].id } })).ok()).toBeTruthy();
+  // a draft grade on the sheet; the course is not published, so chompoo cannot see it
+  expect((await request.patch(`${API}/grades/bulk`, { headers: staff, data: { grades: [{ studentId: me.id, courseId: course.id, letterGrade: "F" }] } })).ok()).toBeTruthy();
+
+  await login(page, "chompoo@student.showpro.local");
+  await page.goto("/courses");
+  await page.getByRole("tab", { name: /รายวิชาของฉัน|My Courses/ }).click();
+  await page.getByTestId(`drop-${course.code}`).click();
+  await page.getByRole("alertdialog").getByTestId("confirm-drop").click();
+  await expect(page.getByText("ถอนวิชานี้ไม่ได้แล้ว กรุณาติดต่ออาจารย์ผู้สอน")).toBeVisible();
+  await expect(page.getByTestId(`drop-${course.code}`)).toBeVisible(); // still enrolled
+});

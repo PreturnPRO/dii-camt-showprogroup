@@ -1,4 +1,5 @@
 import React from 'react';
+import { CvSharingCard } from '@/components/settings/CvSharingCard';
 import { useAuth } from '@/contexts/AuthContext';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { useTheme } from 'next-themes';
@@ -383,6 +384,7 @@ export default function Settings() {
                       <Input value={phone} onChange={e => setPhone(e.target.value)} placeholder="+66 XX XXX XXXX" className="h-12 rounded-xl bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 px-4 font-medium focus-visible:ring-blue-500" />
                     </div>
                   </div>
+                  {user?.role === 'student' && <CvSharingCard />}
                 </motion.div>
               )}
 

@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { api, ApiError } from '@/lib/api';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import type { InternshipLog } from '@/types';
+import { thaiToday } from '@/lib/thai-date';
+import { approvedHours, diaryEntryProblem, MAX_HOURS_PER_DAY } from '@/lib/internship-diary';
 
 export interface DailyDiaryEntry {
   id: string;
@@ -46,7 +48,8 @@ export function InternshipDiary() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form State
-  const [formDate, setFormDate] = useState(() => new Date().toISOString().slice(0, 10));
+  // the Thai day: at 06:00 in Bangkok the UTC date is still yesterday
+  const [formDate, setFormDate] = useState(() => thaiToday());
   const [formHours, setFormHours] = useState<number>(8);
   const [formActivities, setFormActivities] = useState('');
   const [formLearnings, setFormLearnings] = useState('');
@@ -56,7 +59,7 @@ export function InternshipDiary() {
 
   const resetForm = () => {
     setEditingId(null);
-    setFormDate(new Date().toISOString().slice(0, 10));
+    setFormDate(thaiToday());
     setFormActivities('');
     setFormLearnings('');
     setFormChallenges('');
@@ -121,6 +124,13 @@ export function InternshipDiary() {
         title: language === 'th' ? 'กรุณากรอกงานที่ทำ' : 'Please specify activities',
         variant: 'destructive',
       });
+      return;
+    }
+
+    // the server's rules, checked first so the student gets a Thai reason instead of a refused request
+    const problem = diaryEntryProblem({ date: formDate, hours: Number(formHours) || 0 }, logs, { today: thaiToday(), exceptId: editingId ?? undefined, startMonth: asString(record?.startMonth) || null });
+    if (problem) {
+      toast({ title: language === 'th' ? problem.th : problem.en, variant: 'destructive' });
       return;
     }
 
@@ -202,6 +212,10 @@ export function InternshipDiary() {
 
   // Calculations
   const totalHours = logs.reduce((sum, l) => sum + l.hours, 0);
+  // what the certificate will count (approved only, at most 8 a day), shown first so no one is surprised
+  const certifiedHours = approvedHours(logs, { startMonth: asString(record?.startMonth) || null, today: thaiToday() });
+  // owner decision 9/10/69: the diary opens once a company is tied (accepted application or staff)
+  const hasCompany = Boolean(asString(record?.companyId));
   const companyName = asString(record?.companyName, asString(asRecord(record?.company).companyName, '-'));
   const supervisor = asString(record?.supervisor, '');
 
@@ -239,7 +253,13 @@ export function InternshipDiary() {
             </div>
           </div>
 
-          {diaryClosed ? (
+          {!isLoading && !hasCompany ? (
+            <p data-testid="diary-no-company" className="max-w-xs rounded-2xl bg-white/15 px-4 py-3 text-sm leading-relaxed text-white">
+              {language === 'th'
+                ? 'ยังไม่มีสถานประกอบการ — การฝึกงานจะเริ่มเมื่อบริษัทตอบรับใบสมัครฝึกงานของคุณ หรือเจ้าหน้าที่เพิ่มบริษัทให้'
+                : 'No company yet — your internship starts when a company accepts your internship application or staff add one.'}
+            </p>
+          ) : diaryClosed ? (
             <p data-testid="diary-closed" className="max-w-xs rounded-2xl bg-white/15 px-4 py-3 text-sm text-white">
               {internshipStatus === 'completed'
                 ? (language === 'th' ? 'การฝึกงานบันทึกว่าจบแล้ว ไดอารี่ปิดแล้ว เพิ่มหรือแก้บันทึกไม่ได้' : 'This internship is marked completed; the diary is closed.')
@@ -267,9 +287,12 @@ export function InternshipDiary() {
             </div>
             <div>
               <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                {language === 'th' ? 'ชั่วโมงสะสม' : 'Total Hours'}
+                {language === 'th' ? 'ชั่วโมงที่อนุมัติแล้ว (นับในใบรับรอง)' : 'Approved hours (on the certificate)'}
               </p>
-              <h4 className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-50">{totalHours}</h4>
+              <h4 data-testid="diary-approved-hours" className="text-xl font-extrabold font-mono text-slate-900 dark:text-slate-50">{certifiedHours}</h4>
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                {language === 'th' ? `บันทึกทั้งหมด ${totalHours} ชั่วโมง` : `${totalHours} hours logged in all`}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -462,7 +485,7 @@ export function InternshipDiary() {
                     id="logHours"
                     type="number"
                     min={1}
-                    max={16}
+                    max={MAX_HOURS_PER_DAY}
                     required
                     value={formHours}
                     onChange={(e) => setFormHours(Number(e.target.value))}

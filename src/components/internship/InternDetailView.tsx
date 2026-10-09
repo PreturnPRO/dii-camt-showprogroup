@@ -30,6 +30,7 @@ import { useLanguage } from '@/contexts/LanguageContext';
 import { useAuth } from '@/contexts/AuthContext';
 import { api, ApiError } from '@/lib/api';
 import { queryKeys } from '@/lib/query-keys';
+import { BindCompanyDialog } from './BindCompanyDialog';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Textarea } from '@/components/ui/textarea';
@@ -67,6 +68,7 @@ export function InternDetailView({
   useEffect(() => { setSavedStatus(null); }, [intern.status]);
   const diaryClosed = status === 'completed' || status === 'cancelled';
   const [savingStatus, setSavingStatus] = useState(false);
+  const [bindOpen, setBindOpen] = useState(false);
   // leaving "completed" revokes the completion certificates already issued, so staff confirm it first
   const [pendingStatus, setPendingStatus] = useState<'in_progress' | 'cancelled' | null>(null);
   const requestStatus = (next: 'in_progress' | 'completed' | 'cancelled') => {
@@ -169,8 +171,22 @@ export function InternDetailView({
         </Badge>
         {canSetStatus && (
           <div className="ml-auto flex flex-wrap gap-2">
+            {status !== 'completed' && intern.studentId && (
+              <Button size="sm" variant="outline" data-testid="intern-change-company" onClick={() => setBindOpen(true)}>
+                {intern.companyId ? (th ? 'เปลี่ยนบริษัท' : 'Change company') : (th ? 'เพิ่มบริษัท' : 'Add company')}
+              </Button>
+            )}
             {status !== 'completed' && (
-              <Button size="sm" disabled={savingStatus} onClick={() => requestStatus('completed')} className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700">
+              <Button
+                size="sm"
+                // the server refuses these (owner decision 9/10/69); say why instead of sending them
+                disabled={savingStatus || !intern.companyId || status === 'cancelled'}
+                title={!intern.companyId
+                  ? (th ? 'ต้องมีบริษัทก่อนจึงจะบันทึกว่าจบได้' : 'Add a company first')
+                  : status === 'cancelled' ? (th ? 'ต้องกลับเป็นกำลังฝึกงานก่อน' : 'Reopen it first') : undefined}
+                onClick={() => requestStatus('completed')}
+                className="gap-1.5 bg-emerald-600 text-white hover:bg-emerald-700"
+              >
                 {savingStatus ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                 {th ? 'บันทึกว่าฝึกงานจบแล้ว' : 'Mark completed'}
               </Button>
@@ -190,6 +206,16 @@ export function InternDetailView({
           </div>
         )}
       </motion.div>
+
+      {intern.studentId && (
+        <BindCompanyDialog
+          open={bindOpen}
+          onOpenChange={setBindOpen}
+          studentId={intern.studentId}
+          studentLabel={`${intern.studentId} ${intern.name}`}
+          currentCompanyId={intern.companyId}
+        />
+      )}
 
       <AlertDialog open={pendingStatus !== null} onOpenChange={(open) => { if (!open) setPendingStatus(null); }}>
         <AlertDialogContent>
@@ -263,8 +289,9 @@ export function InternDetailView({
                 <span className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-white/75" />
                   <span>
-                    {language === 'th' ? 'สัปดาห์ที่' : 'Week'} {intern.period.currentWeek}/
-                    {intern.period.totalWeeks} ({intern.progress}%)
+                    {intern.period.totalWeeks === null
+                      ? (language === 'th' ? `บันทึกแล้ว ${intern.period.currentWeek} สัปดาห์` : `${intern.period.currentWeek} week(s) logged`)
+                      : `${language === 'th' ? 'สัปดาห์ที่' : 'Week'} ${intern.period.currentWeek}/${intern.period.totalWeeks} (${intern.progress}%)`}
                   </span>
                 </span>
               </div>

@@ -122,7 +122,9 @@ export function InternTableList({ interns, onSelectIntern }: InternTableListProp
                       </span>
                     </span>
                     <span className="font-bold text-slate-700 dark:text-slate-300 font-mono">
-                      {tr.weekLabel} {intern.period.currentWeek}/{intern.period.totalWeeks} ({intern.progress}%)
+                      {intern.period.totalWeeks === null
+                        ? (language === 'th' ? `บันทึกแล้ว ${intern.period.currentWeek} สัปดาห์` : `${intern.period.currentWeek} week(s) logged`)
+                        : `${tr.weekLabel} ${intern.period.currentWeek}/${intern.period.totalWeeks} (${intern.progress}%)`}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
@@ -134,7 +136,7 @@ export function InternTableList({ interns, onSelectIntern }: InternTableListProp
                   <div className="h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                     <motion.div
                       initial={{ width: 0 }}
-                      animate={{ width: `${intern.progress}%` }}
+                      animate={{ width: `${intern.progress ?? 0}%` }}
                       transition={{ delay: 0.3 + idx * 0.1, duration: 0.6 }}
                       className="bg-orange-600 h-full rounded-full"
                     />

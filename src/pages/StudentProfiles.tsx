@@ -405,7 +405,8 @@ export default function StudentProfiles() {
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Year</div><div className="font-bold">{selectedStudent.year}</div></div>
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">GPA</div><div className="font-bold">{formatGpa(selectedStudent)}</div></div>
                                     <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Credits</div><div className="font-bold">{selectedStudent.earnedCredits}/{selectedStudent.requiredCredits}</div></div>
-                                    <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Status</div><div className="font-bold">{selectedStudent.academicStatus}</div></div>
+                                    {/* a company gets no academic status (owner decision 9/10/69), so no made-up "normal" either */}
+                                    {selectedStudent.exactGradeVisible && <div className="rounded-xl bg-slate-50 dark:bg-slate-900 p-3"><div className="text-slate-500">Status</div><div className="font-bold">{selectedStudent.academicStatus}</div></div>}
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4">

@@ -6,12 +6,16 @@ import { toast } from 'sonner';
 import { useLanguage } from '@/contexts/LanguageContext';
 import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { useInternshipsList } from '@/hooks/queries/useInternshipQueries';
+import { internshipWeeks } from '@/lib/internship-weeks';
 
 import type { InternRow, DailyLogItem } from '@/components/internship/types';
 import { InternshipEmptyState } from '@/components/internship/InternshipEmptyState';
 import { InternshipStats } from '@/components/internship/InternshipStats';
 import { InternTableList } from '@/components/internship/InternTableList';
 import { InternDetailView } from '@/components/internship/InternDetailView';
+import { BindCompanyDialog } from '@/components/internship/BindCompanyDialog';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -29,8 +33,8 @@ export function mapRawInternship(item: unknown, index = 0): InternRow {
   const evaluation = record.evaluation ? asRecord(record.evaluation) : null;
   const logs = asArray(record.logs);
 
-  const durationWeeks = Math.max(asNumber(record.duration, 0), logs.length, 1);
-  const completedWeeks = Math.min(logs.length, durationWeeks);
+  // weeks with a diary entry against the planned duration; a missing plan is not filled in from the entries
+  const weeks = internshipWeeks(logs.map((log) => asString(asRecord(log).date).slice(0, 10)), asNumber(record.duration, 0));
   // evaluation scores are stored as-is (0–5 in the seed); round only when displaying
   const optionalScore = (value: unknown) => (value === null || value === undefined ? null : asNumber(value, 0));
   const rawScore = evaluation ? optionalScore(evaluation.overallScore) : null;
@@ -78,17 +82,17 @@ export function mapRawInternship(item: unknown, index = 0): InternRow {
     companyId: asString(record.companyId, asString(company.id, '')) || undefined,
     companyAddress: asString(company.address, '') || undefined,
     mentorName: asString(record.supervisor, '') || undefined,
-    progress: Math.round((completedWeeks / durationWeeks) * 100),
-    weeks: completedWeeks,
-    totalWeeks: durationWeeks,
+    progress: weeks.progress,
+    weeks: weeks.logged,
+    totalWeeks: weeks.total,
     rating,
     avatar: nameThai.charAt(0) || '?',
     period: {
       startDate: asString(record.startMonth, '-'),
       endDate: asString(record.endMonth, '-'),
       durationMonths: durationRaw > 0 ? Math.max(Math.round(durationRaw / 4), 1) : null,
-      currentWeek: completedWeeks,
-      totalWeeks: durationWeeks,
+      currentWeek: weeks.logged,
+      totalWeeks: weeks.total,
     },
     dailyLogs,
     performance: {
@@ -104,6 +108,10 @@ export function mapRawInternship(item: unknown, index = 0): InternRow {
 
 export default function InternTracking() {
   const { t, language } = useLanguage();
+  const { user } = useAuth();
+  // staff tie a company for placements made outside the job board (owner decision 9/10/69)
+  const canBind = ['staff', 'admin'].includes(user?.role ?? '');
+  const [bindOpen, setBindOpen] = useState(false);
   const tr = t.internTracking;
   const [searchParams] = useSearchParams();
 
@@ -168,6 +176,15 @@ export default function InternTracking() {
           </span>
         </h1>
       </div>
+
+      {canBind && (
+        <div className="flex justify-end">
+          <Button data-testid="intern-add-company" variant="outline" onClick={() => setBindOpen(true)}>
+            {language === 'th' ? 'เพิ่มสถานประกอบการให้นักศึกษา' : 'Add a company to a student'}
+          </Button>
+          <BindCompanyDialog open={bindOpen} onOpenChange={setBindOpen} />
+        </div>
+      )}
 
       {isError ? (
         <div data-testid="interns-load-error" role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center text-sm font-medium text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200">

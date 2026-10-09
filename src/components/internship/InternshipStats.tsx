@@ -14,9 +14,9 @@ export function InternshipStats({ interns }: InternshipStatsProps) {
 
   const totalInterns = interns.length;
   const companiesCount = new Set(interns.map((i) => i.company)).size;
-  const avgWeeks = totalInterns
-    ? Math.round(interns.reduce((sum, i) => sum + i.totalWeeks, 0) / totalInterns)
-    : 0;
+  // only interns with a planned duration; none → '-', never a made-up 0 or 1
+  const planned = interns.filter((i) => i.totalWeeks !== null).map((i) => i.totalWeeks as number);
+  const avgWeeks = planned.length ? Math.round(planned.reduce((sum, w) => sum + w, 0) / planned.length) : null;
   const logCount = interns.reduce((sum, i) => sum + i.dailyLogs.length, 0);
 
   const stats = [
@@ -35,7 +35,7 @@ export function InternshipStats({ interns }: InternshipStatsProps) {
     {
       icon: Clock,
       label: tr.avgDuration,
-      value: `${avgWeeks} ${tr.weeks}`,
+      value: avgWeeks === null ? '-' : `${avgWeeks} ${tr.weeks}`,
       sub: language === 'th' ? 'ระยะเวลาฝึกเฉลี่ย' : 'Average duration',
     },
     {

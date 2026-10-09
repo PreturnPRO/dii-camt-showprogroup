@@ -30,6 +30,10 @@ async function freshInternWithEntry(request: APIRequestContext) {
   const temp = { Authorization: `Bearer ${await token(request, email, "Temp-Pass-123!")}` };
   expect((await request.patch(`${API}/users/profile`, { headers: temp, data: { currentPassword: "Temp-Pass-123!", newPassword: PASSWORD } })).ok()).toBeTruthy();
   const student = { Authorization: `Bearer ${await token(request, email)}` };
+  // the diary opens once a company is tied (owner decision 9/10/69); staff tie Northern Soft
+  const companies = (await (await request.get(`${API}/companies`, { headers: staff })).json()).companies as Array<{ id: string; companyName: string }>;
+  const northern = companies.find((c) => c.companyName.includes("Northern"))!;
+  expect((await request.put(`${API}/internship/students/${code}/company`, { headers: staff, data: { companyId: northern.id } })).ok()).toBeTruthy();
   const created = await request.post(`${API}/internship/logs`, { headers: student, data: { date: "2026-10-01", hours: 8, activities: "Set up the dev machine" } });
   expect(created.status()).toBe(201);
   const internships = (await (await request.get(`${API}/internships`, { headers: staff })).json()).internships as Array<{ id: string; status: string; student: { studentId: string } }>;
@@ -182,4 +186,38 @@ test("staff revoke a document by its reference after confirming", async ({ page 
   await page.getByRole("button", { name: "ยืนยันเพิกถอน" }).click();
   await expect(page.getByText(/เพิกถอน SHOWPRO-2026-000042 แล้ว/)).toBeVisible();
   expect(sent).toEqual({ reference: "SHOWPRO-2026-000042" });
+});
+
+test("without a company the diary says why it is closed; staff add the company and the diary opens", async ({ page, request }) => {
+  const staff = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };
+  const stamp = `${Date.now()}`;
+  const email = `e2e-bind-${stamp}@example.com`;
+  const code = `65${stamp.slice(-7)}`;
+  expect((await request.post(`${API}/users/import/students`, { headers: staff, data: { rows: [{
+    studentId: code, name: "Bind E2E", nameThai: `นักศึกษา ผูกบริษัท ${stamp}`, email, major: "DII", program: "DII", year: 3, semester: 1, academicYear: "2569", password: "Temp-Pass-123!",
+  }] } })).ok()).toBeTruthy();
+  const temp = { Authorization: `Bearer ${await token(request, email, "Temp-Pass-123!")}` };
+  expect((await request.patch(`${API}/users/profile`, { headers: temp, data: { currentPassword: "Temp-Pass-123!", newPassword: PASSWORD } })).ok()).toBeTruthy();
+
+  const studentPage = await page.context().browser()!.newPage();
+  await login(studentPage, email);
+  await studentPage.goto("/internships");
+  await studentPage.getByRole("tab", { name: "ไดอารี่บันทึกฝึกงาน" }).click();
+  await expect(studentPage.getByTestId("diary-no-company")).toBeVisible({ timeout: 15_000 });
+  await expect(studentPage.getByRole("button", { name: "บันทึกการทำงานวันนี้" })).toHaveCount(0);
+
+  await login(page, "staff@showpro.local");
+  await page.goto("/intern-tracking");
+  await page.getByTestId("intern-add-company").click();
+  await page.getByTestId("bind-student").fill(code);
+  await page.getByTestId("bind-company").selectOption({ label: await page.getByTestId("bind-company").locator("option").nth(1).innerText() });
+  const saved = page.waitForResponse((r) => r.url().includes(`/internship/students/${code}/company`));
+  await page.getByTestId("bind-save").click();
+  expect((await saved).status()).toBe(200);
+
+  await studentPage.reload();
+  await studentPage.getByRole("tab", { name: "ไดอารี่บันทึกฝึกงาน" }).click();
+  await expect(studentPage.getByRole("button", { name: "บันทึกการทำงานวันนี้" })).toBeVisible({ timeout: 15_000 });
+  await expect(studentPage.getByTestId("diary-no-company")).toHaveCount(0);
+  await studentPage.close();
 });

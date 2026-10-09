@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { isCourseFull, openSections, seatsLeft } from '@/lib/course-seats';
-import { api, type RegistrationSummary } from '@/lib/api';
+import { api, ApiError, type RegistrationSummary } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
@@ -394,6 +394,11 @@ export default function Courses() {
       toast.success(language === 'th' ? 'ถอนวิชาสำเร็จ' : 'Course dropped successfully');
       await reloadStudentData();
     } catch (error) {
+      // 409 = the course has a grade (published or a draft); the message never says which, or what grade
+      if (error instanceof ApiError && error.status === 409) {
+        toast.error(language === 'th' ? 'ถอนวิชานี้ไม่ได้แล้ว กรุณาติดต่ออาจารย์ผู้สอน' : 'This course can no longer be dropped. Please contact the lecturer.');
+        return;
+      }
       toast.error(error instanceof Error ? error.message : (language === 'th' ? 'ถอนวิชาไม่สำเร็จ' : 'Unable to drop course'));
     }
   };
