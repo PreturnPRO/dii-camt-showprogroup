@@ -28,3 +28,12 @@ export const attendanceRate = (statuses: string[]) => {
     percentage: counted > 0 ? Math.round(((present + late) / counted) * 1000) / 10 : null,
   };
 };
+
+/** classes that must be counted (present, late or absent) before a low rate means anything */
+export const ATTENDANCE_WARNING_MIN_CLASSES = 3;
+
+/** owner decision 9/10/69 (G4 รอง e): below 80 % of the counted classes, once at least 3 are counted */
+export const shouldWarnAttendance = (rate: ReturnType<typeof attendanceRate>) =>
+  rate.percentage !== null &&
+  rate.present + rate.late + rate.absent >= ATTENDANCE_WARNING_MIN_CLASSES &&
+  rate.percentage < ATTENDANCE_WARNING_PERCENT;

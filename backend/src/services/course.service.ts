@@ -2,13 +2,14 @@ import { Prisma, Role } from "@prisma/client";
 import { prisma } from "../lib/prisma";
 import { AppError } from "../utils/errors";
 import { prepareCourseSections } from "./facility.service";
+import { HOLDS_TIME, assertLecturerFree, lockLecturerTerm } from "./course-review";
 import { getLecturerProfileByUserId } from "./profile.service";
 import { thaiDay } from "./attendance";
 import { formatDay, weekdayOf } from "./class-move-rules";
 import { parseSlots } from "./enrollment-rules";
 
-export const getCourses = async (query: { q?: string; semester?: number; academicYear?: string; lecturerId?: string }) => {
-  const { q, semester, academicYear, lecturerId } = query;
+export const getCourses = async (query: { q?: string; semester?: number; academicYear?: string; lecturerId?: string; status?: string }) => {
+  const { q, semester, academicYear, lecturerId, status } = query;
   return await prisma.course.findMany({
     where: {
       AND: [
@@ -24,6 +25,7 @@ export const getCourses = async (query: { q?: string; semester?: number; academi
         semester ? { semester: Number(semester) } : {},
         academicYear ? { academicYear: String(academicYear) } : {},
         lecturerId ? { lecturerId: String(lecturerId) } : {},
+        status ? { status: String(status) } : {},
       ],
     },
     include: {
@@ -117,9 +119,14 @@ export const createCourse = async (data: any) => {
     throw new AppError(409, `Course ${courseData.code} already exists for ${courseData.semester}/${courseData.academicYear}`);
   }
 
-  const processedSections = await prepareCourseSections(sections);
+  const processedSections = await prepareCourseSections(sections, undefined, courseData);
 
-  return await prisma.course.create({
+  return await prisma.$transaction(async (tx) => {
+  if (HOLDS_TIME.includes(courseData.status ?? "active")) {
+    await lockLecturerTerm(tx, courseData.lecturerId, Number(courseData.semester), String(courseData.academicYear));
+    await assertLecturerFree(tx, { ...courseData, semester: Number(courseData.semester), sections: processedSections });
+  }
+  return await tx.course.create({
     data: {
       ...courseData,
       sections: { create: processedSections },
@@ -134,6 +141,7 @@ export const createCourse = async (data: any) => {
       gradingCriteria: true,
       gradeCutoffs: true,
     },
+  });
   });
 };
 
@@ -198,9 +206,33 @@ const updateCourseUnchecked = async (currentUser: any, id: string, data: any) =>
     }
   }
 
-  const preparedSections = sections ? await prepareCourseSections(sections, existing.id) : null;
+  // the queue is moved only by review and submit (they notify and keep the note right): review M2
+  if (courseData.status !== undefined && courseData.status !== existing.status &&
+      (existing.status === "pending" || courseData.status === "pending" || (existing.status === "rejected" && courseData.status === "active"))) {
+    throw new AppError(409, "Use approve / send back / send again to move a course in the approval queue", { code: "USE_REVIEW" });
+  }
+
+  // the course as it will be after this save: its term, lecturer, status and sections
+  const next = {
+    lecturerId: String(courseData.lecturerId ?? existing.lecturerId),
+    semester: Number(courseData.semester ?? existing.semester),
+    academicYear: String(courseData.academicYear ?? existing.academicYear),
+    status: String(courseData.status ?? existing.status),
+  };
+  const preparedSections = sections ? await prepareCourseSections(sections, existing.id, next) : null;
 
   return await prisma.$transaction(async (tx) => {
+    // only a save that moves the course in time or to someone is checked: editing the grading of a
+    // course that already overlaps something must not be blocked by it
+    const sectionsChange = Boolean(sections) &&
+      sectionShape(await tx.section.findMany({ where: { courseId: existing.id } })) !== sectionShape(sections);
+    const movesInTime = sectionsChange || next.lecturerId !== existing.lecturerId || next.semester !== existing.semester ||
+      next.academicYear !== existing.academicYear || (next.status !== existing.status && !HOLDS_TIME.includes(existing.status));
+    if (HOLDS_TIME.includes(next.status) && movesInTime) {
+      await lockLecturerTerm(tx, next.lecturerId, next.semester, next.academicYear);
+      const nextSections = preparedSections ?? (await tx.section.findMany({ where: { courseId: existing.id } }));
+      await assertLecturerFree(tx, { ...next, courseId: existing.id, sections: nextSections });
+    }
     // owner decision 7/10/69: a weekly change may not drop a class that has a one-time move waiting or in effect
     if (preparedSections) {
       const today = thaiDay(new Date());

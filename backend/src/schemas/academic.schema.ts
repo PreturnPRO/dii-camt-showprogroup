@@ -8,6 +8,7 @@ export const courseQuerySchema = z.object({
   semester: z.coerce.number().int().optional(),
   academicYear: z.string().optional(),
   lecturerId: z.string().optional(),
+  status: z.enum(["active", "pending", "rejected", "draft", "archived"]).optional(),
 });
 
 const gradingCriterionSchema = z.object({
@@ -37,7 +38,8 @@ export const courseCreateSchema = z.object({
   prerequisites: z.array(z.string()).default([]),
   learningOutcomes: z.array(z.string()).default([]),
   syllabus: z.string().optional(),
-  status: z.string().optional(),
+  // "rejected" is set only by a review (POST /courses/:id/review), never written directly
+  status: z.enum(["active", "pending", "draft", "archived"]).optional(),
   sections: z
     .array(
       z.object({
@@ -143,4 +145,9 @@ export const attendanceHistoryParamsSchema = z.object({
 
 export const closeSessionParamsSchema = z.object({
   id: z.string().min(1),
+});
+
+export const courseReviewSchema = z.object({
+  decision: z.enum(["approve", "reject"]),
+  reason: z.string().max(1000).optional(),
 });

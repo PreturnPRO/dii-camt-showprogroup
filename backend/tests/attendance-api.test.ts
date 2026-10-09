@@ -117,8 +117,11 @@ describe("summary and warnings", () => {
     const code2 = `A${uid()}`;
     const course2 = await prisma.course.create({ data: { code: code2, name: code2, nameThai: code2, credits: 3, semester: 1, academicYear: "2569", year: 2, lecturerId: narinProfile.id, status: "active" } });
     const e2 = await prisma.enrollment.create({ data: { studentId: a.s.profile.id, courseId: course2.id } });
-    await mark(a.narin, { enrollmentId: a.enrollment.id, date: "2026-09-01", status: "absent" });
-    await mark(a.narin, { enrollmentId: e2.id, date: "2026-09-01", status: "absent" });
+    // a warning needs 3 counted classes (owner decision 9/10/69)
+    for (const date of ["2026-09-01", "2026-09-02", "2026-09-03"]) {
+      await mark(a.narin, { enrollmentId: a.enrollment.id, date, status: "absent" });
+      await mark(a.narin, { enrollmentId: e2.id, date, status: "absent" });
+    }
     await vi.waitFor(async () => {
       const titles = (await prisma.notification.findMany({ where: { userId: a.s.userId, type: "ATTENDANCE_WARNING" } })).map((n) => n.title).sort();
       expect(titles).toEqual([`Low Attendance Warning: ${a.course.code}`, `Low Attendance Warning: ${code2}`].sort());

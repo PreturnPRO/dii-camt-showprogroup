@@ -7,6 +7,7 @@ import {
   courseQuerySchema,
   courseCreateSchema,
   courseUpdateSchema,
+  courseReviewSchema,
   enrollSchema,
   gradeBulkSchema,
   gradesHistoryParamsSchema,
@@ -24,6 +25,8 @@ import {
   getCourseByIdHandler,
   createCourseHandler,
   updateCourseHandler,
+  reviewCourseHandler,
+  submitCourseHandler,
   scheduleHandler,
   getEnrollmentsHandler,
   registrationSummaryHandler,
@@ -73,6 +76,22 @@ router.patch(
   checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
   validate(courseUpdateSchema),
   updateCourseHandler
+);
+
+// owner decision 9/10/69 (G4 รอง a): staff approve or send back a lecturer's course; the lecturer sends it again
+router.post(
+  "/courses/:id/review",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN]),
+  validate(courseReviewSchema),
+  reviewCourseHandler
+);
+
+router.post(
+  "/courses/:id/submit",
+  requireAuth,
+  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  submitCourseHandler
 );
 
 router.delete(

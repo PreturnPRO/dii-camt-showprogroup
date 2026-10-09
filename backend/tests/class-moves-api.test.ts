@@ -1,6 +1,6 @@
 import bcrypt from "bcryptjs";
 import request from "supertest";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { app } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 import { loginAs, SEED_PASSWORD, uniqueEmail } from "./helpers/auth";
@@ -17,16 +17,21 @@ afterEach(async () => {
   await prisma.course.updateMany({ where: { id: { in: createdCourseIds.splice(0) } }, data: { academicYear: "2500" } });
 });
 
+// each test's classes live in a term of their own, so they never clash with the seed's weekly classes
+// (a lecturer may not teach two classes at once in one term — G4 รอง b)
+let yr = "2569";
+beforeEach(() => { yr = String(3000 + Math.floor(Math.random() * 60000)); });
+
 const freshRoom = async () => prisma.facility.create({ data: { code: `R${uid()}`, name: "Room", building: "TEST", room: uid(), type: "classroom", capacity: 40 } });
 
-/** a fresh lecturer-owned course in 1/2569 with one section on Mondays 09:00–12:00 in a fresh room */
+/** a fresh lecturer-owned course in a term of its own with one section on Mondays 09:00–12:00 in a fresh room */
 const freshClass = async (opts: { lecturer?: string; day?: string; start?: string; end?: string; facilityId?: string | null } = {}) => {
   const lecturer = await prisma.lecturerProfile.findFirstOrThrow({ where: { user: { email: opts.lecturer ?? "narin@showpro.local" } } });
   const room = opts.facilityId === null ? null : opts.facilityId ? { id: opts.facilityId } : await freshRoom();
   const code = `M${uid()}`;
   const course = await prisma.course.create({
     data: {
-      code, name: code, nameThai: code, credits: 1, semester: 1, academicYear: "2569", year: 2, lecturerId: lecturer.id, status: "active",
+      code, name: code, nameThai: code, credits: 1, semester: 1, academicYear: yr, year: 2, lecturerId: lecturer.id, status: "active",
       sections: { create: [{ number: "01", maxStudents: 30, facilityId: room?.id ?? null, room: room ? null : "Somewhere",
         schedule: [{ day: opts.day ?? "monday", startTime: opts.start ?? "09:00", endTime: opts.end ?? "12:00" }] }] },
     },

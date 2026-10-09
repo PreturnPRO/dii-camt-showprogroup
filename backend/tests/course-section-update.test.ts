@@ -8,14 +8,14 @@ const as = async (email: string) => `Bearer ${await loginAs(email)}`;
 const uid = () => Math.random().toString(36).slice(2, 9).toUpperCase();
 
 // sections of an open course are staff's to change (owner decision 9/10/69), so staff edit here
-/** a narin course with sections 01 and 02, and bob enrolled in 01 */
+/** a narin course (in a term of its own) with sections 01 and 02, and bob enrolled in 01 */
 const courseWithEnrollment = async () => {
   const narin = await prisma.lecturerProfile.findFirstOrThrow({ where: { user: { email: "narin@showpro.local" } } });
   const bob = await prisma.studentProfile.findFirstOrThrow({ where: { user: { email: "bob@student.showpro.local" } } });
   const code = `U${uid()}`;
   const course = await prisma.course.create({
     data: {
-      code, name: code, nameThai: code, credits: 3, semester: 1, academicYear: "2569", year: 2, lecturerId: narin.id, status: "active",
+      code, name: code, nameThai: code, credits: 3, semester: 1, academicYear: String(3000 + Math.floor(Math.random() * 60000)), year: 2, lecturerId: narin.id, status: "active",
       sections: { create: [
         { number: "01", maxStudents: 40, schedule: [{ day: "saturday", startTime: "09:00", endTime: "12:00" }] },
         { number: "02", maxStudents: 40, schedule: [] },

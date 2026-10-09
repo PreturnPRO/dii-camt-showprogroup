@@ -249,7 +249,10 @@ model Course {
   prerequisites    String[]         @default([])
   learningOutcomes String[]         @default([])
   syllabus         String?
+  /// active | pending (waiting for staff) | rejected (sent back, see reviewNote) | draft | archived
   status           String           @default("active")
+  /// why staff sent the course back; cleared when the lecturer sends it again (owner decision 9/10/69)
+  reviewNote       String?
   sections         Section[]
   materials        CourseMaterial[]
   enrollments      Enrollment[]

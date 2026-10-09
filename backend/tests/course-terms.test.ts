@@ -1,5 +1,5 @@
 import request from "supertest";
-import { beforeAll, describe, expect, it } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it } from "vitest";
 import { app } from "../src/app";
 import { prisma } from "../src/lib/prisma";
 import { authOf, freshIntern } from "./helpers/internship";
@@ -18,12 +18,16 @@ beforeAll(async () => {
   narinId = (await prisma.lecturerProfile.findFirstOrThrow({ where: { user: { email: "narin@showpro.local" } } })).id;
 });
 
+// each test gets a term of its own: narin may not teach two classes at once in one term (G4 รอง b)
+let yr = "2569";
+beforeEach(() => { yr = String(3000 + Math.floor(Math.random() * 60000)); });
+
 const code = () => `T${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
 const section = (number: string) => ({ number, maxStudents: 10, schedule: [{ day: "saturday", startTime: "08:00", endTime: "09:00" }] });
 
 const createCourse = (body: Record<string, unknown>, auth = staff) =>
   request(app).post("/api/courses").set("Authorization", auth).send({
-    name: "Term", nameThai: "เทอม", credits: 3, semester: 1, academicYear: "2569", year: 2, lecturerId: narinId, status: "active",
+    name: "Term", nameThai: "เทอม", credits: 3, semester: 1, academicYear: yr, year: 2, lecturerId: narinId, status: "active",
     sections: [section("01")], ...body,
   });
 
@@ -32,7 +36,7 @@ describe("a course code across terms", () => {
     const c = code();
     expect((await createCourse({ code: c, semester: 1 })).status).toBe(201);
     expect((await createCourse({ code: c, semester: 2 })).status).toBe(201);
-    expect((await createCourse({ code: c, semester: 1, academicYear: "2570" })).status).toBe(201);
+    expect((await createCourse({ code: c, semester: 1, academicYear: String(Number(yr) + 1) })).status).toBe(201);
   });
 
   it("the same code twice in one term is refused, and the message says which term", async () => {
@@ -40,7 +44,7 @@ describe("a course code across terms", () => {
     await createCourse({ code: c });
     const res = await createCourse({ code: c });
     expect(res.status).toBe(409);
-    expect(res.body.message).toContain("1/2569");
+    expect(res.body.message).toContain(`1/${yr}`);
   });
 
   it("looking a course up by code gives the latest term", async () => {
@@ -73,10 +77,10 @@ describe("what a lecturer may change on an active course", () => {
   it("changing code or term onto another course's says which term clashes", async () => {
     const c = code();
     await createCourse({ code: c, semester: 1 });
-    const other = (await createCourse({ code: c, semester: 2 })).body.course;
+    const other = (await createCourse({ code: c, semester: 2, sections: [{ number: "01", maxStudents: 10, schedule: [{ day: "sunday", startTime: "08:00", endTime: "09:00" }] }] })).body.course;
     const res = await request(app).patch(`/api/courses/${other.id}`).set("Authorization", staff).send({ semester: 1 });
     expect(res.status).toBe(409);
-    expect(res.body.message).toContain("1/2569");
+    expect(res.body.message).toContain(`1/${yr}`);
   });
 
   it("an unknown instructor is a 400, not a 500", async () => {
@@ -86,7 +90,7 @@ describe("what a lecturer may change on an active course", () => {
   it("a pending course of their own is still theirs to shape", async () => {
     const course = (await createCourse({ code: code() }, narinAuth)).body.course;
     expect(course.status).toBe("pending");
-    expect((await request(app).patch(`/api/courses/${course.id}`).set("Authorization", narinAuth).send({ credits: 2, sections: [section("01"), section("02")] })).status).toBe(200);
+    expect((await request(app).patch(`/api/courses/${course.id}`).set("Authorization", narinAuth).send({ credits: 2, sections: [section("01"), { ...section("02"), schedule: [{ day: "sunday", startTime: "08:00", endTime: "09:00" }] }] })).status).toBe(200);
   });
 
   it("sending the same values back is not a change", async () => {

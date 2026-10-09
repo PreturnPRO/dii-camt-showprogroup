@@ -12,11 +12,13 @@ import { csvRow } from "../utils/csv";
 import { AppError } from "../utils/errors";
 import { requireUser } from "../utils/user";
 import { getCourses, getCourseById, createCourse, updateCourse } from "../services/course.service";
+import { notifyStaffCourseWaiting, reviewCourse, submitCourse } from "../services/course-review";
+import { assertMeetsOn } from "../services/class-days";
 import { getEnrollments, createEnrollment, dropCourseByStudent, getRegistrationSummary } from "../services/enrollment.service";
 import { getStudentTranscript } from "../services/academic-core.service";
 import crypto from "crypto";
 import { emitToUser } from "../lib/realtime";
-import { attendanceRate, ATTENDANCE_WARNING_PERCENT, thaiDay } from "../services/attendance";
+import { attendanceRate, ATTENDANCE_WARNING_PERCENT, shouldWarnAttendance, thaiDay } from "../services/attendance";
 import { assertCanViewStudentRecord, assertCourseManager, isStaffOrAdmin, lecturerProfileIdOf, scopeCourseForViewer, viewerContext } from "../services/access-policy";
 
 
@@ -39,7 +41,18 @@ export const createCourseHandler = asyncHandler(async (req, res) => {
       ? { ...req.body, lecturerId: await lecturerProfileIdOf(currentUser.id), status: "pending" }
       : { ...req.body, status: req.body.status || "active" };
   const course = await createCourse(courseData);
+  if (course.status === "pending") await notifyStaffCourseWaiting(course);
   res.status(201).json({ success: true, course });
+});
+
+export const reviewCourseHandler = asyncHandler(async (req, res) => {
+  const course = await reviewCourse(String(req.params.id), req.body.decision, req.body.reason);
+  res.json({ success: true, course });
+});
+
+export const submitCourseHandler = asyncHandler(async (req, res) => {
+  const course = await submitCourse(requireUser(req), String(req.params.id));
+  res.json({ success: true, course });
 });
 
 export const updateCourseHandler = asyncHandler(async (req, res) => {
@@ -318,7 +331,7 @@ export const getAttendanceReportHandler = asyncHandler(async (req, res) => {
 export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
   const enrollment = await prisma.enrollment.findUnique({
     where: { id: String(req.body.enrollmentId) },
-    select: { courseId: true, status: true },
+    select: { courseId: true, status: true, sectionId: true },
   });
   if (!enrollment) {
     throw new AppError(404, "Enrollment not found");
@@ -330,8 +343,11 @@ export const attendanceCheckInHandler = asyncHandler(async (req, res) => {
   // owner decision 7/10/69: attendance is recorded up to today (Thai time), never ahead
   const day = thaiDay(req.body.date);
   if (day.getTime() > thaiDay(new Date()).getTime()) {
-    throw new AppError(400, "Attendance cannot be recorded for a future date");
+    throw new AppError(400, "Attendance cannot be recorded for a future date", { code: "FUTURE_DATE" });
   }
+  // a record already kept for that day can be corrected even if the timetable changed since (review M3)
+  const kept = await prisma.attendanceRecord.findUnique({ where: { enrollmentId_date: { enrollmentId: String(req.body.enrollmentId), date: day } }, select: { id: true } });
+  if (!kept) await assertMeetsOn(enrollment.courseId, enrollment.sectionId, day);
 
   const record = await prisma.attendanceRecord.upsert({
     where: {
@@ -441,6 +457,8 @@ export const startAttendanceSessionHandler = asyncHandler(async (req, res) => {
   if (currentUser.role === Role.LECTURER && course.lecturer.userId !== currentUser.id) {
     throw new AppError(403, "You can only manage attendance for your own courses");
   }
+  // a QR session is today's attendance: only on a day the course meets (owner decision 9/10/69)
+  await assertMeetsOn(course.id, null, thaiDay(new Date()));
 
   // Generate a random token
   const token = crypto.randomBytes(16).toString("hex");
@@ -549,8 +567,10 @@ async function checkAttendanceWarning(enrollmentId: string) {
   if (!enrollment || enrollment.status === "dropped") return;
 
   const records = await prisma.attendanceRecord.findMany({ where: { enrollmentId: enrollment.id }, select: { status: true } });
-  const { percentage } = attendanceRate(records.map((r) => r.status));
-  if (percentage === null || percentage >= ATTENDANCE_WARNING_PERCENT) return;
+  const rate = attendanceRate(records.map((r) => r.status));
+  // owner decision 9/10/69 (G4 รอง e): warn below 80 % only once 3 classes are counted
+  if (!shouldWarnAttendance(rate)) return;
+  const percentage = rate.percentage as number;
 
   const title = `Low Attendance Warning: ${enrollment.course.code}`;
   // one warning per course per week

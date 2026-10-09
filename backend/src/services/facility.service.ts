@@ -17,7 +17,7 @@ type SectionInput = {
   schedule: unknown;
 };
 
-const normalizeSchedule = (schedule: unknown): ScheduleSlot[] => {
+export const normalizeSchedule = (schedule: unknown): ScheduleSlot[] => {
   if (!Array.isArray(schedule)) {
     return [];
   }
@@ -54,7 +54,7 @@ const toMinutes = (value: string) => {
   return hour * 60 + minute;
 };
 
-const hasOverlap = (a: ScheduleSlot, b: ScheduleSlot) =>
+export const hasOverlap = (a: ScheduleSlot, b: ScheduleSlot) =>
   a.day === b.day && toMinutes(a.startTime) < toMinutes(b.endTime) && toMinutes(b.startTime) < toMinutes(a.endTime);
 
 const resolveRoomLabel = (facility?: { name: string; room: string | null; building: string }) => {
@@ -66,7 +66,12 @@ const resolveRoomLabel = (facility?: { name: string; room: string | null; buildi
   return `${facility.building} ${roomName}`.trim();
 };
 
-export const prepareCourseSections = async (sections: SectionInput[], excludeCourseId?: string) => {
+/** `term` limits the room check to that term's courses: a room used last term is free this term */
+export const prepareCourseSections = async (
+  sections: SectionInput[],
+  excludeCourseId?: string,
+  term?: { semester: number; academicYear: string },
+) => {
   const facilityIds = Array.from(
     new Set(
       sections
@@ -155,6 +160,10 @@ export const prepareCourseSections = async (sections: SectionInput[], excludeCou
             ? { room: current.room }
             : {}),
         ...(excludeCourseId ? { courseId: { not: excludeCourseId } } : {}),
+        // only courses that hold the room in the same term (an archived or returned course frees it)
+        ...(term
+          ? { course: { semester: Number(term.semester), academicYear: String(term.academicYear), status: { in: ["active", "pending"] } } }
+          : {}),
       },
       include: {
         course: true,
