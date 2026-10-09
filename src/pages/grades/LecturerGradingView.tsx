@@ -387,7 +387,7 @@ export function LecturerGradingView() {
               <option value="all">{language === 'th' ? 'ทุกวิชา' : 'All courses'}</option>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>
-                  {course.code} - {course.name}
+                  {course.code} - {course.name} ({course.semester}/{course.academicYear})
                 </option>
               ))}
             </select>

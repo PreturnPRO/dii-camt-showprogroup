@@ -215,6 +215,8 @@ export interface Section {
   id: string;
   sectionNumber: string; // "01", "02"
   room?: string;
+  /** the booked room (Facility); kept on save so editing a course never drops it */
+  facilityId?: string;
   maxStudents: number;
   /** the section's own minimum; the course-level minStudents is the sum across sections */
   minStudents?: number;

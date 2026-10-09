@@ -345,6 +345,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
             id: asString(section.id, fallbackSection?.id ?? `${fallback.id}-section-${sectionIndex}`),
             sectionNumber: asString(section.number, asString(section.sectionNumber, fallbackSection?.sectionNumber ?? "01")),
             room: asString(section.room, fallbackSection?.room ?? mappedSchedule[0]?.room ?? ""),
+            facilityId: asString(section.facilityId) || undefined,
             maxStudents: asNumber(section.maxStudents, fallbackSection?.maxStudents ?? fallback.maxStudents),
             minStudents: asNumber(section.minStudents, fallbackSection?.minStudents ?? 0),
             enrolledStudents: enrollments
@@ -355,9 +356,8 @@ export const mapCourse = (value: unknown, index = 0): Course => {
               section.enrolledCount,
               enrollments.filter((enrollment) => asString(asRecord(enrollment).sectionId) === asString(section.id)).length,
             ),
-            schedule: sectionSchedule.length
-              ? sectionSchedule.map((slot, slotIndex) => mapSchedule(slot, slotIndex, fallbackSection?.schedule[slotIndex]))
-              : mappedSchedule,
+            // a section's own classes only; one with none is "not set yet", never another section's times
+            schedule: sectionSchedule.map((slot, slotIndex) => mapSchedule(slot, slotIndex, fallbackSection?.schedule[slotIndex])),
           };
         })
       : fallback.sections,

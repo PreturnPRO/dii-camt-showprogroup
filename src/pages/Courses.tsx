@@ -1,4 +1,6 @@
 import React from 'react';
+import { SectionsEditor } from '@/components/courses/SectionsEditor';
+import { emptySection, sectionsFromCourse, sectionsPayload, sectionsProblem, type FormSection } from '@/lib/course-form';
 import { enrolledSectionInfo } from '@/lib/enrolled-section';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,7 +32,7 @@ import { asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
 // course import builds section 01 from the file's seat limits (the backend ignores top-level maxStudents)
-import { downloadImportTemplate, normalizeImportCourse, parseCourseImportFile } from '@/lib/course-import';
+import { downloadImportTemplate, normalizeImportCourse, parseCourseImportFile, planCourseImport, type ImportSkip } from '@/lib/course-import';
 import type { Course } from '@/types';
 
 type CourseRow = Course;
@@ -43,16 +45,11 @@ type CourseFormState = {
   academicYear: string;
   year: string;
   lecturerId: string;
-  maxStudents: string;
-  minStudents: string;
   description: string;
   syllabus: string;
   status: string;
-  room: string;
-  sectionNumber: string;
-  scheduleDays: string[];
-  scheduleStartTime: string;
-  scheduleEndTime: string;
+  /** every section with its own seats, room and weekly classes */
+  sections: FormSection[];
 };
 
 type LecturerOption = {
@@ -96,6 +93,8 @@ export default function Courses() {
   const [isSaving, setIsSaving] = React.useState(false);
   const [lecturers, setLecturers] = React.useState<LecturerOption[]>([]);
   const [importLecturerId, setImportLecturerId] = React.useState('');
+  // rows of the last import that did not become courses, with the reason
+  const [importProblems, setImportProblems] = React.useState<ImportSkip[]>([]);
   const [isImporting, setIsImporting] = React.useState(false);
   const importInputRef = React.useRef<HTMLInputElement | null>(null);
 
@@ -200,7 +199,6 @@ export default function Courses() {
           };
         }).filter((lecturer) => lecturer.id);
         setLecturers(nextLecturers);
-        setImportLecturerId((current) => current || nextLecturers[0]?.id || '');
       })
       .catch((error) => {
         console.warn('Unable to load lecturers for course import', error);
@@ -267,22 +265,17 @@ export default function Courses() {
       academicYear: course.academicYear,
       year: String(course.year),
       lecturerId: course.lecturerId,
-      maxStudents: String(course.sections?.[0]?.maxStudents || 60),
-      minStudents: String(course.sections?.[0]?.minStudents || 0),
       description: course.description || '',
       syllabus: course.syllabus || '',
       status: course.status || 'active',
-      room: course.sections?.[0]?.room || '',
-      sectionNumber: course.sections?.[0]?.sectionNumber || '001',
-      scheduleDays: course.sections?.[0]?.schedule?.map(s => s.day) || [],
-      scheduleStartTime: course.sections?.[0]?.schedule?.[0]?.startTime || '09:00',
-      scheduleEndTime: course.sections?.[0]?.schedule?.[0]?.endTime || '12:00',
+      sections: sectionsFromCourse(course),
     });
   };
 
   const openNewCourseEditor = () => {
     setEditingCourse(null);
-    let defaultLecturerId = importLecturerId || lecturers[0]?.id || '';
+    // staff choose the instructor; nobody is filled in for them
+    let defaultLecturerId = importLecturerId;
     if (user?.role === 'lecturer') {
       const myProfile = lecturers.find(l => l.userId === user?.id);
       if (myProfile) defaultLecturerId = myProfile.id;
@@ -297,18 +290,15 @@ export default function Courses() {
       academicYear: String(new Date().getFullYear() + 543),
       year: '1',
       lecturerId: defaultLecturerId,
-      maxStudents: '30',
-      minStudents: '0',
       description: '',
       syllabus: '',
       status: user?.role === 'lecturer' ? 'pending' : 'active',
-      room: '',
-      sectionNumber: '001',
-      scheduleDays: [],
-      scheduleStartTime: '09:00',
-      scheduleEndTime: '12:00',
+      sections: [emptySection([])],
     });
   };
+
+  // owner decision 9/10/69: a lecturer may not change the shape of their open (active) course
+  const shapeLocked = user?.role === 'lecturer' && editingCourse?.status === 'active';
 
   const updateCourseForm = <K extends keyof CourseFormState>(field: K, value: CourseFormState[K]) => {
     setCourseForm((current) => current ? { ...current, [field]: value } : current);
@@ -320,41 +310,29 @@ export default function Courses() {
       toast.error(language === 'th' ? 'กรุณาเลือกผู้สอนก่อนบันทึกรายวิชา' : 'Please choose an instructor before saving');
       return;
     }
+    const problem = shapeLocked ? null : sectionsProblem(courseForm.sections);
+    if (problem) {
+      toast.error(language === 'th' ? problem.th : problem.en);
+      return;
+    }
     setIsSaving(true);
     try {
       const payload = {
-        code: courseForm.code.trim(),
         name: courseForm.name.trim(),
         nameThai: courseForm.nameThai.trim(),
-        credits: Number(courseForm.credits),
-        semester: Number(courseForm.semester),
-        academicYear: courseForm.academicYear.trim(),
         year: Number(courseForm.year),
         lecturerId: courseForm.lecturerId,
-        maxStudents: Number(courseForm.maxStudents),
-        minStudents: Number(courseForm.minStudents),
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
         status: courseForm.status,
-        room: courseForm.room.trim(),
-        sections: [{
-          number: courseForm.sectionNumber.trim() || '001',
-          room: courseForm.room.trim(),
-          maxStudents: Number(courseForm.maxStudents),
-          minStudents: Number(courseForm.minStudents),
-          schedule: courseForm.scheduleDays.map(day => ({
-            day,
-            startTime: courseForm.scheduleStartTime,
-            endTime: courseForm.scheduleEndTime,
-            type: 'lecture',
-          }))
-        }],
-        schedule: courseForm.scheduleDays.map(day => ({
-          day,
-          startTime: courseForm.scheduleStartTime,
-          endTime: courseForm.scheduleEndTime,
-          type: 'lecture',
-        })),
+        // an open course's shape is staff's to change (owner decision 9/10/69): a lecturer does not send it
+        ...(shapeLocked ? {} : {
+          code: courseForm.code.trim(),
+          credits: Number(courseForm.credits),
+          semester: Number(courseForm.semester),
+          academicYear: courseForm.academicYear.trim(),
+          sections: sectionsPayload(courseForm.sections),
+        }),
       };
       const response = editingCourse
         ? await api.courses.update(editingCourse.id, payload)
@@ -368,25 +346,42 @@ export default function Courses() {
       setCourseForm(null);
     } catch (error) {
       console.error('Unable to save course', error);
-      toast.error(language === 'th' ? 'บันทึกรายวิชาไม่สำเร็จ' : 'Unable to save course');
+      const status = error instanceof ApiError ? error.status : 0;
+      toast.error(
+        status === 409
+          ? (language === 'th' ? `บันทึกไม่ได้: ${error instanceof Error ? error.message : 'ข้อมูลซ้ำ'}` : `Not saved: ${error instanceof Error ? error.message : 'duplicate'}`)
+          : status === 403
+            ? (language === 'th' ? 'ไม่มีสิทธิ์แก้ส่วนนี้ของรายวิชา' : 'You may not change this part of the course')
+            : (language === 'th' ? 'บันทึกรายวิชาไม่สำเร็จ' : 'Unable to save course'),
+      );
     } finally {
       setIsSaving(false);
     }
   };
 
   const deleteCourse = async (id: string) => {
-    if (!window.confirm(language === 'th' ? 'คุณแน่ใจหรือไม่ว่าต้องการลบรายวิชานี้? (ข้อมูลจะถูกลบถาวร)' : 'Are you sure you want to delete this course? (This action is permanent)')) {
+    if (!window.confirm(language === 'th'
+      ? 'ลบรายวิชานี้? ถ้าเคยมีนักศึกษาลงทะเบียน ระบบจะปิดรายวิชา (Archived) แทนการลบ เพื่อเก็บประวัติ'
+      : 'Delete this course? If anyone ever enrolled, it is archived instead, to keep the history.')) {
       return;
     }
     try {
-      await api.courses.delete(id);
-      setCourses((current) => current.filter((course) => course.id !== id));
-      toast.success(language === 'th' ? 'ลบรายวิชาแล้ว' : 'Course deleted');
+      const result = await api.courses.delete(id);
+      // a course with enrollment history is archived by the server, not deleted (owner decision 9/10/69)
+      if (result.archived) {
+        setCourses((current) => current.map((course) => course.id === id ? { ...course, status: 'archived' } : course));
+        toast.success(language === 'th' ? 'รายวิชานี้มีประวัติการลงทะเบียน จึงปิดรายวิชาแทนการลบ' : 'The course has enrollment history, so it was archived instead');
+      } else {
+        setCourses((current) => current.filter((course) => course.id !== id));
+        toast.success(language === 'th' ? 'ลบรายวิชาแล้ว' : 'Course deleted');
+      }
       setEditingCourse(null);
       setCourseForm(null);
     } catch (error) {
       console.error('Unable to delete course', error);
-      toast.error(language === 'th' ? 'ลบรายวิชาไม่สำเร็จ' : 'Unable to delete course');
+      toast.error(error instanceof ApiError && error.status === 403
+        ? (language === 'th' ? 'รายวิชาที่เปิดสอนแล้วปิดได้โดยเจ้าหน้าที่' : 'An open course is closed by staff')
+        : (language === 'th' ? 'ลบรายวิชาไม่สำเร็จ' : 'Unable to delete course'));
     }
   };
 
@@ -436,11 +431,8 @@ export default function Courses() {
     event.target.value = '';
     if (!file) return;
 
-    const fallbackLecturerId = importLecturerId || lecturers[0]?.id || '';
-    if (!fallbackLecturerId) {
-      toast.error(language === 'th' ? 'กรุณาเลือกผู้สอนเริ่มต้นก่อนนำเข้าไฟล์' : 'Choose a default instructor before importing');
-      return;
-    }
+    // no silent default: a row without an instructor needs one chosen here (audit M-N7)
+    const fallbackLecturerId = importLecturerId;
 
     setIsImporting(true);
     try {
@@ -450,31 +442,34 @@ export default function Courses() {
         return;
       }
 
-      const existingCodes = new Set(courses.map((course) => course.code.toLowerCase()));
       const payloads = rows.map((row) => normalizeImportCourse(row, fallbackLecturerId));
-      const validPayloads = payloads.filter((course) => course.code && course.name && course.nameThai && !existingCodes.has(course.code.toLowerCase()));
-      const skippedCount = payloads.length - validPayloads.length;
-
-      if (!validPayloads.length) {
-        toast.error(language === 'th' ? 'ไม่มีรายวิชาใหม่ที่พร้อมนำเข้า ตรวจรหัสวิชา/ชื่อวิชา/ข้อมูลซ้ำ' : 'No new valid courses to import. Check required fields and duplicates.');
-        return;
-      }
-
+      const plan = planCourseImport(payloads, courses);
+      const failures: ImportSkip[] = [...plan.skipped];
       const createdCourses: CourseRow[] = [];
-      for (const payload of validPayloads) {
-        const response = await api.courses.create(payload);
-        createdCourses.push(mapCourse(response.course));
+      // one row at a time, so a failing row is reported and the others still go in
+      for (const payload of plan.toCreate) {
+        try {
+          const response = await api.courses.create(payload);
+          createdCourses.push(mapCourse(response.course));
+        } catch (error) {
+          failures.push({
+            row: payloads.indexOf(payload) + 2,
+            code: payload.code,
+            reason: { th: error instanceof Error ? error.message : 'บันทึกไม่สำเร็จ', en: error instanceof Error ? error.message : 'not saved' },
+          });
+        }
       }
 
-      setCourses((current) => [...createdCourses, ...current]);
-      toast.success(
-        language === 'th'
-          ? `นำเข้า ${createdCourses.length} รายวิชาแล้ว${skippedCount ? ` (ข้าม ${skippedCount} แถว)` : ''}`
-          : `Imported ${createdCourses.length} courses${skippedCount ? ` (${skippedCount} rows skipped)` : ''}`,
-      );
+      if (createdCourses.length) setCourses((current) => [...createdCourses, ...current]);
+      setImportProblems(failures.sort((a, b) => a.row - b.row));
+      const summary = language === 'th'
+        ? `นำเข้า ${createdCourses.length} รายวิชา${failures.length ? ` · ไม่ได้นำเข้า ${failures.length} แถว (ดูรายการด้านล่าง)` : ''}`
+        : `Imported ${createdCourses.length} courses${failures.length ? ` · ${failures.length} rows not imported (see the list)` : ''}`;
+      if (createdCourses.length) toast.success(summary);
+      else toast.error(summary);
     } catch (error) {
       console.error('Unable to import courses', error);
-      toast.error(error instanceof Error ? error.message : (language === 'th' ? 'นำเข้ารายวิชาไม่สำเร็จ' : 'Unable to import courses'));
+      toast.error(language === 'th' ? 'อ่านไฟล์ไม่สำเร็จ ตรวจว่าเป็น CSV หรือ Excel' : 'Could not read the file; check it is CSV or Excel');
     } finally {
       setIsImporting(false);
     }
@@ -501,11 +496,11 @@ export default function Courses() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="course-code">{language === 'th' ? 'รหัสวิชา' : 'Code'}</Label>
-              <Input id="course-code" value={courseForm.code} onChange={(event) => updateCourseForm('code', event.target.value)} />
+              <Input id="course-code" disabled={shapeLocked} value={courseForm.code} onChange={(event) => updateCourseForm('code', event.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-credits">{language === 'th' ? 'หน่วยกิต' : 'Credits'}</Label>
-              <Input id="course-credits" type="number" min="1" value={courseForm.credits} onChange={(event) => updateCourseForm('credits', event.target.value)} />
+              <Input id="course-credits" type="number" min="1" disabled={shapeLocked} value={courseForm.credits} onChange={(event) => updateCourseForm('credits', event.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-name">{language === 'th' ? 'ชื่ออังกฤษ' : 'English name'}</Label>
@@ -517,7 +512,7 @@ export default function Courses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-semester">{language === 'th' ? 'ภาคเรียน' : 'Semester'}</Label>
-              <Select value={String(courseForm.semester)} onValueChange={(value) => updateCourseForm('semester', value)}>
+              <Select disabled={shapeLocked} value={String(courseForm.semester)} onValueChange={(value) => updateCourseForm('semester', value)}>
                 <SelectTrigger id="course-semester">
                   <SelectValue placeholder={language === 'th' ? 'เลือกภาคเรียน' : 'Select Semester'} />
                 </SelectTrigger>
@@ -531,15 +526,11 @@ export default function Courses() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-year">{language === 'th' ? 'ปีการศึกษา' : 'Academic year'}</Label>
-              <Input id="course-year" value={courseForm.academicYear} onChange={(event) => updateCourseForm('academicYear', event.target.value)} />
+              <Input id="course-year" disabled={shapeLocked} value={courseForm.academicYear} onChange={(event) => updateCourseForm('academicYear', event.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-level">{language === 'th' ? 'ชั้นปี' : 'Year level'}</Label>
               <Input id="course-level" type="number" min="1" value={courseForm.year} onChange={(event) => updateCourseForm('year', event.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="course-max">{language === 'th' ? 'จำนวนนักศึกษาสูงสุด' : 'Max students'}</Label>
-              <Input id="course-max" type="number" min="1" value={courseForm.maxStudents} onChange={(event) => updateCourseForm('maxStudents', event.target.value)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="course-lecturer">{language === 'th' ? 'ผู้สอน' : 'Instructor'}</Label>
@@ -557,62 +548,17 @@ export default function Courses() {
               </Select>
             </div>
             <div className="space-y-2 md:col-span-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
-              <h3 className="font-semibold text-slate-800 dark:text-slate-200">{language === 'th' ? 'วันเวลาและสถานที่เรียน' : 'Schedule & Room'}</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">{language === 'th' ? 'ตอนเรียน วันเวลา และห้อง' : 'Sections, times and rooms'}</h3>
+              {shapeLocked && (
+                <p data-testid="course-shape-locked" className="text-sm leading-relaxed text-amber-700 dark:text-amber-400">
+                  {language === 'th'
+                    ? 'รายวิชานี้เปิดสอนแล้ว — รหัส หน่วยกิต ภาคเรียน ตอน วันเวลา และห้อง แก้ได้โดยเจ้าหน้าที่ (ย้ายคาบรายครั้งใช้เมนูย้ายคาบ)'
+                    : 'This course is open — code, credits, term, sections, times and rooms are changed by staff (use class moves for one-off changes)'}
+                </p>
+              )}
             </div>
-            <div className="space-y-2 md:col-span-2">
-              <Label>{language === 'th' ? 'วันที่เรียน (เลือกได้หลายวัน หรือไม่เลือกเพื่อเป็น TBA)' : 'Days (Select multiple, or none for TBA)'}</Label>
-              <div className="flex flex-wrap gap-2 mt-1">
-                {[
-                  { id: 'monday', th: 'จันทร์', en: 'Mon' },
-                  { id: 'tuesday', th: 'อังคาร', en: 'Tue' },
-                  { id: 'wednesday', th: 'พุธ', en: 'Wed' },
-                  { id: 'thursday', th: 'พฤหัสฯ', en: 'Thu' },
-                  { id: 'friday', th: 'ศุกร์', en: 'Fri' },
-                  { id: 'saturday', th: 'เสาร์', en: 'Sat' },
-                  { id: 'sunday', th: 'อาทิตย์', en: 'Sun' }
-                ].map((day) => {
-                  const isSelected = courseForm.scheduleDays.includes(day.id);
-                  return (
-                    <button
-                      key={day.id}
-                      type="button"
-                      onClick={() => {
-                        const newDays = isSelected
-                          ? courseForm.scheduleDays.filter(d => d !== day.id)
-                          : [...courseForm.scheduleDays, day.id];
-                        updateCourseForm('scheduleDays', newDays);
-                      }}
-                      className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 border ${
-                        isSelected
-                          ? 'bg-indigo-500 border-indigo-500 text-white shadow-md'
-                          : 'bg-white border-slate-200 text-slate-600 hover:border-indigo-300 hover:bg-indigo-50 dark:bg-slate-900 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800'
-                      }`}
-                    >
-                      {language === 'th' ? day.th : day.en}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="space-y-2 flex gap-2">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="course-time-start">{language === 'th' ? 'เวลาเริ่ม' : 'Start Time'}</Label>
-                <Input id="course-time-start" type="time" value={courseForm.scheduleStartTime} onChange={(event) => updateCourseForm('scheduleStartTime', event.target.value)} />
-              </div>
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="course-time-end">{language === 'th' ? 'เวลาสิ้นสุด' : 'End Time'}</Label>
-                <Input id="course-time-end" type="time" value={courseForm.scheduleEndTime} onChange={(event) => updateCourseForm('scheduleEndTime', event.target.value)} />
-              </div>
-            </div>
-            <div className="space-y-2 flex gap-2">
-              <div className="flex-1 space-y-2">
-                <Label htmlFor="course-section">{language === 'th' ? 'ตอนเรียน (Section)' : 'Section'}</Label>
-                <Input id="course-section" placeholder="Ex. 001, 801" value={courseForm.sectionNumber} onChange={(event) => updateCourseForm('sectionNumber', event.target.value)} />
-              </div>
-              <div className="flex-[2] space-y-2">
-                <Label htmlFor="course-room">{language === 'th' ? 'ห้องเรียน' : 'Room Location'}</Label>
-                <Input id="course-room" placeholder="Ex. CAMT 113" value={courseForm.room} onChange={(event) => updateCourseForm('room', event.target.value)} />
-              </div>
+            <div className="md:col-span-2">
+              <SectionsEditor sections={courseForm.sections} onChange={(sections) => updateCourseForm('sections', sections)} disabled={shapeLocked} language={language === 'th' ? 'th' : 'en'} />
             </div>
 
             <div className="md:col-span-2 space-y-2 mt-2 pt-2 border-t border-slate-100 dark:border-slate-800">
@@ -1121,7 +1067,7 @@ export default function Courses() {
                   {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending</Badge>}
                   {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
                 </div>
-                <Button variant="ghost" size="icon" className="-mr-2 -mt-2" onClick={() => openCourseEditor(course)}>
+                <Button variant="ghost" size="icon" className="-mr-2 -mt-2" data-testid={`edit-course-${course.code}`} onClick={() => openCourseEditor(course)}>
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
               </div>
@@ -1132,7 +1078,7 @@ export default function Courses() {
                 <span className="font-bold text-slate-900 dark:text-slate-200">{(course.enrolledCount ?? course.enrolledStudents.length)} {t.coursesPage.studentsCount}</span>
               </div>
               <div className="flex gap-2 mt-5">
-                <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => openCourseEditor(course)}>
+                <Button className="w-full rounded-xl flex-1" variant="outline" data-testid={`edit-course-${course.code}`} onClick={() => openCourseEditor(course)}>
                   {language === 'th' ? 'แก้ไข' : 'Edit'}
                 </Button>
                 <Button className="w-full rounded-xl flex-1" variant="outline" onClick={() => navigate(`/courses/${course.id}/grading`)}>
@@ -1199,7 +1145,7 @@ export default function Courses() {
             <Button
               variant="outline"
               className="h-11 px-5 rounded-2xl"
-              onClick={() => downloadImportTemplate(importLecturerId || lecturers[0]?.id)}
+              onClick={() => downloadImportTemplate(importLecturerId || undefined)}
             >
               <Download className="w-4 h-4 mr-2" />
               {language === 'th' ? 'Template' : 'Template'}
@@ -1231,7 +1177,7 @@ export default function Courses() {
                 <li>{language === 'th' ? 'กด Template แล้วเปิดไฟล์ด้วย Excel หรือ Google Sheets' : 'Download the template and open it in Excel or Google Sheets.'}</li>
                 <li>{language === 'th' ? 'กรอกอย่างน้อย code, name, nameThai, credits, semester, academicYear, year' : 'Fill at least code, name, nameThai, credits, semester, academicYear, and year.'}</li>
                 <li>{language === 'th' ? 'ถ้าไม่ใส่ lecturerId ระบบจะใช้ผู้สอนเริ่มต้นด้านขวา' : 'If lecturerId is blank, the default instructor on the right will be used.'}</li>
-                <li>{language === 'th' ? 'กดนำเข้า CSV/Excel ระบบจะข้ามรหัสวิชาที่ซ้ำกับข้อมูลเดิม' : 'Click Import CSV/Excel. Existing duplicate course codes will be skipped.'}</li>
+                <li>{language === 'th' ? 'กดนำเข้า CSV/Excel ระบบจะข้ามรายวิชาที่มีรหัสเดียวกันในภาคเรียนเดียวกันอยู่แล้ว และแถวที่ไม่ระบุผู้สอน (ถ้าไม่ได้เลือกผู้สอนเริ่มต้น)' : 'Click Import CSV/Excel. A course already in the same term, and a row without an instructor (when no default is chosen), are skipped.'}</li>
               </ol>
               <div className="space-y-2">
                 <Label>{language === 'th' ? 'ผู้สอนเริ่มต้นสำหรับไฟล์นำเข้า' : 'Default import instructor'}</Label>
@@ -1248,6 +1194,18 @@ export default function Courses() {
                   </SelectContent>
                 </Select>
               </div>
+              {importProblems.length > 0 && (
+                <div role="alert" data-testid="import-problems" className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+                  <p className="mb-2 font-semibold">{language === 'th' ? `แถวที่ไม่ได้นำเข้า (${importProblems.length})` : `Rows not imported (${importProblems.length})`}</p>
+                  <ul className="space-y-1 leading-relaxed">
+                    {importProblems.map((problem) => (
+                      <li key={`${problem.row}-${problem.code}`}>
+                        {language === 'th' ? `แถว ${problem.row}` : `Row ${problem.row}`}{problem.code ? ` (${problem.code})` : ''}: {language === 'th' ? problem.reason.th : problem.reason.en}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>
@@ -1300,7 +1258,7 @@ export default function Courses() {
                       variant="outline"
                       size="sm"
                       className="rounded-xl"
-                      onClick={() => openCourseEditor(course)}
+                      data-testid={`edit-course-${course.code}`} onClick={() => openCourseEditor(course)}
                     >
                       {language === 'th' ? 'แก้ไข' : 'Edit'}
                     </Button>
@@ -1316,7 +1274,7 @@ export default function Courses() {
                       variant="ghost"
                       size="icon"
                       className="rounded-xl"
-                      onClick={() => openCourseEditor(course)}
+                      data-testid={`edit-course-${course.code}`} onClick={() => openCourseEditor(course)}
                     >
                       <MoreHorizontal className="w-5 h-5 text-slate-500 dark:text-slate-400" />
                     </Button>

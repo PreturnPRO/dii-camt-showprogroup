@@ -498,7 +498,7 @@ export const api = {
         body: payload,
       }),
     delete: (id: string) =>
-      request<ApiEnvelope<{ message: string }>>(`/courses/${id}`, {
+      request<ApiEnvelope<{ message: string; archived: boolean }>>(`/courses/${id}`, {
         method: "DELETE",
       }),
     lecturerSchedule: (lecturerId?: string) =>

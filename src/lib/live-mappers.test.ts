@@ -42,3 +42,14 @@ describe('mapStudent advisors', () => {
     expect(s.coAdvisorNameThai).toBe('');
   });
 });
+
+describe('mapCourse sections', () => {
+  it("a section with no classes has none — it does not borrow another section's times", () => {
+    const course = mapCourse({ id: 'c', code: 'X', sections: [
+      { id: 's1', number: '01', schedule: [{ day: 'monday', startTime: '09:00', endTime: '12:00' }] },
+      { id: 's2', number: '02', schedule: [] },
+    ] });
+    expect(course.sections[1].schedule).toEqual([]);
+    expect(course.sections[0].schedule).toHaveLength(1);
+  });
+});

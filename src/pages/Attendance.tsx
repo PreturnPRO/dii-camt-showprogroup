@@ -306,7 +306,7 @@ export default function Attendance() {
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.courseLabel}</label>
                             <Select value={selectedCourse} onValueChange={setSelectedCourse}>
                                 <SelectTrigger className="rounded-xl"><SelectValue placeholder={t.attendancePage.selectCourse} /></SelectTrigger>
-                                <SelectContent>{courses.map(c => (<SelectItem key={c.id} value={c.id}>{c.code} {c.name}</SelectItem>))}</SelectContent>
+                                <SelectContent>{courses.map(c => (<SelectItem key={c.id} value={c.id}>{c.code} {c.name} ({c.semester}/{c.academicYear})</SelectItem>))}</SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
