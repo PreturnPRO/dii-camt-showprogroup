@@ -1,4 +1,4 @@
-import { Role } from "@prisma/client";
+import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { isStaffOrAdmin, PUBLIC_USER_SELECT } from "../services/access-policy";
@@ -30,9 +30,14 @@ const normalizePhone = (value: unknown) => {
 const safeIdentifier = (value: string, fallback: string) =>
   value.replace(/[^a-zA-Z0-9]/g, "").toLowerCase() || fallback.toLowerCase();
 
+/** the student ID rule of the edit form, used by the import and the edit too (G6, staff ST-M1) */
+const STUDENT_ID = /^\d{8,9}$/;
+
 type ImportResult = {
   rowNumber: number;
   status: "created" | "failed";
+  /** why a row failed, for the page to say in Thai */
+  code?: "BAD_STUDENT_ID" | "ADVISOR_NOT_FOUND" | "DUPLICATE" | "ERROR";
   userId?: string;
   identifier?: string;
   email?: string;
@@ -353,6 +358,11 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
       row.email ??
       `${safeIdentifier(row.studentId, `student${rowNumber}`)}@student.showpro.local`;
 
+    if (!STUDENT_ID.test(String(row.studentId).trim())) {
+      results.push({ rowNumber, status: "failed", code: "BAD_STUDENT_ID", identifier: row.studentId, message: "A student ID is 8 or 9 digits" });
+      continue;
+    }
+
     try {
       const duplicateEmail = await prisma.user.findUnique({ where: { email } });
       const duplicateStudent = await prisma.studentProfile.findUnique({
@@ -360,7 +370,8 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
       });
       const advisor = row.advisorEmail
         ? await prisma.lecturerProfile.findFirst({
-            where: { user: { email: { equals: row.advisorEmail, mode: "insensitive" }, isActive: true } },
+            // an exact match: insensitive equals becomes ILIKE, where % and _ are patterns (security L5)
+            where: { user: { email: { equals: row.advisorEmail.replace(/[\\%_]/g, "\\$&"), mode: "insensitive" }, isActive: true } },
             select: { id: true },
           })
         : null;
@@ -368,6 +379,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
         results.push({
           rowNumber,
           status: "failed",
+          code: "ADVISOR_NOT_FOUND",
           identifier: row.studentId,
           message: `Advisor ${row.advisorEmail} is not a lecturer in the system`,
         });
@@ -378,6 +390,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
         results.push({
           rowNumber,
           status: "failed",
+          code: "DUPLICATE",
           identifier: row.studentId,
           message: "Duplicate student email or studentId",
         });
@@ -441,6 +454,7 @@ export const importStudentsHandler = asyncHandler(async (req, res) => {
       results.push({
         rowNumber,
         status: "failed",
+        code: "ERROR",
         identifier: row.studentId,
         message: error instanceof Error ? error.message : "Import failed",
       });
@@ -510,6 +524,18 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
     user.role === Role.STUDENT && "advisorId" in roleData
       ? { advisorId: await lecturerProfileIdOrNull(roleData.advisorId) }
       : {};
+  // the student ID changes only when a different one is sent; then it must fit the rule and be free (ST-M1)
+  const nextStudentId = typeof roleData.studentId === "string" ? roleData.studentId.trim() : undefined;
+  const studentIdChange =
+    user.role === Role.STUDENT && user.studentProfile && nextStudentId && nextStudentId !== user.studentProfile.studentId
+      ? nextStudentId
+      : undefined;
+  if (studentIdChange !== undefined) {
+    if (!STUDENT_ID.test(studentIdChange)) throw new AppError(400, "A student ID is 8 or 9 digits", { code: "BAD_STUDENT_ID" });
+    if (await prisma.studentProfile.findUnique({ where: { studentId: studentIdChange } })) {
+      throw new AppError(409, "Another student has this ID", { code: "STUDENT_ID_TAKEN" });
+    }
+  }
   const newPasswordHash = req.body.password ? await hashPassword(req.body.password) : undefined;
 
   // a reset password, a deactivation or a new role ends every signed-in device of that user
@@ -618,6 +644,7 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
           await tx.studentProfile.update({
             where: { userId: user.id },
             data: {
+              ...(studentIdChange ? { studentId: studentIdChange } : {}),
               major: roleData.major,
               program: roleData.program,
               year: roleData.year,
@@ -715,6 +742,12 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
         adminProfile: true,
       },
     });
+  }).catch((error) => {
+    // two staff giving the same ID at once: the unique index decides, and the answer says why (review L1)
+    if (studentIdChange && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new AppError(409, "Another student has this ID", { code: "STUDENT_ID_TAKEN" });
+    }
+    throw error;
   });
   disconnectSessions(revokedSessions);
 

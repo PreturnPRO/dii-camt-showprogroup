@@ -122,48 +122,52 @@ export const enrollActivity = asyncHandler(async (req, res) => {
   const student = await getStudentProfileByUserId(currentUser.id);
   const activityId = String(req.params.activityId);
 
-  const activity = await prisma.activity.findUnique({
-    where: { id: activityId },
-    include: { enrollments: true },
-  });
+  const enrollment = await prisma.$transaction(async (tx) => {
+    // one enrollment at a time per activity, so the last seat goes to one student (G6)
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`activity-enroll|${activityId}`}))::text`;
+    const activity = await tx.activity.findUnique({
+      where: { id: activityId },
+      include: { enrollments: true },
+    });
 
-  if (!activity) {
-    throw new AppError(404, "Activity not found");
-  }
+    if (!activity) {
+      throw new AppError(404, "Activity not found");
+    }
 
-  if (UNAPPROVED.includes(activity.status)) {
-    throw new AppError(409, "This activity has not been approved yet");
-  }
+    if (UNAPPROVED.includes(activity.status)) {
+      throw new AppError(409, "This activity has not been approved yet");
+    }
 
-  if (activity.registrationStatus !== "open") {
-    throw new AppError(400, "Registration is closed for this activity");
-  }
+    if (["cancelled", "completed"].includes(activity.status)) {
+      throw new AppError(409, "This activity is closed", { code: "ACTIVITY_CLOSED", status: activity.status });
+    }
 
-  if (
-    activity.maxParticipants &&
-    activity.enrollments.length >= activity.maxParticipants
-  ) {
-    throw new AppError(400, "This activity is full");
-  }
+    if (activity.registrationStatus !== "open") {
+      throw new AppError(400, "Registration is closed for this activity");
+    }
 
-  const enrollment = await prisma.activityEnrollment.upsert({
-    where: {
-      activityId_studentId: {
+    // enrolling again must not rewrite the mark staff gave (security M2)
+    if (activity.enrollments.some((e) => e.studentId === student.id)) {
+      throw new AppError(409, "You are already enrolled in this activity", { code: "ALREADY_ENROLLED" });
+    }
+
+    if (
+      activity.maxParticipants &&
+      activity.enrollments.length >= activity.maxParticipants
+    ) {
+      throw new AppError(400, "This activity is full");
+    }
+
+    return tx.activityEnrollment.create({
+      data: {
         activityId: activity.id,
         studentId: student.id,
+        status: "registered",
       },
-    },
-    update: {
-      status: "registered",
-    },
-    create: {
-      activityId: activity.id,
-      studentId: student.id,
-      status: "registered",
-    },
-    include: {
-      activity: true,
-    },
+      include: {
+        activity: true,
+      },
+    });
   });
 
   res.status(201).json({

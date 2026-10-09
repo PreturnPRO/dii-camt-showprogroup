@@ -78,7 +78,8 @@ router.post(
 router.patch(
   "/appointments/:id/status",
   requireAuth,
-  checkRole([Role.LECTURER, Role.STAFF, Role.ADMIN]),
+  // staff and admin see the list only (ruling); a student may cancel their own booking (owner decision 9/10/69)
+  checkRole([Role.LECTURER, Role.STUDENT]),
   validate(appointmentStatusSchema),
   updateAppointmentStatus
 );

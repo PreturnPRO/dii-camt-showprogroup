@@ -1,5 +1,8 @@
 import { Role } from "@prisma/client";
-import { thaiDateTime } from "../services/attendance";
+import { thaiDateTime, thaiDay } from "../services/attendance";
+
+const BOOKING_DAYS_AHEAD = 30;
+const APPOINTMENT_STATUS_TH: Record<string, string> = { pending: "รอยืนยัน", confirmed: "ยืนยันแล้ว", completed: "พบแล้ว", cancelled: "ยกเลิกแล้ว" };
 
 import { prisma } from "../lib/prisma";
 import { getLecturerProfileByUserId, getStudentProfileByUserId } from "../services/profile.service";
@@ -252,6 +255,10 @@ export const createAppointment = asyncHandler(async (req, res) => {
   if (thaiDateTime(date, req.body.startTime) <= new Date()) {
     throw new AppError(400, "Choose a time that has not passed yet");
   }
+  // owner decision 9/10/69 (G6): at most 30 days ahead
+  if (date.getTime() > thaiDay(new Date()).getTime() + BOOKING_DAYS_AHEAD * 86400000) {
+    throw new AppError(400, `Book at most ${BOOKING_DAYS_AHEAD} days ahead`, { code: "TOO_FAR", days: BOOKING_DAYS_AHEAD });
+  }
   const slot = await prisma.officeHour.findFirst({
     where: {
       lecturerId: lecturer.id,
@@ -265,6 +272,15 @@ export const createAppointment = asyncHandler(async (req, res) => {
 
   const appointment = await prisma.$transaction(async (tx) => {
     // one booking at a time per lecturer and day, then check nothing active overlaps this slot
+    // owner decision 9/10/69 (G6): one upcoming booking per student and lecturer — serialized per pair
+    await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`appointment-student|${student.id}|${lecturer.id}`}))::text`;
+    const upcoming = await tx.appointment.findMany({
+      where: { studentId: student.id, lecturerId: lecturer.id, status: { in: ["pending", "confirmed"] }, date: { gte: thaiDay(new Date()) } },
+      select: { date: true, endTime: true },
+    });
+    if (upcoming.some((a) => thaiDateTime(a.date, a.endTime) > new Date())) {
+      throw new AppError(409, "You already have an upcoming appointment with this lecturer", { code: "ONE_PER_LECTURER" });
+    }
     await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`appointment|${lecturer.id}|${req.body.date}`}))::text`;
     const taken = await tx.appointment.count({
       where: {
@@ -330,43 +346,78 @@ export const updateAppointmentStatus = asyncHandler(async (req, res) => {
   const appointmentId = String(req.params.id);
   const existing = await prisma.appointment.findUnique({
     where: { id: appointmentId },
-    select: { status: true, lecturer: { select: { userId: true } } },
+    select: { status: true, date: true, startTime: true, lecturer: { select: { userId: true } }, student: { select: { userId: true } } },
   });
   if (!existing) {
     throw new AppError(404, "Appointment not found");
   }
-  if (currentUser.role === Role.LECTURER && existing.lecturer.userId !== currentUser.id) {
+  const isStudent = currentUser.role === Role.STUDENT;
+  // the lecturer runs their own bookings; a student may only cancel their own (owner decision 9/10/69)
+  if (isStudent ? existing.student.userId !== currentUser.id : existing.lecturer.userId !== currentUser.id) {
     throw new AppError(403, "You can only update your own appointments");
+  }
+  if (isStudent && req.body.status !== "cancelled") {
+    throw new AppError(403, "A student can only cancel a booking");
   }
   const allowed: Record<string, string[]> = { pending: ["confirmed", "cancelled"], confirmed: ["completed", "cancelled"] };
   if (!allowed[existing.status]?.includes(req.body.status)) {
     // a cancelled or completed booking stays closed; its slot may already belong to someone else
-    throw new AppError(409, `An appointment that is ${existing.status} cannot become ${req.body.status}`);
+    throw new AppError(409, `An appointment that is ${existing.status} cannot become ${req.body.status}`, { code: "CLOSED" });
   }
-  const appointment = await prisma.appointment.update({
+  const started = thaiDateTime(existing.date, existing.startTime) <= new Date();
+  if (req.body.status === "completed" && !started) {
+    throw new AppError(409, "A meeting can be marked as met only once it has started", { code: "NOT_STARTED" });
+  }
+  // a waiting booking whose time has come can only be cancelled (review L5)
+  if (req.body.status === "confirmed" && started) {
+    throw new AppError(409, "This booking's time has passed; cancel it instead", { code: "STARTED" });
+  }
+  if (isStudent && started) {
+    throw new AppError(409, "A booking can be cancelled only before it starts", { code: "STARTED" });
+  }
+  // claim the change: only a booking still in the status we checked moves, so confirm and cancel cannot both win
+  const claimed = await prisma.appointment.updateMany({
+    where: { id: appointmentId, status: existing.status },
+    // the notes are the lecturer's; a student only cancels (review L2)
+    data: { status: req.body.status, ...(isStudent ? {} : { meetingNotes: req.body.meetingNotes, followUp: req.body.followUp }) },
+  });
+  if (claimed.count !== 1) {
+    throw new AppError(409, "The appointment changed meanwhile; reload and try again", { code: "CHANGED" });
+  }
+  const appointment = await prisma.appointment.findUniqueOrThrow({
     where: { id: appointmentId },
-    data: {
-      status: req.body.status,
-      meetingNotes: req.body.meetingNotes,
-      followUp: req.body.followUp,
-    },
     include: {
       lecturer: { include: { user: { select: MESSAGE_PERSON } } },
       student: { include: { user: { select: MESSAGE_PERSON } } },
     },
   });
 
-  await createNotification({
-    userId: appointment.student.userId,
-    title: "Appointment status updated",
-    titleThai: "สถานะการนัดหมายมีการอัปเดต",
-    message: `Your appointment is now marked as ${appointment.status}.`,
-    messageThai: `การนัดหมายของคุณถูกอัปเดตเป็น ${appointment.status}`,
-    type: "appointment",
-    priority: "medium",
-    channels: ["in-app"],
-    actionUrl: "/appointments",
-  });
+  const day = appointment.date.toISOString().slice(0, 10);
+  const statusTh = APPOINTMENT_STATUS_TH[appointment.status] ?? appointment.status;
+  // a failed notification never turns a committed change into an error (review L3)
+  await createNotification(isStudent
+    ? {
+        userId: appointment.lecturer.userId,
+        title: "Appointment cancelled by the student",
+        titleThai: "นักศึกษายกเลิกนัดหมาย",
+        message: `${appointment.student.user.name} cancelled the appointment on ${day} ${appointment.startTime}.`,
+        messageThai: `${appointment.student.user.nameThai} ยกเลิกนัดหมายวันที่ ${day} เวลา ${appointment.startTime}`,
+        type: "appointment",
+        priority: "medium",
+        channels: ["in-app"],
+        actionUrl: "/appointments",
+      }
+    : {
+        userId: appointment.student.userId,
+        title: "Appointment status updated",
+        titleThai: "สถานะการนัดหมายมีการอัปเดต",
+        message: `Your appointment on ${day} ${appointment.startTime} is now ${appointment.status}.`,
+        messageThai: `นัดหมายวันที่ ${day} เวลา ${appointment.startTime} ของคุณ: ${statusTh}`,
+        type: "appointment",
+        priority: "medium",
+        channels: ["in-app"],
+        actionUrl: "/appointments",
+      }).catch((error) => console.error("appointment notification failed", error));
 
   res.json({
     success: true,

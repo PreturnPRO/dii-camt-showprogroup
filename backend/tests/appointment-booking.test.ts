@@ -135,12 +135,15 @@ describe("one lecturer, never two bookings at the same time", () => {
     expect((await setStatus("completed")).status).toBe(409);
   });
 
-  it("pending can be confirmed, and confirmed completed", async () => {
+  it("pending can be confirmed, and confirmed completed once the meeting has started", async () => {
     const { lecturer, book } = await setup();
     const id = (await book({})).body.appointment.id;
     const setStatus = (status: string) => request(app).patch(`/api/appointments/${id}/status`).set("Authorization", lecturer.auth).send({ status });
     expect((await setStatus("completed")).status).toBe(409);
     expect((await setStatus("confirmed")).status).toBe(200);
+    // owner decision 9/10/69: not before it starts (this used to pass for a meeting next week)
+    expect((await setStatus("completed")).status).toBe(409);
+    await prisma.appointment.update({ where: { id }, data: { date: thaiDay(new Date(Date.now() - 86400000)) } });
     expect((await setStatus("completed")).status).toBe(200);
   });
 

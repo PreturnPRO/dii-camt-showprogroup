@@ -8,6 +8,13 @@ let reminderInterval: NodeJS.Timeout | null = null;
 const dayMap = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
 
 export const getAvailableOfficeHourSlots = async (lecturerId: string, date?: string) => {
+  // "2026-02-30" would roll over to March (and some made-up dates threw a 500): refuse what does not exist
+  if (date) {
+    const parsed = new Date(`${date}T00:00:00.000Z`);
+    if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== date) {
+      throw new AppError(400, "That date does not exist");
+    }
+  }
   const lecturer = await prisma.lecturerProfile.findFirst({
     where: {
       OR: [{ id: lecturerId }, { lecturerId }, { userId: lecturerId }],
