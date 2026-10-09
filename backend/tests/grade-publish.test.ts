@@ -145,6 +145,16 @@ describe("grades before the course is published", () => {
     expect(row.workingTotal).toBeNull();
   });
 
+  it("a student cannot drop a course the lecturer has already graded in the draft, and is not told the grade", async () => {
+    const { course, mid, fin } = await makeCourse();
+    await saveScores(course.id, bobId, [{ criteriaId: mid.id, score: 10 }, { criteriaId: fin.id, score: 10 }]);
+
+    const res = await request(app).delete(`/api/enrollments/course/${course.id}`).set("Authorization", `Bearer ${bobToken}`);
+    expect(res.status).toBe(409);
+    expect(JSON.stringify(res.body)).not.toMatch(/\bF\b|grade/i);
+    expect((await prisma.enrollment.findFirstOrThrow({ where: { courseId: course.id, studentId: bobId } })).status).toBe("enrolled");
+  });
+
   it("re-saving the sheet keeps a grade the lecturer gave by hand (I/W)", async () => {
     const { course, mid, fin } = await makeCourse();
     const scores = [{ criteriaId: mid.id, score: 90 }, { criteriaId: fin.id, score: 90 }];

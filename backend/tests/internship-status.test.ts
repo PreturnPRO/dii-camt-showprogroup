@@ -10,6 +10,11 @@ const HOUR = 60 * 60 * 1000;
 describe("internship status", () => {
   it("starts when the student submits their first diary entry, and the 48h reminder then reaches them", async () => {
     const intern = await freshIntern();
+    // the diary needs a company first (owner decision 9/10/69); staff tie one, which does not start the internship
+    const company = await prisma.companyProfile.findFirstOrThrow({ where: { user: { email: "talent@northernsoft.local" } } });
+    await request(app).put(`/api/internship/students/${intern.profile.id}/company`).set("Authorization", await authOf("staff@showpro.local"))
+      .send({ companyId: company.id }).expect(200);
+    expect((await prisma.internshipRecord.findUniqueOrThrow({ where: { studentId: intern.profile.id } })).status).toBe("not_started");
     const res = await request(app).post("/api/internship/logs").set("Authorization", intern.auth)
       .send({ date: "2026-10-01", hours: 8, activities: "First day" });
     expect(res.status).toBe(201);

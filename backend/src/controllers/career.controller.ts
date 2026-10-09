@@ -2,6 +2,7 @@ import { Prisma, Role } from "@prisma/client";
 
 import { prisma } from "../lib/prisma";
 import { gpaBand, isStaffOrAdmin, lecturerProfileIdOf } from "../services/access-policy";
+import { diaryDayProblem, hoursOnDay, MAX_HOURS_PER_DAY } from "../services/internship-hours";
 import { createNotification } from "../services/notification.service";
 import { getCompanyProfileByUserId, getStudentProfileByUserId } from "../services/profile.service";
 import { searchTalent } from "../services/talent.service";
@@ -362,12 +363,14 @@ const forViewer = <T extends { student?: (ApplicantView & object) | null }>(
   if (!application.student) return application;
   const { consent, ...withoutConsent } = application.student;
   if (role !== Role.COMPANY) return { ...application, student: withoutConsent };
-  const { gpa: _gpa, gpax, user, cvUrl, ...student } = withoutConsent;
+  const { gpax, user, cvUrl } = withoutConsent;
   const { email: _email, ...publicUser } = user ?? {};
   const sharesCv = consent?.allowDataSharing === true || (companyId !== undefined && consent?.sharedWithCompanies.includes(companyId) === true);
+  // an allowlist: anything else on the profile (academic status, credits, points…) is not the company's business
+  const { id, userId, studentId, major, program, year, skills } = withoutConsent as ApplicantView & Record<string, unknown>;
   return {
     ...application,
-    student: { ...student, user: publicUser, cvUrl: sharesCv ? cvUrl ?? null : null, gpaBand: gpaBand(gpax) },
+    student: { id, userId, studentId, major, program, year, ...(skills ? { skills } : {}), user: publicUser, cvUrl: sharesCv ? cvUrl ?? null : null, gpaBand: gpaBand(gpax) },
   };
 };
 
@@ -432,7 +435,7 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
   const application = await prisma.application.findUnique({
     where: { id: applicationId },
     include: {
-      jobPosting: true,
+      jobPosting: { include: { company: true } },
     },
   });
 
@@ -444,7 +447,11 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
     throw new AppError(403, "You can only manage applications for your own job postings");
   }
 
-  const updated = await prisma.application.update({
+  const updated = await prisma.$transaction(async (tx) => {
+    if (req.body.status === "accepted" && application.jobPosting.type === "internship") {
+      await tieInternshipCompany(tx, application.studentId, application.jobPosting.company, application.jobPosting.title, { replace: false });
+    }
+    return tx.application.update({
     where: { id: applicationId },
     data: {
       status: req.body.status,
@@ -459,6 +466,7 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
       },
       jobPosting: { include: { company: { include: { user: { select: { id: true, name: true, email: true } } } } } },
     },
+    });
   });
 
   await createNotification({
@@ -477,6 +485,41 @@ export const updateApplicationHandler = asyncHandler(async (req, res) => {
     success: true,
     application: forViewer(updated, currentUser.role, company?.id),
   });
+});
+
+/**
+ * Owner decision 9/10/69: a company is tied to a student's internship when it accepts their internship
+ * application (the first one wins: `replace: false`), or when staff choose it (`replace: true`).
+ */
+const tieInternshipCompany = async (
+  tx: Prisma.TransactionClient,
+  studentId: string,
+  company: { id: string; companyName: string },
+  position: string | undefined,
+  opts: { replace: boolean },
+) => {
+  // lock the student first: two companies accepting at once take turns, and the first one wins
+  await tx.$queryRaw`SELECT "id" FROM "StudentProfile" WHERE "id" = ${studentId} FOR UPDATE`;
+  const record = await tx.internshipRecord.findUnique({ where: { studentId } });
+  // a new company's position replaces the old one, or clears it
+  const data = { companyId: company.id, companyName: company.companyName, position: position ?? null };
+  if (!record) return tx.internshipRecord.create({ data: { studentId, ...data } });
+  if (record.companyId && !opts.replace) return record;
+  return tx.internshipRecord.update({ where: { id: record.id }, data });
+};
+
+export const bindInternshipCompanyHandler = asyncHandler(async (req, res) => {
+  const student = await prisma.studentProfile.findFirst({
+    where: { OR: [{ id: String(req.params.studentId) }, { studentId: String(req.params.studentId) }] },
+  });
+  if (!student) throw new AppError(404, "Student not found");
+  const company = await prisma.companyProfile.findUnique({ where: { id: req.body.companyId } });
+  if (!company) throw new AppError(404, "Company not found");
+  const existing = await prisma.internshipRecord.findUnique({ where: { studentId: student.id } });
+  // a completed internship's certificate names its company; reopen it first
+  if (existing?.status === "completed") throw new AppError(409, "This internship is completed; reopen it before changing the company");
+  const record = await prisma.$transaction((tx) => tieInternshipCompany(tx, student.id, company, req.body.position, { replace: true }));
+  res.json({ success: true, internship: record });
 });
 
 type InternRecordForView = {
@@ -593,6 +636,23 @@ export const getInternshipLogsHandler = asyncHandler(async (req, res) => {
 // a completed or cancelled internship's diary no longer changes: the hours are on its certificate
 const CLOSED_INTERNSHIP = new Set(["completed", "cancelled"]);
 
+const lockInternshipRecord = (tx: Prisma.TransactionClient, recordId: string) =>
+  tx.$queryRaw`SELECT "id" FROM "InternshipRecord" WHERE "id" = ${recordId} FOR UPDATE`;
+
+/** owner decision 9/10/69: a diary day is today or earlier, not before the start month, and a day holds at most 8 hours */
+const assertDiaryDay = (
+  date: Date,
+  hours: number,
+  record: { startMonth: string | null; logs: Array<{ id: string; date: Date; hours: number }> },
+  exceptLogId?: string,
+) => {
+  const problem = diaryDayProblem(date, record.startMonth);
+  if (problem) throw new AppError(400, problem);
+  if (hoursOnDay(record.logs, date, exceptLogId) + hours > MAX_HOURS_PER_DAY) {
+    throw new AppError(400, `A day can hold at most ${MAX_HOURS_PER_DAY} hours of diary entries`);
+  }
+};
+
 export const createInternshipLogHandler = asyncHandler(async (req, res) => {
   const currentUser = requireUser(req);
   const student =
@@ -610,21 +670,23 @@ export const createInternshipLogHandler = asyncHandler(async (req, res) => {
     throw new AppError(400, "studentId is required for non-student roles");
   }
 
-  const record =
-    (await prisma.internshipRecord.findUnique({
-      where: { studentId: student.id },
-    })) ??
-    (await prisma.internshipRecord.create({
-      data: {
-        studentId: student.id,
-      },
-    }));
+  // owner decision 9/10/69: an internship starts only once a company is tied to it
+  const record = await prisma.internshipRecord.findUnique({ where: { studentId: student.id } });
+  if (!record?.companyId) {
+    throw new AppError(409, "Your internship has no company yet. It starts when a company accepts you or staff add one.");
+  }
 
   if (CLOSED_INTERNSHIP.has(record.status)) {
     throw new AppError(409, "This internship is finished; its diary is closed");
   }
 
   const log = await prisma.$transaction(async (tx) => {
+    // the day total is checked under a lock on the record, so two entries sent together cannot both pass
+    await lockInternshipRecord(tx, record.id);
+    assertDiaryDay(req.body.date, req.body.hours, {
+      startMonth: record.startMonth,
+      logs: await tx.internshipLog.findMany({ where: { recordId: record.id }, select: { id: true, date: true, hours: true } }),
+    });
     // the first diary entry is when an internship starts; a status staff already set is left alone
     await tx.internshipRecord.updateMany({
       where: { id: record.id, status: "not_started" },
@@ -709,9 +771,14 @@ export const updateInternshipLogHandler = asyncHandler(async (req, res) => {
   if (!student || log.record.studentId !== student.id) throw new AppError(403, "You can only edit your own diary entries");
   if (CLOSED_INTERNSHIP.has(log.record.status)) throw new AppError(409, "This internship is finished; its diary is closed");
   if (log.reviewStatus === "approved") throw new AppError(409, "An approved diary entry can no longer be edited");
-
   // guarded write: an approval that lands between the read above and this write wins
-  const written = await prisma.internshipLog.updateMany({
+  const written = await prisma.$transaction(async (tx) => {
+    await lockInternshipRecord(tx, log.recordId);
+    assertDiaryDay(req.body.date, req.body.hours, {
+      startMonth: log.record.startMonth,
+      logs: await tx.internshipLog.findMany({ where: { recordId: log.recordId }, select: { id: true, date: true, hours: true } }),
+    }, log.id);
+    return tx.internshipLog.updateMany({
     where: { id: log.id, reviewStatus: { not: "approved" } },
     data: {
       date: req.body.date,
@@ -725,6 +792,7 @@ export const updateInternshipLogHandler = asyncHandler(async (req, res) => {
       reviewedById: null,
       reviewedAt: null,
     },
+    });
   });
   if (!written.count) throw new AppError(409, "An approved diary entry can no longer be edited");
   const updated = await prisma.internshipLog.findUniqueOrThrow({ where: { id: log.id } });
@@ -747,6 +815,12 @@ export const updateInternshipLogHandler = asyncHandler(async (req, res) => {
 export const updateInternshipStatusHandler = asyncHandler(async (req, res) => {
   const record = await prisma.internshipRecord.findUnique({ where: { id: String(req.params.id) } });
   if (!record) throw new AppError(404, "Internship record not found");
+  if (req.body.status === "completed" && !record.companyId) {
+    throw new AppError(409, "An internship without a company cannot be completed");
+  }
+  if (req.body.status === "completed" && record.status === "cancelled") {
+    throw new AppError(409, "A cancelled internship must be reopened before it can be completed");
+  }
   const { internship, revoked } = await prisma.$transaction(async (tx) => {
     const internship = await tx.internshipRecord.update({
       where: { id: record.id },

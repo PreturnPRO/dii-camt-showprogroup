@@ -31,6 +31,8 @@ export const serializeStudentProfile = (student: Awaited<ReturnType<typeof getSt
   earnedCredits: student.earnedCredits,
   requiredCredits: student.requiredCredits,
   academicStatus: student.academicStatus,
+  // the student's own CV link (Settings); a company sees it only through a sharing consent
+  cvUrl: student.cvUrl,
   advisor: student.advisor
     ? {
         id: student.advisor.id,
@@ -53,9 +55,9 @@ export const serializeStudentProfile = (student: Awaited<ReturnType<typeof getSt
   timeline: student.timeline,
 });
 
-/** Company view: no exact grades, consent settings, internship or timeline — only a GPA band. */
+/** Company view: no exact grades, academic status (owner decision 9/10/69), consent settings, internship or timeline — only a GPA band. */
 export const serializeStudentProfileForCompany = (student: Awaited<ReturnType<typeof getStudentProfileByAnyId>>) => {
-  const { gpa, gpax, consent, internship, timeline, ...rest } = serializeStudentProfile(student);
+  const { gpa, gpax, consent, internship, timeline, academicStatus: _academicStatus, ...rest } = serializeStudentProfile(student);
   return { ...rest, gpaBand: gpaBand(gpax || gpa) };
 };
 
@@ -327,7 +329,8 @@ export const getStudentProfilesHandler = asyncHandler(async (req, res) => {
       year: student.year,
       semester: student.semester,
       academicYear: student.academicYear,
-      academicStatus: student.academicStatus,
+      // a company sees a GPA band only, never the academic status (owner decision 9/10/69)
+      ...(canSeeExactGrades ? { academicStatus: student.academicStatus } : {}),
       totalCredits: student.totalCredits,
       earnedCredits: student.earnedCredits,
       requiredCredits: student.requiredCredits,

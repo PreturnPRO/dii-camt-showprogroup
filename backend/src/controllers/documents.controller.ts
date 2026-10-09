@@ -15,6 +15,7 @@ import { thaiDay } from "../services/attendance";
 import { getStudentProfileByAnyId, getStudentProfileByUserId } from "../services/profile.service";
 import { asyncHandler } from "../utils/async-handler";
 import { AppError } from "../utils/errors";
+import { certificateHours } from "../services/internship-hours";
 import { requireUser } from "../utils/user";
 
 
@@ -134,7 +135,11 @@ export const getInternshipCertificate = asyncHandler(async (req, res) => {
     throw new AppError(409, "The internship is not marked completed yet");
   }
 
-  const totalHours = student.internship.logs.reduce((sum, log) => sum + log.hours, 0);
+  if (!student.internship.companyId) {
+    throw new AppError(409, "The internship has no company");
+  }
+  // owner decision 9/10/69: approved diary hours only, inside the internship's days, at most 8 a day
+  const totalHours = certificateHours(student.internship.logs, { startMonth: student.internship.startMonth, today: new Date() });
   const verification = await issueVerification("internship-certificate", student.id, currentUser.id);
   const pdf = await buildInternshipCertificatePdf({
     studentName: student.user.name,

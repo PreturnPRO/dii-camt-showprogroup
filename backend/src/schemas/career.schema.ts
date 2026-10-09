@@ -55,12 +55,17 @@ export const internshipLogCreateSchema = z.object({
   studentId: z.string().optional(),
   date: z.coerce.date(),
   activities: z.string().min(1),
-  hours: z.coerce.number().int().min(1).max(16),
+  hours: z.coerce.number().int().min(1).max(8),
   learnings: z.string().optional(),
   challenges: z.string().optional(),
 });
 
 export const internshipLogUpdateSchema = internshipLogCreateSchema.omit({ studentId: true });
+
+export const internshipCompanySchema = z.object({
+  companyId: z.string().min(1),
+  position: z.string().trim().min(1).max(200).optional(),
+});
 
 export const internshipStatusSchema = z.object({
   status: z.enum(["in_progress", "completed", "cancelled"]),

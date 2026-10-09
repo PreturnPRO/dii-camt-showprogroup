@@ -190,15 +190,17 @@ export const dropCourseByStudent = async (currentUser: any, courseId: string) =>
     include: {
       student: { include: { user: true } },
       course: true
-    }
+    },
+    omit: { workingLetterGrade: false },
   });
 
   if (!existing) {
     throw new AppError(404, "Enrollment not found");
   }
-  // owner decision 7/10/69: a course that already has a grade stays on the record
-  if (existing.letterGrade !== null) {
-    throw new AppError(409, "A graded course cannot be dropped");
+  // owner decisions 7/10/69 + 9/10/69: once there is a grade — published or still a draft on the
+  // lecturer's sheet — the course stays on the record; the answer never says which, or what grade
+  if (existing.letterGrade !== null || existing.workingLetterGrade !== null) {
+    throw new AppError(409, "This course can no longer be dropped. Please contact the lecturer.");
   }
 
   // soft delete: เปลี่ยนสถานะเป็น dropped (กัน FK กับ gradeHistory/scores + เก็บประวัติเกรด)

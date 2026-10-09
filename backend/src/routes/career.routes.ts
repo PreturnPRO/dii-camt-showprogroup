@@ -15,6 +15,7 @@ import {
   internshipLogReviewSchema,
   internshipLogUpdateSchema,
   internshipStatusSchema,
+  internshipCompanySchema,
   internshipDocumentCreateSchema,
   internshipDocumentStatusSchema,
   talentQuerySchema,
@@ -36,6 +37,7 @@ import {
   reviewInternshipLogHandler,
   updateInternshipLogHandler,
   updateInternshipStatusHandler,
+  bindInternshipCompanyHandler,
   createInternshipDocumentHandler,
   updateInternshipDocumentStatusHandler,
   searchTalentHandler,
@@ -151,6 +153,14 @@ router.patch(
   checkRole([Role.STUDENT]),
   validate(internshipLogUpdateSchema),
   updateInternshipLogHandler
+);
+
+router.put(
+  "/internship/students/:studentId/company",
+  requireAuth,
+  checkRole([Role.STAFF, Role.ADMIN]),
+  validate(internshipCompanySchema),
+  bindInternshipCompanyHandler
 );
 
 router.patch(
