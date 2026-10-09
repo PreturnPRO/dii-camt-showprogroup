@@ -184,6 +184,8 @@ export interface Course {
   lecturerName: string;
   sections: Section[];
   status?: 'draft' | 'pending' | 'active' | 'archived';
+  /** ISO time the lecturer published the course's grades; unset = students do not see them yet */
+  gradesPublishedAt?: string;
 
   // Course info
   description?: string;

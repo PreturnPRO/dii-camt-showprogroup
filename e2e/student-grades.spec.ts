@@ -49,3 +49,22 @@ test("the dashboards' latest GPA is the current term GPA (or '-'), the same numb
   await page.getByRole("tab", { name: "ผลการเรียน" }).click();
   await expect(page.getByTestId("gpa-latest").first()).toHaveText(expected);
 });
+
+test("the status card shows the recorded standing, not a fixed 'normal · no risk'", async ({ page }) => {
+  // chompoo is recorded as at risk in the seed
+  await login(page, "chompoo@student.showpro.local");
+  await page.goto("/grades");
+  const main = page.locator("main");
+  await expect(main.getByTestId("academic-standing")).toHaveText("เสี่ยง");
+  await expect(main.getByText("ไม่มีความเสี่ยง")).toHaveCount(0);
+  await page.goto("/dashboard");
+  await expect(page.getByTestId("academic-standing-chip").first()).toHaveText("สถานะเสี่ยง");
+});
+
+test("when the grades cannot load, the page says so instead of showing GPAX 0.00", async ({ page }) => {
+  await login(page, "alice@student.showpro.local");
+  await page.route("**/api/students/stats", (route) => route.fulfill({ status: 500, body: "{}" }));
+  await page.goto("/grades");
+  await expect(page.getByRole("alert")).toContainText("โหลดผลการเรียนไม่สำเร็จ");
+  await expect(page.getByTestId("gpax")).toHaveCount(0);
+});

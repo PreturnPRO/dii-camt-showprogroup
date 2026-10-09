@@ -18,6 +18,8 @@ import { asArray, asNumber, asRecord, asString } from '@/lib/live-data';
 import { mapCourse } from '@/lib/live-mappers';
 import type { Course } from '@/types';
 import { solidBg } from '@/lib/flat-color';
+import { gradeSheetPayload, sheetCell } from '@/lib/grade-sheet';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 type EnrollmentRow = {
   id: string;
@@ -55,6 +57,12 @@ export function LecturerGradingView() {
   const [selectedCourseId, setSelectedCourseId] = useState<string>(() => searchParams.get('courseId') || 'all');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  // total/letter cells the lecturer typed into since the last save; only those are sent (grade-sheet.ts)
+  const [edited, setEdited] = useState<Set<string>>(() => new Set());
+  const [confirmPublish, setConfirmPublish] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
+  // students the server said still lack a complete grade on the last publish attempt
+  const [publishMissing, setPublishMissing] = useState<string[]>([]);
   // rows the server rejected on the last save (the whole batch is saved or none of it)
   const [gradeRowErrors, setGradeRowErrors] = useState<Array<{ studentCode: string; message: string }>>([]);
 
@@ -79,10 +87,11 @@ export function LecturerGradingView() {
             const studentRecord = asRecord(enrollment.student);
             const studentUser = asRecord(studentRecord.user);
             const course = asRecord(enrollment.course);
+            // the lecturer works on the grade sheet; total/letterGrade are only what students were shown
             const total =
-              enrollment.total === null || typeof enrollment.total === 'undefined'
+              enrollment.workingTotal === null || typeof enrollment.workingTotal === 'undefined'
                 ? undefined
-                : asNumber(enrollment.total, 0);
+                : asNumber(enrollment.workingTotal, 0);
 
             const courseMatch = loadedCourses.find((c) => c.id === asString(enrollment.courseId));
             const criteria = (courseMatch?.gradingCriteria ?? []).map((criterion, index) => ({
@@ -105,8 +114,8 @@ export function LecturerGradingView() {
                 return { criteriaId: asString(scoreRec.criteriaId), score: asNumber(scoreRec.score, 0) };
               }),
               total,
-              letterGrade: asString(enrollment.letterGrade),
-              remarks: asString(enrollment.remarks),
+              letterGrade: asString(enrollment.workingLetterGrade),
+              remarks: asString(enrollment.workingRemarks),
             };
           });
           setEnrollments(mappedEnrollments);
@@ -133,6 +142,8 @@ export function LecturerGradingView() {
       current.map((item) => {
         if (item.id !== id) return item;
         if (value === '') return item;
+        // an unsaved score keeps "publish" disabled; it is not a total/letter cell, so the payload ignores it
+        setEdited((cells) => new Set(cells).add(`${id}:score`));
         const scores = item.scores.filter((score) => score.criteriaId !== criteriaId);
         scores.push({ criteriaId, score: Number(value) });
         return { ...item, scores };
@@ -141,6 +152,7 @@ export function LecturerGradingView() {
   };
 
   const updateEnrollmentDraft = (id: string, field: 'total' | 'letterGrade' | 'remarks', value: string) => {
+    setEdited((current) => new Set(current).add(field === 'remarks' ? `${id}:remarks` : sheetCell(id, field)));
     setEnrollments((current) =>
       current.map((item) =>
         item.id !== id
@@ -157,16 +169,7 @@ export function LecturerGradingView() {
     const targetEnrollments =
       selectedCourseId === 'all' ? enrollments : enrollments.filter((item) => item.courseId === selectedCourseId);
 
-    const payloadGrades = targetEnrollments.map((item) => ({
-      enrollmentId: item.id,
-      // the bulk schema identifies each row by student + course
-      studentId: item.studentId,
-      courseId: item.courseId,
-      scores: item.scores,
-      total: item.total,
-      letterGrade: item.letterGrade || undefined,
-      remarks: item.remarks || undefined,
-    }));
+    const payloadGrades = gradeSheetPayload(targetEnrollments, edited);
 
     if (payloadGrades.length === 0) {
       toast.info(language === 'th' ? 'ไม่มีรายการคะแนนที่ต้องบันทึก' : 'No grades to save');
@@ -190,9 +193,9 @@ export function LecturerGradingView() {
           if (!updated) return item;
           return {
             ...item,
-            total: updated.total === null ? undefined : asNumber(updated.total, item.total ?? 0),
-            letterGrade: asString(updated.letterGrade, item.letterGrade),
-            remarks: asString(updated.remarks, item.remarks),
+            total: updated.workingTotal === null ? undefined : asNumber(updated.workingTotal, item.total ?? 0),
+            letterGrade: asString(updated.workingLetterGrade, item.letterGrade),
+            remarks: asString(updated.workingRemarks, item.remarks),
             scores: asArray(updated.scores).length
               ? asArray(updated.scores).map((score) => {
                   const scoreRec = asRecord(score);
@@ -202,7 +205,14 @@ export function LecturerGradingView() {
           };
         }),
       );
-      toast.success(language === 'th' ? 'บันทึกคะแนนแล้ว' : 'Grades saved');
+      // only the rows just saved are clean; edits in other courses stay pending
+      const saved = new Set(targetEnrollments.map((item) => item.id));
+      setEdited((cells) => new Set([...cells].filter((cell) => !saved.has(cell.split(':')[0]))));
+      toast.success(
+        selectedCourse && !selectedCourse.gradesPublishedAt
+          ? (language === 'th' ? 'บันทึกคะแนนแล้ว — นักศึกษายังไม่เห็นจนกว่าจะประกาศเกรด' : 'Grades saved — students will not see them until you publish')
+          : (language === 'th' ? 'บันทึกคะแนนแล้ว' : 'Grades saved'),
+      );
     } catch (error) {
       console.warn('Unable to save grades', error);
       // ApiError.details is the whole error payload: { message, details: { rows } }
@@ -224,6 +234,40 @@ export function LecturerGradingView() {
 
   const filteredEnrollments =
     selectedCourseId === 'all' ? enrollments : enrollments.filter((item) => item.courseId === selectedCourseId);
+  const selectedCourse = courses.find((course) => course.id === selectedCourseId);
+
+  const publishGrades = async () => {
+    if (!selectedCourse) return;
+    setIsPublishing(true);
+    setPublishMissing([]);
+    try {
+      const response = await api.grades.publish(selectedCourse.id);
+      setCourses((current) =>
+        current.map((course) => (course.id === selectedCourse.id ? { ...course, gradesPublishedAt: response.course.gradesPublishedAt } : course)),
+      );
+      setConfirmPublish(false);
+      toast.success(language === 'th' ? `ประกาศเกรด ${selectedCourse.code} แล้ว นักศึกษาเห็นเกรดและได้รับแจ้งเตือน` : `Grades for ${selectedCourse.code} published`);
+    } catch (error) {
+      // the server lists who is not complete yet: { details: { missing: [{ studentId, reason }] } }
+      const payload = error instanceof ApiError ? asRecord(asRecord(error.details).details) : {};
+      const missing = asArray(payload.missing).map((item) => {
+        const row = asRecord(item);
+        const student = filteredEnrollments.find((e) => e.studentId === asString(row.studentId));
+        const who = student ? `${student.studentCode} ${student.studentName}` : asString(row.studentCode, asString(row.studentId));
+        const why = asString(row.reason) === 'no grade'
+          ? (language === 'th' ? 'ยังไม่มีเกรด' : 'no grade')
+          : (language === 'th' ? 'คะแนนยังไม่ครบทุกเกณฑ์' : 'not every criterion scored');
+        return `${who} — ${why}`;
+      });
+      setPublishMissing(missing);
+      setConfirmPublish(false);
+      toast.error(missing.length > 0
+        ? (language === 'th' ? 'ยังประกาศไม่ได้ — มีนักศึกษาที่เกรดยังไม่ครบ ดูรายชื่อด้านล่าง' : 'Cannot publish yet — some students are not complete, see below')
+        : (language === 'th' ? `ประกาศเกรดไม่สำเร็จ${error instanceof Error && error.message ? ` (${error.message})` : ''}` : `Unable to publish grades${error instanceof Error && error.message ? ` (${error.message})` : ''}`));
+    } finally {
+      setIsPublishing(false);
+    }
+  };
 
   const saveableEnrollments = filteredEnrollments.filter(
     (item) => item.scores.length > 0 || item.total !== undefined || Boolean(item.letterGrade) || Boolean(item.remarks),
@@ -363,6 +407,67 @@ export function LecturerGradingView() {
           </div>
         </div>
 
+        {selectedCourse && (
+          <div
+            data-testid="grade-publish-status"
+            className={`mb-4 flex flex-col gap-3 rounded-2xl border p-4 text-sm sm:flex-row sm:items-center sm:justify-between ${
+              selectedCourse.gradesPublishedAt
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/30 dark:text-emerald-300'
+                : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-300'
+            }`}
+          >
+            <p className="leading-relaxed">
+              {selectedCourse.gradesPublishedAt
+                ? (language === 'th'
+                  ? `ประกาศเกรดแล้วเมื่อ ${new Date(selectedCourse.gradesPublishedAt).toLocaleDateString('th-TH', { dateStyle: 'medium' })} — คะแนนที่แก้ตอนนี้นักศึกษาเห็นทันทีและได้รับแจ้งเตือน`
+                  : `Published ${new Date(selectedCourse.gradesPublishedAt).toLocaleDateString('en-GB', { dateStyle: 'medium' })} — changes reach students at once`)
+                : (language === 'th'
+                  ? 'ยังไม่ประกาศเกรด — นักศึกษายังไม่เห็นคะแนนและเกรดของวิชานี้ ประกาศได้เมื่อทุกคนมีคะแนนครบทุกเกณฑ์ (หรือได้ I/W)'
+                  : 'Not published — students cannot see these grades yet. You can publish once everyone has every criterion scored (or an I/W)')}
+            </p>
+            {!selectedCourse.gradesPublishedAt && (
+              <Button
+                onClick={() => setConfirmPublish(true)}
+                disabled={isPublishing || filteredEnrollments.some((row) => [...edited].some((cell) => cell.startsWith(`${row.id}:`)))}
+                title={edited.size > 0 ? (language === 'th' ? 'บันทึกคะแนนก่อนประกาศ' : 'Save first') : undefined}
+                className="h-10 shrink-0 rounded-2xl"
+              >
+                {language === 'th' ? 'ประกาศเกรด' : 'Publish grades'}
+              </Button>
+            )}
+          </div>
+        )}
+
+        {publishMissing.length > 0 && (
+          <div role="alert" className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
+            <p className="font-bold mb-2">{language === 'th' ? 'ยังประกาศไม่ได้ — นักศึกษาที่เกรดยังไม่ครบ' : 'Not published — students without a complete grade'}</p>
+            <ul className="space-y-1 leading-relaxed">
+              {publishMissing.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <AlertDialog open={confirmPublish} onOpenChange={setConfirmPublish}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{language === 'th' ? `ประกาศเกรด ${selectedCourse?.code ?? ''}?` : `Publish grades for ${selectedCourse?.code ?? ''}?`}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === 'th'
+                  ? `นักศึกษา ${filteredEnrollments.length} คนจะเห็นเกรดและได้รับแจ้งเตือน และเกรดจะถูกนำไปคิด GPA ทันที หลังประกาศแล้วยังแก้คะแนนได้ แต่ทุกการแก้จะถึงนักศึกษาทันที`
+                  : `${filteredEnrollments.length} students will see their grades, get a notification, and their GPA will be updated. You can still edit afterwards, but every change reaches them at once.`}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isPublishing}>{language === 'th' ? 'ยกเลิก' : 'Cancel'}</AlertDialogCancel>
+              <AlertDialogAction disabled={isPublishing} onClick={(event) => { event.preventDefault(); void publishGrades(); }}>
+                {isPublishing ? (language === 'th' ? 'กำลังประกาศ...' : 'Publishing...') : (language === 'th' ? 'ยืนยันประกาศ' : 'Publish')}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {gradeRowErrors.length > 0 && (
           <div role="alert" className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
             <p className="font-bold mb-2">{language === 'th' ? 'แถวที่ต้องแก้ก่อนบันทึก' : 'Rows to fix before saving'}</p>
@@ -391,9 +496,15 @@ export function LecturerGradingView() {
               >
                 <span>{language === 'th' ? 'นักศึกษา' : 'Student'}</span>
                 <span>{language === 'th' ? 'วิชา' : 'Course'}</span>
-                {Array.from({ length: maxCriteriaCount }, (_, index) => (
-                  <span key={index}>Score {index + 1}</span>
-                ))}
+                {Array.from({ length: maxCriteriaCount }, (_, index) => {
+                  // one course: its criterion names; all courses mix different criteria, so a number
+                  const name = selectedCourseId !== 'all' ? filteredEnrollments[0]?.criteria[index]?.name : undefined;
+                  return (
+                    <span key={index} className="truncate" title={name}>
+                      {name ?? (language === 'th' ? `เกณฑ์ ${index + 1}` : `Criterion ${index + 1}`)}
+                    </span>
+                  );
+                })}
                 <span>Total</span>
                 <span>Grade</span>
                 <span>{language === 'th' ? 'หมายเหตุ' : 'Remarks'}</span>

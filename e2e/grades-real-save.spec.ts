@@ -66,13 +66,41 @@ test("a lecturer's grade sheet really saves, and the student sees every criterio
       await expect(page.getByTestId("grade-row").filter({ hasText: "นักศึกษา เกรด" }).getByTestId(`grade-score-${i}`)).toHaveValue("80");
     }
 
-    // the student's card shows all five criteria, not the first three
+    // the column headers are the criterion names, not "Score 1"
+    for (const name of CRITERIA) await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
+    await expect(page.getByText(/^Score \d$/)).toHaveCount(0);
+
+    const asStudent = async () => {
+      await page.context().clearCookies();
+      await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
+      await login(page, student.email);
+      await page.goto("/grades");
+      return page.getByTestId("grade-card").filter({ hasText: code });
+    };
+
+    // a draft: the student sees the course but no grade, score or "passed"
+    let card = await asStudent();
+    await expect(card).toHaveCount(1);
+    await expect(card.getByTestId("grade-footnote")).toHaveText("ยังไม่ประกาศเกรด");
+    for (const name of CRITERIA) await expect(card).not.toContainText(name, { ignoreCase: true });
+
+    // the lecturer publishes
     await page.context().clearCookies();
     await page.evaluate(() => { localStorage.clear(); sessionStorage.clear(); });
-    await login(page, student.email);
+    await login(page, "narin@showpro.local");
     await page.goto("/grades");
-    const card = page.getByTestId("grade-card").filter({ hasText: code });
+    await page.getByTestId("grade-course-filter").selectOption(course.id);
+    await expect(page.getByTestId("grade-publish-status")).toContainText("ยังไม่ประกาศเกรด");
+    await page.getByRole("button", { name: "ประกาศเกรด" }).click();
+    const published = page.waitForResponse((r) => r.url().endsWith("/publish"));
+    await page.getByRole("button", { name: "ยืนยันประกาศ" }).click();
+    expect((await published).status()).toBe(200);
+    await expect(page.getByTestId("grade-publish-status")).toContainText("ประกาศเกรดแล้ว");
+
+    // the student's card shows all five criteria, not the first three
+    card = await asStudent();
     for (const name of CRITERIA) await expect(card).toContainText(name, { ignoreCase: true });
+    await expect(card.getByTestId("grade-footnote")).toHaveText("ผ่าน");
     await expect(page.getByText(/เป้าหมาย|Target/)).toHaveCount(0);
   } finally {
     await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });

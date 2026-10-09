@@ -324,6 +324,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
     learningOutcomes: asArray<string>(source.learningOutcomes),
     syllabus: asString(source.syllabus, fallback.syllabus ?? ""),
     status: asString(source.status, fallback.status ?? "active") as Course["status"],
+    gradesPublishedAt: asString(source.gradesPublishedAt) || undefined,
     schedule: mappedSchedule,
     enrolledStudents: enrollments
       .map((item) => {
@@ -770,7 +771,7 @@ export const mapTermGpaHistory = (stats: unknown) =>
   asArray(asRecord(stats).termGpa).map((item) => {
     const term = asRecord(item);
     return {
-      semester: `${asString(term.semester)}/${asString(term.academicYear)}`,
+      semester: `${asNumber(term.semester, 0) || "-"}/${asString(term.academicYear, "-")}`,
       gpa: asNumber(term.gpa, 0),
       credits: asNumber(term.credits, 0),
     };

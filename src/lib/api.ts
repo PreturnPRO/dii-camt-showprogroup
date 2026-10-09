@@ -512,6 +512,11 @@ export const api = {
         method: "PATCH",
         body: payload,
       }),
+    publish: (courseId: string) =>
+      request<ApiEnvelope<{ course: { id: string; gradesPublishedAt: string } }>>(
+        `/grades/courses/${encodeURIComponent(courseId)}/publish`,
+        { method: "POST" },
+      ),
     history: (studentId: string) =>
       request<ApiEnvelope<{ student: unknown; history: unknown[] }>>(
         `/grades/history/${encodeURIComponent(studentId)}`,

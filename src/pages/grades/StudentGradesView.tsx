@@ -26,6 +26,7 @@ import { asRecord } from '@/lib/live-data';
 import { mapCourse, mapGrade, mapStudent, mapStudentStatsToStudent, mapTermGpaHistory } from '@/lib/live-mappers';
 import type { Course, Grade, Student } from '@/types';
 import { EMPTY_STUDENT as emptyStudent } from '@/lib/constants/defaults';
+import { academicStanding, gpaxNote, gradeFootnote } from '@/lib/academic-standing';
 
 const gradePoint = (grade?: string) => {
   switch (grade) {
@@ -56,6 +57,9 @@ export function StudentGradesView() {
   const [grades, setGrades] = useState<Grade[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  // profile/stats failed: show that, not a GPAX of 0.00 with "no risk"
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
   // from the server: GPA of the current term (null = nothing graded yet) and one entry per graded term
   const [currentTermGpa, setCurrentTermGpa] = useState<number | null>(null);
   const [termGpaHistory, setTermGpaHistory] = useState<ReturnType<typeof mapTermGpaHistory>>([]);
@@ -63,6 +67,7 @@ export function StudentGradesView() {
   useEffect(() => {
     let mounted = true;
     setIsLoading(true);
+    setLoadFailed(false);
 
     Promise.allSettled([
       api.students.profile(),
@@ -72,6 +77,7 @@ export function StudentGradesView() {
     ])
       .then(([profileResult, statsResult, transcriptResult, coursesResult]) => {
         if (!mounted) return;
+        if (profileResult.status === 'rejected' || statsResult.status === 'rejected') setLoadFailed(true);
 
         let nextStudent = emptyStudent;
         if (profileResult.status === 'fulfilled') {
@@ -103,7 +109,7 @@ export function StudentGradesView() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [reloadKey]);
 
   const handleDownloadTranscript = async () => {
     try {
@@ -139,6 +145,11 @@ export function StudentGradesView() {
     F: studentGrades.filter((g) => g.letterGrade === 'F').length,
   };
 
+  // W, I and ungraded courses carry no grade points, so they do not make a GPAX
+  const hasPublishedGrades = studentGrades.some((g) => g.letterGrade && !['W', 'I', '-'].includes(g.letterGrade));
+  const gpaxLine = gpaxNote(student.gpax, hasPublishedGrades);
+  const standing = academicStanding(student.academicStatus);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center p-24 text-slate-500">
@@ -146,6 +157,19 @@ export function StudentGradesView() {
         <span className="text-sm font-medium">
           {language === 'th' ? 'กำลังโหลดข้อมูลผลการเรียน...' : 'Loading grades...'}
         </span>
+      </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <div role="alert" className="mx-auto max-w-lg rounded-2xl border border-rose-200 bg-rose-50 p-6 text-center text-sm text-rose-700 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-300">
+        <p className="mb-4 leading-relaxed">
+          {language === 'th' ? 'โหลดผลการเรียนไม่สำเร็จ ตัวเลขที่แสดงอาจไม่ถูกต้อง จึงยังไม่แสดง' : 'Could not load your grades, so no numbers are shown.'}
+        </p>
+        <Button variant="outline" onClick={() => setReloadKey((key) => key + 1)}>
+          {language === 'th' ? 'ลองอีกครั้ง' : 'Try again'}
+        </Button>
       </div>
     );
   }
@@ -215,12 +239,16 @@ export function StudentGradesView() {
               </div>
             </div>
             <div className="text-3xl sm:text-4xl font-extrabold font-mono text-emerald-600 dark:text-emerald-400 tracking-tight" data-testid="gpax">
-              {student.gpax.toFixed(2)}
+              {hasPublishedGrades ? student.gpax.toFixed(2) : '-'}
             </div>
           </div>
-          <div className="mt-3 text-[11px] text-emerald-600 dark:text-emerald-400/90 font-medium flex items-center gap-1">
-            {student.gpax >= 3.5 ? <Sparkles className="w-3.5 h-3.5 shrink-0" /> : null}
-            <span>{student.gpax >= 3.5 ? t.grades.excellent : t.grades.normalRange}</span>
+          <div
+            className={`mt-3 text-[11px] font-medium flex items-center gap-1 ${
+              gpaxLine.tone === 'bad' ? 'text-rose-600 dark:text-rose-400' : gpaxLine.tone === 'none' ? 'text-slate-500 dark:text-slate-400' : 'text-emerald-600 dark:text-emerald-400/90'
+            }`}
+          >
+            {gpaxLine.tone === 'excellent' ? <Sparkles className="w-3.5 h-3.5 shrink-0" /> : null}
+            <span data-testid="gpax-note">{language === 'th' ? gpaxLine.th : gpaxLine.en}</span>
           </div>
         </motion.div>
 
@@ -300,16 +328,17 @@ export function StudentGradesView() {
                 <Target className="w-4 h-4" />
               </div>
             </div>
-            <div className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-snug">
-              {t.grades.normal}
+            <div data-testid="academic-standing" className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100 leading-snug">
+              {language === 'th' ? standing.th : standing.en}
             </div>
           </div>
-          <div className="mt-3 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-            </span>
-            {t.grades.noRisk}
+          <div
+            className={`mt-3 text-[11px] font-medium flex items-center gap-1.5 ${
+              standing.tone === 'ok' ? 'text-emerald-600 dark:text-emerald-400' : standing.tone === 'warn' ? 'text-amber-700 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'
+            }`}
+          >
+            <span aria-hidden="true" className={`inline-flex rounded-full h-2 w-2 ${standing.tone === 'ok' ? 'bg-emerald-500' : standing.tone === 'warn' ? 'bg-amber-500' : 'bg-rose-500'}`} />
+            {language === 'th' ? standing.detailTh : standing.detailEn}
           </div>
         </motion.div>
       </div>
@@ -400,7 +429,7 @@ export function StudentGradesView() {
                           grade.letterGrade,
                         )}`}
                       >
-                        {grade.letterGrade}
+                        {grade.letterGrade || '-'}
                       </div>
                     </div>
 
@@ -420,7 +449,7 @@ export function StudentGradesView() {
                         <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-sans font-bold mb-0.5">
                           Total
                         </div>
-                        <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total}</div>
+                        <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total ?? '-'}</div>
                       </div>
                     </div>
                   </div>
@@ -434,8 +463,8 @@ export function StudentGradesView() {
                         <Sparkles className="w-3 h-3" /> {grade.remarks}
                       </span>
                     ) : (
-                      <span className="text-slate-400 dark:text-slate-400 text-[11px]">
-                        {language === 'th' ? 'ผ่านเกณฑ์มาตรฐาน' : 'Standard Passed'}
+                      <span data-testid="grade-footnote" className="text-slate-500 dark:text-slate-400 text-[11px]">
+                        {language === 'th' ? gradeFootnote(grade.letterGrade).th : gradeFootnote(grade.letterGrade).en}
                       </span>
                     )}
                   </div>

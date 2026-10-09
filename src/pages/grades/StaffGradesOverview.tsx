@@ -71,7 +71,8 @@ export function StaffGradesOverview() {
 
   const totalCourses = courses.length;
   const totalEnrollments = enrollments.length;
-  const gradedEnrollments = enrollments.filter((e) => Boolean(e.letterGrade)).length;
+  // the grade sheet (staff receive it), so a draft-graded row is not counted as pending
+  const gradedEnrollments = enrollments.filter((e) => Boolean(e.workingLetterGrade)).length;
   const pendingEnrollments = totalEnrollments - gradedEnrollments;
   const completionRate = totalEnrollments ? Math.round((gradedEnrollments / totalEnrollments) * 100) : 0;
 
@@ -222,7 +223,7 @@ export function StaffGradesOverview() {
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
               {filteredCourses.map((course) => {
                 const courseEnrollments = enrollments.filter((e) => asString(e.courseId) === course.id);
-                const courseGraded = courseEnrollments.filter((e) => Boolean(e.letterGrade)).length;
+                const courseGraded = courseEnrollments.filter((e) => Boolean(e.workingLetterGrade)).length;
                 const isComplete = courseEnrollments.length > 0 && courseGraded === courseEnrollments.length;
 
                 return (
@@ -246,9 +247,13 @@ export function StaffGradesOverview() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {isComplete ? (
+                      {course.gradesPublishedAt ? (
                         <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 text-[10px]">
-                          {language === 'th' ? 'เสร็จสมบูรณ์' : 'Complete'}
+                          {language === 'th' ? 'ประกาศแล้ว' : 'Published'}
+                        </Badge>
+                      ) : isComplete ? (
+                        <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 text-[10px]">
+                          {language === 'th' ? 'ครบ รอประกาศ' : 'Complete, not published'}
                         </Badge>
                       ) : courseGraded > 0 ? (
                         <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 text-[10px]">

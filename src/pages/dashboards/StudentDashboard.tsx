@@ -1,4 +1,5 @@
 import React from 'react';
+import { academicStanding } from '@/lib/academic-standing';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -327,11 +328,10 @@ export default function StudentDashboard() {
               <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/30">
                 GPAX: {gpaxText}
               </Badge>
-              {student.academicStatus === 'normal' && (
-                <Badge className="bg-green-50 text-green-700 border-green-200 dark:bg-green-500/20 dark:text-green-300 dark:border-green-500/30">
-                  {t.studentDashboard.statusNormal}
-                </Badge>
-              )}
+              {/* the recorded standing, not only when it is normal */}
+              <Badge data-testid="academic-standing-chip" className={`text-xs font-medium ${academicStanding(student.academicStatus).tone === 'ok' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50' : academicStanding(student.academicStatus).tone === 'warn' ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/50'}`}>
+                {language === 'th' ? `สถานะ${academicStanding(student.academicStatus).th}` : academicStanding(student.academicStatus).en}
+              </Badge>
             </div>
           </div>
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { mapCourse } from './live-mappers';
+import { mapCourse, mapTermGpaHistory } from './live-mappers';
 
 describe('mapCourse enrolledCount', () => {
   it('uses the server count when the enrollment rows were scoped to the viewer', () => {
@@ -24,5 +24,11 @@ describe('mapCourse section minimum', () => {
   it('keeps each section its own minimum so the edit form does not save 0 back', () => {
     const course = mapCourse({ id: 'c1', sections: [{ id: 's1', number: '01', maxStudents: 30, minStudents: 8 }], enrollments: [] });
     expect(course.sections[0].minStudents).toBe(8);
+  });
+});
+
+describe('mapTermGpaHistory', () => {
+  it('keeps the term number the server sends as a number ("1/2569", not "/2569")', () => {
+    expect(mapTermGpaHistory({ termGpa: [{ semester: 1, academicYear: '2569', gpa: 3.5, credits: 9 }] })[0].semester).toBe('1/2569');
   });
 });

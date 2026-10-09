@@ -1,4 +1,5 @@
 import React from 'react';
+import { academicStanding } from '@/lib/academic-standing';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '@/contexts/LanguageContext';
@@ -608,11 +609,10 @@ export default function PersonalDashboard() {
                             <Badge variant="outline" className="font-mono text-xs font-bold bg-emerald-50/70 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-md">
                                 GPAX: {student.gpax.toFixed(2)}
                             </Badge>
-                            {student.academicStatus === 'normal' && (
-                                <Badge variant="outline" className="text-xs font-medium bg-emerald-50/50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 border-emerald-200/50 dark:border-emerald-800/50 px-2.5 py-0.5 rounded-md">
-                                    {t.personalDashboard.statusNormal}
-                                </Badge>
-                            )}
+                            {/* the recorded standing, not only when it is normal */}
+                            <Badge variant="outline" data-testid="academic-standing-chip" className={`text-xs font-medium ${academicStanding(student.academicStatus).tone === 'ok' ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50' : academicStanding(student.academicStatus).tone === 'warn' ? 'bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/30 dark:text-amber-300 dark:border-amber-800/50' : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/30 dark:text-rose-300 dark:border-rose-800/50'}`}>
+                                {language === 'th' ? `สถานะ${academicStanding(student.academicStatus).th}` : academicStanding(student.academicStatus).en}
+                            </Badge>
                             <Badge variant="outline" className="text-[11px] font-medium bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200/70 dark:border-slate-800 px-2 py-0.5 rounded-md">
                                 {language === 'th' ? 'ที่ปรึกษา: ' : 'Advisor: '} {student.advisorNameThai || student.advisorName || 'ผศ.ดร. นรินทร์ พิชยกุล'}
                             </Badge>
