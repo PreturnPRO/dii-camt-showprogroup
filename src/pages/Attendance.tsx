@@ -14,6 +14,9 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useSocket } from '@/contexts/SocketContext';
 import { api } from '@/lib/api';
 import { asRecord, asString } from '@/lib/live-data';
+import { attendanceTone } from '@/lib/attendance-warning';
+import { attendanceErrorText } from '@/lib/attendance-errors';
+import { courseTerms, coursesInTerm, defaultCourseTerm, termKey } from '@/lib/course-terms';
 import { mapCourse } from '@/lib/live-mappers';
 import { toast } from 'sonner';
 import { thaiToday } from '@/lib/thai-date';
@@ -47,6 +50,25 @@ export default function Attendance() {
     // the dashboard's "เช็คชื่อ" opens one course via ?courseId=
     const [searchParams] = useSearchParams();
     const [selectedCourse, setSelectedCourse] = React.useState(() => searchParams.get('courseId') || '');
+    // the course picker shows one term at a time (newest open term first) and can be searched (G4 รอง c)
+    const selectedRef = React.useRef(selectedCourse);
+    selectedRef.current = selectedCourse;
+    const [termFilter, setTermFilter] = React.useState('');
+    const [courseQuery, setCourseQuery] = React.useState('');
+    const terms = React.useMemo(() => courseTerms(courses), [courses]);
+    const pickerCourses = React.useMemo(() => {
+        const inTerm = coursesInTerm(courses, termFilter, courseQuery);
+        const chosen = courses.find((course) => course.id === selectedCourse);
+        // the chosen course stays listed while a search hides it, so the picker never shows a blank value
+        return chosen && !inTerm.includes(chosen) && termKey({ semester: Number(chosen.semester), academicYear: String(chosen.academicYear) }) === termFilter
+            ? [chosen, ...inTerm]
+            : inTerm;
+    }, [courses, termFilter, courseQuery, selectedCourse]);
+    const changeTerm = (key: string) => {
+        setTermFilter(key);
+        const inTerm = coursesInTerm(courses, key, '');
+        if (!inTerm.some((course) => course.id === selectedCourse)) setSelectedCourse(inTerm[0]?.id ?? '');
+    };
     const [date, setDate] = React.useState(thaiToday());
     const dateRef = React.useRef(date);
     dateRef.current = date;
@@ -112,9 +134,12 @@ export default function Attendance() {
                 if (!mounted) return;
                 const liveCourses = response.courses.map(mapCourse);
                 setCourses(liveCourses);
-                if (liveCourses[0] && !liveCourses.some(course => course.id === selectedCourse)) {
-                    setSelectedCourse(liveCourses[0].id);
-                }
+                // start at the linked course's term, else the newest term with an open course (G4 รอง c)
+                const linked = liveCourses.find((course) => course.id === selectedRef.current);
+                const term = linked ?? defaultCourseTerm(liveCourses);
+                const key = term ? termKey({ semester: Number(term.semester), academicYear: String(term.academicYear) }) : '';
+                setTermFilter(key);
+                setSelectedCourse(linked ? linked.id : coursesInTerm(liveCourses, key, '')[0]?.id ?? '');
             })
             .catch((error) => {
                 console.warn('Unable to load courses for attendance', error);
@@ -123,7 +148,7 @@ export default function Attendance() {
         return () => {
             mounted = false;
         };
-    }, [selectedCourse, user?.role]);
+    }, [user?.role]);
 
     React.useEffect(() => {
         if (!selectedCourse) return;
@@ -193,14 +218,14 @@ export default function Attendance() {
                     item.enrollmentId === row.enrollmentId && item.status === status ? { ...item, status: previous } : item));
             }
             toast.error(language === 'th' ? 'บันทึกการเช็คชื่อไม่สำเร็จ' : 'Could not save attendance', {
-                description: error instanceof Error ? error.message : undefined,
+                description: attendanceErrorText(error, language === 'th'),
             });
         }
     };
 
     const handleGenerateQR = async () => {
         if (!selectedCourse) {
-            toast.error("Please select a course first");
+            toast.error(language === 'th' ? 'กรุณาเลือกรายวิชาก่อน' : 'Please select a course first');
             return;
         }
         try {
@@ -218,8 +243,8 @@ export default function Attendance() {
                 setTimeRemaining(15 * 60);
                 setQrModalOpen(true);
             }
-        } catch (error: any) {
-            toast.error(error.message || "Failed to start session");
+        } catch (error) {
+            toast.error(attendanceErrorText(error, language === 'th') || (language === 'th' ? 'เริ่มเช็คชื่อด้วย QR ไม่สำเร็จ' : 'Failed to start session'));
         }
     };
 
@@ -243,7 +268,7 @@ export default function Attendance() {
             setSummarySessions(Number((res as any).totalSessions) || 0);
             setSummaryModalOpen(true);
         } catch (err: any) {
-            toast.error("Failed to load summary");
+            toast.error(language === 'th' ? 'โหลดสรุปการเข้าเรียนไม่สำเร็จ' : 'Failed to load summary');
         }
     };
 
@@ -255,7 +280,7 @@ export default function Attendance() {
             setSelectedStudentForHistory({ id: studentId, name: studentName });
             setHistoryModalOpen(true);
         } catch (err: any) {
-            toast.error("Failed to load history");
+            toast.error(language === 'th' ? 'โหลดประวัติการเข้าเรียนไม่สำเร็จ' : 'Failed to load history');
         }
     };
 
@@ -304,10 +329,17 @@ export default function Attendance() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.courseLabel}</label>
-                            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
-                                <SelectTrigger className="rounded-xl"><SelectValue placeholder={t.attendancePage.selectCourse} /></SelectTrigger>
-                                <SelectContent>{courses.map(c => (<SelectItem key={c.id} value={c.id}>{c.code} {c.name} ({c.semester}/{c.academicYear})</SelectItem>))}</SelectContent>
+                            <Select value={termFilter} onValueChange={changeTerm}>
+                                <SelectTrigger className="rounded-xl" aria-label={language === 'th' ? 'ภาคเรียน' : 'Term'} data-testid="attendance-term"><SelectValue placeholder={language === 'th' ? 'ภาคเรียน' : 'Term'} /></SelectTrigger>
+                                <SelectContent>{terms.map((term) => (<SelectItem key={termKey(term)} value={termKey(term)}>{language === 'th' ? `ภาคเรียน ${termKey(term)}` : `Term ${termKey(term)}`}</SelectItem>))}</SelectContent>
                             </Select>
+                            <Input type="search" value={courseQuery} onChange={(e) => setCourseQuery(e.target.value)} className="rounded-xl"
+                                aria-label={language === 'th' ? 'ค้นหารายวิชา' : 'Search courses'} placeholder={language === 'th' ? 'ค้นหารหัสหรือชื่อวิชา' : 'Search code or name'} />
+                            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+                                <SelectTrigger className="rounded-xl" aria-label={t.attendancePage.courseLabel} data-testid="attendance-course"><SelectValue placeholder={t.attendancePage.selectCourse} /></SelectTrigger>
+                                <SelectContent>{pickerCourses.map(c => (<SelectItem key={c.id} value={c.id}>{c.code} {c.name} ({c.semester}/{c.academicYear})</SelectItem>))}</SelectContent>
+                            </Select>
+                            {pickerCourses.length === 0 && courseQuery && <p className="text-xs text-slate-500 dark:text-slate-400">{language === 'th' ? 'ไม่พบรายวิชาที่ค้นหาในภาคเรียนนี้' : 'No course matches in this term'}</p>}
                         </div>
                         <div className="space-y-2">
                             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">{t.attendancePage.dateLabel}</label>
@@ -422,8 +454,8 @@ export default function Attendance() {
                         </DialogTitle>
                         <DialogDescription>
                             {selectedCourseInfo?.code} {selectedCourseInfo?.name} · {language === 'th'
-                                ? `คาบที่เช็คแล้ว ${summarySessions} · % = (มา+สาย) ÷ (มา+สาย+ขาด) ไม่นับลาและวันที่ยังไม่เช็ค`
-                                : `${summarySessions} sessions marked · % = (present+late) ÷ (present+late+absent), leave and unmarked days not counted`}
+                                ? `คาบที่เช็คแล้ว ${summarySessions} · % = (มา+สาย) ÷ (มา+สาย+ขาด) ไม่นับลาและวันที่ยังไม่เช็ค · ขึ้นแดงเมื่อนับได้ตั้งแต่ 3 คาบและต่ำกว่า 80%`
+                                : `${summarySessions} sessions marked · % = (present+late) ÷ (present+late+absent), leave and unmarked days not counted · red from 3 counted classes below 80%`}
                         </DialogDescription>
                     </DialogHeader>
                     
@@ -455,7 +487,11 @@ export default function Attendance() {
                                             {row.percentage === null ? (
                                                 <Badge variant="outline" className="text-slate-500">-</Badge>
                                             ) : (
-                                                <Badge variant={row.percentage >= 80 ? "default" : "destructive"} className={row.percentage >= 80 ? "bg-emerald-500" : ""}>
+                                                <Badge
+                                                    variant={attendanceTone(row) === 'low' ? 'destructive' : attendanceTone(row) === 'ok' ? 'default' : 'outline'}
+                                                    className={attendanceTone(row) === 'ok' ? 'bg-emerald-600 text-white' : attendanceTone(row) === 'early' ? 'text-slate-600 dark:text-slate-300' : ''}
+                                                    title={attendanceTone(row) === 'early' ? (language === 'th' ? 'ยังเช็คไม่ถึง 3 คาบ ยังไม่ประเมิน' : 'Fewer than 3 classes counted; not judged yet') : undefined}
+                                                >
                                                     {row.percentage}%
                                                 </Badge>
                                             )}

@@ -104,7 +104,7 @@ test("dashboard and schedule course items lead to /courses", async ({ page, requ
     await page.waitForURL("**/courses");
   } finally {
     await request.delete(`${API}/enrollments/course/${course.id}`, { headers: student });
-    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });
+    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
   }
 });
 

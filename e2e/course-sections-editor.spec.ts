@@ -14,6 +14,13 @@ async function login(page: Page, email: string) {
 const token = async (request: APIRequestContext, email: string) =>
   (await (await request.post(`${API}/auth/login`, { data: { email, password: "Password123!" } })).json()).token as string;
 
+// courses made here are archived afterwards: an active one would hold narin's time in 1/2500 (no teaching two classes at once)
+const made: string[] = [];
+test.afterEach(async ({ request }) => {
+  const staff = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };
+  while (made.length) await request.patch(`${API}/courses/${made.pop()}`, { headers: staff, data: { status: "archived" } });
+});
+
 async function twoSectionCourse(request: APIRequestContext) {
   const staff = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };
   const lecturers = (await (await request.get(`${API}/lecturers`, { headers: staff })).json()).lecturers as Array<{ id: string; user: { email: string } }>;
@@ -22,12 +29,15 @@ async function twoSectionCourse(request: APIRequestContext) {
   const res = await request.post(`${API}/courses`, { headers: staff, data: {
     code, name: code, nameThai: code, credits: 3, semester: 1, academicYear: "2500", year: 2, lecturerId: narin.id, status: "active",
     sections: [
-      { number: "01", maxStudents: 10, schedule: [{ day: "monday", startTime: "09:00", endTime: "12:00" }, { day: "wednesday", startTime: "13:00", endTime: "15:00" }] },
+      // section 01 not on Monday 09:00, where a class added in the editor starts: one lecturer, no overlap
+      { number: "01", maxStudents: 10, schedule: [{ day: "tuesday", startTime: "09:00", endTime: "12:00" }, { day: "wednesday", startTime: "13:00", endTime: "15:00" }] },
       { number: "02", maxStudents: 10, schedule: [] },
     ],
   } });
   expect(res.ok()).toBeTruthy();
-  return { staff, course: (await res.json()).course as { id: string; code: string } };
+  const course = (await res.json()).course as { id: string; code: string };
+  made.push(course.id);
+  return { staff, course };
 }
 
 test("staff edit a two-section course: both sections and each class time survive, and a class added to 02 is saved", async ({ page, request }) => {
@@ -44,7 +54,7 @@ test("staff edit a two-section course: both sections and each class time survive
   const detail = (await (await request.get(`${API}/courses/${course.id}`, { headers: staff })).json()).course as { sections: Array<{ number: string; schedule: Array<{ day: string; startTime: string }> }> };
   const byNumber = Object.fromEntries(detail.sections.map((s) => [s.number, s]));
   expect(Object.keys(byNumber).sort()).toEqual(["01", "02"]);
-  expect(byNumber["01"].schedule.map((s) => `${s.day} ${s.startTime}`).sort()).toEqual(["monday 09:00", "wednesday 13:00"]);
+  expect(byNumber["01"].schedule.map((s) => `${s.day} ${s.startTime}`).sort()).toEqual(["tuesday 09:00", "wednesday 13:00"]);
   expect(byNumber["02"].schedule).toHaveLength(1);
 });
 

@@ -103,6 +103,6 @@ test("a lecturer's grade sheet really saves, and the student sees every criterio
     await expect(card.getByTestId("grade-footnote")).toHaveText("ผ่าน");
     await expect(page.getByText(/เป้าหมาย|Target/)).toHaveCount(0);
   } finally {
-    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });
+    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
   }
 });

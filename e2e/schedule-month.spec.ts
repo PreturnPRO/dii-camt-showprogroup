@@ -72,7 +72,7 @@ test("student schedule switches to a month view kept in the URL, built from the 
     await expect(page.getByTestId("month-calendar")).toHaveCount(0);
   } finally {
     await request.delete(`${API}/enrollments/course/${course.id}`, { headers: student });
-    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });
+    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
   }
 });
 
@@ -98,7 +98,7 @@ test("lecturer month view shows the lecturer's own classes", async ({ page, requ
     await page.getByRole("option", { name: /1\/2569/ }).click();
     await expect(page.locator(`[data-testid=month-event][data-course="${code}"]`)).toHaveCount(thursdays(month).length);
   } finally {
-    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });
+    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
   }
 });
 

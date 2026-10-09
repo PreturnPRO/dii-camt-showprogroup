@@ -4,7 +4,7 @@ const thaiToday = () =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
 
 async function pickDII340(page: Page) {
-  await page.locator("main").getByRole("combobox").first().click();
+  await page.getByTestId("attendance-course").click();
   await page.getByRole("option", { name: /DII340/ }).click();
 }
 
@@ -93,4 +93,18 @@ test("the status counters add up to the class", async ({ page }) => {
     sum += Number(await page.getByTestId(id).textContent());
   }
   expect(sum).toBe(rows);
+});
+
+// owner decision 9/10/69 (G4 รอง d): a day the class does not meet cannot be marked, and the page says why
+test("marking a day without a class is refused with the reason, and the row goes back", async ({ page }) => {
+  await login(page, "narin@showpro.local");
+  await page.waitForURL("**/dashboard");
+  await page.goto("/attendance");
+  await pickDII340(page);
+  await page.locator("main input[type=date]").fill("2026-02-03"); // a Tuesday; DII340 meets on Mondays
+  const firstRow = page.getByTestId("attendance-row").first();
+  await expect(firstRow).toHaveAttribute("data-status", "unmarked");
+  await firstRow.getByTestId("mark-present").click();
+  await expect(page.getByText("วันที่ 2026-02-03 (วันอังคาร) วิชานี้ไม่มีคาบเรียน จึงเช็คชื่อไม่ได้")).toBeVisible();
+  await expect(firstRow).toHaveAttribute("data-status", "unmarked");
 });

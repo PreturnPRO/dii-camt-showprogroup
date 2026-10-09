@@ -103,3 +103,12 @@ test("closing a dialog opened from a menu puts focus back on the menu button", a
   await expect(page.getByRole("dialog")).toHaveCount(0);
   await expect(add).toBeFocused();
 });
+
+// owner 9/10/69: staff reach Network and admin reach Documents from the menu (both pages already allow them)
+for (const [email, href] of [["staff@showpro.local", "/network"], ["admin@showpro.local", "/documents"]] as const) {
+  test(`${email} has ${href} in the menu`, async ({ page }) => {
+    await page.setViewportSize(DESKTOP);
+    await login(page, email);
+    await expect(page.locator(`aside nav a[href='${href}']`)).toHaveCount(1);
+  });
+}

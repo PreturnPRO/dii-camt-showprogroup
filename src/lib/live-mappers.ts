@@ -324,6 +324,7 @@ export const mapCourse = (value: unknown, index = 0): Course => {
     learningOutcomes: asArray<string>(source.learningOutcomes),
     syllabus: asString(source.syllabus, fallback.syllabus ?? ""),
     status: asString(source.status, fallback.status ?? "active") as Course["status"],
+    reviewNote: asString(source.reviewNote) || undefined,
     gradesPublishedAt: asString(source.gradesPublishedAt) || undefined,
     schedule: mappedSchedule,
     enrolledStudents: enrollments

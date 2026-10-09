@@ -10,7 +10,7 @@ async function token(request: APIRequestContext, email: string) {
 
 /** courses cannot be deleted once they have sections; park them in a term nobody uses */
 async function park(request: APIRequestContext, staff: Record<string, string>, ...ids: string[]) {
-  for (const id of ids) await request.patch(`${API}/courses/${id}`, { headers: staff, data: { academicYear: "2500" } });
+  for (const id of ids) await request.patch(`${API}/courses/${id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
 }
 
 async function login(page: Page, email: string) {

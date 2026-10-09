@@ -497,6 +497,10 @@ export const api = {
         method: "PATCH",
         body: payload,
       }),
+    // owner decision 9/10/69: staff approve a waiting course or send it back; the lecturer sends it again
+    review: (id: string, payload: { decision: "approve" | "reject"; reason?: string }) =>
+      request<ApiEnvelope<{ course: unknown }>>(`/courses/${id}/review`, { method: "POST", body: payload }),
+    submit: (id: string) => request<ApiEnvelope<{ course: unknown }>>(`/courses/${id}/submit`, { method: "POST" }),
     delete: (id: string) =>
       request<ApiEnvelope<{ message: string; archived: boolean }>>(`/courses/${id}`, {
         method: "DELETE",

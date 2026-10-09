@@ -42,7 +42,7 @@ test("the lecturer dashboard lists this term's courses with real student and awa
 
   await cards.first().getByRole("link", { name: /เช็คชื่อ|Attendance/ }).click();
   await expect(page).toHaveURL(new RegExp(`/attendance\\?courseId=${first.id}`));
-  await expect(page.locator("button[role=combobox]").first()).toContainText(first.code);
+  await expect(page.getByTestId("attendance-course")).toContainText(first.code);
 
   await page.goBack();
   await page.getByTestId("lecturer-course").first().getByRole("link", { name: /ให้เกรด|Grades/ }).click();

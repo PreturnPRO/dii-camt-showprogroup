@@ -28,7 +28,7 @@ async function classFor(request: APIRequestContext, staff: Record<string, string
   const teaches = opts.teaches ?? "DII340"; // narin; DII420 is mali's
   const seeded = (await (await request.get(`${API}/courses?q=${teaches}`, { headers: staff })).json()).courses.find((x: { code: string }) => x.code === teaches);
   const code = `MV${Date.now().toString(36).toUpperCase()}${Math.random().toString(36).slice(2, 4).toUpperCase()}`;
-  // a fresh room each run: course creation checks rooms across every term, and earlier runs' parked courses still hold theirs
+  // a fresh room each run (parked courses are archived in 2500 and hold no room, but a failed run may leave one)
   const room = await request.post(`${API}/facilities`, { headers: staff, data: { code: `R${code}`, name: `Room ${code}`, building: "E2E", room: code, type: "classroom", capacity: 10, isActive: true } });
   expect(room.ok()).toBeTruthy();
   const facility = (await room.json()).facility as { id: string };
@@ -46,7 +46,7 @@ const cancelMovesOf = async (request: APIRequestContext, staff: Record<string, s
   }
 };
 const park = (request: APIRequestContext, staff: Record<string, string>, id: string) =>
-  request.patch(`${API}/courses/${id}`, { headers: staff, data: { academicYear: "2500" } });
+  request.patch(`${API}/courses/${id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
 
 test("a student sees a staff move in the week it happens", async ({ page, request }) => {
   const staff = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };

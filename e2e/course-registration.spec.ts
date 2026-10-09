@@ -36,7 +36,7 @@ async function twoSectionCourse(request: APIRequestContext) {
 const created: string[] = [];
 test.afterEach(async ({ request }) => {
   const auth = { Authorization: `Bearer ${await token(request, "staff@showpro.local")}` };
-  while (created.length) await request.patch(`${API}/courses/${created.pop()}`, { headers: auth, data: { academicYear: "2500" } });
+  while (created.length) await request.patch(`${API}/courses/${created.pop()}`, { headers: auth, data: { academicYear: "2500", status: "archived" } });
 });
 
 test("student picks a section, confirms, sees API credits, and must confirm a drop", async ({ page, request }) => {

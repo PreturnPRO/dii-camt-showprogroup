@@ -87,6 +87,7 @@ export const getNavItems = (role: UserRole, nav: Record<string, string>): NavIte
         { icon: ClipboardList, label: nav.requests || 'Requests', href: '/requests' },
         { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },
         { icon: Building2, label: nav.cooperationMOU || 'MOU', href: '/cooperation' },
+        { icon: Building, label: nav.cooperationNetwork || 'Network', href: '/network' },
         { icon: MessageSquare, label: nav.messages || 'Messages', href: '/messages' },
         { icon: Settings, label: nav.settings || 'Settings', href: '/settings' },
       ];
@@ -106,6 +107,7 @@ export const getNavItems = (role: UserRole, nav: Record<string, string>): NavIte
       return [
         ...commonItems,
         { icon: Users, label: nav.userManagement || 'User Management', href: '/users' },
+        { icon: FileText, label: nav.documentIssue || 'Documents', href: '/documents' },
         { icon: BookOpen, label: nav.courseManagement || 'Courses', href: '/courses' },
         { icon: Calendar, label: nav.scheduleManagement || 'Schedule Mgmt', href: '/schedule-management' },
         { icon: UserCog, label: nav.internTracking || 'Intern Tracking', href: '/intern-tracking' },

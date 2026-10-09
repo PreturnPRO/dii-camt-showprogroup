@@ -183,7 +183,9 @@ export interface Course {
   lecturerId: string;
   lecturerName: string;
   sections: Section[];
-  status?: 'draft' | 'pending' | 'active' | 'archived';
+  status?: 'draft' | 'pending' | 'active' | 'archived' | 'rejected';
+  /** why staff sent the course back (status 'rejected') */
+  reviewNote?: string;
   /** ISO time the lecturer published the course's grades; unset = students do not see them yet */
   gradesPublishedAt?: string;
 

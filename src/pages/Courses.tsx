@@ -29,6 +29,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { isCourseFull, openSections, seatsLeft } from '@/lib/course-seats';
 import { api, ApiError, type RegistrationSummary } from '@/lib/api';
 import { asNumber, asRecord, asString } from '@/lib/live-data';
+import { courseSaveMessage } from '@/lib/course-errors';
 import { mapCourse } from '@/lib/live-mappers';
 import { CoursesLoadError, RegisterCta } from '@/components/common/RegisterCta';
 // course import builds section 01 from the file's seat limits (the backend ignores top-level maxStudents)
@@ -75,9 +76,22 @@ const courseStatusLabel = (status: Course['status'], th: boolean) => {
     case 'pending': return th ? 'รออนุมัติ' : 'Pending approval';
     case 'draft': return th ? 'ฉบับร่าง' : 'Draft';
     case 'archived': return th ? 'ปิดแล้ว' : 'Archived';
+    case 'rejected': return th ? 'ถูกตีกลับให้แก้' : 'Sent back';
     default: return th ? 'เปิดใช้งาน' : 'Active';
   }
 };
+
+const STATUS_BADGE: Record<string, string> = {
+  pending: 'bg-amber-100 text-amber-800',
+  rejected: 'bg-rose-100 text-rose-800',
+  draft: 'bg-slate-100 text-slate-700',
+  archived: 'bg-slate-200 text-slate-700',
+};
+
+/** the status of a course that is not open, in words (one badge for every view) */
+function CourseStatusBadge({ status, th }: { status: NonNullable<Course['status']>; th: boolean }) {
+  return <Badge variant="secondary" className={`${STATUS_BADGE[status] ?? ''} border-0`}>{courseStatusLabel(status, th)}</Badge>;
+}
 
 export default function Courses() {
   const { user } = useAuth();
@@ -110,6 +124,63 @@ export default function Courses() {
   const [pendingEnroll, setPendingEnroll] = React.useState<CourseRow | null>(null);
   const [pendingSectionId, setPendingSectionId] = React.useState('');
   const [pendingDrop, setPendingDrop] = React.useState<Course | null>(null);
+  // owner decision 9/10/69 (G4 รอง a): the approval queue
+  const statusFilter = searchParams.get('status') === 'pending' ? 'pending' : 'all';
+  const setStatusFilter = (value: 'all' | 'pending') => setSearchParams((prev) => {
+    const p = new URLSearchParams(prev);
+    if (value === 'all') p.delete('status'); else p.set('status', value);
+    return p;
+  }, { replace: true });
+  const [sendingBack, setSendingBack] = React.useState<CourseRow | null>(null);
+  const [sendBackReason, setSendBackReason] = React.useState('');
+  const [reviewingId, setReviewingId] = React.useState<string | null>(null);
+
+  // a review changes only the status and the note; the rest of the card (enrolment counts, …) stays
+  const replaceCourse = (raw: unknown) => {
+    const saved = mapCourse(raw);
+    setCourses((current) => current.map((course) => (course.id === saved.id ? { ...course, status: saved.status, reviewNote: saved.reviewNote } : course)));
+  };
+
+  // someone else may have moved the course first: show where it is now (review L6)
+  const refreshCourse = async (id: string) => {
+    try {
+      replaceCourse((await api.courses.get(id)).course);
+    } catch {
+      // the toast already said the action failed
+    }
+  };
+
+  const reviewCourse = async (course: CourseRow, decision: 'approve' | 'reject', reason?: string) => {
+    setReviewingId(course.id);
+    try {
+      const response = await api.courses.review(course.id, { decision, reason });
+      replaceCourse(response.course);
+      toast.success(decision === 'approve'
+        ? (language === 'th' ? `อนุมัติ ${course.code} แล้ว` : `${course.code} approved`)
+        : (language === 'th' ? `ตีกลับ ${course.code} ให้ผู้สอนแก้แล้ว` : `${course.code} sent back`));
+      setSendingBack(null);
+      setSendBackReason('');
+    } catch (error) {
+      toast.error(courseSaveMessage(error, language === 'th'));
+      await refreshCourse(course.id);
+    } finally {
+      setReviewingId(null);
+    }
+  };
+
+  const submitAgain = async (course: CourseRow) => {
+    setReviewingId(course.id);
+    try {
+      const response = await api.courses.submit(course.id);
+      replaceCourse(response.course);
+      toast.success(language === 'th' ? 'ส่งให้เจ้าหน้าที่อนุมัติอีกครั้งแล้ว' : 'Sent for approval again');
+    } catch (error) {
+      toast.error(courseSaveMessage(error, language === 'th'));
+      await refreshCourse(course.id);
+    } finally {
+      setReviewingId(null);
+    }
+  };
 
   const reloadStudentData = React.useCallback(async () => {
     const [coursesResponse, enrollmentsResponse, summaryResponse] = await Promise.all([
@@ -230,6 +301,7 @@ export default function Courses() {
       c.nameThai?.toLowerCase().includes(searchQuery.toLowerCase())
     )
     : visibleCourses;
+  const staffCourses = statusFilter === 'pending' ? filteredCourses.filter((c) => c.status === 'pending') : filteredCourses;
   const registrationMatches = React.useMemo(() => {
     const q = registrationQuery.trim().toLowerCase();
     if (!q) return [];
@@ -346,14 +418,7 @@ export default function Courses() {
       setCourseForm(null);
     } catch (error) {
       console.error('Unable to save course', error);
-      const status = error instanceof ApiError ? error.status : 0;
-      toast.error(
-        status === 409
-          ? (language === 'th' ? `บันทึกไม่ได้: ${error instanceof Error ? error.message : 'ข้อมูลซ้ำ'}` : `Not saved: ${error instanceof Error ? error.message : 'duplicate'}`)
-          : status === 403
-            ? (language === 'th' ? 'ไม่มีสิทธิ์แก้ส่วนนี้ของรายวิชา' : 'You may not change this part of the course')
-            : (language === 'th' ? 'บันทึกรายวิชาไม่สำเร็จ' : 'Unable to save course'),
-      );
+      toast.error(courseSaveMessage(error, language === 'th'));
     } finally {
       setIsSaving(false);
     }
@@ -455,7 +520,7 @@ export default function Courses() {
           failures.push({
             row: payloads.indexOf(payload) + 2,
             code: payload.code,
-            reason: { th: error instanceof Error ? error.message : 'บันทึกไม่สำเร็จ', en: error instanceof Error ? error.message : 'not saved' },
+            reason: { th: courseSaveMessage(error, true), en: courseSaveMessage(error, false) },
           });
         }
       }
@@ -474,6 +539,32 @@ export default function Courses() {
       setIsImporting(false);
     }
   };
+
+  const sendBackDialog = (
+    <Dialog open={Boolean(sendingBack)} onOpenChange={(open) => { if (!open) setSendingBack(null); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{language === 'th' ? `ตีกลับ ${sendingBack?.code ?? ''} ให้ผู้สอนแก้` : `Send ${sendingBack?.code ?? ''} back`}</DialogTitle>
+          <DialogDescription>
+            {language === 'th' ? 'ผู้สอนจะได้รับแจ้งพร้อมเหตุผลนี้ แก้แล้วส่งกลับมาให้อนุมัติได้' : 'The lecturer is told, with this reason, and can fix the course and send it again.'}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2">
+          <Label htmlFor="send-back-reason">{language === 'th' ? 'เหตุผล' : 'Reason'}</Label>
+          <Textarea id="send-back-reason" value={sendBackReason} onChange={(event) => setSendBackReason(event.target.value)} />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setSendingBack(null)}>{language === 'th' ? 'ยกเลิก' : 'Cancel'}</Button>
+          <Button
+            disabled={!sendBackReason.trim() || reviewingId === sendingBack?.id}
+            onClick={() => sendingBack && reviewCourse(sendingBack, 'reject', sendBackReason.trim())}
+          >
+            {language === 'th' ? 'ยืนยันตีกลับ' : 'Send back'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 
   const courseEditorDialog = (
     <Dialog open={Boolean(courseForm)} onOpenChange={(open) => {
@@ -572,17 +663,25 @@ export default function Courses() {
             {(user?.role === 'staff' || user?.role === 'admin') && (
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="course-status">{language === 'th' ? 'สถานะรายวิชา' : 'Course Status'}</Label>
-                <Select value={courseForm.status} onValueChange={(value) => updateCourseForm('status', value)}>
+                {/* the approval queue moves only through approve / send back / send again (review M2) */}
+                <Select disabled={courseForm.status === 'pending'} value={courseForm.status} onValueChange={(value) => updateCourseForm('status', value)}>
                   <SelectTrigger id="course-status">
-                    <SelectValue placeholder="Select status" />
+                    <SelectValue placeholder={language === 'th' ? 'เลือกสถานะ' : 'Select status'} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="active">{language === 'th' ? 'เปิดสอน (Active)' : 'Active'}</SelectItem>
-                    <SelectItem value="pending">{language === 'th' ? 'รออนุมัติ (Pending)' : 'Pending'}</SelectItem>
+                    {courseForm.status === 'pending' && <SelectItem value="pending">{language === 'th' ? 'รออนุมัติ (Pending)' : 'Pending'}</SelectItem>}
+                    {courseForm.status === 'rejected'
+                      ? <SelectItem value="rejected" disabled>{language === 'th' ? 'ถูกตีกลับให้แก้' : 'Sent back'}</SelectItem>
+                      : <SelectItem value="active">{language === 'th' ? 'เปิดสอน (Active)' : 'Active'}</SelectItem>}
                     <SelectItem value="draft">{language === 'th' ? 'แบบร่าง (Draft)' : 'Draft'}</SelectItem>
                     <SelectItem value="archived">{language === 'th' ? 'ปิดรายวิชา (Archived)' : 'Archived'}</SelectItem>
                   </SelectContent>
                 </Select>
+                {(courseForm.status === 'pending' || courseForm.status === 'rejected') && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {language === 'th' ? 'วิชาในคิวอนุมัติ ใช้ปุ่มอนุมัติ / ตีกลับ บนการ์ด หรือให้ผู้สอนส่งใหม่' : 'A course in the approval queue moves with Approve / Send back on its card, or the lecturer sends it again.'}
+                  </p>
+                )}
               </div>
             )}
             </div>
@@ -1060,12 +1159,11 @@ export default function Courses() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredCourses.map((course) => (
-            <motion.div variants={itemVariants} key={course.id} className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all dark:bg-slate-900">
+            <motion.div variants={itemVariants} key={course.id} data-testid="course-card" className="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 dark:border-slate-800 hover:shadow-lg transition-all dark:bg-slate-900">
               <div className="flex justify-between items-start mb-4">
-                <div className="flex gap-2">
+                <div className="flex flex-wrap gap-2">
                   <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border-0 dark:text-slate-300 dark:bg-slate-800">{course.code}</Badge>
-                  {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending</Badge>}
-                  {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
+                  {course.status && course.status !== 'active' && <CourseStatusBadge status={course.status} th={language === 'th'} />}
                 </div>
                 <Button variant="ghost" size="icon" className="-mr-2 -mt-2" data-testid={`edit-course-${course.code}`} onClick={() => openCourseEditor(course)}>
                   <MoreHorizontal className="w-4 h-4" />
@@ -1073,6 +1171,15 @@ export default function Courses() {
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-1">{course.name}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{course.nameThai}</p>
+              {course.status === 'rejected' && (
+                <div role="note" className="mb-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+                  <p className="font-semibold">{language === 'th' ? 'เหตุผลที่ตีกลับ' : 'Why it was sent back'}</p>
+                  <p className="mt-1 whitespace-pre-line">{course.reviewNote || '-'}</p>
+                  <Button size="sm" className="mt-3 rounded-xl bg-rose-600 hover:bg-rose-700 text-white" disabled={reviewingId === course.id} onClick={() => submitAgain(course)}>
+                    {language === 'th' ? 'ส่งให้อนุมัติอีกครั้ง' : 'Send again'}
+                  </Button>
+                </div>
+              )}
               <div className="flex items-center justify-between text-sm py-3 border-t border-slate-100 dark:border-slate-700">
                 <span className="text-slate-500 dark:text-slate-400">{t.coursesPage.studentsRegistered}</span>
                 <span className="font-bold text-slate-900 dark:text-slate-200">{(course.enrolledCount ?? course.enrolledStudents.length)} {t.coursesPage.studentsCount}</span>
@@ -1230,11 +1337,28 @@ export default function Courses() {
           </Button>
         </motion.div>
 
+        {/* the approval queue (G4 รอง a): a notification links here with ?status=pending */}
+        <div className="flex flex-wrap gap-2" role="group" aria-label={language === 'th' ? 'กรองตามสถานะ' : 'Filter by status'}>
+          <Button size="sm" variant={statusFilter === 'all' ? 'default' : 'outline'} className="rounded-xl" aria-pressed={statusFilter === 'all'} onClick={() => setStatusFilter('all')}>
+            {language === 'th' ? 'ทุกรายวิชา' : 'All courses'}
+          </Button>
+          <Button size="sm" variant={statusFilter === 'pending' ? 'default' : 'outline'} className="rounded-xl" aria-pressed={statusFilter === 'pending'} data-testid="pending-filter" onClick={() => setStatusFilter('pending')}>
+            {language === 'th' ? `รออนุมัติ (${courses.filter((c) => c.status === 'pending').length})` : `Waiting for approval (${courses.filter((c) => c.status === 'pending').length})`}
+          </Button>
+        </div>
+
+        {statusFilter === 'pending' && !isLoading && staffCourses.length === 0 && (
+          <div className="rounded-3xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:text-slate-400">
+            {language === 'th' ? 'ไม่มีรายวิชารออนุมัติ' : 'No course is waiting for approval'}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredCourses.map((course) => (
+          {staffCourses.map((course) => (
             <motion.div
               variants={itemVariants}
               key={course.id}
+              data-testid="course-card"
               className="group bg-white dark:bg-[#0c1222] border border-slate-200/80 dark:border-slate-800/60 rounded-3xl shadow-sm hover:shadow-xl transition-all overflow-hidden"
             >
               <div className="p-6">
@@ -1242,9 +1366,7 @@ export default function Courses() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-2 flex-wrap">
                       <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-200 border-0 dark:text-slate-300 dark:bg-slate-800">{course.code}</Badge>
-                      {course.status === 'pending' && <Badge variant="secondary" className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-0">Pending Approval</Badge>}
-                      {course.status === 'draft' && <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-0">Draft</Badge>}
-                      {course.status === 'archived' && <Badge variant="secondary" className="bg-rose-100 text-rose-700 hover:bg-rose-200 border-0">Archived</Badge>}
+                      {course.status && course.status !== 'active' && <CourseStatusBadge status={course.status} th={language === 'th'} />}
                       <Badge variant="outline" className="border-slate-200 text-slate-600 dark:text-slate-400 bg-white/60 dark:bg-slate-900/60 dark:border-slate-700">
                         {language === 'th' ? `${course.credits} หน่วยกิต` : `${course.credits} credits`}
                       </Badge>
@@ -1291,6 +1413,21 @@ export default function Courses() {
                     <div data-testid="course-card-status" className="font-semibold text-emerald-700 dark:text-slate-300">{courseStatusLabel(course.status, language === 'th')}</div>
                   </div>
                 </div>
+                {course.status === 'rejected' && course.reviewNote && (
+                  <p className="mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-800 dark:border-rose-900 dark:bg-rose-950/30 dark:text-rose-200">
+                    {language === 'th' ? 'เหตุผลที่ตีกลับ: ' : 'Sent back because: '}{course.reviewNote}
+                  </p>
+                )}
+                {course.status === 'pending' && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Button className="flex-1 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white" disabled={reviewingId === course.id} onClick={() => reviewCourse(course, 'approve')}>
+                      {language === 'th' ? 'อนุมัติ' : 'Approve'}
+                    </Button>
+                    <Button variant="outline" className="flex-1 rounded-xl" disabled={reviewingId === course.id} onClick={() => { setSendBackReason(''); setSendingBack(course); }}>
+                      {language === 'th' ? 'ตีกลับให้แก้' : 'Send back'}
+                    </Button>
+                  </div>
+                )}
                 <div className="mt-4 pt-4 border-t border-slate-100 dark:border-slate-800">
                   <Button variant="ghost" className="w-full text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-xl" onClick={() => deleteCourse(course.id)}>
                     <Trash2 className="w-4 h-4 mr-2" />
@@ -1302,6 +1439,7 @@ export default function Courses() {
           ))}
         </div>
         {courseEditorDialog}
+        {sendBackDialog}
       </motion.div>
     );
   }

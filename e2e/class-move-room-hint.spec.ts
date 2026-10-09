@@ -44,6 +44,6 @@ test("moving a class whose course has no room in the system says to pick a room"
     await expect(dialog.getByText("วิชานี้ยังไม่มีห้องในระบบ เลือกห้องใหม่ก่อนส่ง")).toBeVisible();
     await expect(dialog.getByTestId("move-submit")).toBeDisabled();
   } finally {
-    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500" } });
+    await request.patch(`${API}/courses/${course.id}`, { headers: staff, data: { academicYear: "2500", status: "archived" } });
   }
 });
