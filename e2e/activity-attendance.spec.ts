@@ -23,7 +23,8 @@ async function freshStudent(request: APIRequestContext, staff: Record<string, st
   const email = `e2e-act-${stamp}@example.com`;
   const nameThai = `นักศึกษา กิจกรรม ${stamp}`;
   expect((await request.post(`${API}/users/import/students`, { headers: staff, data: { rows: [{
-    studentId: `64${stamp.slice(-7)}`, name: `Activity ${stamp}`, nameThai, email, major: "DII", program: "DII", year: 2, semester: 1, academicYear: "2569", password: "Temp-Pass-123!",
+    // a student ID is 8-9 digits (G6): the letter tag only keeps the email unique
+    studentId: `64${String(Date.now()).slice(-6)}${tag === "a" ? 1 : 2}`, name: `Activity ${stamp}`, nameThai, email, major: "DII", program: "DII", year: 2, semester: 1, academicYear: "2569", password: "Temp-Pass-123!",
   }] } })).ok()).toBeTruthy();
   const temp = { Authorization: `Bearer ${await token(request, email, "Temp-Pass-123!")}` };
   expect((await request.patch(`${API}/users/profile`, { headers: temp, data: { currentPassword: "Temp-Pass-123!", newPassword: PASSWORD } })).ok()).toBeTruthy();

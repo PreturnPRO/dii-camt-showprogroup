@@ -80,3 +80,17 @@ export const companyUserSchema = z.object({
   socialMedia: z.string().optional().or(z.literal('')),
 });
 export type CompanyUserFormValues = z.infer<typeof companyUserSchema>;
+
+/**
+ * the student form for one dialog: an ID the student already has passes as it is (an import may have
+ * given an ID in another format), a new or changed ID must be 8-9 digits (G6, staff ST-M1)
+ */
+export const studentUserSchemaFor = (originalStudentId?: string) =>
+  originalStudentId
+    ? studentUserSchema.extend({
+        studentId: z
+          .string()
+          .min(1, 'กรุณากรอกรหัสนักศึกษา')
+          .refine((value) => value.trim() === originalStudentId || /^\d{8,9}$/.test(value.trim()), 'รหัสนักศึกษาต้องเป็นตัวเลข 8-9 หลัก (เช่น 652110001)'),
+      })
+    : studentUserSchema;

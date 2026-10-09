@@ -73,13 +73,20 @@ export const guessColumnMapping = (columns: string[], fields: ImportField[]): Co
     normalized: normalizeColumnName(column),
   }));
 
+  const candidatesOf = (field: ImportField) => [field.key, field.label, ...(field.aliases ?? [])].map(normalizeColumnName);
+  // a column that is exactly another field's name belongs to that field: "Advisor Email" is never the
+  // student's email just because it contains "email" (G6, staff ST-M2)
+  const claimed = new Set(
+    normalizedColumns.filter((column) => fields.some((field) => candidatesOf(field).includes(column.normalized))).map((c) => c.original),
+  );
+
   return fields.reduce<ColumnMapping>((mapping, field) => {
-    const candidates = [field.key, field.label, ...(field.aliases ?? [])].map(normalizeColumnName);
+    const candidates = candidatesOf(field);
     const exact = normalizedColumns.find((column) => candidates.includes(column.normalized));
     const fuzzy =
       exact ??
       normalizedColumns.find((column) =>
-        candidates.some((candidate) => candidate && column.normalized.includes(candidate)),
+        !claimed.has(column.original) && candidates.some((candidate) => candidate && column.normalized.includes(candidate)),
       );
 
     if (fuzzy) {

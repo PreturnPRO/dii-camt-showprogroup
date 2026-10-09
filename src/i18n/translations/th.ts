@@ -469,8 +469,9 @@ export const th = {
     emailLabel: 'อีเมล',
     emailPlaceholder: 'email@example.com',
     roleLabel: 'บทบาท',
-    deleteConfirm: 'คุณแน่ใจหรือไม่ที่จะลบผู้ใช้นี้?',
-    deleteSuccess: 'ลบผู้ใช้งานเรียบร้อยแล้ว',
+    // the button suspends the account (it can be reactivated); it never deleted anything (owner 9/10/69)
+    deleteConfirm: 'ระงับบัญชีนี้? ผู้ใช้จะเข้าระบบไม่ได้ ประวัติยังอยู่ครบ และเปิดใช้งานคืนได้จาก "บัญชีที่ระงับ"',
+    deleteSuccess: 'ระงับบัญชีแล้ว',
     editSuccess: 'แก้ไขข้อมูลผู้ใช้เรียบร้อยแล้ว',
     addSuccess: 'เพิ่มผู้ใช้ใหม่เรียบร้อยแล้ว',
   },

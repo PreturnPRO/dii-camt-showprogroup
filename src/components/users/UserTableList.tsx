@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Edit, Trash2, KeyRound } from 'lucide-react';
+import { Search, Edit, UserX, KeyRound } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -131,11 +131,11 @@ export function UserTableList({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onDelete(user.id)}
-                                aria-label="ลบ"
-                                title="ลบ"
+                                aria-label="ระงับบัญชี"
+                                title="ระงับบัญชี"
                                 className="text-red-500 hover:text-red-600 hover:bg-red-50 dark:text-slate-300 dark:bg-slate-800"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <UserX className="w-4 h-4" />
                               </Button>
                             </div>}
                           </div>

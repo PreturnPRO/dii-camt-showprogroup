@@ -239,6 +239,18 @@ export default function Activities() {
     setLeaderboard(buildLeaderboard(response.activities, student.id));
   }, [student.id]);
 
+  // the server's refusals in the viewer's language (G6: enrolling twice or in a closed activity)
+  const enrollErrorText = (error: unknown, en: boolean) => {
+    if (!(error instanceof ApiError)) return en ? 'Could not register' : 'ลงทะเบียนไม่สำเร็จ';
+    const code = (error.details as { details?: { code?: string } } | undefined)?.details?.code;
+    if (en) return error.message;
+    if (code === 'ALREADY_ENROLLED') return 'คุณลงทะเบียนกิจกรรมนี้แล้ว';
+    if (code === 'ACTIVITY_CLOSED') return 'กิจกรรมนี้ยกเลิกหรือจบไปแล้ว ลงทะเบียนไม่ได้';
+    if (/full/i.test(error.message)) return 'กิจกรรมนี้เต็มแล้ว';
+    if (/closed/i.test(error.message)) return 'กิจกรรมนี้ปิดรับลงทะเบียนแล้ว';
+    return 'ลงทะเบียนไม่สำเร็จ';
+  };
+
   const handleEnroll = async (activityId: string) => {
     try {
       await api.activities.enroll(activityId);
@@ -246,7 +258,7 @@ export default function Activities() {
       toast.success(language === 'en' ? 'Registered for the activity' : 'ลงทะเบียนเข้าร่วมกิจกรรมแล้ว');
     } catch (error) {
       console.warn('Unable to enroll activity', error);
-      toast.error(error instanceof ApiError ? error.message : t.activitiesPage.details);
+      toast.error(enrollErrorText(error, language === 'en'));
     }
   };
 
@@ -429,7 +441,7 @@ export default function Activities() {
                           <div className="mt-6 flex gap-3">
                             <Button
                               className="rounded-xl h-11 bg-slate-900 hover:bg-slate-800 text-white shadow-xl shadow-slate-900/20 px-8 font-bold border border-slate-700"
-                              disabled={activity.enrolledStudents.includes(student.id)}
+                              disabled={activity.enrolledStudents.includes(student.id) || ['cancelled', 'completed'].includes(activity.status)}
                               onClick={(event) => {
                                 event.stopPropagation();
                                 void handleEnroll(activity.id);
@@ -649,13 +661,17 @@ export default function Activities() {
               <div className="flex justify-end gap-3">
                 {/* self check-in hidden until a check-in method is chosen (Por 6/10/69) */}
                 <Button
-                  disabled={selectedActivity.enrolledStudents.includes(student.id)}
+                  disabled={selectedActivity.enrolledStudents.includes(student.id) || ['cancelled', 'completed'].includes(selectedActivity.status)}
                   onClick={async () => {
                     await handleEnroll(selectedActivity.id);
                     setSelectedActivity(null);
                   }}
                 >
-                  {selectedActivity.enrolledStudents.includes(student.id) ? 'ลงทะเบียนแล้ว' : t.activitiesPage.joinActivity}
+                  {selectedActivity.enrolledStudents.includes(student.id)
+                    ? 'ลงทะเบียนแล้ว'
+                    : ['cancelled', 'completed'].includes(selectedActivity.status)
+                      ? (selectedActivity.status === 'cancelled' ? 'กิจกรรมถูกยกเลิก' : 'กิจกรรมจบแล้ว')
+                      : t.activitiesPage.joinActivity}
                 </Button>
               </div>
             </>

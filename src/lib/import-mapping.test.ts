@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { describe, expect, it } from 'vitest';
 import {
   companyImportFields,
   guessColumnMapping,
@@ -9,65 +10,78 @@ import {
   validateMappedRows,
 } from './import-mapping';
 
-// normalizePhone tests
-assert.equal(normalizePhone('0812345678'), '0812345678');
-assert.equal(normalizePhone('812345678'), '0812345678');
-assert.equal(normalizePhone('+66812345678'), '0812345678');
-assert.equal(normalizePhone('66812345678'), '0812345678');
-assert.equal(normalizePhone('021234567'), '021234567');
-assert.equal(normalizePhone('21234567'), '021234567');
-assert.equal(normalizePhone('+66 81-234-5678'), '0812345678');
+// these were plain assert calls that no runner picked up ("No test suite found"); now they run
+describe('import mapping', () => {
+  it('normalizes, guesses, maps and validates', () => {
+    // normalizePhone tests
+    assert.equal(normalizePhone('0812345678'), '0812345678');
+    assert.equal(normalizePhone('812345678'), '0812345678');
+    assert.equal(normalizePhone('+66812345678'), '0812345678');
+    assert.equal(normalizePhone('66812345678'), '0812345678');
+    assert.equal(normalizePhone('021234567'), '021234567');
+    assert.equal(normalizePhone('21234567'), '021234567');
+    assert.equal(normalizePhone('+66 81-234-5678'), '0812345678');
 
-assert.equal(normalizeColumnName('Company_ID'), 'company id');
+    assert.equal(normalizeColumnName('Company_ID'), 'company id');
 
-const companyMapping = guessColumnMapping(
-  ['Company_ID', 'ชื่อบริษัท', 'เบอร์มือถือ', 'Industry', 'Size'],
-  companyImportFields,
-);
+    const companyMapping = guessColumnMapping(
+      ['Company_ID', 'ชื่อบริษัท', 'เบอร์มือถือ', 'Industry', 'Size'],
+      companyImportFields,
+    );
 
-assert.equal(companyMapping.companyId, 'Company_ID');
-assert.equal(companyMapping.companyName, 'ชื่อบริษัท');
-assert.equal(companyMapping.phone, 'เบอร์มือถือ');
+    assert.equal(companyMapping.companyId, 'Company_ID');
+    assert.equal(companyMapping.companyName, 'ชื่อบริษัท');
+    assert.equal(companyMapping.phone, 'เบอร์มือถือ');
 
-const mappedCompanies = mapRows(
-  [
-    {
-      Company_ID: 'CMP-100',
-      ชื่อบริษัท: 'Acme Co.',
-      เบอร์มือถือ: '0812345678',
-      Industry: 'Technology',
-      Size: '',
-    },
-  ],
-  companyImportFields,
-  companyMapping,
-);
+    const mappedCompanies = mapRows(
+      [
+        {
+          Company_ID: 'CMP-100',
+          ชื่อบริษัท: 'Acme Co.',
+          เบอร์มือถือ: '0812345678',
+          Industry: 'Technology',
+          Size: '',
+        },
+      ],
+      companyImportFields,
+      companyMapping,
+    );
 
-assert.equal(mappedCompanies[0].values.companyId, 'CMP-100');
-assert.equal(mappedCompanies[0].values.size, 'small');
+    assert.equal(mappedCompanies[0].values.companyId, 'CMP-100');
+    assert.equal(mappedCompanies[0].values.size, 'small');
 
-const companyValidation = validateMappedRows(mappedCompanies, companyImportFields);
-assert.equal(companyValidation.issues.length, 0);
-assert.equal(companyValidation.validRows.length, 1);
+    const companyValidation = validateMappedRows(mappedCompanies, companyImportFields);
+    assert.equal(companyValidation.issues.length, 0);
+    assert.equal(companyValidation.validRows.length, 1);
 
-const studentMapping = guessColumnMapping(
-  ['student_id', 'name', 'year', 'ปีการศึกษา'],
-  studentImportFields,
-);
-const mappedStudents = mapRows(
-  [{ student_id: '66010001', name: 'Ada Lovelace', year: '2', ปีการศึกษา: '2569' }],
-  studentImportFields,
-  studentMapping,
-);
-const studentValidation = validateMappedRows(mappedStudents, studentImportFields);
+    const studentMapping = guessColumnMapping(
+      ['student_id', 'name', 'year', 'ปีการศึกษา'],
+      studentImportFields,
+    );
+    const mappedStudents = mapRows(
+      [{ student_id: '66010001', name: 'Ada Lovelace', year: '2', ปีการศึกษา: '2569' }],
+      studentImportFields,
+      studentMapping,
+    );
+    const studentValidation = validateMappedRows(mappedStudents, studentImportFields);
 
-assert.equal(mappedStudents[0].values.program, 'bachelor');
-assert.equal(studentValidation.issues.length, 0);
+    assert.equal(mappedStudents[0].values.program, 'bachelor');
+    assert.equal(studentValidation.issues.length, 0);
 
-const invalidStudents = mapRows([{ name: 'No ID' }], studentImportFields, studentMapping);
-const invalidValidation = validateMappedRows(invalidStudents, studentImportFields);
+    const invalidStudents = mapRows([{ name: 'No ID' }], studentImportFields, studentMapping);
+    const invalidValidation = validateMappedRows(invalidStudents, studentImportFields);
 
-assert.equal(invalidValidation.validRows.length, 0);
-assert.equal(invalidValidation.issues.some((issue) => issue.fieldKey === 'studentId'), true);
+    assert.equal(invalidValidation.validRows.length, 0);
+    assert.equal(invalidValidation.issues.some((issue) => issue.fieldKey === 'studentId'), true);
+  });
 
-console.log('import-mapping tests passed');
+  // G6 (staff ST-M2): a registrar export with an advisor email and no student email
+  it('an "Advisor Email" column is the advisor, never the student\'s login email', () => {
+    const mapping = guessColumnMapping(['studentId', 'name', 'Advisor Email', 'year', 'academicYear'], studentImportFields);
+    expect(mapping.advisorEmail).toBe('Advisor Email');
+    expect(mapping.email).toBeUndefined();
+    const thai = guessColumnMapping(['รหัสนักศึกษา', 'ชื่อ', 'อีเมลอาจารย์ที่ปรึกษา'], studentImportFields);
+    expect(thai.advisorEmail).toBe('อีเมลอาจารย์ที่ปรึกษา');
+    expect(thai.email).toBeUndefined();
+  });
+});

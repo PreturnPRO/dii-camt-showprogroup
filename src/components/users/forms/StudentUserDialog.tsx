@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { studentUserSchema, type StudentUserFormValues } from '@/schemas/user-forms.schema';
+import { studentUserSchemaFor, type StudentUserFormValues } from '@/schemas/user-forms.schema';
 import {
   Dialog,
   DialogContent,
@@ -66,8 +66,11 @@ export function StudentUserDialog({
   initialData,
   isSubmitting = false,
 }: StudentUserDialogProps) {
+  // the ID the student has now: it may stay as it is even if an import gave it another format
+  const originalId = React.useRef<string | undefined>(undefined);
+  originalId.current = initialData?.identifier || undefined;
   const form = useForm<StudentUserFormValues>({
-    resolver: zodResolver(studentUserSchema),
+    resolver: (values, context, options) => zodResolver(studentUserSchemaFor(originalId.current))(values, context, options),
     defaultValues,
   });
   const [lecturers, setLecturers] = React.useState<Array<{ id: string; name: string }>>([]);

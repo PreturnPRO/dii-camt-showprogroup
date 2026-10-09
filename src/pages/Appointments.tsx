@@ -20,6 +20,7 @@ import { asArray, asBoolean, asRecord, asString } from '@/lib/live-data';
 import { thaiToday } from '@/lib/thai-date';
 import { OfficeHoursEditor } from '@/components/appointments/OfficeHoursEditor';
 import { lecturerDirectory } from '@/lib/lecturer-directory';
+import { appointmentErrorText, hasEnded, hasStarted, lastBookableDay } from '@/lib/appointment-rules';
 import type { Appointment, Lecturer } from '@/types';
 
 type AppointmentRow = Appointment;
@@ -28,13 +29,7 @@ type FreeSlot = { startTime: string; endTime: string; location: string; isBooked
 
 const sameSlot = (a: FreeSlot | null, b: FreeSlot) => a?.startTime === b.startTime && a?.endTime === b.endTime;
 
-// the server's refusals, said in Thai
-const bookingError = (error: unknown) => {
-    if (error instanceof ApiError && error.status === 409) return 'มีคนจองช่วงเวลานี้ไปแล้ว กรุณาเลือกเวลาอื่น';
-    if (error instanceof ApiError && error.status === 404) return 'ไม่พบอาจารย์ท่านนี้ในระบบแล้ว';
-    if (error instanceof ApiError && error.status === 400) return 'ช่วงเวลานี้จองไม่ได้ (ผ่านไปแล้ว หรือไม่ใช่ office hours ของอาจารย์) กรุณาเลือกใหม่';
-    return 'จองนัดไม่สำเร็จ กรุณาลองใหม่';
-};
+const STATUS_DONE_TH: Record<string, string> = { confirmed: 'ยืนยันนัดแล้ว', completed: 'บันทึกว่าพบแล้ว', cancelled: 'ยกเลิกนัดแล้ว' };
 
 const DAY_LABELS: Record<string, string> = {
     monday: 'จันทร์', tuesday: 'อังคาร', wednesday: 'พุธ', thursday: 'พฤหัสบดี', friday: 'ศุกร์', saturday: 'เสาร์', sunday: 'อาทิตย์',
@@ -67,7 +62,44 @@ export default function Appointments() {
     const [bookingPurpose, setBookingPurpose] = React.useState('');
     const [isBooking, setIsBooking] = React.useState(false);
     const pendingCount = appointments.filter(a => a.status === 'pending').length;
-    const confirmedCount = appointments.filter(a => a.status === 'confirmed').length;
+    // upcoming = confirmed and not over yet; a confirmed meeting that is over waits in history for the lecturer to close (G6)
+    const upcomingList = appointments.filter((a) => a.status === 'confirmed' && !hasEnded(a));
+    const historyList = appointments
+        .filter((a) => a.status === 'completed' || a.status === 'cancelled' || (a.status === 'confirmed' && hasEnded(a)))
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+    const cancelOwn = (apt: AppointmentRow) => {
+        if (window.confirm(`ยกเลิกนัดกับ ${apt.lecturerName} วันที่ ${new Date(apt.date).toLocaleDateString('th-TH')} เวลา ${apt.startTime}?`)) {
+            void updateAppointmentStatus(apt.id, 'cancelled');
+        }
+    };
+
+    /** what this viewer may do with a booking now (owner decisions 9/10/69) */
+    const appointmentActions = (apt: AppointmentRow) => {
+        if (isTeacher && apt.status === 'confirmed') {
+            const started = hasStarted(apt);
+            return (
+                <div className="flex flex-wrap gap-2">
+                    <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={!started}
+                        title={started ? undefined : 'กดได้เมื่อถึงเวลานัด'} onClick={() => updateAppointmentStatus(apt.id, 'completed')}>
+                        <CheckCircle className="w-4 h-4 mr-1" />พบแล้ว
+                    </Button>
+                    <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400"
+                        onClick={() => { if (window.confirm(`ยกเลิกนัดกับ ${apt.studentName} วันที่ ${new Date(apt.date).toLocaleDateString('th-TH')} เวลา ${apt.startTime}?`)) void updateAppointmentStatus(apt.id, 'cancelled'); }}>
+                        ยกเลิกนัด
+                    </Button>
+                </div>
+            );
+        }
+        if (canBook && (apt.status === 'pending' || apt.status === 'confirmed') && !hasStarted(apt)) {
+            return (
+                <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400" onClick={() => cancelOwn(apt)}>
+                    ยกเลิกนัด
+                </Button>
+            );
+        }
+        return null;
+    };
     const isTeacher = user?.role === 'lecturer';
     // only students book; admin sees the list (the API takes bookings from students only)
     const canBook = user?.role === 'student';
@@ -127,11 +159,11 @@ export default function Appointments() {
         try {
             const response = await api.appointments.updateStatus(id, { status });
             setAppointments(current => current.map(item => item.id === id ? mapAppointment(response.appointment) : item));
-            toast.success(status === 'confirmed' ? t.appointmentsPage.confirmedTab : status);
+            toast.success(STATUS_DONE_TH[status] ?? status);
         } catch (error) {
             console.warn('Unable to update appointment status', error);
             setAppointments(previous);
-            toast.error(t.appointmentsPage.systemUpgrade);
+            toast.error(appointmentErrorText(error));
         }
     };
 
@@ -184,7 +216,7 @@ export default function Appointments() {
             toast.success(`${t.appointmentsPage.bookSuccess} ${bookingLecturer.nameThai}`);
             setBookingLecturer(null);
         } catch (error) {
-            toast.error(bookingError(error));
+            toast.error(appointmentErrorText(error));
             // whatever changed (taken, or the time passed), show the day as it is now
             if (error instanceof ApiError && (error.status === 409 || error.status === 400)) void loadDaySlots(bookingLecturer.id, bookingDate);
         } finally {
@@ -197,6 +229,7 @@ export default function Appointments() {
             case 'pending': return <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-400">{t.appointmentsPage.pendingTab}</Badge>;
             case 'confirmed': return <Badge className="bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400">{t.appointmentsPage.confirmedTab}</Badge>;
             case 'completed': return <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400">{t.appointmentsPage.completedTab}</Badge>;
+            case 'cancelled': return <Badge className="bg-slate-200 text-slate-700 dark:bg-slate-800 dark:text-slate-300">ยกเลิกแล้ว</Badge>;
             default: return <Badge>{status}</Badge>;
         }
     };
@@ -225,7 +258,7 @@ export default function Appointments() {
             <motion.div variants={itemVariants} className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
                     { label: t.appointmentsPage.pendingTab, value: pendingCount, gradient: '', icon: Clock },
-                    { label: t.appointmentsPage.confirmedTab, value: confirmedCount, gradient: '', icon: Calendar },
+                    { label: t.appointmentsPage.confirmedTab, value: upcomingList.length, gradient: '', icon: Calendar },
                     { label: t.appointmentsPage.completedTab, value: appointments.filter(a => a.status === 'completed').length, gradient: '', icon: CheckCircle },
                     { label: t.appointmentsPage.allTab, value: appointments.length, gradient: '', icon: Calendar },
                 ].map((stat, i) => (
@@ -258,12 +291,12 @@ export default function Appointments() {
                                         กำลังโหลดนัดหมายจริงจากระบบ...
                                     </div>
                                 )}
-                                {!isLoading && appointments.filter(a => a.status === 'confirmed').length === 0 && (
+                                {!isLoading && upcomingList.length === 0 && (
                                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
                                         ไม่มีนัดหมายที่ยืนยันแล้ว
                                     </div>
                                 )}
-                                {!isLoading && appointments.filter(a => a.status === 'confirmed').map((apt) => (
+                                {!isLoading && upcomingList.map((apt) => (
                                     <div key={apt.id} data-testid="appointment-card" className="bg-blue-50 dark:bg-blue-500/10 flex flex-wrap items-start gap-4 p-4 border dark:border-slate-700 rounded-xl">
                                         <div className="bg-blue-600 text-white rounded-xl px-4 py-3 text-center min-w-[80px]">
                                             <div className="text-xl font-bold">{new Date(apt.date).getDate()}</div>
@@ -277,7 +310,7 @@ export default function Appointments() {
                                                 <span><MapPin className="w-4 h-4 inline mr-1" />{apt.location}</span>
                                             </div>
                                         </div>
-                                        {getStatusBadge(apt.status)}
+                                        <div className="flex flex-col items-end gap-2">{getStatusBadge(apt.status)}{appointmentActions(apt)}</div>
                                     </div>
                                 ))}
                             </div>
@@ -313,10 +346,10 @@ export default function Appointments() {
                                         </div>
                                         {isTeacher ? (
                                             <div className="flex gap-2">
-                                                <Button size="sm" className="bg-emerald-500" onClick={() => updateAppointmentStatus(apt.id, 'confirmed')}><CheckCircle className="w-4 h-4 mr-1" />{t.appointmentsPage.confirm}</Button>
-                                                <Button size="sm" variant="outline" className="text-red-600 dark:text-slate-300" onClick={() => updateAppointmentStatus(apt.id, 'cancelled')}><XCircle className="w-4 h-4" /></Button>
+                                                <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" disabled={hasStarted(apt)} title={hasStarted(apt) ? 'เลยเวลานัดแล้ว ยืนยันไม่ได้ ยกเลิกได้อย่างเดียว' : undefined} onClick={() => updateAppointmentStatus(apt.id, 'confirmed')}><CheckCircle className="w-4 h-4 mr-1" />{t.appointmentsPage.confirm}</Button>
+                                                <Button size="sm" variant="outline" className="text-red-600 dark:text-red-400" aria-label="ปฏิเสธนัด" onClick={() => updateAppointmentStatus(apt.id, 'cancelled')}><XCircle className="w-4 h-4" /></Button>
                                             </div>
-                                        ) : getStatusBadge(apt.status)}
+                                        ) : <div className="flex flex-col items-end gap-2">{getStatusBadge(apt.status)}{appointmentActions(apt)}</div>}
                                     </div>
                                 ))}
                             </div>
@@ -331,21 +364,28 @@ export default function Appointments() {
                                         กำลังโหลดนัดหมายจริงจากระบบ...
                                     </div>
                                 )}
-                                {!isLoading && appointments.filter(a => a.status === 'completed').length === 0 && (
+                                {!isLoading && historyList.length === 0 && (
                                     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/70 p-8 text-center text-sm text-slate-500 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-400">
                                         ยังไม่มีประวัตินัดหมาย
                                     </div>
                                 )}
-                                {!isLoading && appointments.filter(a => a.status === 'completed').map((apt) => (
-                                    <div key={apt.id} className="flex items-center justify-between p-4 border rounded-xl bg-gray-50 dark:bg-slate-800">
+                                {!isLoading && historyList.map((apt) => (
+                                    <div key={apt.id} data-testid="appointment-history" className="flex flex-wrap items-center justify-between gap-3 p-4 border rounded-xl bg-gray-50 dark:bg-slate-800">
                                         <div className="flex items-center gap-4">
-                                            <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-slate-300" />
+                                            {apt.status === 'completed'
+                                                ? <CheckCircle className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                                                : apt.status === 'cancelled'
+                                                    ? <XCircle className="w-6 h-6 text-slate-400" />
+                                                    : <Clock className="w-6 h-6 text-amber-600 dark:text-amber-400" />}
                                             <div>
                                                 <h3 className="font-semibold">{isTeacher ? apt.studentName : apt.lecturerName}</h3>
-                                                <p className="text-xs text-gray-400">{new Date(apt.date).toLocaleDateString('th-TH')}</p>
+                                                <p className="text-xs text-gray-500 dark:text-slate-400">{new Date(apt.date).toLocaleDateString('th-TH')} · {apt.startTime}-{apt.endTime}</p>
                                             </div>
                                         </div>
-                                        {getStatusBadge(apt.status)}
+                                        <div className="flex flex-col items-end gap-2">
+                                            {apt.status === 'confirmed' ? <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">ผ่านเวลานัดแล้ว ยังไม่ได้ปิด</Badge> : getStatusBadge(apt.status)}
+                                            {appointmentActions(apt)}
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -424,10 +464,11 @@ export default function Appointments() {
                     <div className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="appointment-date">วันที่</Label>
-                            <Input id="appointment-date" type="date" min={thaiToday()} value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} />
+                            <Input id="appointment-date" type="date" min={thaiToday()} max={lastBookableDay()} value={bookingDate} onChange={(event) => setBookingDate(event.target.value)} />
                             <p className="text-xs text-slate-500 dark:text-slate-400">
                                 office hours: {bookingLecturer?.officeHours.filter((hour) => hour.isAvailable).map((hour) => `${DAY_LABELS[hour.day] ?? hour.day} ${hour.startTime}-${hour.endTime}`).join(' · ') || '-'}
                             </p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">จองล่วงหน้าได้ไม่เกิน 30 วัน · มีนัดที่ยังไม่ถึงกับอาจารย์ท่านเดียวกันได้ครั้งละ 1 นัด</p>
                         </div>
                         {bookingDate && (
                             <div className="space-y-2" data-testid="day-slots">

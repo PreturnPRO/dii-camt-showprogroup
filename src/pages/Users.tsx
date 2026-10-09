@@ -26,6 +26,8 @@ import { credentialsFromImport, generateTemporaryPassword } from '@/lib/temporar
 import { ImportMappingDialog } from '@/components/common/ImportMappingDialog';
 import { buildSafeIdentifier, companyImportFields, studentImportFields, type MappedImportRow } from '@/lib/import-mapping';
 import type { UserRow, UserType } from '@/components/users/types';
+import { userMatches } from '@/components/users/user-search';
+import { importFailureLines, userSaveMessage } from '@/components/users/user-errors';
 import { mapBackendUser } from '@/components/users/user-mapper';
 import { UserStatsCards } from '@/components/users/UserStatsCards';
 import { UserTableList } from '@/components/users/UserTableList';
@@ -90,6 +92,8 @@ export default function UsersPage() {
   // active and suspended accounts load separately; GET /users hides inactive ones unless asked
   const [inactiveUsers, setInactiveUsers] = useState<UserRow[]>([]);
   const [showInactive, setShowInactive] = useState(false);
+  // the rows an import could not take, each with its reason (G6, staff M-N1)
+  const [importProblems, setImportProblems] = useState<string[]>([]);
   const loadUsers = useCallback(async () => {
     try {
       const [active, inactive] = await Promise.all([api.users.list(), api.users.list('?isActive=false')]);
@@ -124,7 +128,7 @@ export default function UsersPage() {
         setUsers((current) => current.filter((u) => u.id !== id));
         toast.success(t.users.deleteSuccess);
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : t.users.deleteConfirm);
+        toast.error(userSaveMessage(error, language === 'th' ? 'ระงับบัญชีไม่สำเร็จ' : 'Could not suspend the account'));
       }
     }
   };
@@ -140,6 +144,8 @@ export default function UsersPage() {
           phone: values.phone,
           isActive: values.status === 'active',
           roleData: {
+            // the ID is saved only when it changed (ST-M1: it used to be dropped while "saved" was shown)
+            studentId: values.studentId.trim(),
             major: values.major,
             program: values.program,
             year: values.year,
@@ -181,7 +187,7 @@ export default function UsersPage() {
       }
       setActiveDialog(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.users.addUser);
+      toast.error(userSaveMessage(error, t.users.addUser));
     } finally {
       setIsSubmitting(false);
     }
@@ -231,7 +237,7 @@ export default function UsersPage() {
       }
       setActiveDialog(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.users.addUser);
+      toast.error(userSaveMessage(error, t.users.addUser));
     } finally {
       setIsSubmitting(false);
     }
@@ -281,7 +287,7 @@ export default function UsersPage() {
       }
       setActiveDialog(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.users.addUser);
+      toast.error(userSaveMessage(error, t.users.addUser));
     } finally {
       setIsSubmitting(false);
     }
@@ -355,7 +361,7 @@ export default function UsersPage() {
       }
       setActiveDialog(null);
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : t.users.addUser);
+      toast.error(userSaveMessage(error, t.users.addUser));
     } finally {
       setIsSubmitting(false);
     }
@@ -407,8 +413,9 @@ export default function UsersPage() {
     await loadUsers();
     setCredentials(credentialsFromImport(response.results));
     toast.success(`Import บริษัทสำเร็จ ${response.createdCount} รายการ`);
+    setImportProblems(importFailureLines(response.results));
     if (response.failedCount > 0) {
-      toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ`);
+      toast.error(`Import บริษัทไม่สำเร็จ ${response.failedCount} รายการ (ดูเหตุผลรายแถวในหน้า)`);
     }
 
     return { successCount: response.createdCount, failureCount: response.failedCount };
@@ -444,8 +451,9 @@ export default function UsersPage() {
     await loadUsers();
     setCredentials(credentialsFromImport(response.results));
     toast.success(`Import นักศึกษาสำเร็จ ${response.createdCount} รายการ`);
+    setImportProblems(importFailureLines(response.results));
     if (response.failedCount > 0) {
-      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ`);
+      toast.error(`Import นักศึกษาไม่สำเร็จ ${response.failedCount} รายการ (ดูเหตุผลรายแถวในหน้า)`);
     }
 
     return { successCount: response.createdCount, failureCount: response.failedCount };
@@ -489,13 +497,7 @@ export default function UsersPage() {
   };
 
   const filteredUsers = useMemo(() => {
-    const q = searchQuery.toLowerCase();
-    return (showInactive ? inactiveUsers : users).filter(
-      (u) =>
-        u.name?.toLowerCase().includes(q) ||
-        u.email?.toLowerCase().includes(q) ||
-        getRoleText(u.type).toLowerCase().includes(q),
-    );
+    return (showInactive ? inactiveUsers : users).filter((u) => userMatches(u, searchQuery, getRoleText(u.type)));
   }, [users, inactiveUsers, showInactive, searchQuery, getRoleText]);
 
   return (
@@ -605,6 +607,15 @@ export default function UsersPage() {
               : (language === 'th' ? `บัญชีที่ระงับ (${inactiveUsers.length})` : `Suspended accounts (${inactiveUsers.length})`)}
           </Button>
         </div>
+        {importProblems.length > 0 && (
+          <div role="alert" data-testid="user-import-problems" className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900 dark:border-amber-900 dark:bg-amber-950/30 dark:text-amber-200">
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <p className="font-semibold">{language === 'th' ? `แถวที่นำเข้าไม่ได้ (${importProblems.length})` : `Rows not imported (${importProblems.length})`}</p>
+              <Button size="sm" variant="ghost" onClick={() => setImportProblems([])}>{language === 'th' ? 'ปิด' : 'Close'}</Button>
+            </div>
+            <ul className="space-y-1">{importProblems.map((line) => <li key={line}>{line}</li>)}</ul>
+          </div>
+        )}
         <UserTableList
           users={filteredUsers}
           searchQuery={searchQuery}

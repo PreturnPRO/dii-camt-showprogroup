@@ -69,5 +69,6 @@ test("user row action buttons have names", async ({ page }) => {
   await page.goto("/users");
   const row = page.getByTestId("user-row").first();
   await expect(row.getByRole("button", { name: /แก้ไข|edit/i })).toBeVisible();
-  await expect(row.getByRole("button", { name: /ลบ|delete/i })).toBeVisible();
+  // the button suspends (owner decision 9/10/69), so it says so
+  await expect(row.getByRole("button", { name: "ระงับบัญชี" })).toBeVisible();
 });
