@@ -1,8 +1,5 @@
 import { expect, test, type APIRequestContext } from '@playwright/test';
-
-// writes logs and reviews: only against a throw-away backend, never the dev server on :4000 by default
-const API = process.env.TEST_API_BASE_URL ?? '';
-test.skip(!API, 'set TEST_API_BASE_URL to a backend pointed at a test database');
+import { API } from './env';
 
 async function auth(request: APIRequestContext, email: string) {
   const response = await request.post(`${API}/auth/login`, { data: { email, password: 'Password123!' } });

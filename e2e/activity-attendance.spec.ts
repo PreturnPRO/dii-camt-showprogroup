@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const PASSWORD = "Password123!";
 
 async function token(request: APIRequestContext, email: string, password = PASSWORD) {
@@ -56,10 +56,11 @@ test("staff tick who came; that student gets the hours, the one marked absent do
   const cameRow = dialog.locator("div").filter({ hasText: came.nameThai }).filter({ has: page.getByTestId("attendance-row") }).last();
   const absentRow = dialog.locator("div").filter({ hasText: absent.nameThai }).filter({ has: page.getByTestId("attendance-row") }).last();
   await cameRow.getByRole("button", { name: "เข้าร่วม" }).click();
-  await expect(cameRow.getByText("เข้าร่วมแล้ว")).toBeVisible();
+  await expect(cameRow.getByTestId("attendance-status")).toHaveAttribute("data-status", "completed");
   await expect(cameRow.getByRole("button", { name: "ไม่มา" })).toHaveCount(0);
   await absentRow.getByRole("button", { name: "ไม่มา" }).click();
-  await expect(absentRow.getByText("ไม่มา", { exact: true }).first()).toBeVisible();
+  // the badge's status, not its text: the button next to it says "ไม่มา" too, before anything is saved
+  await expect(absentRow.getByTestId("attendance-status")).toHaveAttribute("data-status", "absent");
 
   expect(await hoursOf(request, came.auth)).toBe(before.came + 3);
   expect(await hoursOf(request, absent.auth)).toBe(before.absent);
@@ -67,6 +68,6 @@ test("staff tick who came; that student gets the hours, the one marked absent do
   // a credit given by mistake is taken back after confirming
   page.once("dialog", (dialog) => dialog.accept());
   await cameRow.getByRole("button", { name: "ถอนการเข้าร่วม" }).click();
-  await expect(cameRow.getByText("ไม่มา", { exact: true }).first()).toBeVisible();
+  await expect(cameRow.getByTestId("attendance-status")).toHaveAttribute("data-status", "absent");
   expect(await hoursOf(request, came.auth)).toBe(before.came);
 });

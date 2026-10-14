@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -31,7 +31,8 @@ for (const email of ["narin@showpro.local", "staff@showpro.local"]) {
   test(`${email.split("@")[0]}'s courses page shows no hard-coded term`, async ({ page }) => {
     await login(page, email);
     await page.goto("/courses");
-    await page.waitForLoadState("networkidle");
+    // the page has to show the courses first, or a blank or failed page would pass
+    await expect(page.locator("main").getByText("DII340").first()).toBeVisible({ timeout: 15_000 });
     await expect(page.locator("main").getByText(/1\/2567|1\/2568/)).toHaveCount(0);
   });
 }
@@ -39,6 +40,6 @@ for (const email of ["narin@showpro.local", "staff@showpro.local"]) {
 test("internship stat cards say what they count", async ({ page }) => {
   await login(page, "alice@student.showpro.local");
   await page.goto("/internships");
-  await page.waitForLoadState("networkidle");
+  await expect(page.getByTestId("job-card").first()).toBeVisible({ timeout: 15_000 });
   await expect(page.locator("main").getByText(/คัดสรรตามทักษะคุณ|นักศึกษาที่ได้งาน/)).toHaveCount(0);
 });

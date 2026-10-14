@@ -6,6 +6,16 @@ const thaiToday = () =>
 async function pickDII340(page: Page) {
   await page.getByTestId("attendance-course").click();
   await page.getByRole("option", { name: /DII340/ }).click();
+  // the course's rows load with no date in the URL; let them land so pickDate only sees its own reload
+  await page.waitForLoadState("networkidle");
+}
+
+/** sets the date and waits for that day's rows: a click or a read made before the reload lands is overwritten by it */
+async function pickDate(page: Page, date: string) {
+  const reloaded = Promise.all(["/api/attendance/report", "/api/enrollments"].map((path) =>
+    page.waitForResponse((response) => response.url().includes(path)).then((response) => response.finished())));
+  await page.locator("main input[type=date]").fill(date);
+  await reloaded;
 }
 
 async function login(page: Page, email: string) {
@@ -25,8 +35,13 @@ test("attendance defaults to the Thai day, cannot go ahead, and shows unmarked s
   await expect(dateInput).toHaveValue(thaiToday());
   await expect(dateInput).toHaveAttribute("max", thaiToday());
 
-  await dateInput.fill("2026-02-02"); // no seed attendance on this day
-  await expect(page.getByTestId("unmarked-count")).not.toHaveText("0");
+  await pickDate(page, "2026-01-12"); // the seed marks two students on this day
+  await expect(page.getByTestId("present-count")).not.toHaveText("0");
+  await pickDate(page, "2026-02-02"); // and nobody on this one
+  const rows = await page.getByTestId("attendance-row").count();
+  expect(rows).toBeGreaterThan(0);
+  await expect(page.getByTestId("unmarked-count")).toHaveText(String(rows));
+  await expect(page.getByTestId("present-count")).toHaveText("0");
   await expect(page.getByTestId("absent-count")).toHaveText("0");
 });
 
@@ -35,7 +50,7 @@ test("a failed save is reported and the row goes back", async ({ page }) => {
   await page.waitForURL("**/dashboard");
   await page.goto("/attendance");
   await pickDII340(page);
-  await page.locator("main input[type=date]").fill("2026-02-02");
+  await pickDate(page, "2026-02-02");
   const firstRow = page.getByTestId("attendance-row").first();
   await expect(firstRow).toHaveAttribute("data-status", "unmarked");
   await page.route("**/api/attendance/check-in", (route) => route.fulfill({ status: 500, contentType: "application/json", body: JSON.stringify({ success: false, message: "boom" }) }));
@@ -57,11 +72,7 @@ test("a late failure never undoes a newer choice", async ({ page }) => {
   await page.waitForURL("**/dashboard");
   await page.goto("/attendance");
   await pickDII340(page);
-  // the rows reload for the new date; a click made before that reload lands is overwritten by it
-  const reloaded = Promise.all(["/api/attendance/report", "/api/enrollments"].map((path) =>
-    page.waitForResponse((response) => response.url().includes(path)).then((response) => response.finished())));
-  await page.locator("main input[type=date]").fill("2026-02-02");
-  await reloaded;
+  await pickDate(page, "2026-02-02");
   const firstRow = page.getByTestId("attendance-row").first();
   await expect(firstRow).toHaveAttribute("data-status", "unmarked");
   let calls = 0;
@@ -85,7 +96,9 @@ test("the status counters add up to the class", async ({ page }) => {
   await page.waitForURL("**/dashboard");
   await page.goto("/attendance");
   await pickDII340(page);
-  await page.locator("main input[type=date]").fill("2026-02-02");
+  await pickDate(page, "2026-01-12"); // a day with present, late and unmarked rows
+  await expect(page.getByTestId("present-count")).not.toHaveText("0");
+  await expect(page.getByTestId("late-count")).not.toHaveText("0");
   const rows = await page.getByTestId("attendance-row").count();
   expect(rows).toBeGreaterThan(0);
   let sum = 0;
@@ -101,7 +114,7 @@ test("marking a day without a class is refused with the reason, and the row goes
   await page.waitForURL("**/dashboard");
   await page.goto("/attendance");
   await pickDII340(page);
-  await page.locator("main input[type=date]").fill("2026-02-03"); // a Tuesday; DII340 meets on Mondays
+  await pickDate(page, "2026-02-03"); // a Tuesday; DII340 meets on Mondays
   const firstRow = page.getByTestId("attendance-row").first();
   await expect(firstRow).toHaveAttribute("data-status", "unmarked");
   await firstRow.getByTestId("mark-present").click();

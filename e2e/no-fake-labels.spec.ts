@@ -1,7 +1,7 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
 // G3 (round-2 audit): screens that stated things that were not true
-const API = "http://localhost:4000/api";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -16,7 +16,7 @@ const token = async (request: APIRequestContext, email: string) =>
 
 test("a student's course card shows their own section time and room, and no payment claim", async ({ page, request }) => {
   const auth = { Authorization: `Bearer ${await token(request, "alice@student.showpro.local")}` };
-  const enrollments = (await (await request.get(`${API}/enrollments`, { headers: auth })).json()).enrollments as Array<{ course: { code: string; semester: number; academicYear: string }; section: { schedule: Array<{ startTime: string }> } | null }>;
+  const enrollments = (await (await request.get(`${API}/enrollments`, { headers: auth })).json()).enrollments as Array<{ course: { code: string; name: string; semester: number; academicYear: string }; section: { schedule: Array<{ startTime: string }> } | null }>;
   await login(page, "alice@student.showpro.local");
   await page.goto("/courses");
   const main = page.locator("main");
@@ -26,9 +26,10 @@ test("a student's course card shows their own section time and room, and no paym
   await expect(main.getByText("ห้อง 301 อาคาร DII")).toHaveCount(0);
   await expect(main.getByText(/วิชาที่แนะนำ/)).toHaveCount(0);
   const withTimes = enrollments.find((e) => e.section?.schedule?.length);
-  if (withTimes) {
-    await expect(main.getByTestId("course-card-schedule").first()).toContainText(withTimes.section!.schedule[0].startTime);
-  }
+  expect(withTimes, "the seed gives alice a section with class times — otherwise this checks nothing").toBeTruthy();
+  // that course's own card (cards show the name, not the code), not whichever card comes first
+  const card = main.locator("div").filter({ has: page.getByRole("heading", { name: withTimes!.course.name, exact: true }) }).filter({ has: page.getByTestId("course-card-schedule") }).last();
+  await expect(card.getByTestId("course-card-schedule")).toContainText(withTimes!.section!.schedule[0].startTime);
 });
 
 test("budget shows this month's expenses and a change computed from the records, never a fixed +12.5%", async ({ page }) => {

@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const STUDENT = "alice@student.showpro.local";
 // the /notifications page is staff/admin only; students see notifications in the header bell
 const STAFF = "staff@showpro.local";

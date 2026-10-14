@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { API } from "./env";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -39,11 +40,16 @@ test("an intern with no logs or evaluation never borrows the demo interns' repor
 test("cooperation shows no hard-coded MOU dates or coordinator", async ({ page }) => {
   await login(page, "staff@showpro.local");
   await page.goto("/cooperation");
-  await page.waitForLoadState("networkidle");
+  await expect(page.locator("main").getByText("Applied Talent Pipeline MOU").first()).toBeVisible({ timeout: 15_000 });
   await expect(page.getByText(/1 มกราคม 2567|31 ธันวาคม 2569|053-942-xxx|1 ปี 9 เดือน/)).toHaveCount(0);
 });
 
-test("an evaluated intern shows the real 0–5 scores, not rounded up or as percent", async ({ page }) => {
+test("an evaluated intern shows the real 0–5 scores, not rounded up or as percent", async ({ page, request }) => {
+  // the seed company has no contact person, which opens the onboarding dialog over every page
+  const company = await request.post(`${API}/auth/login`, { data: { email: "talent@northernsoft.local", password: "Password123!" } });
+  expect((await request.patch(`${API}/users/profile`, { headers: { Authorization: `Bearer ${(await company.json()).token}` }, data: {
+    roleData: { contactPersonName: "Somsri HR", contactPersonPhone: "0812345678", contactPersonEmail: "hr@northernsoft.example.com" },
+  } })).ok()).toBeTruthy();
   await page.route("**/api/internships", (route) =>
     route.fulfill({
       json: {

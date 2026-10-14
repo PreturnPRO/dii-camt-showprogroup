@@ -768,7 +768,7 @@ export default function Portfolio() {
             <div className="relative pt-10 text-center">
               <Avatar className="w-24 h-24 border-4 border-white shadow-xl rounded-2xl mx-auto mb-4">
                 <AvatarImage src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} />
-                <AvatarFallback className="text-2xl bg-indigo-100 text-indigo-600 rounded-3xl dark:text-slate-300">
+                <AvatarFallback className="text-2xl bg-indigo-100 text-indigo-600 rounded-3xl dark:bg-indigo-950 dark:text-indigo-200">
                   {student.nameThai ? student.nameThai.charAt(0) : 'U'}
                 </AvatarFallback>
               </Avatar>

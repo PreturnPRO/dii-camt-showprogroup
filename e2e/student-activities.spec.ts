@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { API } from "./env";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -14,7 +15,7 @@ test("a student sees what they joined, their real points, and no check-in button
   page.on("request", (r) => { if (r.url().includes("/api/")) calls.push(r.url()); });
   await login(page, "bob@student.showpro.local");
   const token = await page.evaluate(() => sessionStorage.getItem("xchange_auth_token") ?? localStorage.getItem("xchange_auth_token"));
-  const stats = await (await request.get("http://localhost:4000/api/students/stats", { headers: { Authorization: `Bearer ${token}` } })).json();
+  const stats = await (await request.get(`${API}/students/stats`, { headers: { Authorization: `Bearer ${token}` } })).json();
 
   await page.goto("/activities");
   await page.waitForLoadState("networkidle");
@@ -34,7 +35,7 @@ test("a student sees what they joined, their real points, and no check-in button
 test("badges: locked ones with a lock and the real counter, one selected at a time", async ({ page, request }) => {
   await login(page, "bob@student.showpro.local");
   const token = await page.evaluate(() => sessionStorage.getItem("xchange_auth_token") ?? localStorage.getItem("xchange_auth_token"));
-  const badges = (await (await request.get("http://localhost:4000/api/students/badges", { headers: { Authorization: `Bearer ${token}` } })).json()).badges as
+  const badges = (await (await request.get(`${API}/students/badges`, { headers: { Authorization: `Bearer ${token}` } })).json()).badges as
     Array<{ name: string; nameThai: string; unlocked: boolean; current: number | null; target: number | null; unit: string | null; criteria: string }>;
   await page.goto("/activities");
   await page.waitForLoadState("networkidle");

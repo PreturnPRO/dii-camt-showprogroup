@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const CHOMPOO = "chompoo@student.showpro.local";
 const token = async (request: APIRequestContext, email: string) =>
   (await (await request.post(`${API}/auth/login`, { data: { email, password: "Password123!" } })).json()).token as string;

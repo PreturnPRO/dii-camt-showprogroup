@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 test("a lecturer's grading weights are really saved", async ({ page, request }) => {
   const token = (await (await request.post(`${API}/auth/login`, { data: { email: "narin@showpro.local", password: "Password123!" } })).json()).token;

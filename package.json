@@ -19,6 +19,9 @@
     "backend:push": "npm run prisma:push --prefix backend",
     "backend:seed": "npm run prisma:seed --prefix backend",
     "check": "npm run typecheck && npm run lint && npm run build && npm run backend:validate",
+    "test": "npm run test:unit && npm run test:backend",
+    "test:unit": "vitest run src",
+    "test:backend": "npm test --prefix backend",
     "test:e2e": "playwright test",
     "backend:migrate": "npm run prisma:migrate --prefix backend"
   },

@@ -1,0 +1,55 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: showpro
+          POSTGRES_PASSWORD: showpro
+          POSTGRES_DB: showpro_main
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U showpro"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      # backend tests reset showpro_main_test (derived from this URL), never showpro_main itself
+      DATABASE_URL: postgresql://showpro:showpro@localhost:5432/showpro_main?schema=public
+      JWT_SECRET: ci-secret-at-least-32-characters-long
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            backend/package-lock.json
+
+      - run: npm ci
+      - run: npm ci --prefix backend
+      - run: npm run backend:generate
+
+      - name: Typecheck, lint, build, validate
+        run: npm run check
+
+      - name: Unit and backend tests
+        run: npm test

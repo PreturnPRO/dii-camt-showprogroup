@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 test.use({ viewport: { width: 1280, height: 1400 } });
 
 async function token(request: APIRequestContext, email: string) {

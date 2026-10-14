@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 // self-registration is gone entirely (M3) — see no-self-register.spec.ts
 

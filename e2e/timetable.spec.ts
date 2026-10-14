@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 // drags need both the class and the drop slot on screen; with force:true Playwright does not scroll the target in
 test.use({ viewport: { width: 1280, height: 1400 } });
 

@@ -158,6 +158,14 @@ Keep these files local; use the corresponding `.env.example` templates as a star
 | `npm run backend:migrate` | Apply the Biw Prisma migration history to the development database |
 | `npm run backend:seed` | Clear and seed development application data |
 | `npm run check` | Typecheck, lint, build, and validate backend schema and TypeScript |
+| `npm test` | Frontend unit tests, then backend tests (against `showpro_main_test`, reset on every run) |
+| `npm run test:e2e` | Playwright end-to-end tests on their own stack (see below) |
+
+CI (`.github/workflows/ci.yml`) runs `npm run check` and `npm test` on every push and pull request. E2E is not in CI.
+
+### End-to-end tests
+
+`npm run test:e2e` starts a second backend on `:4100` and frontend on `:8180`, against the database `showpro_e2e_test` on the same server as `DATABASE_URL` in `backend/.env`. That database is created if missing, then wiped and seeded at the start of every run, so tests never depend on, or leave data in, your development database. The dev servers on `:4000` / `:8080` can keep running. Set `E2E_DATABASE_URL` to use another database; its name must end with `_e2e_test` and it must be on localhost.
 
 ---
 

@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 test("a course imported from CSV gets a section with the file's seat limit", async ({ page, request }) => {
   await page.goto("/login");

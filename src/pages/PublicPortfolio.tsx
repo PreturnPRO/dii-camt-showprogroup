@@ -109,7 +109,7 @@ export default function PublicPortfolio() {
             <div className="flex flex-col md:flex-row items-center md:items-start gap-8 relative z-10">
               <Avatar className="w-32 h-32 md:w-40 md:h-40 border-4 border-white shadow-xl rounded-3xl shrink-0">
                 <AvatarImage src={student.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${student.name}`} />
-                <AvatarFallback className="text-4xl bg-indigo-100 text-indigo-600 rounded-3xl dark:text-slate-300">
+                <AvatarFallback className="text-4xl bg-indigo-100 text-indigo-600 rounded-3xl dark:bg-indigo-950 dark:text-indigo-200">
                   {student.nameThai.charAt(0)}
                 </AvatarFallback>
               </Avatar>

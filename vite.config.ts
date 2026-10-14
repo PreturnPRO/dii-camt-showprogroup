@@ -5,6 +5,8 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  // the E2E server sets its own, so it never shares the dev server's optimised-deps cache
+  cacheDir: process.env.VITE_CACHE_DIR || "node_modules/.vite",
   server: {
     host: "::",
     port: 5173,

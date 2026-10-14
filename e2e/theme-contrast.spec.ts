@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 async function login(page: Page, email: string) {
   await page.goto("/login");
@@ -107,6 +107,9 @@ for (const c of cases) {
   test(`${c.email} ${c.path} in ${c.scheme} mode has no near-invisible text`, async ({ page, request }) => {
     const cleanup = c.seed ? await c.seed(request) : null;
     await page.emulateMedia({ colorScheme: c.scheme });
+    // generated avatars come from the internet: block them so the letter fallback is always the one checked
+    // (it showed only when the image was slow, and was near-invisible in dark mode)
+    await page.route("https://api.dicebear.com/**", (route) => route.abort());
     await login(page, c.email);
     await page.goto(c.path);
     await expect(page.locator(c.ready).first()).toBeVisible({ timeout: 15_000 });

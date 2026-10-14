@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const PASSWORD = "Password123!";
 const PHONE = { width: 390, height: 844 };
 

@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 test.use({ viewport: { width: 1280, height: 1400 } });
 const token = async (request: APIRequestContext, email: string) =>
   (await (await request.post(`${API}/auth/login`, { data: { email, password: "Password123!" } })).json()).token as string;

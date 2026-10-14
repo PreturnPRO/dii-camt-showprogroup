@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const PASSWORD = "Password123!";
 
 async function token(request: APIRequestContext, email: string, password = PASSWORD) {
@@ -103,5 +103,9 @@ test("admin sees appointments but has no booking button (only students book)", a
   await login(page, "admin@showpro.local");
   await page.goto("/appointments");
   await expect(page.getByRole("tab").first()).toBeVisible({ timeout: 15_000 });
+  // the tabs show at once and the lecturer cards only after loading: count them once loading is over
+  await expect(page.getByText(/กำลังโหลด/)).toHaveCount(0, { timeout: 15_000 });
+  await expect(page.getByText(/ไม่มีนัดหมายที่ยืนยันแล้ว/).or(page.getByTestId("appointment-card")).first()).toBeVisible();
   await expect(page.getByTestId("bookable-lecturer")).toHaveCount(0);
+  await expect(page.getByRole("searchbox", { name: /ค้นหาอาจารย์|Search lecturers/ })).toHaveCount(0);
 });

@@ -425,6 +425,7 @@ export function StudentGradesView() {
                       </div>
 
                       <div
+                        data-testid="grade-card-letter"
                         className={`w-11 h-11 rounded-xl flex items-center justify-center font-bold text-lg shrink-0 shadow-xs select-none ${getGradeBadge(
                           grade.letterGrade,
                         )}`}
@@ -442,14 +443,14 @@ export function StudentGradesView() {
                           <div className="text-[10px] text-slate-400 uppercase font-sans mb-0.5 truncate">
                             {score.criteriaName || 'Score'}
                           </div>
-                          <div className="font-bold text-xs text-slate-700 dark:text-slate-200">{score.score}</div>
+                          <div data-testid="grade-card-score" className="font-bold text-xs text-slate-700 dark:text-slate-200">{score.score}</div>
                         </div>
                       ))}
                       <div className="p-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200/60 dark:border-emerald-800/60">
                         <div className="text-[10px] text-emerald-600 dark:text-emerald-400 uppercase font-sans font-bold mb-0.5">
                           Total
                         </div>
-                        <div className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total ?? '-'}</div>
+                        <div data-testid="grade-card-total" className="font-bold text-xs text-emerald-700 dark:text-emerald-300">{grade.total ?? '-'}</div>
                       </div>
                     </div>
                   </div>

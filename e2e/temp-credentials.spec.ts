@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 
 async function uiLogin(page: Page, email: string, password: string) {
   await page.goto("/login");

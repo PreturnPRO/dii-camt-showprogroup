@@ -1,10 +1,11 @@
 import { expect, test } from "@playwright/test";
+import { API } from "./env";
 
 test("a company with no internship quota can still publish an internship", async ({ page, request }) => {
   // the seed company has no contact person, which opens the onboarding dialog over every page
-  const login = await request.post("http://localhost:4000/api/auth/login", { data: { email: "talent@northernsoft.local", password: "Password123!" } });
+  const login = await request.post(`${API}/auth/login`, { data: { email: "talent@northernsoft.local", password: "Password123!" } });
   const token = (await login.json()).token;
-  await request.patch("http://localhost:4000/api/users/profile", {
+  await request.patch(`${API}/users/profile`, {
     headers: { Authorization: `Bearer ${token}` },
     data: { roleData: { contactPersonName: "Somsri HR", contactPersonPhone: "0812345678", contactPersonEmail: "hr@northernsoft.example.com" } },
   });

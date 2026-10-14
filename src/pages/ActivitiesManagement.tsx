@@ -1002,7 +1002,7 @@ export default function ActivitiesManagement() {
                                                         </div>
                                                     </div>
                                                     <div className="flex flex-wrap items-center justify-end gap-1.5 text-right" data-testid="attendance-row">
-                                                        <Badge variant="outline" className={`rounded-xl text-[11px] ${st.status === 'completed' ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400' : st.status === 'absent' ? 'border-rose-300 text-rose-700 dark:text-rose-400' : ''}`}>
+                                                        <Badge variant="outline" data-testid="attendance-status" data-status={st.status} className={`rounded-xl text-[11px] ${st.status === 'completed' ? 'border-emerald-300 text-emerald-700 dark:text-emerald-400' : st.status === 'absent' ? 'border-rose-300 text-rose-700 dark:text-rose-400' : ''}`}>
                                                             {ATTENDANCE_LABELS[st.status] ?? st.status}
                                                         </Badge>
                                                         {canRecordAttendance(viewingActivity) && st.status !== 'completed' && (

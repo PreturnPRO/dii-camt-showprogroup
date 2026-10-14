@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const PASSWORD = "Password123!";
 
 async function token(request: APIRequestContext, email: string, password = PASSWORD) {
@@ -31,9 +31,17 @@ async function applicant(request: APIRequestContext, share: boolean) {
   expect((await request.patch(`${API}/users/profile`, { headers: temp, data: { currentPassword: "Temp-Pass-123!", newPassword: PASSWORD } })).ok()).toBeTruthy();
   const student = { Authorization: `Bearer ${await token(request, email)}` };
   expect((await request.patch(`${API}/students/profile`, { headers: student, data: { cvUrl: `https://cv.example.com/${stamp}.pdf`, consent: { allowDataSharing: share } } })).ok()).toBeTruthy();
-  const jobs = (await (await request.get(`${API}/jobs`, { headers: student })).json()).jobs as Array<{ id: string; company?: { companyName?: string }; type: string; status: string }>;
-  const job = jobs.find((j) => j.company?.companyName?.includes("Northern") && j.type !== "skill_requirement" && j.status === "open")!;
-  expect(job).toBeTruthy();
+  // a Northern Soft job of its own: the seed's jobs are past their deadline
+  const company = { Authorization: `Bearer ${await token(request, "talent@northernsoft.local")}` };
+  // the seed company has no contact person, which opens the onboarding dialog over every page
+  expect((await request.patch(`${API}/users/profile`, { headers: company, data: {
+    roleData: { contactPersonName: "Somsri HR", contactPersonPhone: "0812345678", contactPersonEmail: "hr@northernsoft.example.com" },
+  } })).ok()).toBeTruthy();
+  const posted = await request.post(`${API}/jobs`, { headers: company, data: {
+    title: `CV E2E ${stamp}`, type: "internship", description: "e2e", location: "CM", workType: "onsite", status: "open",
+  } });
+  expect(posted.ok()).toBeTruthy();
+  const job = (await posted.json()).job as { id: string };
   expect((await request.post(`${API}/apply/${job.id}`, { headers: student, data: {} })).status()).toBe(201);
   return { nameThai, cvUrl: `https://cv.example.com/${stamp}.pdf` };
 }

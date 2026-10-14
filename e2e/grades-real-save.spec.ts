@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
+import { API } from "./env";
 
-const API = "http://localhost:4000/api";
 const CRITERIA = ["Midterm", "Final", "Assignments", "Participation", "Project"];
 
 async function token(request: APIRequestContext, email: string, password = "Password123!") {
@@ -65,6 +65,8 @@ test("a lecturer's grade sheet really saves, and the student sees every criterio
     for (let i = 0; i < CRITERIA.length; i++) {
       await expect(page.getByTestId("grade-row").filter({ hasText: "นักศึกษา เกรด" }).getByTestId(`grade-score-${i}`)).toHaveValue("80");
     }
+    const lecturerLetter = await page.getByTestId("grade-row").filter({ hasText: "นักศึกษา เกรด" }).getByTestId("grade-letter").inputValue();
+    expect(lecturerLetter).not.toBe("");
 
     // the column headers are the criterion names, not "Score 1"
     for (const name of CRITERIA) await expect(page.getByText(name, { exact: true }).first()).toBeVisible();
@@ -100,6 +102,10 @@ test("a lecturer's grade sheet really saves, and the student sees every criterio
     // the student's card shows all five criteria, not the first three
     card = await asStudent();
     for (const name of CRITERIA) await expect(card).toContainText(name, { ignoreCase: true });
+    // and the numbers themselves: 80 in each criterion, 80 in all (five × 20 %), the lecturer's letter
+    await expect(card.getByTestId("grade-card-score")).toHaveText(Array(CRITERIA.length).fill("80"));
+    await expect(card.getByTestId("grade-card-total")).toHaveText(/^80(\.0+)?$/);
+    await expect(card.getByTestId("grade-card-letter")).toHaveText(lecturerLetter);
     await expect(card.getByTestId("grade-footnote")).toHaveText("ผ่าน");
     await expect(page.getByText(/เป้าหมาย|Target/)).toHaveCount(0);
   } finally {
