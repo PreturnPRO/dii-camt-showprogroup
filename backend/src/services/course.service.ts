@@ -298,8 +298,9 @@ const updateCourseUnchecked = async (currentUser: any, id: string, data: any) =>
       for (let i = 0; i < gradingCriteria.length; i++) {
         const item = gradingCriteria[i];
         if (item.id) {
-          await tx.courseGradingCriteria.update({
-            where: { id: item.id },
+          // only this course's criteria: an id from another course must not rewrite it (review round 3 C1)
+          const { count } = await tx.courseGradingCriteria.updateMany({
+            where: { id: item.id, courseId: existing.id },
             data: {
               name: item.name,
               weightPercentage: item.weightPercentage,
@@ -307,6 +308,9 @@ const updateCourseUnchecked = async (currentUser: any, id: string, data: any) =>
               orderIndex: i
             }
           });
+          if (count === 0) {
+            throw new AppError(400, "A grading criterion does not belong to this course");
+          }
         } else {
           await tx.courseGradingCriteria.create({
             data: {
