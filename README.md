@@ -118,7 +118,7 @@ npm run backend:seed
 npm run dev:all
 ```
 
-The included Compose service publishes PostgreSQL on host port `5433` to avoid a conflict with a local service on `5432`. The example backend `DATABASE_URL` matches that port. The database uses a dedicated Docker volume named `backend_iq-showpro-postgres`.
+The included Compose service publishes PostgreSQL on host port `5432`; stop any other PostgreSQL using `5432` first. The example backend `DATABASE_URL` matches that port. The database uses a dedicated Docker volume named `backend_iq-showpro-postgres`.
 
 > **Seeding clears existing application tables.** Run `npm run backend:seed` only against a development database whose contents may be reset.
 

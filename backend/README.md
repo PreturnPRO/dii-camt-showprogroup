@@ -10,7 +10,7 @@ The IQ backend uses the Biw Express API, PostgreSQL schema, and Prisma migration
    cp backend/.env.example backend/.env
    ```
 
-   The included Docker Compose service uses user `postgres`, password `postgres`, database `showpro`, and host port `5433` (container port `5432`). The example `DATABASE_URL` is set for those values. Port `5433` avoids conflicts with a local PostgreSQL server already using `5432`. If you use another PostgreSQL instance, update the URL to its credentials.
+   The included Docker Compose service uses user `postgres`, password `postgres`, database `showpro`, and host port `5432`. The example `DATABASE_URL` is set for those values. Stop any other PostgreSQL server using `5432` first. If you use another PostgreSQL instance, update the URL to its credentials.
 
 2. Start Docker Desktop, then confirm its daemon is available and start PostgreSQL:
 
