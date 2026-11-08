@@ -396,7 +396,9 @@ export default function Courses() {
         lecturerId: courseForm.lecturerId,
         description: courseForm.description.trim(),
         syllabus: courseForm.syllabus.trim(),
-        status: courseForm.status,
+        // send the status only when it changes: a sent-back course keeps "rejected", which is never written
+        // directly, so resending it made every edit fail with 400 (review round 3 H1)
+        ...(editingCourse && courseForm.status === editingCourse.status ? {} : { status: courseForm.status }),
         // an open course's shape is staff's to change (owner decision 9/10/69): a lecturer does not send it
         ...(shapeLocked ? {} : {
           code: courseForm.code.trim(),
